@@ -32,29 +32,60 @@
         class="drawer-list"
       >
         <v-list-item
-          prepend-icon="mdi-wallet"
-          title="My Wallet"
-          :subtitle="user.wallet"
-          :class="{ 'pill-active': selected.includes('wallet') }"
-          value="wallet"
+          prepend-icon="mdi-domain"
+          title="AGENCY"
+          :class="{ 'pill-active': selected.includes('agency') }"
+          value="agency"
+          @click="navigateTo('agency')"
         />
         <v-list-item
-          prepend-icon="mdi-briefcase"
-          title="My Trips"
-          :class="{ 'pill-active': selected.includes('trips') }"
-          value="trips"
+          prepend-icon="mdi-home"
+          title="ACTIVE UNITS"
+          :class="{ 'pill-active': selected.includes('active-units') }"
+          value="active-units"
+          @click="navigateTo('active-units')"
         />
         <v-list-item
-          prepend-icon="mdi-account-plus-outline"
-          title="Invite Friends"
-          :class="{ 'pill-active': selected.includes('invite') }"
-          value="invite"
+          prepend-icon="mdi-file-document"
+          title="DOCUMENTS"
+          :class="{ 'pill-active': selected.includes('documents') }"
+          value="documents"
+          @click="navigateTo('documents')"
         />
         <v-list-item
-          prepend-icon="mdi-sale"
-          title="Promotions"
-          :class="{ 'pill-active': selected.includes('promotions') }"
-          value="promotions"
+          prepend-icon="mdi-bell"
+          title="NOTICES"
+          :class="{ 'pill-active': selected.includes('notices') }"
+          value="notices"
+          @click="navigateTo('notices')"
+        />
+        <v-list-item
+          prepend-icon="mdi-flag"
+          title="FLAGGED UNITS"
+          :class="{ 'pill-active': selected.includes('flagged-units') }"
+          value="flagged-units"
+          @click="navigateTo('flagged-units')"
+        />
+        <v-list-item
+          prepend-icon="mdi-wrench"
+          title="MAINTENANCE"
+          :class="{ 'pill-active': selected.includes('maintenance') }"
+          value="maintenance"
+          @click="navigateTo('maintenance')"
+        />
+        <v-list-item
+          prepend-icon="mdi-clipboard-check"
+          title="INSPECTIONS"
+          :class="{ 'pill-active': selected.includes('inspections') }"
+          value="inspections"
+          @click="navigateTo('inspections')"
+        />
+        <v-list-item
+          prepend-icon="mdi-home-outline"
+          title="VACANCIES"
+          :class="{ 'pill-active': selected.includes('vacancies') }"
+          value="vacancies"
+          @click="navigateTo('vacancies')"
         />
       </v-list>
 
@@ -66,47 +97,66 @@
   </v-navigation-drawer>
 </template>
 
-<script setup>
+<script>
 import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useDrawer } from '@/composables/useDrawer'
 import { useNav } from '@/composables/useNav'
 
-const { mdAndUp } = useDisplay()
-const isDesktop = computed(() => mdAndUp.value)
-const { isOpen } = useDrawer()
-const router = useRouter()
-const { selectedKey, setSelected } = useNav()
-const selected = computed({
-  get: () => [selectedKey.value],
-  set: (values) => {
-    const value = Array.isArray(values) ? values[0] : values
-    if (value) setSelected(value)
+export default {
+  name: 'NavDrawer',
+  setup() {
+    const { mdAndUp } = useDisplay()
+    const isDesktop = computed(() => mdAndUp.value)
+    const { isOpen } = useDrawer()
+    const router = useRouter()
+    const { selectedKey, setSelected } = useNav()
+    const selected = computed({
+      get: () => [selectedKey.value],
+      set: (values) => {
+        const value = Array.isArray(values) ? values[0] : values
+        if (value) setSelected(value)
+      }
+    })
+
+    const user = reactive({
+      name: 'Angela Mayer',
+      email: 'angela@example.com',
+      avatar: 'https://i.pravatar.cc/100?img=5',
+      score: 2100,
+      created: 1265,
+      downloaded: 72,
+      uploaded: 256,
+      wallet: '0.023456 BTC'
+    })
+
+    const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
+
+    const headerStyle = computed(() => ({
+      backgroundImage: `url(${headerImage.value})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }))
+
+    function onLogout() {
+      router.push('/')
+    }
+
+    function navigateTo(route) {
+      router.push(`/${route}`)
+    }
+
+    return {
+      isDesktop,
+      isOpen,
+      selected,
+      user,
+      headerStyle,
+      onLogout,
+      navigateTo
+    }
   }
-})
-
-const user = reactive({
-  name: 'Angela Mayer',
-  email: 'angela@example.com',
-  avatar: 'https://i.pravatar.cc/100?img=5',
-  score: 2100,
-  created: 1265,
-  downloaded: 72,
-  uploaded: 256,
-  wallet: '0.023456 BTC'
-})
-
-const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
-
-const headerStyle = computed(() => ({
-  backgroundImage: `url(${headerImage.value})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center'
-}))
-
-function onLogout() {
-  router.push('/')
 }
 </script>
 
@@ -207,12 +257,12 @@ function onLogout() {
 
 /* Active state */
 .pill-active {
-  background-color: rgba(255,255,255,0.14) !important;
+  background-color: #ffffff !important;
 }
 
 .pill-active :deep(.v-list-item-title),
 .pill-active :deep(.v-list-item-subtitle),
 .pill-active :deep(.v-icon) {
-  color: rgba(255,255,255,1) !important;
+  color: #000000 !important;
 }
 </style>
