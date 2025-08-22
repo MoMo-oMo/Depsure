@@ -89,7 +89,7 @@ export default {
   },
   methods: {
     onSubmit() {
-      this.$router.push('/dashbaaord')
+      this.$router.push('/agency')
     },
     onForgotPassword() {
       alert('Redirect to Forgot Password page')
