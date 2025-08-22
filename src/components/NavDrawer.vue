@@ -18,7 +18,7 @@
           </v-avatar>
           <div class="user-meta">
             <div class="name">{{ user.name }}</div>
-            <div class="email">{{ user.email }}</div>
+            <div class="user-type">{{ user.userType }}</div>
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@ export default {
 
     const user = reactive({
       name: 'Angela Mayer',
-      email: 'angela@example.com',
+      userType: 'Admin',
       avatar: 'https://i.pravatar.cc/100?img=5',
       score: 2100,
       created: 1265,
@@ -207,12 +207,13 @@ export default {
   color: white;
 }
 
-.email {
+.user-type {
   opacity: 0.8;
   font-size: clamp(0.7rem, 1.2vw, 0.82rem);
   line-height: 1.1;
   overflow-wrap: anywhere;
   color: white;
+  font-weight: 500;
 }
 
 .drawer-footer {
