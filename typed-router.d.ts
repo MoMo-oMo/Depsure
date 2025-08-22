@@ -26,6 +26,7 @@ declare module 'vue-router/auto-routes' {
     '/agency': RouteRecordInfo<'/agency', '/agency', Record<never, never>, Record<never, never>>,
     '/dashbaaord': RouteRecordInfo<'/dashbaaord', '/dashbaaord', Record<never, never>, Record<never, never>>,
     '/documents': RouteRecordInfo<'/documents', '/documents', Record<never, never>, Record<never, never>>,
+    '/edit-notice-[id]': RouteRecordInfo<'/edit-notice-[id]', '/edit-notice-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/edit-property-[id]': RouteRecordInfo<'/edit-property-[id]', '/edit-property-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/flagged-units': RouteRecordInfo<'/flagged-units', '/flagged-units', Record<never, never>, Record<never, never>>,
     '/inspections': RouteRecordInfo<'/inspections', '/inspections', Record<never, never>, Record<never, never>>,
@@ -33,6 +34,8 @@ declare module 'vue-router/auto-routes' {
     '/notices': RouteRecordInfo<'/notices', '/notices', Record<never, never>, Record<never, never>>,
     '/vacancies': RouteRecordInfo<'/vacancies', '/vacancies', Record<never, never>, Record<never, never>>,
     '/view-agency': RouteRecordInfo<'/view-agency', '/view-agency', Record<never, never>, Record<never, never>>,
+    '/view-notice': RouteRecordInfo<'/view-notice', '/view-notice', Record<never, never>, Record<never, never>>,
+    '/view-notice-[id]': RouteRecordInfo<'/view-notice-[id]', '/view-notice-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/view-property': RouteRecordInfo<'/view-property', '/view-property', Record<never, never>, Record<never, never>>,
     '/view-property-[id]': RouteRecordInfo<'/view-property-[id]', '/view-property-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
   }
