@@ -1,13 +1,45 @@
 <template>
   <div class="agency-page">
     <v-container fluid>
+      <!-- Search and Add Agency Section -->
+      <v-row class="mb-6">
+        <v-col cols="12" md="6" lg="4">
+          <v-text-field
+            v-model="searchQuery"
+            label="Search agencies..."
+            prepend-inner-icon="mdi-magnify"
+            flat="true"
+            density="comfortable"
+
+            variant="outlined"
+            clearable
+            hide-details
+            dense
+            class="custom-input"
+            @input="filterAgencies"
+          />
+        </v-col>
+        <v-col cols="12" md="3" lg="2" class="d-flex align-center">
+          <v-btn
+            color="primary"
+       
+            variant="elevated"
+            size="small"
+            class="add-agency-btn"
+            @click="addNewAgency"
+          >
+            Add Agency
+          </v-btn>
+        </v-col>
+      </v-row>
+
       <v-row>
         <v-col cols="12">
 
           
                      <v-row>
              <v-col 
-               v-for="(agency, index) in agencies" 
+               v-for="(agency, index) in filteredAgencies" 
                :key="index"
                cols="12" 
                sm="6" 
@@ -124,15 +156,31 @@ export default {
           properties: 543,
           rating: 4.4
         }
-      ]
+      ],
+      searchQuery: '',
+      filteredAgencies: []
     }
   },
   methods: {
     viewAgencyDetails(agency) {
-      // Handle viewing agency details
-      console.log('Viewing agency details for:', agency.name)
-      alert(`Viewing details for ${agency.name}`)
+      // Navigate to the view agency page
+      this.$router.push('/view-agency');
+    },
+    filterAgencies() {
+      this.filteredAgencies = this.agencies.filter(agency => 
+        agency.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        agency.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        agency.description.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        agency.location.toLowerCase().includes(this.searchQuery.toLowerCase())
+      );
+    },
+    addNewAgency() {
+      // Navigate to the add agency page
+      this.$router.push('/add-agency');
     }
+  },
+  mounted() {
+    this.filteredAgencies = this.agencies; // Initialize filteredAgencies with all agencies
   }
 }
 </script>
@@ -140,7 +188,6 @@ export default {
 <style scoped>
 .agency-page {
   padding: 20px;
-
   min-height: 100vh;
   position: relative;
 }
@@ -152,8 +199,31 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-
   pointer-events: none;
+}
+
+/* Search and Add Agency Styles */
+.custom-input .v-field {
+  border-radius: 8px;
+}
+
+.add-agency-btn {
+  width: 160px;
+  height: 40px;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  background-color: black !important;
+  color: white !important;
+}
+
+.add-agency-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  background-color: #333 !important;
 }
 
        .business-card {
@@ -236,21 +306,23 @@ export default {
   }
 
   .action-btn {
-    border: 2px solid white;
+    border: 2px solid black;
     color: white;
     font-weight: 600;
     text-transform: none;
-    padding: 6px 16px;
+    padding: 10px 24px;
     border-radius: 6px;
     transition: all 0.3s ease;
-    background: transparent;
+    background: black;
+    min-width: 140px;
   }
 
   .action-btn:hover {
-    background: white;
-    color: black;
+    background: #333;
+    border-color: #333;
+    color: white;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
 
    /* Responsive adjustments */

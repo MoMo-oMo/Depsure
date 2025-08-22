@@ -14,6 +14,7 @@
               label="Email Address"
               prepend-inner-icon="mdi-email"
               flat="true"
+                     density="comfortable"
               variant="outlined"
               class="custom-input"
               :rules="emailRules"
@@ -25,6 +26,8 @@
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               label="Password"
+              density="comfortable"
+
               prepend-inner-icon="mdi-lock"
               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
               @click:append-inner="showPassword = !showPassword"
@@ -165,7 +168,7 @@ export default {
 /* Buttons */
 .custom-btn {
   width: 100%;
-  padding: 12px;
+  padding: 10px 24px;
   background-color: black;
   color: white;
   border: none;
@@ -175,6 +178,7 @@ export default {
   margin-top: 1rem;
   transition: background-color 0.3s;
   z-index: 3;
+  min-width: 280px;
 }
 
 .custom-btn:disabled {
