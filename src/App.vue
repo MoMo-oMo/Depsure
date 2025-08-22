@@ -93,6 +93,16 @@
   text-align: center !important;
 }
 
+/* Make action buttons centered vertically */
+:deep(.v-data-table .v-data-table__actions-cell) {
+  display: flex;
+  justify-content: center; /* horizontal */
+  align-items: center;     /* vertical */
+  gap: 4px;                /* space between icons */
+  height: 100%;
+}
+
+
 :deep(.v-data-table .v-data-table__td) {
   font-size: 0.75rem !important;
   padding: 0.5rem !important;

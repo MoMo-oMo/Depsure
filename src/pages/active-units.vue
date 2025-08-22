@@ -143,6 +143,7 @@
               </span>
             </template>
             <template v-slot:item.actions="{ item }">
+            <div class ="v-data-table_actions-cell">
               <v-btn
                 icon="mdi-eye"
                 size="small"
@@ -167,6 +168,7 @@
                 @click="deleteProperty(item)"
                 class="action-btn"
               />
+              </div>
             </template>
           </v-data-table>
         </v-col>
