@@ -9,7 +9,7 @@
               <h1 class="page-title">Add New Agency</h1>
             </div>
             
-            <v-card class="form-card" elevation="0">
+            <div class="form-card" elevation="0">
               <v-form ref="form" v-model="valid" lazy-validation>
                 <!-- **Row 0: Logo Upload at very top (square block + button)** -->
                 <v-row class="logo-row">
@@ -189,7 +189,7 @@
                   </v-btn>
                 </div>
               </v-form>
-            </v-card>
+            </div>
           </v-col>
         </v-row>
       </v-container>
@@ -306,7 +306,7 @@
     background: white;
     border-radius: 0 0 12px 12px;
     padding: 0;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
   
   .v-form {

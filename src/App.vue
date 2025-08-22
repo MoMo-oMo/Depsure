@@ -20,14 +20,14 @@
 <style>
 /* Make the header row container allow rounded corners */
 .custom-header .v-data-table__thead {
-  background-color: #002060 !important;
+  background-color: #000000 !important;
   border-collapse: separate;        /* allow cell-level radii */
   overflow: hidden;                 /* clip overflowing corners */
 }
 
 /* Base styling for every header cell */
 .custom-header .v-data-table__th {
-  background-color:#002060 !important;
+  background-color:#000000 !important;
   white-space: nowrap;
   color: white !important;
   text-transform: none;             /* keep original casing */
@@ -35,12 +35,12 @@
 
 /* Top-left corner radius on the very first <th> */
 .custom-header .v-data-table__th:first-child {
-  border-top-left-radius: 20px !important;
+  border-top-left-radius: 12px !important;
 }
 
 /* Top-right corner radius on the very last <th> */
 .custom-header .v-data-table__th:last-child {
-  border-top-right-radius: 20px !important;
+  border-top-right-radius: 12px !important;
 }
 
 /* Optional: striped row background */
