@@ -2,9 +2,9 @@
   <div class="view-agency-page">
     <v-container fluid>
       
-      <!-- Back Button -->
+      <!-- Back Button and Add Unit -->
       <v-row class="mb-4">
-        <v-col cols="7">
+        <v-col cols="6">
           <v-btn
             icon="mdi-arrow-left"
             variant="outlined"
@@ -15,7 +15,7 @@
             Back
           </v-btn>
         </v-col>
-        <v-col cols="12" md="3" lg="3" class="pa-4">
+        <v-col cols="12" md="2" lg="2" class="pa-4">
           <v-text-field
             v-model="searchQuery"
             label="Search properties..."
@@ -44,6 +44,17 @@
             class="custom-input"
             @input="filterProperties"
           />
+        </v-col>
+        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center">
+          <v-btn
+            icon="mdi-plus"
+            variant="outlined"
+            color="primary"
+            @click="addUnit"
+            class="back-btn"
+          >
+            Add Unit
+          </v-btn>
         </v-col>
       </v-row>
 
@@ -314,6 +325,10 @@ export default {
           this.filterProperties(); // Refresh filtered list
         }
       }
+    },
+    addUnit() {
+      console.log('Adding new unit');
+      this.$router.push('/add-unit');
     }
   },
   mounted() {

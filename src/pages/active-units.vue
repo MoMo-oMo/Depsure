@@ -1,7 +1,7 @@
 <template>
   <div class="view-agency-page">
     <v-container fluid>
-      <!-- Filters -->
+      <!-- Filters and Add Unit Button -->
       <v-row class="mb-4">
         <!-- Search -->
         <v-col cols="12" md="3" lg="3" class="pa-4">
@@ -52,6 +52,19 @@
             class="custom-input"
             @input="filterProperties"
           />
+        </v-col>
+
+        <!-- Add Unit Button -->
+        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center">
+          <v-btn
+            icon="mdi-plus"
+            variant="outlined"
+            color="primary"
+            @click="addUnit"
+            class="back-btn"
+          >
+            Add Unit
+          </v-btn>
         </v-col>
       </v-row>
 
@@ -359,6 +372,10 @@ export default {
           this.filterProperties();
         }
       }
+    },
+    addUnit() {
+      console.log("Adding new unit");
+      this.$router.push('/add-unit');
     },
   },
   mounted() {

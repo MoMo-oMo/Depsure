@@ -45,13 +45,7 @@
           value="active-units"
           @click="navigateTo('active-units')"
         />
-        <v-list-item
-          prepend-icon="mdi-file-document"
-          title="DOCUMENTS"
-          :class="{ 'pill-active': selected.includes('documents') }"
-          value="documents"
-          @click="navigateTo('documents')"
-        />
+  
         <v-list-item
           prepend-icon="mdi-bell"
           title="NOTICES"
