@@ -1,5 +1,5 @@
 <template>
-  <div class="edit-notice-page">
+  <div class="edit-maintenance-page">
     <v-container fluid>
 
       <!-- Back Button -->
@@ -18,14 +18,14 @@
       <v-row justify="center">
         <v-col cols="12" lg="10" xl="8">
           <div class="title-section">
-            <h1 class="page-title">Edit Notice</h1>
+            <h1 class="page-title">Edit Maintenance Entry</h1>
           </div>
 
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
               <v-progress-circular indeterminate color="primary" />
-              <p class="mt-4">Loading notice details...</p>
+              <p class="mt-4">Loading maintenance entry details...</p>
             </v-card-text>
           </v-card>
 
@@ -45,36 +45,23 @@
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.propertyName"
+                      v-model="entry.unitName"
                       label="Unit Name"
                       variant="outlined"
                       class="custom-input"
-                      :rules="propertyNameRules"
+                      :rules="unitNameRules"
                       required
                     />
                   </v-col>
 
-                  <!-- Lease Start Date -->
+                  <!-- Notice Given (Yes/No) -->
                   <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.leaseStartDate"
-                      label="Lease Start Date"
-                      type="date"
+                    <v-select
+                      v-model="entry.noticeGiven"
+                      label="Notice Given (Yes/No)"
                       variant="outlined"
                       class="custom-input"
-                      :rules="leaseStartDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Notice Given Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.noticeGivenDate"
-                      label="Notice Given Date"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
+                      :items="['Yes', 'No']"
                       :rules="noticeGivenRules"
                       required
                     />
@@ -83,26 +70,50 @@
                   <!-- Vacate Date -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.leaseEndDate"
+                      v-model="entry.vacateDate"
                       label="Vacate Date"
                       type="date"
                       variant="outlined"
                       class="custom-input"
-                      :rules="leaseEndDateRules"
+                      :rules="vacateDateRules"
                       required
                     />
                   </v-col>
 
-                  <!-- Maintenance Required -->
+                  <!-- Contact Number -->
                   <v-col cols="12" md="6">
-                    <v-select
-                      v-model="notice.maintenanceRequired"
-                      label="Maintenance Required (Yes/No)"
+                    <v-text-field
+                      v-model="entry.contactNumber"
+                      label="Contact Number"
                       variant="outlined"
                       class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="maintenanceRequiredRules"
+                      :rules="contactNumberRules"
                       required
+                    />
+                  </v-col>
+
+                  <!-- Address -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="entry.address"
+                      label="Address"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="addressRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Quote Instructions Upload -->
+                  <v-col cols="12" md="6">
+                    <v-file-input
+                      v-model="entry.quoteFile"
+                      label="Upload Quote Instructions"
+                      variant="outlined"
+                      class="custom-input"
+                      accept=".pdf,.doc,.docx"
+                      show-size
+                      prepend-icon="mdi-upload"
                     />
                   </v-col>
                 </v-row>
@@ -122,7 +133,7 @@
                 <v-btn
                   color="black"
                   variant="elevated"
-                  @click="saveNotice"
+                  @click="saveEntry"
                   :disabled="!valid"
                   class="save-btn"
                 >
@@ -139,83 +150,78 @@
 
 <script>
 export default {
-  name: "EditNoticePage",
+  name: "EditMaintenancePage",
   data() {
     return {
-      notice: {
+      entry: {
         id: null,
-        propertyName: "",
-        leaseStartDate: "",
-        noticeGivenDate: "",
-        leaseEndDate: "",
-        maintenanceRequired: "No",
+        unitName: "",
+        noticeGiven: "No",
+        vacateDate: "",
+        contactNumber: "",
+        address: "",
+        quoteFile: null, // For uploaded file
       },
       loading: true,
       error: null,
       valid: true,
       // Validation rules
-      propertyNameRules: [
-        v => !!v || "Unit Name is required",
-        v => v.length >= 5 || "Unit Name must be at least 5 characters"
-      ],
-      leaseStartDateRules: [
-        v => !!v || "Lease Start Date is required"
-      ],
-      noticeGivenRules: [
-        v => !!v || "Notice Given Date is required"
-      ],
-      leaseEndDateRules: [
-        v => !!v || "Vacate Date is required"
-      ],
-      maintenanceRequiredRules: [
-        v => !!v || "Maintenance Required is required"
-      ]
+      unitNameRules: [v => !!v || "Unit Name is required"],
+      noticeGivenRules: [v => !!v || "Notice Given is required"],
+      vacateDateRules: [v => !!v || "Vacate Date is required"],
+      contactNumberRules: [v => !!v || "Contact Number is required"],
+      addressRules: [v => !!v || "Address is required"],
     };
   },
   mounted() {
-    document.title = "Edit Notice - Depsure";
-    const noticeId = this.$route.params.id;
-    if (noticeId) {
-      this.loadNoticeData(noticeId);
+    document.title = "Edit Maintenance Entry - Depsure";
+    const entryId = this.$route.params.id;
+    if (entryId) {
+      this.loadEntryData(entryId);
     } else {
-      this.error = "Notice ID not found";
+      this.error = "Entry ID not found";
       this.loading = false;
     }
   },
   methods: {
-    loadNoticeData(id) {
-      const mockNotices = [
+    loadEntryData(id) {
+      const mockEntries = [
         {
           id: 1,
-          propertyName: "123 Main Street, Cape Town",
-          leaseStartDate: "2024-01-15",
-          noticeGivenDate: "2024-12-01",
-          leaseEndDate: "2025-01-15",
-          maintenanceRequired: "Yes"
+          unitName: "123 Main Street, Cape Town",
+          noticeGiven: "Yes",
+          vacateDate: "2025-01-15",
+          contactNumber: "0821234567",
+          address: "123 Main Street, Cape Town",
+          quoteFile: null
         },
         {
           id: 2,
-          propertyName: "456 Ocean Drive, Camps Bay",
-          leaseStartDate: "2023-06-01",
-          noticeGivenDate: "2024-05-01",
-          leaseEndDate: "2024-06-01",
-          maintenanceRequired: "No"
+          unitName: "456 Ocean Drive, Camps Bay",
+          noticeGiven: "No",
+          vacateDate: "2024-06-01",
+          contactNumber: "0839876543",
+          address: "456 Ocean Drive, Camps Bay",
+          quoteFile: null
         }
       ];
 
-      const foundNotice = mockNotices.find(n => n.id == id);
-      if (foundNotice) {
-        this.notice = { ...foundNotice };
+      const foundEntry = mockEntries.find(e => e.id == id);
+      if (foundEntry) {
+        this.entry = { ...foundEntry };
         this.loading = false;
       } else {
-        this.error = "Notice not found";
+        this.error = "Entry not found";
         this.loading = false;
       }
     },
-    saveNotice() {
+    saveEntry() {
       if (this.$refs.form.validate()) {
-        console.log("Saving notice:", this.notice);
-        alert("Notice saved successfully!");
+        console.log("Saving maintenance entry:", this.entry);
+        if (this.entry.quoteFile) {
+          console.log("Uploaded file:", this.entry.quoteFile.name);
+        }
+        alert("Maintenance entry saved successfully!");
         this.$router.go(-1);
       }
     }
@@ -224,7 +230,7 @@ export default {
 </script>
 
 <style scoped>
-.edit-notice-page {
+.edit-maintenance-page {
   padding: 20px;
   min-height: 100vh;
 }
@@ -269,7 +275,7 @@ export default {
   background: white;
   border-radius: 12px;
   padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
@@ -312,7 +318,7 @@ export default {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .edit-notice-page {
+  .edit-maintenance-page {
     padding: 10px;
   }
   .page-title {

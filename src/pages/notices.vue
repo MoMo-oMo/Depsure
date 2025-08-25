@@ -9,7 +9,7 @@
             v-model="searchQuery"
             label="Search notices..."
             prepend-inner-icon="mdi-magnify"
-            flat="true"
+            flat
             density="comfortable"
             variant="outlined"
             clearable
@@ -43,7 +43,7 @@
             v-model="monthFilter"
             label="Filter by month"
             prepend-inner-icon="mdi-calendar"
-            flat="true"
+            flat
             density="comfortable"
             variant="outlined"
             type="month"
@@ -196,7 +196,6 @@ export default {
           rating: 4.6,
         },
       ],
-
       properties: [
         {
           id: 1,
@@ -215,7 +214,6 @@ export default {
           maintenanceRequired: "No",
         },
       ],
-
       headers: [
         { title: "UNIT NAME", key: "propertyName", sortable: true },
         { title: "LEASE START DATE", key: "leaseStartDate", sortable: true, align: "center" },
@@ -246,34 +244,19 @@ export default {
     filterProperties() {
       this.filteredProperties = this.properties.filter((property) => {
         const textMatch =
-          property.propertyName
-            .toLowerCase()
-            .includes(this.searchQuery.toLowerCase());
-
+          property.propertyName.toLowerCase().includes(this.searchQuery.toLowerCase());
         if (this.monthFilter) {
           const propertyDate = new Date(property.leaseStartDate);
           const filterDate = new Date(this.monthFilter + "-01");
-          const propertyMonth = `${propertyDate.getFullYear()}-${String(
-            propertyDate.getMonth() + 1
-          ).padStart(2, "0")}`;
-          const filterMonth = `${filterDate.getFullYear()}-${String(
-            filterDate.getMonth() + 1
-          ).padStart(2, "0")}`;
-
+          const propertyMonth = `${propertyDate.getFullYear()}-${String(propertyDate.getMonth() + 1).padStart(2, "0")}`;
+          const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, "0")}`;
           return textMatch && propertyMonth === filterMonth;
         }
-
         return textMatch;
       });
     },
-    viewProperty(property) {
-      console.log("Viewing notice:", property);
-      this.$router.push(`/view-notice-${property.id}`);
-    },
-    editProperty(property) {
-      console.log("Editing notice:", property);
-      this.$router.push(`/edit-notice-${property.id}`);
-    },
+    viewProperty(property) { this.$router.push(`/view-notice-${property.id}`); },
+    editProperty(property) { this.$router.push(`/edit-notice-${property.id}`); },
     deleteProperty(property) {
       if (confirm(`Are you sure you want to delete notice for ${property.propertyName}?`)) {
         const index = this.properties.findIndex((p) => p.id === property.id);
@@ -283,10 +266,7 @@ export default {
         }
       }
     },
-    addNotice() {
-      console.log("Adding new notice");
-      this.$router.push('/add-notice');
-    },
+    addNotice() { this.$router.push('/add-notice'); },
   },
   mounted() {
     document.title = "Notice Page - Depsure";
@@ -296,12 +276,8 @@ export default {
 </script>
 
 <style scoped>
-.view-agency-page {
-  padding: 20px;
-  min-height: 100vh;
-}
+.view-agency-page { padding: 20px; min-height: 100vh; }
 
-/* Back button styling */
 .back-btn {
   font-weight: 500;
   text-transform: none;
@@ -313,123 +289,43 @@ export default {
   width: 160px;
   height: 44px;
 }
-
 .back-btn:hover {
   background-color: #333 !important;
   border-color: #333 !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
-/* Agency card styling */
 .agency-info-card-black {
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg,#000000 0%,#1a1a1a 100%);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   color: white;
   padding: 0;
 }
 
-.no-gutters {
-  --v-gutter-x: 0;
-  --v-gutter-y: 0;
-  margin: 0 !important;
-}
+.no-gutters { --v-gutter-x:0; --v-gutter-y:0; margin:0 !important; }
+.agency-logo-black { display:block; width:100%; height:100%; object-fit:cover; }
+.agency-details-black { margin-bottom:16px; }
+.detail-item-black { display:flex; align-items:center; margin-bottom:12px; font-size:1rem; color:#fff; }
+.agency-description-black { font-size:1rem; line-height:1.6; color:#e0e0e0; margin:0; }
 
-.agency-logo-black {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+.custom-input .v-field { border-radius:8px; }
 
-.agency-details-black {
-  margin-bottom: 16px;
-}
+.action-btn-container { display:flex; justify-content:center; align-items:center; gap:4px; height:100%; }
+.action-btn { margin:0; font-size:0.75rem; font-weight:500; text-transform:none; border-radius:6px; transition:all 0.3s ease; }
+.action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
 
-.detail-item-black {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-  font-size: 1rem;
-  color: #ffffff;
-}
+:deep(.custom-header .v-data-table-header) { background-color:#000 !important; }
+:deep(.custom-header .v-data-table-header th) { background-color:#000 !important; color:white !important; }
+:deep(.custom-header .v-data-table-header .v-data-table-header__content) { color:white !important; }
 
-.agency-description-black {
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #e0e0e0;
-  margin: 0;
-}
-
-/* Input field styling */
-.custom-input .v-field {
-  border-radius: 8px;
-}
-
-/* Action Buttons Centered */
-.action-btn-container {
-  display: flex;
-  justify-content: center; /* horizontal centering */
-  align-items: center;     /* vertical centering */
-  gap: 4px;
-  height: 100%;
-}
-
-.action-btn {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: none;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-}
-
-.action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Custom table header styling */
-:deep(.custom-header .v-data-table-header) {
-  background-color: #000000 !important;
-}
-
-:deep(.custom-header .v-data-table-header th) {
-  background-color: #000000 !important;
-  color: white !important;
-}
-
-:deep(.custom-header .v-data-table-header .v-data-table-header__content) {
-  color: white !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .view-agency-page {
-    padding: 10px;
-  }
-
-  .back-btn {
-    width: 140px;
-    height: 40px;
-  }
-
-  .action-btn {
-    font-size: 0.7rem;
-    padding: 6px 8px;
-  }
-
-  .agency-info-card-black {
-    text-align: center;
-  }
-
-  .agency-logo-black {
-    margin: 0;
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-  }
+@media (max-width:768px){
+  .view-agency-page { padding:10px; }
+  .back-btn { width:140px; height:40px; }
+  .action-btn { font-size:0.7rem; padding:6px 8px; }
+  .agency-info-card-black { text-align:center; }
+  .agency-logo-black { margin:0; width:100%; height:220px; object-fit:cover; }
 }
 </style>

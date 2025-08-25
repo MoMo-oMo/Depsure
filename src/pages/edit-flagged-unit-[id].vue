@@ -1,7 +1,6 @@
 <template>
-  <div class="edit-notice-page">
+  <div class="edit-flagged-unit-page">
     <v-container fluid>
-
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
@@ -18,14 +17,14 @@
       <v-row justify="center">
         <v-col cols="12" lg="10" xl="8">
           <div class="title-section">
-            <h1 class="page-title">Edit Notice</h1>
+            <h1 class="page-title">Edit Flagged Unit</h1>
           </div>
 
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
               <v-progress-circular indeterminate color="primary" />
-              <p class="mt-4">Loading notice details...</p>
+              <p class="mt-4">Loading flagged unit details...</p>
             </v-card-text>
           </v-card>
 
@@ -45,63 +44,50 @@
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.propertyName"
+                      v-model="unit.propertyName"
                       label="Unit Name"
                       variant="outlined"
                       class="custom-input"
-                      :rules="propertyNameRules"
+                      :rules="[v => !!v || 'Unit Name is required']"
                       required
                     />
                   </v-col>
 
-                  <!-- Lease Start Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.leaseStartDate"
-                      label="Lease Start Date"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="leaseStartDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Notice Given Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.noticeGivenDate"
-                      label="Notice Given Date"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="noticeGivenRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Vacate Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.leaseEndDate"
-                      label="Vacate Date"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="leaseEndDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Maintenance Required -->
+                  <!-- Missed Payment Flag -->
                   <v-col cols="12" md="6">
                     <v-select
-                      v-model="notice.maintenanceRequired"
-                      label="Maintenance Required (Yes/No)"
+                      v-model="unit.missedPaymentFlag"
+                      :items="['Yes', 'No']"
+                      label="Missed Payment Flag"
                       variant="outlined"
                       class="custom-input"
+                      :rules="[v => !!v || 'This field is required']"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Notice to Vacate Given -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="unit.noticeToVacateGiven"
                       :items="['Yes', 'No']"
-                      :rules="maintenanceRequiredRules"
+                      label="Notice to Vacate Given"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="[v => !!v || 'This field is required']"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Comments -->
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="unit.comments"
+                      label="Comments"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="[v => !!v || 'Comments are required']"
+                      rows="4"
                       required
                     />
                   </v-col>
@@ -122,7 +108,7 @@
                 <v-btn
                   color="black"
                   variant="elevated"
-                  @click="saveNotice"
+                  @click="saveUnit"
                   :disabled="!valid"
                   class="save-btn"
                 >
@@ -139,92 +125,69 @@
 
 <script>
 export default {
-  name: "EditNoticePage",
+  name: "EditFlaggedUnitPage",
   data() {
     return {
-      notice: {
-        id: null,
-        propertyName: "",
-        leaseStartDate: "",
-        noticeGivenDate: "",
-        leaseEndDate: "",
-        maintenanceRequired: "No",
-      },
+      unit: {},
       loading: true,
       error: null,
-      valid: true,
-      // Validation rules
-      propertyNameRules: [
-        v => !!v || "Unit Name is required",
-        v => v.length >= 5 || "Unit Name must be at least 5 characters"
-      ],
-      leaseStartDateRules: [
-        v => !!v || "Lease Start Date is required"
-      ],
-      noticeGivenRules: [
-        v => !!v || "Notice Given Date is required"
-      ],
-      leaseEndDateRules: [
-        v => !!v || "Vacate Date is required"
-      ],
-      maintenanceRequiredRules: [
-        v => !!v || "Maintenance Required is required"
-      ]
+      valid: false,
     };
   },
   mounted() {
-    document.title = "Edit Notice - Depsure";
-    const noticeId = this.$route.params.id;
-    if (noticeId) {
-      this.loadNoticeData(noticeId);
-    } else {
-      this.error = "Notice ID not found";
-      this.loading = false;
-    }
+    document.title = "Edit Flagged Unit - Depsure";
+    const unitId = this.$route.params.id;
+    this.loadUnit(unitId);
   },
   methods: {
-    loadNoticeData(id) {
-      const mockNotices = [
+    loadUnit(unitId) {
+      // Mock flagged units data
+      const mockUnits = [
         {
           id: 1,
           propertyName: "123 Main Street, Cape Town",
-          leaseStartDate: "2024-01-15",
-          noticeGivenDate: "2024-12-01",
-          leaseEndDate: "2025-01-15",
-          maintenanceRequired: "Yes"
+          missedPaymentFlag: "Yes",
+          noticeToVacateGiven: "Yes",
+          comments: "Tenant missed 2 months of payment. Follow up next week."
         },
         {
           id: 2,
           propertyName: "456 Ocean Drive, Camps Bay",
-          leaseStartDate: "2023-06-01",
-          noticeGivenDate: "2024-05-01",
-          leaseEndDate: "2024-06-01",
-          maintenanceRequired: "No"
-        }
+          missedPaymentFlag: "No",
+          noticeToVacateGiven: "No",
+          comments: "Tenant caught up on all payments. No action required."
+        },
+        {
+          id: 3,
+          propertyName: "789 Mountain View, Constantia",
+          missedPaymentFlag: "Yes",
+          noticeToVacateGiven: "Yes",
+          comments: "Tenant has multiple late payments. Monitor payments closely."
+        },
       ];
 
-      const foundNotice = mockNotices.find(n => n.id == id);
-      if (foundNotice) {
-        this.notice = { ...foundNotice };
+      const foundUnit = mockUnits.find((u) => u.id == unitId);
+      if (foundUnit) {
+        this.unit = { ...foundUnit };
         this.loading = false;
       } else {
-        this.error = "Notice not found";
+        this.error = "Flagged unit not found";
         this.loading = false;
       }
     },
-    saveNotice() {
+    saveUnit() {
       if (this.$refs.form.validate()) {
-        console.log("Saving notice:", this.notice);
-        alert("Notice saved successfully!");
+        console.log("Saving flagged unit:", this.unit);
+        alert("Flagged unit updated successfully!");
         this.$router.go(-1);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style scoped>
-.edit-notice-page {
+.edit-flagged-unit-page {
   padding: 20px;
   min-height: 100vh;
 }
@@ -267,7 +230,7 @@ export default {
 /* Form card */
 .form-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 0 0 12px 12px;
   padding: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
@@ -277,12 +240,10 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
 .custom-input :deep(.v-field__input) {
-  background-color: white !important;
+  background-color: #f8f9fa !important;
   color: #000000 !important;
 }
-
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
@@ -295,7 +256,6 @@ export default {
   width: 120px;
   height: 44px;
 }
-
 .save-btn {
   font-weight: 500;
   text-transform: none;
@@ -305,14 +265,13 @@ export default {
   background-color: black !important;
   color: white !important;
 }
-
 .save-btn:hover:not(:disabled) {
   background-color: #333 !important;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .edit-notice-page {
+  .edit-flagged-unit-page {
     padding: 10px;
   }
   .page-title {
