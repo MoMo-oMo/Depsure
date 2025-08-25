@@ -109,8 +109,14 @@
 </template>
 
 <script>
+import { useNotification } from '@/composables/useNotification'
+
 export default {
   name: "ViewMaintenanceEntry",
+  setup() {
+    const { showSuccess } = useNotification()
+    return { showSuccess }
+  },
   data() {
     return {
       entry: null,
@@ -175,7 +181,7 @@ export default {
     deleteEntry() {
       if (confirm(`Are you sure you want to delete maintenance entry for ${this.entry.unitName}?`)) {
         // Delete logic here (API or store)
-        alert("Entry deleted!");
+        this.showSuccess("Maintenance entry deleted successfully!");
         this.$router.back();
       }
     }

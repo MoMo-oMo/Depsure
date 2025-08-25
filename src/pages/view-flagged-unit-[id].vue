@@ -43,11 +43,66 @@
           <div v-else class="form-card" elevation="0">
             <v-card-text>
               <v-row>
+                <!-- Agency -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="agencyName"
+                    label="Agency"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
                 <!-- Unit Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="unit.propertyName"
+                    :model-value="unit.unitName"
                     label="Unit Name"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Tenant Reference -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="unit.tenantRef"
+                    label="Tenant Reference"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Lease Start Date -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="unit.leaseStartDate"
+                    label="Lease Start Date"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Flag Reason -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="unit.flagReason"
+                    label="Reason Flagged"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Date Flagged -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="unit.dateFlagged"
+                    label="Date Flagged"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -76,11 +131,22 @@
                   />
                 </v-col>
 
-                <!-- Comments -->
+                <!-- Action Taken -->
                 <v-col cols="12">
                   <v-textarea
-                    :model-value="unit.comments"
-                    label="Comments"
+                    :model-value="unit.actionTaken"
+                    label="Action Taken"
+                    readonly
+                    class="custom-input"
+                    rows="3"
+                  />
+                </v-col>
+
+                <!-- Notes -->
+                <v-col cols="12">
+                  <v-textarea
+                    :model-value="unit.notes"
+                    label="Additional Notes"
                     readonly
                     class="custom-input"
                     rows="3"
@@ -96,56 +162,75 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { doc, getDoc } from 'firebase/firestore'
+
 export default {
   name: "ViewFlaggedUnitPage",
   data() {
     return {
       unit: {},
+      agencyName: '',
       loading: true,
       error: null,
     };
   },
-  mounted() {
+  async mounted() {
     document.title = "Flagged Unit Details - Depsure";
     const unitId = this.$route.params.id;
-    this.loadUnit(unitId);
+    if (unitId) {
+      await this.loadUnit(unitId);
+    } else {
+      this.error = "No flagged unit ID provided";
+      this.loading = false;
+    }
   },
   methods: {
-    loadUnit(unitId) {
-      // Mock flagged units data
-      const mockUnits = [
-        {
-          id: 1,
-          propertyName: "123 Main Street, Cape Town",
-          missedPaymentFlag: "Yes",
-          noticeToVacateGiven: "Yes, notice sent on 05/08/2025.",
-          comments: "Tenant missed 2 months of payment. Follow up next week if no payment is received."
-        },
-        {
-          id: 2,
-          propertyName: "456 Ocean Drive, Camps Bay",
-          missedPaymentFlag: "No",
-          noticeToVacateGiven: "No",
-          comments: "Tenant caught up on all payments. No action required."
-        },
-        {
-          id: 3,
-          propertyName: "789 Mountain View, Constantia",
-          missedPaymentFlag: "Yes",
-          noticeToVacateGiven: "Yes, notice sent on 20/07/2025.",
-          comments: "Tenant has multiple late payments. Monitor payments closely for the next two months."
-        },
-      ];
-
-      const foundUnit = mockUnits.find((u) => u.id == unitId);
-      if (foundUnit) {
-        this.unit = foundUnit;
-        this.loading = false;
-      } else {
-        this.error = "Flagged unit not found";
+    async loadUnit(unitId) {
+      try {
+        console.log('Loading flagged unit with ID:', unitId);
+        
+        // Fetch flagged unit from Firestore
+        const unitDoc = await getDoc(doc(db, 'flaggedUnits', unitId));
+        
+        if (unitDoc.exists()) {
+          const unitData = unitDoc.data();
+          this.unit = {
+            id: unitDoc.id,
+            ...unitData
+          };
+          
+          // Fetch agency name if agencyId exists
+          if (unitData.agencyId) {
+            await this.loadAgencyName(unitData.agencyId);
+          }
+          
+          console.log('Flagged unit loaded:', this.unit);
+        } else {
+          this.error = "Flagged unit not found";
+        }
+      } catch (error) {
+        console.error('Error loading flagged unit:', error);
+        this.error = "Failed to load flagged unit details";
+      } finally {
         this.loading = false;
       }
     },
+
+    async loadAgencyName(agencyId) {
+      try {
+        const agencyDoc = await getDoc(doc(db, 'users', agencyId));
+        if (agencyDoc.exists()) {
+          const agencyData = agencyDoc.data();
+          this.agencyName = agencyData.agencyName || 'Unknown Agency';
+        } else {
+          this.agencyName = 'Unknown Agency';
+        }
+      } catch (error) {
+        console.error('Error loading agency name:', error);
+        this.agencyName = 'Unknown Agency';
+      }
+    }
   },
 };
 </script>

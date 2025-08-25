@@ -174,6 +174,9 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { doc, getDoc } from 'firebase/firestore'
+
 export default {
   name: 'ViewPropertyPage',
   data() {
@@ -214,92 +217,32 @@ export default {
     }
   },
   methods: {
-    loadPropertyData(propertyId) {
-      console.log('Loading property data for ID:', propertyId);
-      // Mock data - in a real app this would be an API call
-      const mockProperties = [
-        {
-          id: 1,
-          tenantRef: 'T001',
-          propertyName: '123 Main Street, Cape Town',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-01-15',
-          leaseEndDate: '2025-01-15',
-          monthsMissed: 2,
-          maintenanceAmount: 15000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 5000,
-          amountToBePaidOut: 25000,
-          paidOut: 'No'
-        },
-        {
-          id: 2,
-          tenantRef: 'T002',
-          propertyName: '456 Ocean Drive, Camps Bay',
-          newOccupation: 'No',
-          leaseStartDate: '2023-06-01',
-          leaseEndDate: '2024-06-01',
-          monthsMissed: 0,
-          maintenanceAmount: 8000,
-          contractorRequested: 'No',
-          paidTowardsFund: 12000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
-        },
-        {
-          id: 3,
-          tenantRef: 'T003',
-          propertyName: '789 Mountain View, Constantia',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-02-01',
-          leaseEndDate: '2025-02-01',
-          monthsMissed: 1,
-          maintenanceAmount: 22000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 8000,
-          amountToBePaidOut: 18000,
-          paidOut: 'No'
-        },
-        {
-          id: 4,
-          tenantRef: 'T004',
-          propertyName: '321 Beach Road, Clifton',
-          newOccupation: 'No',
-          leaseStartDate: '2023-09-15',
-          leaseEndDate: '2024-09-15',
-          monthsMissed: 3,
-          maintenanceAmount: 30000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 15000,
-          amountToBePaidOut: 35000,
-          paidOut: 'No'
-        },
-        {
-          id: 5,
-          tenantRef: 'T005',
-          propertyName: '654 Garden Street, Newlands',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-03-01',
-          leaseEndDate: '2025-03-01',
-          monthsMissed: 0,
-          maintenanceAmount: 12000,
-          contractorRequested: 'No',
-          paidTowardsFund: 10000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
-        }
-      ];
+    async loadPropertyData(propertyId) {
+      this.loading = true;
+      this.error = null;
       
-      const foundProperty = mockProperties.find(p => p.id == propertyId);
-      console.log('Found property:', foundProperty);
-      if (foundProperty) {
-        this.property = foundProperty;
+      try {
+        console.log('Loading property data for ID:', propertyId);
+        
+        // Fetch property from Firestore
+        const propertyDoc = await getDoc(doc(db, 'units', propertyId));
+        
+        if (propertyDoc.exists()) {
+          const propertyData = propertyDoc.data();
+          this.property = {
+            id: propertyDoc.id,
+            ...propertyData
+          };
+          console.log('Property loaded successfully:', this.property);
+        } else {
+          this.error = 'Property not found';
+          console.log('Property not found in Firestore');
+        }
+      } catch (error) {
+        console.error('Error loading property:', error);
+        this.error = 'Failed to load property details';
+      } finally {
         this.loading = false;
-        console.log('Property loaded successfully');
-      } else {
-        this.error = 'Property not found';
-        this.loading = false;
-        console.log('Property not found for ID:', propertyId);
       }
     }
   }

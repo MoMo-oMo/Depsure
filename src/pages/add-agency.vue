@@ -197,87 +197,92 @@
   </template>
   
   <script>
-  export default {
-    name: 'AddAgencyPage',
-    data() {
-      return {
-        valid: false,
-        logoPreview: '',
-        agencyData: {
-          name: '',
-          title: '',
-          location: '',
-          established: '',
-          // store data URL or uploaded file URL after upload
-          logo: '',
-          description: '',
-          properties: '',
-          rating: ''
-        },
-        nameRules: [
-          v => !!v || 'Agency name is required',
-          v => v.length >= 3 || 'Name must be at least 3 characters'
-        ],
-        titleRules: [
-          v => !!v || 'Agency tagline is required',
-          v => v.length >= 5 || 'Tagline must be at least 5 characters'
-        ],
-        locationRules: [
-          v => !!v || 'Location is required'
-        ],
-        yearRules: [
-          v => !!v || 'Established year is required',
-          v => (v >= 1800 && v <= new Date().getFullYear()) || 'Please enter a valid year'
-        ],
-        descriptionRules: [
-          v => !!v || 'Description is required',
-          v => v.length >= 20 || 'Description must be at least 20 characters'
-        ],
-        propertiesRules: [
-          v => !!v || 'Number of properties is required',
-          v => v > 0 || 'Number of properties must be greater than 0'
-        ],
-        ratingRules: [
-          v => !!v || 'Rating is required',
-          v => (v >= 1 && v <= 5) || 'Rating must be between 1 and 5'
-        ]
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+
+export default {
+  name: 'AddAgencyPage',
+  setup() {
+    const { showSuccessDialog } = useCustomDialogs()
+    return { showSuccessDialog }
+  },
+  data() {
+    return {
+      valid: false,
+      logoPreview: '',
+      agencyData: {
+        name: '',
+        title: '',
+        location: '',
+        established: '',
+        // store data URL or uploaded file URL after upload
+        logo: '',
+        description: '',
+        properties: '',
+        rating: ''
+      },
+      nameRules: [
+        v => !!v || 'Agency name is required',
+        v => v.length >= 3 || 'Name must be at least 3 characters'
+      ],
+      titleRules: [
+        v => !!v || 'Agency tagline is required',
+        v => v.length >= 5 || 'Tagline must be at least 5 characters'
+      ],
+      locationRules: [
+        v => !!v || 'Location is required'
+      ],
+      yearRules: [
+        v => !!v || 'Established year is required',
+        v => (v >= 1800 && v <= new Date().getFullYear()) || 'Please enter a valid year'
+      ],
+      descriptionRules: [
+        v => !!v || 'Description is required',
+        v => v.length >= 20 || 'Description must be at least 20 characters'
+      ],
+      propertiesRules: [
+        v => !!v || 'Number of properties is required',
+        v => v > 0 || 'Number of properties must be greater than 0'
+      ],
+      ratingRules: [
+        v => !!v || 'Rating is required',
+        v => (v >= 1 && v <= 5) || 'Rating must be between 1 and 5'
+      ]
+    }
+  },
+  methods: {
+    triggerLogoUpload() {
+      this.$refs.logoInput && this.$refs.logoInput.click()
+    },
+    handleLogoChange(e) {
+      const file = e.target.files && e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        this.logoPreview = ev.target.result
+        this.agencyData.logo = ev.target.result // replace with uploaded URL after integrating storage
+      }
+      reader.readAsDataURL(file)
+    },
+    clearLogo() {
+      this.logoPreview = ''
+      this.agencyData.logo = ''
+      if (this.$refs.logoInput) {
+        this.$refs.logoInput.value = ''
       }
     },
-    methods: {
-      triggerLogoUpload() {
-        this.$refs.logoInput && this.$refs.logoInput.click()
-      },
-      handleLogoChange(e) {
-        const file = e.target.files && e.target.files[0]
-        if (!file) return
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          this.logoPreview = ev.target.result
-          this.agencyData.logo = ev.target.result // replace with uploaded URL after integrating storage
-        }
-        reader.readAsDataURL(file)
-      },
-      clearLogo() {
-        this.logoPreview = ''
-        this.agencyData.logo = ''
-        if (this.$refs.logoInput) {
-          this.$refs.logoInput.value = ''
-        }
-      },
-      submitForm() {
-        if (this.$refs.form.validate()) {
-          // Send to backend here
-          console.log('Submitting agency data:', this.agencyData)
-          alert('Agency created successfully!')
-          this.$router.push('/agency')
-        }
-      },
-      goBack() {
-        this.$router.push('/agency')
+    submitForm() {
+      if (this.$refs.form.validate()) {
+        // Send to backend here
+        console.log('Submitting agency data:', this.agencyData)
+        this.showSuccessDialog('Agency created successfully!', 'Success!', 'Continue', '/agency')
       }
+    },
+    goBack() {
+      this.$router.push('/agency')
     }
   }
-  </script>
+}
+</script>
   
   <style scoped>
   .add-agency-page {

@@ -3,6 +3,8 @@
     <NavDrawer v-if="showDrawer" />
     <AppBar v-if="showDrawer" />
     <router-view />
+    <GlobalNotification />
+    <GlobalDialogs />
   </v-app>
 </template>
 
@@ -10,11 +12,41 @@
   // Components
   import NavDrawer from '@/components/NavDrawer.vue'
   import AppBar from '@/components/AppBar.vue'
-  import { computed } from 'vue'
-  import { useRoute } from 'vue-router'
+  import GlobalNotification from '@/components/GlobalNotification.vue'
+  import GlobalDialogs from '@/components/GlobalDialogs.vue'
+  import { computed, onMounted, watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import { useAppStore } from '@/stores/app'
 
   const route = useRoute()
+  const router = useRouter()
+  const appStore = useAppStore()
+  
   const showDrawer = computed(() => route.path !== '/')
+
+  // Initialize authentication state
+  onMounted(() => {
+    appStore.initializeAuth()
+  })
+
+  // Route guard for protected pages
+  const protectedRoutes = [
+    '/agency', '/active-units', '/notices', '/flagged-units', 
+    '/maintenance', '/inspections', '/vacancies', '/user-management',
+    '/dashboard', '/add-user', '/add-unit', '/add-notice', '/add-flagged-unit'
+  ]
+
+  // Check if current route is protected
+  const isProtectedRoute = computed(() => {
+    return protectedRoutes.some(protectedRoute => route.path.startsWith(protectedRoute))
+  })
+
+  // Watch for route changes and check authentication
+  watch(() => route.path, (newPath) => {
+    if (newPath !== '/' && !appStore.isLoggedIn) {
+      router.push('/')
+    }
+  }, { immediate: true })
 </script>
 
 <style>

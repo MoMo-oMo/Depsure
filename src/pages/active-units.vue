@@ -25,15 +25,17 @@
           <v-select
             v-model="selectedAgency"
             :items="agencies"
-            item-title="name"
-            item-value="name"
+            item-title="agencyName"
+            item-value="id"
             label="Select Agency"
             prepend-inner-icon="mdi-domain"
             density="comfortable"
             variant="outlined"
             hide-details
             clearable
+            :loading="agenciesLoading"
             class="custom-input"
+            @update:model-value="onAgencyChange"
           />
         </v-col>
 
@@ -75,8 +77,8 @@
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12" md="3" class="pa-0 ma-0">
                 <v-img
-                  :src="selectedAgencyDetails.logo"
-                  :alt="selectedAgencyDetails.name"
+                  :src="selectedAgencyDetails.profileImageUrl || selectedAgencyDetails.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
+                  :alt="selectedAgencyDetails.agencyName"
                   height="100%"
                   cover
                   class="agency-logo-black"
@@ -84,30 +86,30 @@
               </v-col>
               <v-col cols="12" md="9">
                 <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.name }}
+                  {{ selectedAgencyDetails.agencyName }}
                 </v-card-title>
                 <v-card-text class="text-white">
                   <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.location }}</span>
+                      <span>{{ selectedAgencyDetails.location || 'Location not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ selectedAgencyDetails.established }}</span>
+                      <span>Established: {{ selectedAgencyDetails.establishedYear || 'Year not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.properties }} Properties</span>
+                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating }}/5</span>
+                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
-                    {{ selectedAgencyDetails.description }}
+                    {{ selectedAgencyDetails.agencyDescription || selectedAgencyDetails.agencyTagline || 'No description available' }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -119,6 +121,7 @@
       <!-- Properties Table -->
       <v-row>
         <v-col cols="12" class="pa-4">
+          <!-- Properties Table -->
           <v-data-table
             :headers="headers"
             :items="filteredProperties"
@@ -126,6 +129,8 @@
             class="custom-header"
             density="comfortable"
             hover
+            :loading="propertiesLoading"
+            no-data-text="No data available"
           >
             <template v-slot:item.maintenanceAmount="{ item }">
               <span class="font-weight-medium">
@@ -178,113 +183,21 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { collection, getDocs, query, where } from 'firebase/firestore'
+
 export default {
-  name: "ViewAgencyPage",
+  name: "ActiveUnitsPage",
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
       filteredProperties: [],
       selectedAgency: null,
-      agencies: [
-        {
-          name: "Pam Golding Properties",
-          title: "Luxury Real Estate Specialist",
-          logo: "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg",
-          description:
-            "Premium real estate agency specializing in luxury properties and exceptional service.",
-          location: "Cape Town, South Africa",
-          established: "1976",
-          properties: 1250,
-          rating: 4.8,
-        },
-        {
-          name: "RE/MAX Properties",
-          title: "Global Real Estate Network",
-          logo: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
-          description:
-            "Global real estate network with local expertise and innovative solutions.",
-          location: "Johannesburg, South Africa",
-          established: "1973",
-          properties: 890,
-          rating: 4.6,
-        },
-        {
-          name: "Seeff Properties",
-          title: "Family-Owned Agency",
-          logo: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-          description:
-            "Trusted family-owned agency with over 50 years of experience in property sales.",
-          location: "Durban, South Africa",
-          established: "1964",
-          properties: 756,
-          rating: 4.7,
-        },
-        {
-          name: "Lew Geffen Sotheby's",
-          title: "Luxury Property Experts",
-          logo: "https://images.unsplash.com/photo-1554995207-c18c203602cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-          description:
-            "Luxury real estate specialists with international connections and premium listings.",
-          location: "Pretoria, South Africa",
-          established: "1983",
-          properties: 432,
-          rating: 4.9,
-        },
-        {
-          name: "Chas Everitt International",
-          title: "Comprehensive Property Services",
-          logo: "https://images.pexels.com/photos/1797393/pexels-photo-1797393.jpeg",
-          description:
-            "Comprehensive property services with a focus on customer satisfaction and results.",
-          location: "Port Elizabeth, South Africa",
-          established: "1980",
-          properties: 678,
-          rating: 4.5,
-        },
-        {
-          name: "Keller Williams Realty",
-          title: "Innovative Real Estate",
-          logo: "https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg",
-          description:
-            "Innovative real estate company with cutting-edge technology and training programs.",
-          location: "Bloemfontein, South Africa",
-          established: "1983",
-          properties: 543,
-          rating: 4.4,
-        },
-      ],
-
-      properties: [
-        {
-          id: 1,
-          tenantRef: "T001",
-          propertyName: "123 Main Street, Cape Town",
-          newOccupation: "Yes",
-          leaseStartDate: "2024-01-15",
-          leaseEndDate: "2025-01-15",
-          monthsMissed: 2,
-          maintenanceAmount: 15000,
-          contractorRequested: "Yes",
-          paidTowardsFund: 5000,
-          amountToBePaidOut: 25000,
-          paidOut: "No",
-        },
-        {
-          id: 2,
-          tenantRef: "T002",
-          propertyName: "456 Ocean Drive, Camps Bay",
-          newOccupation: "No",
-          leaseStartDate: "2023-06-01",
-          leaseEndDate: "2024-06-01",
-          monthsMissed: 0,
-          maintenanceAmount: 8000,
-          contractorRequested: "No",
-          paidTowardsFund: 12000,
-          amountToBePaidOut: 0,
-          paidOut: "Yes",
-        },
-      ],
+      agencies: [],
+      agenciesLoading: false,
+      properties: [],
+      propertiesLoading: false,
       headers: [
         { title: "TENANT REF", key: "tenantRef", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
@@ -313,7 +226,7 @@ export default {
   },
   computed: {
     selectedAgencyDetails() {
-      return this.agencies.find((a) => a.name === this.selectedAgency) || null;
+      return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
   },
   methods: {
@@ -342,8 +255,21 @@ export default {
             .toLowerCase()
             .includes(this.searchQuery.toLowerCase());
 
+        // Month filter - now filtering by createdAt date
         if (this.monthFilter) {
-          const propertyDate = new Date(property.leaseStartDate);
+          // Handle Firestore Timestamp objects
+          let propertyDate;
+          if (property.createdAt && property.createdAt.toDate) {
+            // Firestore Timestamp object
+            propertyDate = property.createdAt.toDate();
+          } else if (property.createdAt) {
+            // Regular Date object or date string
+            propertyDate = new Date(property.createdAt);
+          } else {
+            // No createdAt date, skip this property
+            return textMatch;
+          }
+          
           const filterDate = new Date(this.monthFilter + "-01");
           const propertyMonth = `${propertyDate.getFullYear()}-${String(
             propertyDate.getMonth() + 1
@@ -375,14 +301,82 @@ export default {
         }
       }
     },
+    async fetchAgencies() {
+      this.agenciesLoading = true;
+      try {
+        // Query users collection for agencies only
+        const agenciesQuery = query(
+          collection(db, 'users'),
+          where('userType', '==', 'Agency')
+        );
+        
+        const querySnapshot = await getDocs(agenciesQuery);
+        this.agencies = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log('Agencies fetched:', this.agencies);
+      } catch (error) {
+        console.error('Error fetching agencies:', error);
+      } finally {
+        this.agenciesLoading = false;
+      }
+    },
+    
+    async fetchProperties(agencyId = null) {
+      this.propertiesLoading = true;
+      try {
+        let unitsQuery;
+        
+        if (agencyId) {
+          // Query units for specific agency
+          unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', agencyId)
+          );
+        } else {
+          // Query all units
+          unitsQuery = collection(db, 'units');
+        }
+        
+        const querySnapshot = await getDocs(unitsQuery);
+        this.properties = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        // Apply initial filtering
+        this.filterProperties();
+        console.log('Properties fetched:', this.properties);
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+      } finally {
+        this.propertiesLoading = false;
+      }
+    },
+    
+    onAgencyChange(agencyId) {
+      console.log('Agency changed to:', agencyId);
+      if (agencyId) {
+        // Fetch properties for selected agency
+        this.fetchProperties(agencyId);
+      } else {
+        // Fetch all properties when no agency is selected
+        this.fetchProperties();
+      }
+    },
+    
     addUnit() {
       console.log("Adding new unit");
       this.$router.push('/add-unit');
     },
   },
-  mounted() {
-    document.title = "Agency Details - Depsure";
-    this.filteredProperties = this.properties;
+  async mounted() {
+    document.title = "Active Units - Depsure";
+    
+    // Fetch agencies and all properties
+    await this.fetchAgencies();
+    await this.fetchProperties();
   },
 };
 </script>

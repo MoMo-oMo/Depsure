@@ -10,9 +10,14 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppBar: typeof import('./src/components/AppBar.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
+    ErrorDialog: typeof import('./src/components/ErrorDialog.vue')['default']
+    GlobalDialogs: typeof import('./src/components/GlobalDialogs.vue')['default']
+    GlobalNotification: typeof import('./src/components/GlobalNotification.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     NavDrawer: typeof import('./src/components/NavDrawer.vue')['default']
+    NotificationDialog: typeof import('./src/components/NotificationDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SuccessDialog: typeof import('./src/components/SuccessDialog.vue')['default']
   }
 }

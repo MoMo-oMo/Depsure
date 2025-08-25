@@ -45,11 +45,11 @@
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.propertyName"
+                      v-model="notice.unitName"
                       label="Unit Name"
                       variant="outlined"
                       class="custom-input"
-                      :rules="propertyNameRules"
+                      :rules="unitNameRules"
                       required
                     />
                   </v-col>
@@ -75,7 +75,7 @@
                       type="date"
                       variant="outlined"
                       class="custom-input"
-                      :rules="noticeGivenRules"
+                      :rules="noticeGivenDateRules"
                       required
                     />
                   </v-col>
@@ -83,12 +83,12 @@
                   <!-- Vacate Date -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.leaseEndDate"
+                      v-model="notice.vacateDate"
                       label="Vacate Date"
                       type="date"
                       variant="outlined"
                       class="custom-input"
-                      :rules="leaseEndDateRules"
+                      :rules="vacateDateRules"
                       required
                     />
                   </v-col>
@@ -123,10 +123,11 @@
                   color="black"
                   variant="elevated"
                   @click="saveNotice"
-                  :disabled="!valid"
+                  :disabled="!valid || loading"
+                  :loading="loading"
                   class="save-btn"
                 >
-                  Save Changes
+                  {{ loading ? 'Saving...' : 'Save Changes' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -138,33 +139,41 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+
 export default {
   name: "EditNoticePage",
+  setup() {
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
+  },
   data() {
     return {
       notice: {
-        id: null,
-        propertyName: "",
-        leaseStartDate: "",
-        noticeGivenDate: "",
-        leaseEndDate: "",
-        maintenanceRequired: "No",
+        id: '',
+        unitName: '',
+        leaseStartDate: '',
+        noticeGivenDate: '',
+        vacateDate: '',
+        maintenanceRequired: ''
       },
       loading: true,
       error: null,
       valid: true,
       // Validation rules
-      propertyNameRules: [
+      unitNameRules: [
         v => !!v || "Unit Name is required",
         v => v.length >= 5 || "Unit Name must be at least 5 characters"
       ],
       leaseStartDateRules: [
         v => !!v || "Lease Start Date is required"
       ],
-      noticeGivenRules: [
+      noticeGivenDateRules: [
         v => !!v || "Notice Given Date is required"
       ],
-      leaseEndDateRules: [
+      vacateDateRules: [
         v => !!v || "Vacate Date is required"
       ],
       maintenanceRequiredRules: [
@@ -172,51 +181,80 @@ export default {
       ]
     };
   },
-  mounted() {
+  async mounted() {
     document.title = "Edit Notice - Depsure";
     const noticeId = this.$route.params.id;
     if (noticeId) {
-      this.loadNoticeData(noticeId);
+      await this.loadNoticeData(noticeId);
     } else {
       this.error = "Notice ID not found";
       this.loading = false;
     }
   },
   methods: {
-    loadNoticeData(id) {
-      const mockNotices = [
-        {
-          id: 1,
-          propertyName: "123 Main Street, Cape Town",
-          leaseStartDate: "2024-01-15",
-          noticeGivenDate: "2024-12-01",
-          leaseEndDate: "2025-01-15",
-          maintenanceRequired: "Yes"
-        },
-        {
-          id: 2,
-          propertyName: "456 Ocean Drive, Camps Bay",
-          leaseStartDate: "2023-06-01",
-          noticeGivenDate: "2024-05-01",
-          leaseEndDate: "2024-06-01",
-          maintenanceRequired: "No"
+    async loadNoticeData(noticeId) {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        console.log('Loading notice data for ID:', noticeId);
+        
+        // Fetch notice from Firestore
+        const noticeDoc = await getDoc(doc(db, 'notices', noticeId));
+        
+        if (noticeDoc.exists()) {
+          const noticeData = noticeDoc.data();
+          this.notice = {
+            id: noticeDoc.id,
+            ...noticeData
+          };
+          console.log('Notice loaded successfully:', this.notice);
+        } else {
+          this.error = 'Notice not found';
+          console.log('Notice not found in Firestore');
         }
-      ];
-
-      const foundNotice = mockNotices.find(n => n.id == id);
-      if (foundNotice) {
-        this.notice = { ...foundNotice };
-        this.loading = false;
-      } else {
-        this.error = "Notice not found";
+      } catch (error) {
+        console.error('Error loading notice:', error);
+        this.error = `Failed to load notice details: ${error.message}`;
+      } finally {
         this.loading = false;
       }
     },
-    saveNotice() {
+    
+    async saveNotice() {
       if (this.$refs.form.validate()) {
-        console.log("Saving notice:", this.notice);
-        alert("Notice saved successfully!");
-        this.$router.go(-1);
+        this.loading = true;
+        try {
+          console.log('Saving notice:', this.notice);
+          
+          // Validate that we have an ID
+          if (!this.notice.id) {
+            throw new Error('Notice ID is missing');
+          }
+          
+          // Prepare notice data for Firestore (remove id field)
+          const { id, ...noticeData } = this.notice;
+          
+          // Add updated timestamp
+          noticeData.updatedAt = new Date();
+          
+          console.log('Notice data to save:', noticeData);
+          
+          // Update notice in Firestore
+          await updateDoc(doc(db, 'notices', id), noticeData);
+          
+          console.log('Notice updated successfully');
+          this.showSuccessDialog('Notice saved successfully!', 'Success!', 'Continue', `/view-notice-${id}`);
+          
+        } catch (error) {
+          console.error('Error saving notice:', error);
+          this.showErrorDialog(`Failed to save notice: ${error.message}`, 'Error', 'OK');
+        } finally {
+          this.loading = false;
+        }
+      } else {
+        console.log('Form validation failed');
+        this.showErrorDialog('Please fix the form errors before saving.', 'Validation Error', 'OK');
       }
     }
   }

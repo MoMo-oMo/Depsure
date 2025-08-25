@@ -28,6 +28,22 @@
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
+                  <!-- Agency Selection -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="notice.agencyId"
+                      :items="agencies"
+                      item-title="agencyName"
+                      item-value="id"
+                      label="Select Agency"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="agencyRules"
+                      :loading="agenciesLoading"
+                      required
+                    />
+                  </v-col>
+
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -109,10 +125,11 @@
                   color="black"
                   variant="elevated"
                   @click="saveNotice"
-                  :disabled="!valid"
+                  :disabled="!valid || loading"
+                  :loading="loading"
                   class="save-btn"
                 >
-                  Add Notice
+                  {{ loading ? 'Adding...' : 'Add Notice' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -124,18 +141,31 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
+
 export default {
   name: 'AddNoticePage',
+  setup() {
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
+  },
   data() {
     return {
       valid: true,
+      loading: false,
+      agencies: [],
+      agenciesLoading: false,
       notice: {
+        agencyId: '',
         unitName: '',
         leaseStartDate: '',
         noticeGivenDate: '',
         vacateDate: '',
         maintenanceRequired: ''
       },
+      agencyRules: [v => !!v || 'Agency selection is required'],
       unitNameRules: [
         v => !!v || 'Unit Name is required',
         v => v.length >= 2 || 'Unit Name must be at least 2 characters'
@@ -146,15 +176,57 @@ export default {
       maintenanceRequiredRules: [v => !!v || 'Maintenance selection is required']
     }
   },
-  mounted() {
+  async mounted() {
     document.title = 'Add New Notice - Depsure';
+    await this.fetchAgencies();
   },
   methods: {
-    saveNotice() {
+    async fetchAgencies() {
+      this.agenciesLoading = true;
+      try {
+        console.log('Fetching agencies...');
+        const agenciesQuery = query(collection(db, 'users'), where('userType', '==', 'Agency'));
+        const agenciesSnapshot = await getDocs(agenciesQuery);
+        
+        this.agencies = agenciesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log('Agencies loaded:', this.agencies);
+      } catch (error) {
+        console.error('Error fetching agencies:', error);
+      } finally {
+        this.agenciesLoading = false;
+      }
+    },
+    
+    async saveNotice() {
       if (this.$refs.form.validate()) {
-        console.log('Notice added:', this.notice);
-        alert('Notice added successfully!');
-        this.$router.go(-1); // return to previous page
+        this.loading = true;
+        try {
+          console.log('Saving notice:', this.notice);
+          
+          // Prepare notice data for Firestore
+          const noticeData = {
+            ...this.notice,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          console.log('Notice data to save:', noticeData);
+          
+          // Add notice to Firestore
+          const docRef = await addDoc(collection(db, 'notices'), noticeData);
+          
+          console.log('Notice added successfully with ID:', docRef.id);
+          this.showSuccessDialog('Notice added successfully!', 'Success!', 'Continue', '/notices');
+          
+        } catch (error) {
+          console.error('Error adding notice:', error);
+          this.showErrorDialog(`Failed to add notice: ${error.message}`, 'Error', 'OK');
+        } finally {
+          this.loading = false;
+        }
       }
     }
   }

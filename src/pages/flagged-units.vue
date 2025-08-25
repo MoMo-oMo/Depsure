@@ -26,16 +26,17 @@
           <v-select
             v-model="selectedAgency"
             :items="agencies"
-            item-title="name"
-            item-value="name"
+            item-title="agencyName"
+            item-value="id"
             label="Select Agency"
             prepend-inner-icon="mdi-domain"
             density="comfortable"
             variant="outlined"
             hide-details
             clearable
+            :loading="agenciesLoading"
             class="custom-input"
-            @change="filterUnits"
+            @update:model-value="onAgencyChange"
           />
         </v-col>
 
@@ -71,8 +72,8 @@
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12" md="3" class="pa-0 ma-0">
                 <v-img
-                  :src="selectedAgencyDetails.logo"
-                  :alt="selectedAgencyDetails.name"
+                  :src="selectedAgencyDetails.profileImageUrl || selectedAgencyDetails.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
+                  :alt="selectedAgencyDetails.agencyName"
                   height="100%"
                   cover
                   class="agency-logo-black"
@@ -80,30 +81,30 @@
               </v-col>
               <v-col cols="12" md="9">
                 <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.name }}
+                  {{ selectedAgencyDetails.agencyName }}
                 </v-card-title>
                 <v-card-text class="text-white">
                   <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.location }}</span>
+                      <span>{{ selectedAgencyDetails.location || 'Location not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ selectedAgencyDetails.established }}</span>
+                      <span>Established: {{ selectedAgencyDetails.establishedYear || 'Year not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.properties }} Properties</span>
+                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating }}/5</span>
+                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
-                    {{ selectedAgencyDetails.description }}
+                    {{ selectedAgencyDetails.agencyDescription || selectedAgencyDetails.agencyTagline || 'No description available' }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -122,6 +123,8 @@
             class="custom-header"
             density="comfortable"
             hover
+            :loading="unitsLoading"
+            no-data-text="No data available"
           >
             <!-- Centered Action Buttons -->
             <template v-slot:item.actions="{ item }">
@@ -160,58 +163,26 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { collection, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+
 export default {
   name: "FlaggedUnitsPage",
+  setup() {
+    const { showErrorDialog } = useCustomDialogs()
+    return { showErrorDialog }
+  },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
       selectedAgency: null,
       filteredUnits: [],
-      agencies: [
-        {
-          name: "Pam Golding Properties",
-          title: "Luxury Real Estate Specialist",
-          logo: "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg",
-          description:
-            "Premium real estate agency specializing in luxury properties and exceptional service.",
-          location: "Cape Town, South Africa",
-          established: "1976",
-          properties: 1250,
-          rating: 4.8,
-        },
-        {
-          name: "RE/MAX Properties",
-          title: "Global Real Estate Network",
-          logo: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
-          description:
-            "Global real estate network with local expertise and innovative solutions.",
-          location: "Johannesburg, South Africa",
-          established: "1973",
-          properties: 890,
-          rating: 4.6,
-        },
-      ],
-      units: [
-        {
-          id: 1,
-          unitName: "123 Main Street, Cape Town",
-          missedPaymentFlag: "Yes",
-          noticeToVacateGiven: "2024-12-01",
-          notes: "Tenant behind 2 months",
-          agency: "Pam Golding Properties",
-          leaseStartDate: "2024-01-15"
-        },
-        {
-          id: 2,
-          unitName: "456 Ocean Drive, Camps Bay",
-          missedPaymentFlag: "No",
-          noticeToVacateGiven: "2024-05-01",
-          notes: "All payments up to date",
-          agency: "RE/MAX Properties",
-          leaseStartDate: "2023-06-01"
-        }
-      ],
+      agencies: [],
+      agenciesLoading: false,
+      units: [],
+      unitsLoading: false,
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Missed Payment Flag", key: "missedPaymentFlag", sortable: true, align: "center" },
@@ -223,7 +194,7 @@ export default {
   },
   computed: {
     selectedAgencyDetails() {
-      return this.agencies.find((a) => a.name === this.selectedAgency) || null;
+      return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     }
   },
   methods: {
@@ -235,18 +206,34 @@ export default {
     },
     filterUnits() {
       this.filteredUnits = this.units.filter((unit) => {
-        const textMatch = unit.unitName.toLowerCase().includes(this.searchQuery.toLowerCase());
+        const textMatch = unit.unitName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          unit.tenantRef.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          unit.flagReason.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          unit.notes.toLowerCase().includes(this.searchQuery.toLowerCase());
+
         let agencyMatch = true;
         let monthMatch = true;
 
         if (this.selectedAgency) {
-          agencyMatch = unit.agency === this.selectedAgency;
+          agencyMatch = unit.agencyId === this.selectedAgency;
         }
 
         if (this.monthFilter) {
-          const propertyDate = new Date(unit.leaseStartDate);
+          // Handle Firestore Timestamp objects
+          let unitDate;
+          if (unit.createdAt && unit.createdAt.toDate) {
+            // Firestore Timestamp object
+            unitDate = unit.createdAt.toDate();
+          } else if (unit.createdAt) {
+            // Regular Date object or date string
+            unitDate = new Date(unit.createdAt);
+          } else {
+            // No createdAt date, skip this unit
+            return textMatch && agencyMatch;
+          }
+          
           const filterDate = new Date(this.monthFilter + "-01");
-          const unitMonth = `${propertyDate.getFullYear()}-${String(propertyDate.getMonth() + 1).padStart(2, "0")}`;
+          const unitMonth = `${unitDate.getFullYear()}-${String(unitDate.getMonth() + 1).padStart(2, "0")}`;
           const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, "0")}`;
           monthMatch = unitMonth === filterMonth;
         }
@@ -255,29 +242,103 @@ export default {
       });
     },
     viewUnit(unit) {
-  console.log("Viewing flagged unit:", unit);
-  this.$router.push(`/view-flagged-unit-${unit.id}`);
-  },
-
+      console.log("Viewing flagged unit:", unit);
+      this.$router.push(`/view-flagged-unit-${unit.id}`);
+    },
     editUnit(unit) {
       this.$router.push(`/edit-flagged-unit-${unit.id}`);
     },
-    deleteUnit(unit) {
+    async deleteUnit(unit) {
       if (confirm(`Are you sure you want to delete flagged unit ${unit.unitName}?`)) {
-        const index = this.units.findIndex(u => u.id === unit.id);
-        if (index > -1) {
-          this.units.splice(index, 1);
-          this.filterUnits();
+        try {
+          await deleteDoc(doc(db, 'flaggedUnits', unit.id));
+          
+          // Remove from local array
+          const index = this.units.findIndex(u => u.id === unit.id);
+          if (index > -1) {
+            this.units.splice(index, 1);
+            this.filterUnits();
+          }
+        } catch (error) {
+          console.error('Error deleting flagged unit:', error);
+          this.showErrorDialog('Failed to delete flagged unit. Please try again.');
         }
       }
     },
     addFlaggedUnit() {
       this.$router.push('/add-flagged-unit');
+    },
+    async fetchAgencies() {
+      this.agenciesLoading = true;
+      try {
+        // Query users collection for agencies only
+        const agenciesQuery = query(
+          collection(db, 'users'),
+          where('userType', '==', 'Agency')
+        );
+        
+        const querySnapshot = await getDocs(agenciesQuery);
+        this.agencies = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log('Agencies fetched:', this.agencies);
+      } catch (error) {
+        console.error('Error fetching agencies:', error);
+      } finally {
+        this.agenciesLoading = false;
+      }
+    },
+    
+    async fetchFlaggedUnits(agencyId = null) {
+      this.unitsLoading = true;
+      try {
+        let unitsQuery;
+        
+        if (agencyId) {
+          // Query flagged units for specific agency
+          unitsQuery = query(
+            collection(db, 'flaggedUnits'),
+            where('agencyId', '==', agencyId)
+          );
+        } else {
+          // Query all flagged units
+          unitsQuery = collection(db, 'flaggedUnits');
+        }
+        
+        const querySnapshot = await getDocs(unitsQuery);
+        this.units = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        // Apply initial filtering
+        this.filterUnits();
+        console.log('Flagged units fetched:', this.units);
+      } catch (error) {
+        console.error('Error fetching flagged units:', error);
+      } finally {
+        this.unitsLoading = false;
+      }
+    },
+    
+    onAgencyChange(agencyId) {
+      console.log('Agency changed to:', agencyId);
+      if (agencyId) {
+        // Fetch flagged units for selected agency
+        this.fetchFlaggedUnits(agencyId);
+      } else {
+        // Fetch all flagged units when no agency is selected
+        this.fetchFlaggedUnits();
+      }
     }
   },
-  mounted() {
+  async mounted() {
     document.title = "Flagged Units - Depsure";
-    this.filteredUnits = this.units;
+    
+    // Fetch agencies and all flagged units
+    await this.fetchAgencies();
+    await this.fetchFlaggedUnits();
   }
 };
 </script>

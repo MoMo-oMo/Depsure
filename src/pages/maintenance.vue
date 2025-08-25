@@ -148,27 +148,27 @@
         </v-col>
       </v-row>
 
-      <v-snackbar v-model="snackbar" timeout="3000">
-        {{ snackbarMessage }}
-        <template v-slot:action="{ attrs }">
-          <v-btn color="white" text v-bind="attrs" @click="snackbar=false">Close</v-btn>
-        </template>
-      </v-snackbar>
+
     </v-container>
   </div>
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+
 export default {
   name: "MaintenancePage",
+  setup() {
+    const { showSuccessDialog } = useCustomDialogs()
+    return { showSuccessDialog }
+  },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
       selectedAgency: null,
       filteredEntries: [],
-      snackbar: false,
-      snackbarMessage: "",
+
       agencies: [
         { name: "Pam Golding Properties", logo: "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg", location: "Cape Town, South Africa", established: "1976", properties: 1250, rating: 4.8, description: "Premium real estate agency specializing in luxury properties." },
         { name: "RE/MAX Properties", logo: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg", location: "Johannesburg, South Africa", established: "1973", properties: 890, rating: 4.6, description: "Global real estate network with local expertise." },
@@ -224,8 +224,7 @@ export default {
         if(index>-1) {
           this.entries.splice(index,1);
           this.filterEntries();
-          this.snackbarMessage = `Deleted maintenance entry for ${entry.unitName}`;
-          this.snackbar = true;
+          this.showSuccessDialog(`Maintenance entry for ${entry.unitName} deleted successfully!`, 'Success!', 'Continue');
         }
       }
     },

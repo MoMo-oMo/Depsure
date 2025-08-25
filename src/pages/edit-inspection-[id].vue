@@ -146,8 +146,14 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+
 export default {
   name: "EditInspectionPage",
+  setup() {
+    const { showSuccessDialog } = useCustomDialogs()
+    return { showSuccessDialog }
+  },
   data() {
     return {
       entry: {
@@ -209,8 +215,7 @@ export default {
       if (this.$refs.form.validate()) {
         console.log("Saving inspection entry:", this.entry);
         if (this.entry.quotesFile) console.log("Uploaded file:", this.entry.quotesFile.name);
-        alert("Inspection entry saved successfully!");
-        this.$router.go(-1);
+        this.showSuccessDialog("Inspection entry saved successfully!", "Success!", "Continue", "/inspections");
       }
     }
   }

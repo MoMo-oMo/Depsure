@@ -120,8 +120,14 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+
 export default {
   name: "AddMaintenancePage",
+  setup() {
+    const { showSuccessDialog } = useCustomDialogs()
+    return { showSuccessDialog }
+  },
   data() {
     return {
       valid: false,
@@ -147,8 +153,7 @@ export default {
         if (this.entry.quoteFile) {
           console.log("Uploaded file:", this.entry.quoteFile.name);
         }
-        alert("Maintenance entry added successfully!");
-        this.$router.push("/maintenance-entries");
+        this.showSuccessDialog("Maintenance entry added successfully!", "Success!", "Continue", "/maintenance");
       }
     },
     goBack() {

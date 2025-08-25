@@ -25,15 +25,17 @@
           <v-select
             v-model="selectedAgency"
             :items="agencies"
-            item-title="name"
-            item-value="name"
+            item-title="agencyName"
+            item-value="id"
             label="Select Agency"
             prepend-inner-icon="mdi-domain"
             density="comfortable"
             variant="outlined"
             hide-details
             clearable
+            :loading="agenciesLoading"
             class="custom-input"
+            @update:model-value="onAgencyChange"
           />
         </v-col>
 
@@ -69,8 +71,8 @@
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12" md="3" class="pa-0 ma-0">
                 <v-img
-                  :src="selectedAgencyDetails.logo"
-                  :alt="selectedAgencyDetails.name"
+                  :src="selectedAgencyDetails.profileImageUrl || selectedAgencyDetails.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
+                  :alt="selectedAgencyDetails.agencyName"
                   height="100%"
                   cover
                   class="agency-logo-black"
@@ -78,30 +80,30 @@
               </v-col>
               <v-col cols="12" md="9">
                 <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.name }}
+                  {{ selectedAgencyDetails.agencyName }}
                 </v-card-title>
                 <v-card-text class="text-white">
                   <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.location }}</span>
+                      <span>{{ selectedAgencyDetails.location || 'Location not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ selectedAgencyDetails.established }}</span>
+                      <span>Established: {{ selectedAgencyDetails.establishedYear || 'Year not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.properties }} Properties</span>
+                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating }}/5</span>
+                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
-                    {{ selectedAgencyDetails.description }}
+                    {{ selectedAgencyDetails.agencyDescription || selectedAgencyDetails.agencyTagline || 'No description available' }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -113,6 +115,7 @@
       <!-- Notices Table -->
       <v-row>
         <v-col cols="12" class="pa-4">
+          <!-- Notices Table -->
           <v-data-table
             :headers="headers"
             :items="filteredProperties"
@@ -120,6 +123,8 @@
             class="custom-header"
             density="comfortable"
             hover
+            :loading="propertiesLoading"
+            no-data-text="No data available"
           >
             <template v-slot:item.maintenanceRequired="{ item }">
               <span class="font-weight-medium">
@@ -164,61 +169,31 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { collection, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore'
+
 export default {
   name: "NoticePage",
+  setup() {
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
+  },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
       filteredProperties: [],
       selectedAgency: null,
-      agencies: [
-        {
-          name: "Pam Golding Properties",
-          title: "Luxury Real Estate Specialist",
-          logo: "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg",
-          description:
-            "Premium real estate agency specializing in luxury properties and exceptional service.",
-          location: "Cape Town, South Africa",
-          established: "1976",
-          properties: 1250,
-          rating: 4.8,
-        },
-        {
-          name: "RE/MAX Properties",
-          title: "Global Real Estate Network",
-          logo: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
-          description:
-            "Global real estate network with local expertise and innovative solutions.",
-          location: "Johannesburg, South Africa",
-          established: "1973",
-          properties: 890,
-          rating: 4.6,
-        },
-      ],
-      properties: [
-        {
-          id: 1,
-          propertyName: "123 Main Street, Cape Town",
-          leaseStartDate: "2024-01-15",
-          noticeGivenDate: "2024-12-01",
-          leaseEndDate: "2025-01-15",
-          maintenanceRequired: "Yes",
-        },
-        {
-          id: 2,
-          propertyName: "456 Ocean Drive, Camps Bay",
-          leaseStartDate: "2023-06-01",
-          noticeGivenDate: "2024-05-01",
-          leaseEndDate: "2024-06-01",
-          maintenanceRequired: "No",
-        },
-      ],
+      agencies: [],
+      agenciesLoading: false,
+      properties: [],
+      propertiesLoading: false,
       headers: [
-        { title: "UNIT NAME", key: "propertyName", sortable: true },
+        { title: "UNIT NAME", key: "unitName", sortable: true },
         { title: "LEASE START DATE", key: "leaseStartDate", sortable: true, align: "center" },
         { title: "NOTICE GIVEN DATE", key: "noticeGivenDate", sortable: true, align: "center" },
-        { title: "VACATE DATE", key: "leaseEndDate", sortable: true, align: "center" },
+        { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
         {
           title: "MAINTENANCE REQUIRED AFTER INSPECTION YES/NO",
           key: "maintenanceRequired",
@@ -231,7 +206,7 @@ export default {
   },
   computed: {
     selectedAgencyDetails() {
-      return this.agencies.find((a) => a.name === this.selectedAgency) || null;
+      return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
   },
   methods: {
@@ -244,9 +219,23 @@ export default {
     filterProperties() {
       this.filteredProperties = this.properties.filter((property) => {
         const textMatch =
-          property.propertyName.toLowerCase().includes(this.searchQuery.toLowerCase());
+          property.unitName.toLowerCase().includes(this.searchQuery.toLowerCase());
+        
+        // Month filter - now filtering by createdAt date
         if (this.monthFilter) {
-          const propertyDate = new Date(property.leaseStartDate);
+          // Handle Firestore Timestamp objects
+          let propertyDate;
+          if (property.createdAt && property.createdAt.toDate) {
+            // Firestore Timestamp object
+            propertyDate = property.createdAt.toDate();
+          } else if (property.createdAt) {
+            // Regular Date object or date string
+            propertyDate = new Date(property.createdAt);
+          } else {
+            // No createdAt date, skip this property
+            return textMatch;
+          }
+          
           const filterDate = new Date(this.monthFilter + "-01");
           const propertyMonth = `${propertyDate.getFullYear()}-${String(propertyDate.getMonth() + 1).padStart(2, "0")}`;
           const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, "0")}`;
@@ -255,22 +244,93 @@ export default {
         return textMatch;
       });
     },
+    async fetchAgencies() {
+      this.agenciesLoading = true;
+      try {
+        console.log('Fetching agencies...');
+        const agenciesQuery = query(collection(db, 'users'), where('userType', '==', 'Agency'));
+        const agenciesSnapshot = await getDocs(agenciesQuery);
+        
+        this.agencies = agenciesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log('Agencies loaded:', this.agencies);
+      } catch (error) {
+        console.error('Error fetching agencies:', error);
+      } finally {
+        this.agenciesLoading = false;
+      }
+    },
+    
+    async fetchNotices(agencyId = null) {
+      this.propertiesLoading = true;
+      try {
+        console.log('Fetching notices...');
+        let noticesQuery;
+        
+        if (agencyId) {
+          noticesQuery = query(collection(db, 'notices'), where('agencyId', '==', agencyId));
+        } else {
+          noticesQuery = collection(db, 'notices');
+        }
+        
+        const noticesSnapshot = await getDocs(noticesQuery);
+        
+        this.properties = noticesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log('Notices loaded:', this.properties);
+        console.log('Number of notices found:', this.properties.length);
+        
+        // Log the first notice structure if available
+        if (this.properties.length > 0) {
+          console.log('First notice structure:', this.properties[0]);
+        }
+        
+        // Apply filters after loading
+        this.filterProperties();
+      } catch (error) {
+        console.error('Error fetching notices:', error);
+      } finally {
+        this.propertiesLoading = false;
+      }
+    },
+    
+    onAgencyChange(agencyId) {
+      console.log('Agency changed to:', agencyId);
+      this.fetchNotices(agencyId);
+    },
+    
     viewProperty(property) { this.$router.push(`/view-notice-${property.id}`); },
     editProperty(property) { this.$router.push(`/edit-notice-${property.id}`); },
-    deleteProperty(property) {
-      if (confirm(`Are you sure you want to delete notice for ${property.propertyName}?`)) {
-        const index = this.properties.findIndex((p) => p.id === property.id);
-        if (index > -1) {
-          this.properties.splice(index, 1);
-          this.filterProperties();
+    async deleteProperty(property) {
+      if (confirm(`Are you sure you want to delete notice for ${property.unitName}?`)) {
+        try {
+          console.log('Deleting notice:', property.id);
+          await deleteDoc(doc(db, 'notices', property.id));
+          
+          // Remove from local array
+          const index = this.properties.findIndex((p) => p.id === property.id);
+          if (index > -1) {
+            this.properties.splice(index, 1);
+            this.filterProperties();
+          }
+          
+          this.showSuccessDialog(`Notice for ${property.unitName} deleted successfully!`, 'Success!', 'Continue');
+        } catch (error) {
+          console.error('Error deleting notice:', error);
+          this.showErrorDialog(`Failed to delete notice: ${error.message}`, 'Error', 'OK');
         }
       }
     },
     addNotice() { this.$router.push('/add-notice'); },
   },
-  mounted() {
+  async mounted() {
     document.title = "Notice Page - Depsure";
-    this.filteredProperties = this.properties;
+    await this.fetchAgencies();
+    await this.fetchNotices();
   },
 };
 </script>

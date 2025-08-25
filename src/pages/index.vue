@@ -47,16 +47,19 @@
           <!-- Custom Black Login Button -->
           <button
             class="custom-btn"
-            :disabled="!valid"
+            :disabled="!valid || loading"
             @click="onSubmit"
           >
-            Login
+            {{ loading ? 'Logging in...' : 'Login' }}
           </button>
 
           <!-- Register as plain text -->
           <div class="register-text" @click="onRegister">
             Register
           </div>
+
+
+
         </div>
       </div>
 
@@ -70,13 +73,27 @@
 </template>
 
 <script>
+import { useNotification } from '@/composables/useNotification'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { auth, db } from '@/firebaseConfig'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
+
 export default {
+  setup() {
+    const { showSuccess, showError, showWarning, showInfo } = useNotification()
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    const appStore = useAppStore()
+    return { showSuccess, showError, showWarning, showInfo, showSuccessDialog, showErrorDialog, appStore }
+  },
   data() {
     return {
       email: '',
       password: '',
       valid: false,
       showPassword: false,
+      loading: false,
       emailRules: [
         v => !!v || 'Email is required',
         v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
@@ -88,14 +105,87 @@ export default {
     }
   },
   methods: {
-    onSubmit() {
-      this.$router.push('/agency')
+    async onSubmit() {
+      if (this.$refs.form.validate()) {
+        this.loading = true;
+        try {
+          // Sign in with Firebase Auth
+          const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
+          const user = userCredential.user;
+          
+          // Fetch user data from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Store user data using Pinia store
+            const userInfo = {
+              uid: user.uid,
+              email: user.email,
+              ...userData
+            };
+            this.appStore.setUser(userInfo);
+            
+            console.log('User logged in:', userInfo);
+            this.showSuccess('Login successful!');
+            
+            // Redirect based on user type
+            if (userData.userType === 'Agency') {
+              this.$router.push('/agency');
+            } else {
+              this.$router.push('/dashboard');
+            }
+          } else {
+            // User exists in Auth but not in Firestore
+            this.showError('User profile not found. Please contact administrator.');
+            await auth.signOut();
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          let errorMessage = 'Login failed. Please check your credentials.';
+          
+          if (error.code === 'auth/user-not-found') {
+            errorMessage = 'No account found with this email address.';
+          } else if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Incorrect password. Please try again.';
+          } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Please enter a valid email address.';
+          } else if (error.code === 'auth/too-many-requests') {
+            errorMessage = 'Too many failed attempts. Please try again later.';
+          } else if (error.code === 'auth/user-disabled') {
+            errorMessage = 'This account has been disabled. Please contact administrator.';
+          }
+          
+          this.showError(errorMessage);
+        } finally {
+          this.loading = false;
+        }
+      }
     },
     onForgotPassword() {
-      alert('Redirect to Forgot Password page')
+      this.showInfo('Redirecting to Forgot Password page...')
     },
     onRegister() {
-      alert('Redirect to Register page')
+      this.showInfo('Redirecting to Register page...')
+    },
+    testSuccess() {
+      this.showSuccess('This is a success notification!')
+    },
+    testError() {
+      this.showError('This is an error notification!')
+    },
+    testWarning() {
+      this.showWarning('This is a warning notification!')
+    },
+    testInfo() {
+      this.showInfo('This is an info notification!')
+    },
+    testCustomSuccess() {
+      this.showSuccessDialog('Operation completed successfully! This is a beautiful custom dialog.', 'Success!', 'Continue', '/agency')
+    },
+    testCustomError() {
+      this.showErrorDialog('Something went wrong. Please check your input and try again.', 'Oops!', 'Try Again', '/')
     }
   },
 }
@@ -219,5 +309,69 @@ export default {
 .register-text:hover {
   color: black;
   text-decoration: underline;
+}
+
+/* Test notification buttons */
+.test-notifications {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.test-dialogs {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.test-dialogs h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+}
+
+.test-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: white;
+}
+
+.test-btn.success {
+  background-color: #4caf50;
+}
+
+.test-btn.success:hover {
+  background-color: #45a049;
+}
+
+.test-btn.error {
+  background-color: #f44336;
+}
+
+.test-btn.error:hover {
+  background-color: #da190b;
+}
+
+.test-btn.warning {
+  background-color: #ff9800;
+}
+
+.test-btn.warning:hover {
+  background-color: #e68900;
+}
+
+.test-btn.info {
+  background-color: #2196f3;
+}
+
+.test-btn.info:hover {
+  background-color: #0b7dda;
 }
 </style>

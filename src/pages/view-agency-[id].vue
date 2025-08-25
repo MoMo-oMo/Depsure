@@ -30,21 +30,21 @@
             @input="filterProperties"
           />
         </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4">
-          <v-text-field
-            v-model="monthFilter"
-            label="Filter by month"
-            prepend-inner-icon="mdi-calendar"
-            flat="true"
-            density="comfortable"
-            variant="outlined"
-            type="month"
-            hide-details
-            dense
-            class="custom-input"
-            @input="filterProperties"
-          />
-        </v-col>
+                 <v-col cols="12" md="2" lg="2" class="pa-4">
+           <v-text-field
+             v-model="monthFilter"
+             label="Filter by creation month"
+             prepend-inner-icon="mdi-calendar"
+             flat="true"
+             density="comfortable"
+             variant="outlined"
+             type="month"
+             hide-details
+             dense
+             class="custom-input"
+             @input="filterProperties"
+           />
+         </v-col>
         <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center">
           <v-btn
             icon="mdi-plus"
@@ -119,16 +119,17 @@
       <!-- Properties Table -->
       <v-row>
         <v-col cols="12" class="pa-4">
-
-
-              <v-data-table
-                :headers="headers"
-                :items="filteredProperties"
-                :search="searchQuery"
-                class="custom-header"
-                density="comfortable"
-                hover
-              >
+          <!-- Properties Table -->
+          <v-data-table
+            :headers="headers"
+            :items="filteredProperties"
+            :search="searchQuery"
+            class="custom-header"
+            density="comfortable"
+            hover
+            :loading="propertiesLoading"
+            no-data-text="No data available"
+          >
                 <template v-slot:item.maintenanceAmount="{ item }">
                   <span class="font-weight-medium">R{{ item.maintenanceAmount.toLocaleString() }}</span>
                 </template>
@@ -175,7 +176,7 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore'
 
 export default {
   name: 'ViewAgencyPage',
@@ -186,78 +187,8 @@ export default {
       filteredProperties: [],
       agency: {},
       loading: false,
-      properties: [
-        {
-          id: 1,
-          tenantRef: 'T001',
-          propertyName: '123 Main Street, Cape Town',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-01-15',
-          leaseEndDate: '2025-01-15',
-          monthsMissed: 2,
-          maintenanceAmount: 15000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 5000,
-          amountToBePaidOut: 25000,
-          paidOut: 'No'
-        },
-        {
-          id: 2,
-          tenantRef: 'T002',
-          propertyName: '456 Ocean Drive, Camps Bay',
-          newOccupation: 'No',
-          leaseStartDate: '2023-06-01',
-          leaseEndDate: '2024-06-01',
-          monthsMissed: 0,
-          maintenanceAmount: 8000,
-          contractorRequested: 'No',
-          paidTowardsFund: 12000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
-        },
-        {
-          id: 3,
-          tenantRef: 'T003',
-          propertyName: '789 Mountain View, Constantia',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-02-01',
-          leaseEndDate: '2025-02-01',
-          monthsMissed: 1,
-          maintenanceAmount: 22000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 8000,
-          amountToBePaidOut: 18000,
-          paidOut: 'No'
-        },
-        {
-          id: 4,
-          tenantRef: 'T004',
-          propertyName: '321 Beach Road, Clifton',
-          newOccupation: 'No',
-          leaseStartDate: '2023-09-15',
-          leaseEndDate: '2024-09-15',
-          monthsMissed: 3,
-          maintenanceAmount: 30000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 15000,
-          amountToBePaidOut: 35000,
-          paidOut: 'No'
-        },
-        {
-          id: 5,
-          tenantRef: 'T005',
-          propertyName: '654 Garden Street, Newlands',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-03-01',
-          leaseEndDate: '2025-03-01',
-          monthsMissed: 0,
-          maintenanceAmount: 12000,
-          contractorRequested: 'No',
-          paidTowardsFund: 10000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
-        }
-      ],
+      properties: [],
+      propertiesLoading: false,
       headers: [
         { title: 'TENANT REF', key: 'tenantRef', sortable: true },
         { title: 'PROPERTY NAME', key: 'propertyName', sortable: true },
@@ -270,9 +201,6 @@ export default {
     }
   },
   computed: {
-    filteredProperties() {
-      return this.properties;
-    },
     activeProperties() {
       return this.properties.filter(p => p.status === 'Active').length;
     },
@@ -296,9 +224,21 @@ export default {
           property.contractorRequested.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           property.paidOut.toLowerCase().includes(this.searchQuery.toLowerCase());
         
-        // Month filter
+        // Month filter - now filtering by createdAt date
         if (this.monthFilter) {
-          const propertyDate = new Date(property.leaseStartDate);
+          // Handle Firestore Timestamp objects
+          let propertyDate;
+          if (property.createdAt && property.createdAt.toDate) {
+            // Firestore Timestamp object
+            propertyDate = property.createdAt.toDate();
+          } else if (property.createdAt) {
+            // Regular Date object or date string
+            propertyDate = new Date(property.createdAt);
+          } else {
+            // No createdAt date, skip this property
+            return textMatch;
+          }
+          
           const filterDate = new Date(this.monthFilter + '-01');
           const propertyMonth = `${propertyDate.getFullYear()}-${String(propertyDate.getMonth() + 1).padStart(2, '0')}`;
           const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, '0')}`;
@@ -333,7 +273,32 @@ export default {
     },
     addUnit() {
       console.log('Adding new unit');
-      this.$router.push('/add-unit');
+      // Navigate to add unit page with agency ID
+      this.$router.push(`/add-unit?agencyId=${this.agency.id}`);
+    },
+    
+    async fetchProperties(agencyId) {
+      this.propertiesLoading = true;
+      try {
+        // Query units collection for properties belonging to this agency
+        const unitsQuery = query(
+          collection(db, 'units'),
+          where('agencyId', '==', agencyId)
+        );
+        
+        const querySnapshot = await getDocs(unitsQuery);
+        this.properties = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        // Apply initial filtering
+        this.filterProperties();
+        console.log('Properties fetched for agency:', this.properties);
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+      } finally {
+        this.propertiesLoading = false;
+      }
     },
     
     async fetchAgencyData(agencyId) {
@@ -348,6 +313,9 @@ export default {
             ...agencyData
           };
           console.log('Agency data loaded:', this.agency);
+          
+          // Fetch properties for this agency
+          await this.fetchProperties(agencyId);
         } else {
           console.error('Agency not found');
           // Handle agency not found - could redirect to 404 or show error
@@ -363,21 +331,8 @@ export default {
     // Set the page title for the app bar
     document.title = 'Agency Details - Depsure';
     
-    // Initialize filteredProperties with all properties
-    this.filteredProperties = this.properties;
-    
-    // Get agency ID from route params or path
-    let agencyId = this.$route.params.id;
-    
-    // If no ID in params, try to extract from the path
-    if (!agencyId) {
-      const pathParts = this.$route.path.split('/');
-      const lastPart = pathParts[pathParts.length - 1];
-      if (lastPart && lastPart.startsWith('view-agency-')) {
-        agencyId = lastPart.replace('view-agency-', '');
-      }
-    }
-    
+    // Get agency ID from route params
+    const agencyId = this.$route.params.id;
     if (agencyId) {
       console.log('Loading agency with ID:', agencyId);
       await this.fetchAgencyData(agencyId);

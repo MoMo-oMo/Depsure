@@ -41,14 +41,75 @@
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
+                  <!-- Agency -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      :model-value="agencyName"
+                      label="Agency"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </v-col>
+
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="unit.propertyName"
+                      v-model="unit.unitName"
                       label="Unit Name"
                       variant="outlined"
                       class="custom-input"
-                      :rules="[v => !!v || 'Unit Name is required']"
+                      :rules="unitNameRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Tenant Reference -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="unit.tenantRef"
+                      label="Tenant Reference"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="tenantRefRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Lease Start Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="unit.leaseStartDate"
+                      label="Lease Start Date"
+                      type="date"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="leaseStartDateRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Flag Reason -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="unit.flagReason"
+                      label="Reason Flagged"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="flagReasonRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Date Flagged -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="unit.dateFlagged"
+                      label="Date Flagged"
+                      type="date"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="dateFlaggedRules"
                       required
                     />
                   </v-col>
@@ -61,34 +122,45 @@
                       label="Missed Payment Flag"
                       variant="outlined"
                       class="custom-input"
-                      :rules="[v => !!v || 'This field is required']"
+                      :rules="missedPaymentFlagRules"
                       required
                     />
                   </v-col>
 
                   <!-- Notice to Vacate Given -->
                   <v-col cols="12" md="6">
-                    <v-select
+                    <v-text-field
                       v-model="unit.noticeToVacateGiven"
-                      :items="['Yes', 'No']"
                       label="Notice to Vacate Given"
+                      type="date"
                       variant="outlined"
                       class="custom-input"
-                      :rules="[v => !!v || 'This field is required']"
+                      :rules="noticeToVacateGivenRules"
                       required
                     />
                   </v-col>
 
-                  <!-- Comments -->
+                  <!-- Action Taken -->
                   <v-col cols="12">
                     <v-textarea
-                      v-model="unit.comments"
-                      label="Comments"
+                      v-model="unit.actionTaken"
+                      label="Action Taken"
                       variant="outlined"
                       class="custom-input"
-                      :rules="[v => !!v || 'Comments are required']"
-                      rows="4"
+                      :rules="actionTakenRules"
+                      rows="3"
                       required
+                    />
+                  </v-col>
+
+                  <!-- Notes -->
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="unit.notes"
+                      label="Additional Notes"
+                      variant="outlined"
+                      class="custom-input"
+                      rows="3"
                     />
                   </v-col>
                 </v-row>
@@ -102,6 +174,7 @@
                   variant="outlined"
                   @click="$router.go(-1)"
                   class="cancel-btn"
+                  :disabled="saving"
                 >
                   Cancel
                 </v-btn>
@@ -109,10 +182,11 @@
                   color="black"
                   variant="elevated"
                   @click="saveUnit"
-                  :disabled="!valid"
+                  :disabled="!valid || saving"
+                  :loading="saving"
                   class="save-btn"
                 >
-                  Save Changes
+                  {{ saving ? 'Saving...' : 'Save Changes' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -124,62 +198,148 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+
 export default {
   name: "EditFlaggedUnitPage",
+  setup() {
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
+  },
   data() {
     return {
-      unit: {},
+      unit: {
+        unitName: '',
+        tenantRef: '',
+        leaseStartDate: '',
+        flagReason: '',
+        dateFlagged: '',
+        missedPaymentFlag: '',
+        noticeToVacateGiven: '',
+        actionTaken: '',
+        notes: ''
+      },
+      agencyName: '',
       loading: true,
+      saving: false,
       error: null,
       valid: false,
+      unitNameRules: [
+        v => !!v || "Unit Name is required",
+        v => v.length >= 3 || "Unit Name must be at least 3 characters"
+      ],
+      tenantRefRules: [v => !!v || "Tenant Reference is required"],
+      leaseStartDateRules: [v => !!v || "Lease Start Date is required"],
+      flagReasonRules: [v => !!v || "Reason Flagged is required"],
+      dateFlaggedRules: [v => !!v || "Date Flagged is required"],
+      missedPaymentFlagRules: [v => !!v || "Missed Payment Flag is required"],
+      noticeToVacateGivenRules: [v => !!v || "Notice To Vacate Given is required"],
+      actionTakenRules: [v => !!v || "Action Taken is required"]
     };
   },
-  mounted() {
+  async mounted() {
     document.title = "Edit Flagged Unit - Depsure";
     const unitId = this.$route.params.id;
-    this.loadUnit(unitId);
+    if (unitId) {
+      await this.loadUnit(unitId);
+    } else {
+      this.error = "No flagged unit ID provided";
+      this.loading = false;
+    }
   },
   methods: {
-    loadUnit(unitId) {
-      // Mock flagged units data
-      const mockUnits = [
-        {
-          id: 1,
-          propertyName: "123 Main Street, Cape Town",
-          missedPaymentFlag: "Yes",
-          noticeToVacateGiven: "Yes",
-          comments: "Tenant missed 2 months of payment. Follow up next week."
-        },
-        {
-          id: 2,
-          propertyName: "456 Ocean Drive, Camps Bay",
-          missedPaymentFlag: "No",
-          noticeToVacateGiven: "No",
-          comments: "Tenant caught up on all payments. No action required."
-        },
-        {
-          id: 3,
-          propertyName: "789 Mountain View, Constantia",
-          missedPaymentFlag: "Yes",
-          noticeToVacateGiven: "Yes",
-          comments: "Tenant has multiple late payments. Monitor payments closely."
-        },
-      ];
-
-      const foundUnit = mockUnits.find((u) => u.id == unitId);
-      if (foundUnit) {
-        this.unit = { ...foundUnit };
-        this.loading = false;
-      } else {
-        this.error = "Flagged unit not found";
+    async loadUnit(unitId) {
+      try {
+        console.log('Loading flagged unit with ID:', unitId);
+        
+        // Fetch flagged unit from Firestore
+        const unitDoc = await getDoc(doc(db, 'flaggedUnits', unitId));
+        
+        if (unitDoc.exists()) {
+          const unitData = unitDoc.data();
+          this.unit = {
+            id: unitDoc.id,
+            unitName: unitData.unitName || '',
+            tenantRef: unitData.tenantRef || '',
+            leaseStartDate: unitData.leaseStartDate || '',
+            flagReason: unitData.flagReason || '',
+            dateFlagged: unitData.dateFlagged || '',
+            missedPaymentFlag: unitData.missedPaymentFlag || '',
+            noticeToVacateGiven: unitData.noticeToVacateGiven || '',
+            actionTaken: unitData.actionTaken || '',
+            notes: unitData.notes || ''
+          };
+          
+          // Fetch agency name if agencyId exists
+          if (unitData.agencyId) {
+            await this.loadAgencyName(unitData.agencyId);
+          }
+          
+          console.log('Flagged unit loaded:', this.unit);
+        } else {
+          this.error = "Flagged unit not found";
+        }
+      } catch (error) {
+        console.error('Error loading flagged unit:', error);
+        this.error = "Failed to load flagged unit details";
+      } finally {
         this.loading = false;
       }
     },
-    saveUnit() {
+
+    async loadAgencyName(agencyId) {
+      try {
+        const agencyDoc = await getDoc(doc(db, 'users', agencyId));
+        if (agencyDoc.exists()) {
+          const agencyData = agencyDoc.data();
+          this.agencyName = agencyData.agencyName || 'Unknown Agency';
+        } else {
+          this.agencyName = 'Unknown Agency';
+        }
+      } catch (error) {
+        console.error('Error loading agency name:', error);
+        this.agencyName = 'Unknown Agency';
+      }
+    },
+
+    async saveUnit() {
       if (this.$refs.form.validate()) {
-        console.log("Saving flagged unit:", this.unit);
-        alert("Flagged unit updated successfully!");
-        this.$router.go(-1);
+        this.saving = true;
+        try {
+          console.log('Saving flagged unit:', this.unit);
+          
+          // Check if unit has an ID
+          if (!this.unit.id) {
+            throw new Error('No flagged unit ID found');
+          }
+
+          // Prepare the update data
+          const updateData = {
+            unitName: this.unit.unitName,
+            tenantRef: this.unit.tenantRef,
+            leaseStartDate: this.unit.leaseStartDate,
+            flagReason: this.unit.flagReason,
+            dateFlagged: this.unit.dateFlagged,
+            missedPaymentFlag: this.unit.missedPaymentFlag,
+            noticeToVacateGiven: this.unit.noticeToVacateGiven,
+            actionTaken: this.unit.actionTaken,
+            notes: this.unit.notes,
+            updatedAt: new Date()
+          };
+
+          // Update the flagged unit in Firestore
+          await updateDoc(doc(db, 'flaggedUnits', this.unit.id), updateData);
+          
+          console.log('Flagged unit updated successfully');
+          this.showSuccessDialog("Flagged unit updated successfully!", "Success!", "Continue", "/flagged-units");
+        } catch (error) {
+          console.error('Error saving flagged unit:', error);
+          this.showErrorDialog('Failed to save flagged unit. Please try again.');
+        } finally {
+          this.saving = false;
+        }
       }
     },
   },

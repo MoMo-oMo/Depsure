@@ -28,6 +28,22 @@
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
+                  <!-- Agency Selection -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="property.agencyId"
+                      label="Select Agency"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="agencies"
+                      item-title="agencyName"
+                      item-value="id"
+                      :rules="agencyRules"
+                      required
+                      :loading="agenciesLoading"
+                    />
+                  </v-col>
+
                   <!-- Tenant Reference -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -186,10 +202,11 @@
                   color="black"
                   variant="elevated"
                   @click="saveProperty"
-                  :disabled="!valid"
+                  :disabled="!valid || loading"
+                  :loading="loading"
                   class="save-btn"
                 >
-                  Add Unit
+                  {{ loading ? 'Adding Unit...' : 'Add Unit' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -201,11 +218,20 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { collection, getDocs, addDoc, query, where } from 'firebase/firestore'
+
 export default {
   name: 'AddUnitPage',
+  setup() {
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
+  },
   data() {
     return {
       property: {
+        agencyId: '',
         tenantRef: '',
         propertyName: '',
         newOccupation: '',
@@ -218,8 +244,14 @@ export default {
         amountToBePaidOut: 0,
         paidOut: ''
       },
+      agencies: [],
+      agenciesLoading: false,
+      loading: false,
       valid: true,
       // Validation rules
+      agencyRules: [
+        v => !!v || 'Agency selection is required'
+      ],
       tenantRefRules: [
         v => !!v || 'Tenant Reference is required',
         v => v.length >= 2 || 'Tenant Reference must be at least 2 characters'
@@ -258,18 +290,71 @@ export default {
       ]
     }
   },
-  mounted() {
+  async mounted() {
     console.log('AddUnitPage mounted');
     // Set the page title for the app bar
     document.title = 'Add New Unit - Depsure';
+    
+    // Fetch agencies for dropdown
+    await this.fetchAgencies();
+    
+    // Check if agencyId is provided in URL params (from view-agency page)
+    const urlParams = new URLSearchParams(window.location.search);
+    const agencyId = urlParams.get('agencyId');
+    if (agencyId) {
+      this.property.agencyId = agencyId;
+      console.log('Pre-selected agency ID:', agencyId);
+    }
   },
   methods: {
-    saveProperty() {
+    async fetchAgencies() {
+      this.agenciesLoading = true;
+      try {
+        // Query users collection for agencies only
+        const agenciesQuery = query(
+          collection(db, 'users'),
+          where('userType', '==', 'Agency')
+        );
+        
+        const querySnapshot = await getDocs(agenciesQuery);
+        this.agencies = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        console.log('Agencies fetched:', this.agencies);
+      } catch (error) {
+        console.error('Error fetching agencies:', error);
+        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK');
+      } finally {
+        this.agenciesLoading = false;
+      }
+    },
+    
+    async saveProperty() {
       if (this.$refs.form.validate()) {
-        console.log('Adding new property:', this.property);
-        // In a real app, you would make an API call here to save the property
-        alert('Unit added successfully!');
-        this.$router.go(-1); // Go back to previous page
+        this.loading = true;
+        try {
+          console.log('Adding new unit:', this.property);
+          
+          // Prepare unit data for Firestore
+          const unitData = {
+            ...this.property,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          // Add unit to Firestore
+          const docRef = await addDoc(collection(db, 'units'), unitData);
+          
+          console.log('Unit added with ID:', docRef.id);
+          this.showSuccessDialog('Unit added successfully!', 'Success!', 'Continue', '/active-units');
+          
+        } catch (error) {
+          console.error('Error adding unit:', error);
+          this.showErrorDialog('Failed to add unit. Please try again.', 'Error', 'OK');
+        } finally {
+          this.loading = false;
+        }
       }
     }
   }

@@ -46,7 +46,7 @@
                 <!-- Unit Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.propertyName"
+                    :model-value="notice.unitName"
                     label="Unit Name"
                     variant="outlined"
                     readonly
@@ -76,10 +76,10 @@
                   />
                 </v-col>
 
-                <!-- Lease End Date -->
+                <!-- Vacate Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.leaseEndDate"
+                    :model-value="notice.vacateDate"
                     label="Vacate Date"
                     variant="outlined"
                     readonly
@@ -107,48 +107,61 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { doc, getDoc } from 'firebase/firestore'
+
 export default {
   name: "ViewNoticePage",
   data() {
     return {
-      notice: {},
+      notice: {
+        id: '',
+        unitName: '',
+        leaseStartDate: '',
+        noticeGivenDate: '',
+        vacateDate: '',
+        maintenanceRequired: ''
+      },
       loading: true,
       error: null,
     };
   },
-  mounted() {
+  async mounted() {
     document.title = "Notice Details - Depsure";
     const noticeId = this.$route.params.id;
-    this.loadNotice(noticeId);
+    if (noticeId) {
+      await this.loadNotice(noticeId);
+    } else {
+      this.error = 'No notice ID provided';
+      this.loading = false;
+    }
   },
   methods: {
-    loadNotice(noticeId) {
-      // Mock data like your NoticePage
-      const mockNotices = [
-        {
-          id: 1,
-          propertyName: "123 Main Street, Cape Town",
-          leaseStartDate: "2024-01-15",
-          noticeGivenDate: "2024-12-01",
-          leaseEndDate: "2025-01-15",
-          maintenanceRequired: "Yes",
-        },
-        {
-          id: 2,
-          propertyName: "456 Ocean Drive, Camps Bay",
-          leaseStartDate: "2023-06-01",
-          noticeGivenDate: "2024-05-01",
-          leaseEndDate: "2024-06-01",
-          maintenanceRequired: "No",
-        },
-      ];
-
-      const foundNotice = mockNotices.find((n) => n.id == noticeId);
-      if (foundNotice) {
-        this.notice = foundNotice;
-        this.loading = false;
-      } else {
-        this.error = "Notice not found";
+    async loadNotice(noticeId) {
+      this.loading = true;
+      this.error = null;
+      
+      try {
+        console.log('Loading notice data for ID:', noticeId);
+        
+        // Fetch notice from Firestore
+        const noticeDoc = await getDoc(doc(db, 'notices', noticeId));
+        
+        if (noticeDoc.exists()) {
+          const noticeData = noticeDoc.data();
+          this.notice = {
+            id: noticeDoc.id,
+            ...noticeData
+          };
+          console.log('Notice loaded successfully:', this.notice);
+        } else {
+          this.error = 'Notice not found';
+          console.log('Notice not found in Firestore');
+        }
+      } catch (error) {
+        console.error('Error loading notice:', error);
+        this.error = `Failed to load notice details: ${error.message}`;
+      } finally {
         this.loading = false;
       }
     },

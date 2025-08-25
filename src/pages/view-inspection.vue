@@ -113,8 +113,14 @@
 </template>
 
 <script>
+import { useNotification } from '@/composables/useNotification'
+
 export default {
   name: "ViewInspectionEntry",
+  setup() {
+    const { showSuccess } = useNotification()
+    return { showSuccess }
+  },
   data() {
     return {
       entry: null,
@@ -179,7 +185,7 @@ export default {
     },
     deleteEntry() {
       if (confirm(`Are you sure you want to delete inspection entry for ${this.entry.unitName}?`)) {
-        alert("Entry deleted!");
+        this.showSuccess("Inspection entry deleted successfully!");
         this.$router.back();
       }
     }

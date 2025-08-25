@@ -14,11 +14,11 @@
         <div class="header-fade"></div>
         <div class="header-content">
           <v-avatar size="56">
-            <v-img :src="user.avatar" alt="User" />
+            <v-img :src="userAvatar" alt="User" />
           </v-avatar>
           <div class="user-meta">
-            <div class="name">{{ user.name }}</div>
-            <div class="user-type">{{ user.userType }}</div>
+            <div class="name">{{ userName }}</div>
+            <div class="user-type">{{ userType }}</div>
           </div>
         </div>
       </div>
@@ -31,6 +31,13 @@
         color="transparent"
         class="drawer-list"
       >
+      <v-list-item
+          prepend-icon="mdi-account-group"
+          title="USER MANAGEMENT"
+          :class="{ 'pill-active': selected.includes('user-management') }"
+          value="user-management"
+          @click="navigateTo('user-management')"
+        />
         <v-list-item
           prepend-icon="mdi-domain"
           title="AGENCY"
@@ -81,11 +88,21 @@
           value="vacancies"
           @click="navigateTo('vacancies')"
         />
+  
       </v-list>
 
       <!-- Footer / Logout -->
       <div class="drawer-footer">
-        <v-btn color="red" variant="tonal" block class="footer-btn" @click="onLogout">Logout</v-btn>
+        <v-btn 
+          color="red" 
+          variant="tonal" 
+          block 
+          class="footer-btn" 
+          @click="onLogout"
+          :loading="logoutLoading"
+        >
+          {{ logoutLoading ? 'Logging out...' : 'Logout' }}
+        </v-btn>
       </div>
     </div>
   </v-navigation-drawer>
@@ -97,6 +114,8 @@ import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useDrawer } from '@/composables/useDrawer'
 import { useNav } from '@/composables/useNav'
+import { useAppStore } from '@/stores/app'
+import { useNotification } from '@/composables/useNotification'
 
 export default {
   name: 'NavDrawer',
@@ -106,6 +125,11 @@ export default {
     const { isOpen } = useDrawer()
     const router = useRouter()
     const { selectedKey, setSelected } = useNav()
+    const appStore = useAppStore()
+    const { showSuccess, showError } = useNotification()
+    
+    const logoutLoading = ref(false)
+    
     const selected = computed({
       get: () => [selectedKey.value],
       set: (values) => {
@@ -114,16 +138,10 @@ export default {
       }
     })
 
-    const user = reactive({
-      name: 'Angela Mayer',
-      userType: 'Admin',
-      avatar: 'https://i.pravatar.cc/100?img=5',
-      score: 2100,
-      created: 1265,
-      downloaded: 72,
-      uploaded: 256,
-      wallet: '0.023456 BTC'
-    })
+    // Get user data from Pinia store
+    const userName = computed(() => appStore.userName)
+    const userType = computed(() => appStore.userType)
+    const userAvatar = computed(() => appStore.userAvatar)
 
     const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
 
@@ -133,8 +151,22 @@ export default {
       backgroundPosition: 'center'
     }))
 
-    function onLogout() {
-      router.push('/')
+    async function onLogout() {
+      logoutLoading.value = true
+      try {
+        const success = await appStore.logout()
+        if (success) {
+          showSuccess('Logged out successfully')
+          router.push('/')
+        } else {
+          showError('Failed to logout. Please try again.')
+        }
+      } catch (error) {
+        console.error('Logout error:', error)
+        showError('An error occurred during logout')
+      } finally {
+        logoutLoading.value = false
+      }
     }
 
     function navigateTo(route) {
@@ -145,8 +177,11 @@ export default {
       isDesktop,
       isOpen,
       selected,
-      user,
+      userName,
+      userType,
+      userAvatar,
       headerStyle,
+      logoutLoading,
       onLogout,
       navigateTo
     }

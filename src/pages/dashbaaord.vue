@@ -1,12 +1,167 @@
 <template>
-  <v-main class="pa-6">
-    <h1>Dashboard</h1>
-    <p>Placeholder dashboard page at path /dashbaaord.</p>
-  </v-main>
+  <div class="dashboard-page">
+    <v-container fluid>
+      <!-- Welcome Section -->
+      <v-row class="mb-6">
+        <v-col cols="12">
+          <v-card class="welcome-card">
+            <v-card-title class="text-h4">
+              Welcome, {{ userName }}!
+            </v-card-title>
+            <v-card-text class="text-h6">
+              User Type: {{ userType }}
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Quick Actions -->
+      <v-row>
+        <v-col cols="12" md="6" lg="4">
+          <v-card class="action-card" @click="navigateTo('user-management')">
+            <v-card-title>
+              <v-icon icon="mdi-account-group" class="mr-2" />
+              User Management
+            </v-card-title>
+            <v-card-text>
+              Manage users and their permissions
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <v-col cols="12" md="6" lg="4">
+          <v-card class="action-card" @click="navigateTo('agency')">
+            <v-card-title>
+              <v-icon icon="mdi-domain" class="mr-2" />
+              Agencies
+            </v-card-title>
+            <v-card-text>
+              View and manage property agencies
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <v-col cols="12" md="6" lg="4">
+          <v-card class="action-card" @click="navigateTo('active-units')">
+            <v-card-title>
+              <v-icon icon="mdi-home" class="mr-2" />
+              Active Units
+            </v-card-title>
+            <v-card-text>
+              View all active property units
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <v-col cols="12" md="6" lg="4">
+          <v-card class="action-card" @click="navigateTo('notices')">
+            <v-card-title>
+              <v-icon icon="mdi-bell" class="mr-2" />
+              Notices
+            </v-card-title>
+            <v-card-text>
+              Manage property notices
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <v-col cols="12" md="6" lg="4">
+          <v-card class="action-card" @click="navigateTo('flagged-units')">
+            <v-card-title>
+              <v-icon icon="mdi-flag" class="mr-2" />
+              Flagged Units
+            </v-card-title>
+            <v-card-text>
+              View flagged property units
+            </v-card-text>
+          </v-card>
+        </v-col>
+
+        <v-col cols="12" md="6" lg="4">
+          <v-card class="action-card" @click="navigateTo('maintenance')">
+            <v-card-title>
+              <v-icon icon="mdi-wrench" class="mr-2" />
+              Maintenance
+            </v-card-title>
+            <v-card-text>
+              Manage maintenance requests
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
-<script setup>
-  // Placeholder dashboard page
+<script>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/app'
+
+export default {
+  name: 'DashboardPage',
+  setup() {
+    const router = useRouter()
+    const appStore = useAppStore()
+    
+    const userName = computed(() => appStore.userName)
+    const userType = computed(() => appStore.userType)
+
+    const navigateTo = (route) => {
+      router.push(`/${route}`)
+    }
+
+    return {
+      userName,
+      userType,
+      navigateTo
+    }
+  },
+  mounted() {
+    document.title = "Dashboard - Depsure"
+  }
+}
 </script>
+
+<style scoped>
+.dashboard-page {
+  padding: 20px;
+  min-height: 100vh;
+  background-color: #f6f7fa;
+}
+
+.welcome-card {
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+  color: white;
+  border-radius: 12px;
+}
+
+.action-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  height: 100%;
+}
+
+.action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.action-card .v-card-title {
+  color: #000;
+  font-weight: 600;
+}
+
+.action-card .v-card-text {
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding: 10px;
+  }
+}
+</style>
 
 

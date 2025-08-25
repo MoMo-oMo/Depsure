@@ -133,8 +133,14 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+
 export default {
   name: "AddInspectionPage",
+  setup() {
+    const { showSuccessDialog } = useCustomDialogs()
+    return { showSuccessDialog }
+  },
   data() {
     return {
       valid: false,
@@ -160,8 +166,7 @@ export default {
     submitForm() {
       if (this.$refs.form.validate()) {
         console.log("Adding inspection entry:", this.entry);
-        alert("Inspection entry added successfully!");
-        this.$router.push("/inspections");
+        this.showSuccessDialog("Inspection entry added successfully!", "Success!", "Continue", "/inspections");
       }
     },
     goBack() {

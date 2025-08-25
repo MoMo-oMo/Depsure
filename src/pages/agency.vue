@@ -18,7 +18,7 @@
             @input="filterAgencies"
           />
         </v-col>
-        <v-col cols="12" md="3" lg="2" class="d-flex align-center">
+        <!-- <v-col cols="12" md="3" lg="2" class="d-flex align-center">
           <v-btn
             color="primary"
             variant="elevated"
@@ -28,15 +28,32 @@
           >
             Add Agency
           </v-btn>
-        </v-col>
+        </v-col> -->
       </v-row>
 
       <v-row>
         <v-col cols="12">
-          <v-row>
+          <!-- Loading state -->
+          <div v-if="loading" class="text-center pa-8">
+            <v-progress-circular
+              indeterminate
+              color="primary"
+              size="64"
+            ></v-progress-circular>
+            <p class="mt-4">Loading agencies...</p>
+          </div>
+          
+          <!-- No agencies found -->
+          <div v-else-if="filteredAgencies.length === 0" class="text-center pa-8">
+            <v-icon size="64" color="grey">mdi-domain-off</v-icon>
+            <p class="mt-4 text-grey">No agencies found</p>
+          </div>
+          
+          <!-- Agencies grid -->
+          <v-row v-else>
             <v-col
               v-for="(agency, index) in filteredAgencies"
-              :key="index"
+              :key="agency.id"
               cols="12"
               sm="6"
               md="4"
@@ -46,14 +63,14 @@
                 <!-- Image section with overlay title -->
                 <div class="image-section">
                   <v-img
-                    :src="agency.logo"
-                    :alt="agency.name"
+                    :src="agency.profileImageUrl || agency.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
+                    :alt="agency.agencyName"
                     class="card-image"
                     cover
                   />
                   <div class="image-overlay">
                     <h2 class="card-headline">
-                      {{ agency.name }}
+                      {{ agency.agencyName }}
                     </h2>
                   </div>
                 </div>
@@ -62,7 +79,7 @@
                 <div class="content-section">
                   <!-- Description -->
                   <p class="card-description">
-                    {{ agency.description }}
+                    {{ agency.agencyDescription || agency.agencyTagline || 'No description available' }}
                   </p>
 
                   <!-- Action Button -->
@@ -87,96 +104,61 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { collection, getDocs, query, where } from 'firebase/firestore'
+
 export default {
   name: 'AgencyPage',
   data() {
     return {
-      agencies: [
-        {
-          name: 'Pam Golding Properties',
-          title: 'Luxury Real Estate Specialist',
-          logo: 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg',
-          description: 'Premium real estate agency specializing in luxury properties and exceptional service.',
-          location: 'Cape Town, South Africa',
-          established: '1976',
-          properties: 1250,
-          rating: 4.8
-        },
-        {
-          name: 'RE/MAX Properties',
-          title: 'Global Real Estate Network',
-          logo: 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg',
-          description: 'Global real estate network with local expertise and innovative solutions.',
-          location: 'Johannesburg, South Africa',
-          established: '1973',
-          properties: 890,
-          rating: 4.6
-        },
-        {
-          name: 'Seeff Properties',
-          title: 'Family-Owned Agency',
-          logo: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-          description: 'Trusted family-owned agency with over 50 years of experience in property sales.',
-          location: 'Durban, South Africa',
-          established: '1964',
-          properties: 756,
-          rating: 4.7
-        },
-        {
-          name: 'Lew Geffen Sotheby\'s',
-          title: 'Luxury Property Experts',
-          logo: 'https://images.unsplash.com/photo-1554995207-c18c203602cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
-          description: 'Luxury real estate specialists with international connections and premium listings.',
-          location: 'Pretoria, South Africa',
-          established: '1983',
-          properties: 432,
-          rating: 4.9
-        },
-        {
-          name: 'Chas Everitt International',
-          title: 'Comprehensive Property Services',
-          logo: 'https://images.pexels.com/photos/1797393/pexels-photo-1797393.jpeg',
-          description: 'Comprehensive property services with a focus on customer satisfaction and results.',
-          location: 'Port Elizabeth, South Africa',
-          established: '1980',
-          properties: 678,
-          rating: 4.5
-        },
-        {
-          name: 'Keller Williams Realty',
-          title: 'Innovative Real Estate',
-          logo: 'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-          description: 'Innovative real estate company with cutting-edge technology and training programs.',
-          location: 'Bloemfontein, South Africa',
-          established: '1983',
-          properties: 543,
-          rating: 4.4
-        }
-      ],
+      agencies: [],
       searchQuery: '',
-      filteredAgencies: []
+      filteredAgencies: [],
+      loading: false
     }
   },
   methods: {
     viewAgencyDetails(agency) {
-      // Navigate to the view agency page
-      this.$router.push('/view-agency');
+      // Navigate to the view agency page with agency ID
+      this.$router.push(`/view-agency-${agency.id}`);
     },
     filterAgencies() {
       this.filteredAgencies = this.agencies.filter(agency =>
-        agency.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.description.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.location.toLowerCase().includes(this.searchQuery.toLowerCase())
+        agency.agencyName?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        agency.agencyTagline?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        agency.agencyDescription?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        agency.location?.toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     },
     addNewAgency() {
       // Navigate to the add agency page
       this.$router.push('/add-agency');
+    },
+    async fetchAgencies() {
+      this.loading = true;
+      try {
+        // Query users collection for agencies only
+        const agenciesQuery = query(
+          collection(db, 'users'),
+          where('userType', '==', 'Agency')
+        );
+        
+        const querySnapshot = await getDocs(agenciesQuery);
+        this.agencies = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        this.filteredAgencies = this.agencies;
+        console.log('Agencies fetched:', this.agencies);
+      } catch (error) {
+        console.error('Error fetching agencies:', error);
+      } finally {
+        this.loading = false;
+      }
     }
   },
-  mounted() {
-    this.filteredAgencies = this.agencies; // Initialize filteredAgencies with all agencies
+  async mounted() {
+    await this.fetchAgencies();
   }
 }
 </script>

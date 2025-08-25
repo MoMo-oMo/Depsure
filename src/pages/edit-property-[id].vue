@@ -201,10 +201,11 @@
                   color="black"
                   variant="elevated"
                   @click="saveProperty"
-                  :disabled="!valid"
+                  :disabled="!valid || loading"
+                  :loading="loading"
                   class="save-btn"
                 >
-                  Save Changes
+                  {{ loading ? 'Saving...' : 'Save Changes' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -216,23 +217,31 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+
 export default {
   name: 'EditPropertyPage',
+  setup() {
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
+  },
   data() {
     return {
       property: {
-        id: 1,
-        tenantRef: 'T001',
-        propertyName: '123 Main Street, Cape Town',
-        newOccupation: 'Yes',
-        leaseStartDate: '2024-01-15',
-        leaseEndDate: '2025-01-15',
-        monthsMissed: 2,
-        maintenanceAmount: 15000,
-        contractorRequested: 'Yes',
-        paidTowardsFund: 5000,
-        amountToBePaidOut: 25000,
-        paidOut: 'No'
+        id: '',
+        tenantRef: '',
+        propertyName: '',
+        newOccupation: '',
+        leaseStartDate: '',
+        leaseEndDate: '',
+        monthsMissed: 0,
+        maintenanceAmount: 0,
+        contractorRequested: '',
+        paidTowardsFund: 0,
+        amountToBePaidOut: 0,
+        paidOut: ''
       },
       loading: true,
       error: null,
@@ -276,7 +285,7 @@ export default {
       ]
     }
   },
-  mounted() {
+  async mounted() {
     console.log('EditPropertyPage mounted');
     // Set the page title for the app bar
     document.title = 'Edit Property - Depsure';
@@ -287,107 +296,94 @@ export default {
     if (propertyId) {
       // Load property data based on ID
       console.log('Loading property with ID:', propertyId);
-      // In a real app, you would fetch the property data here
-      this.loadPropertyData(propertyId);
+      await this.loadPropertyData(propertyId);
     } else {
       console.log('No property ID found in route params');
+      this.error = 'No property ID provided';
+      this.loading = false;
     }
   },
   methods: {
-    loadPropertyData(propertyId) {
-      console.log('Loading property data for ID:', propertyId);
-      // Mock data - in a real app this would be an API call
-      const mockProperties = [
-        {
-          id: 1,
-          tenantRef: 'T001',
-          propertyName: '123 Main Street, Cape Town',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-01-15',
-          leaseEndDate: '2025-01-15',
-          monthsMissed: 2,
-          maintenanceAmount: 15000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 5000,
-          amountToBePaidOut: 25000,
-          paidOut: 'No'
-        },
-        {
-          id: 2,
-          tenantRef: 'T002',
-          propertyName: '456 Ocean Drive, Camps Bay',
-          newOccupation: 'No',
-          leaseStartDate: '2023-06-01',
-          leaseEndDate: '2024-06-01',
-          monthsMissed: 0,
-          maintenanceAmount: 8000,
-          contractorRequested: 'No',
-          paidTowardsFund: 12000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
-        },
-        {
-          id: 3,
-          tenantRef: 'T003',
-          propertyName: '789 Mountain View, Constantia',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-02-01',
-          leaseEndDate: '2025-02-01',
-          monthsMissed: 1,
-          maintenanceAmount: 22000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 8000,
-          amountToBePaidOut: 18000,
-          paidOut: 'No'
-        },
-        {
-          id: 4,
-          tenantRef: 'T004',
-          propertyName: '321 Beach Road, Clifton',
-          newOccupation: 'No',
-          leaseStartDate: '2023-09-15',
-          leaseEndDate: '2024-09-15',
-          monthsMissed: 3,
-          maintenanceAmount: 30000,
-          contractorRequested: 'Yes',
-          paidTowardsFund: 15000,
-          amountToBePaidOut: 35000,
-          paidOut: 'No'
-        },
-        {
-          id: 5,
-          tenantRef: 'T005',
-          propertyName: '654 Garden Street, Newlands',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-03-01',
-          leaseEndDate: '2025-03-01',
-          monthsMissed: 0,
-          maintenanceAmount: 12000,
-          contractorRequested: 'No',
-          paidTowardsFund: 10000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
-        }
-      ];
+    async loadPropertyData(propertyId) {
+      this.loading = true;
+      this.error = null;
       
-      const foundProperty = mockProperties.find(p => p.id == propertyId);
-      console.log('Found property:', foundProperty);
-      if (foundProperty) {
-        this.property = { ...foundProperty }; // Create a copy to avoid direct mutation
+      try {
+        console.log('Loading property data for ID:', propertyId);
+        
+        // Fetch property from Firestore
+        const propertyDoc = await getDoc(doc(db, 'units', propertyId));
+        
+        if (propertyDoc.exists()) {
+          const propertyData = propertyDoc.data();
+          this.property = {
+            id: propertyDoc.id,
+            ...propertyData
+          };
+          console.log('Property loaded successfully:', this.property);
+          
+          // Ensure all required fields have default values if they're missing
+          this.property.tenantRef = this.property.tenantRef || '';
+          this.property.propertyName = this.property.propertyName || '';
+          this.property.newOccupation = this.property.newOccupation || '';
+          this.property.leaseStartDate = this.property.leaseStartDate || '';
+          this.property.leaseEndDate = this.property.leaseEndDate || '';
+          this.property.monthsMissed = this.property.monthsMissed || 0;
+          this.property.maintenanceAmount = this.property.maintenanceAmount || 0;
+          this.property.contractorRequested = this.property.contractorRequested || '';
+          this.property.paidTowardsFund = this.property.paidTowardsFund || 0;
+          this.property.amountToBePaidOut = this.property.amountToBePaidOut || 0;
+          this.property.paidOut = this.property.paidOut || '';
+          
+          console.log('Property data after defaults:', this.property);
+        } else {
+          this.error = 'Property not found';
+          console.log('Property not found in Firestore');
+        }
+      } catch (error) {
+        console.error('Error loading property:', error);
+        this.error = `Failed to load property details: ${error.message}`;
+      } finally {
         this.loading = false;
-        console.log('Property loaded successfully');
-      } else {
-        this.error = 'Property not found';
-        this.loading = false;
-        console.log('Property not found for ID:', propertyId);
       }
     },
-    saveProperty() {
-      if (this.$refs.form.validate()) {
-        console.log('Saving property:', this.property);
-        // In a real app, you would make an API call here to save the property
-        alert('Property saved successfully!');
-        this.$router.go(-1); // Go back to previous page
+    async saveProperty() {
+      console.log('Save property called, form valid:', this.valid);
+      console.log('Form ref exists:', !!this.$refs.form);
+      
+      if (this.$refs.form && this.$refs.form.validate()) {
+        this.loading = true;
+        try {
+          console.log('Saving property:', this.property);
+          
+          // Validate that we have an ID
+          if (!this.property.id) {
+            throw new Error('Property ID is missing');
+          }
+          
+          // Prepare property data for Firestore (remove id field)
+          const { id, ...propertyData } = this.property;
+          
+          // Add updated timestamp
+          propertyData.updatedAt = new Date();
+          
+          console.log('Property data to save:', propertyData);
+          
+          // Update property in Firestore
+          await updateDoc(doc(db, 'units', id), propertyData);
+          
+          console.log('Property updated successfully');
+          this.showSuccessDialog('Property saved successfully!', 'Success!', 'Continue', `/view-property-${id}`);
+          
+        } catch (error) {
+          console.error('Error saving property:', error);
+          this.showErrorDialog(`Failed to save property: ${error.message}`, 'Error', 'OK');
+        } finally {
+          this.loading = false;
+        }
+      } else {
+        console.log('Form validation failed');
+        this.showErrorDialog('Please fix the form errors before saving.', 'Validation Error', 'OK');
       }
     }
   }
