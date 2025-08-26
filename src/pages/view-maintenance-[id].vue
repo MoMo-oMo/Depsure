@@ -8,7 +8,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/maintenance')"
             class="back-btn"
           >
             Back

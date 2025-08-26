@@ -112,6 +112,7 @@
           </v-card>
         </v-col>
       </v-row>
+      
 
       <!-- Flagged Units Table -->
       <v-row>
@@ -126,6 +127,14 @@
             :loading="unitsLoading"
             no-data-text="No data available"
           >
+            <template v-slot:item.missedPaymentFlag="{ item }">
+              <v-chip :color="item.missedPaymentFlag === 'Yes' ? 'error' : 'success'" size="small">
+                {{ item.missedPaymentFlag }}
+              </v-chip>
+            </template>
+            <template v-slot:item.noticeToVacateGiven="{ item }">
+              <span class="font-weight-medium">{{ item.noticeToVacateGiven }}</span>
+            </template>
             <!-- Centered Action Buttons -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -171,8 +180,8 @@ import { useAppStore } from '@/stores/app'
 export default {
   name: "FlaggedUnitsPage",
   setup() {
-    const { showErrorDialog } = useCustomDialogs()
-    return { showErrorDialog }
+    const { showConfirmDialog } = useCustomDialogs()
+    return { showConfirmDialog }
   },
   data() {
     return {
@@ -254,8 +263,18 @@ export default {
       this.$router.push(`/edit-flagged-unit-${unit.id}`);
     },
     async deleteUnit(unit) {
-      if (confirm(`Are you sure you want to delete flagged unit ${unit.unitName}?`)) {
-        try {
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete unit?',
+          message: `Are you sure you want to delete ${unit.unitName || 'this unit'}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
           await deleteDoc(doc(db, 'flaggedUnits', unit.id));
           
           // Remove from local array
@@ -268,7 +287,6 @@ export default {
           console.error('Error deleting flagged unit:', error);
           this.showErrorDialog('Failed to delete flagged unit. Please try again.');
         }
-      }
     },
     addFlaggedUnit() {
       this.$router.push('/add-flagged-unit');

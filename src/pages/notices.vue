@@ -127,9 +127,9 @@
             no-data-text="No data available"
           >
             <template v-slot:item.maintenanceRequired="{ item }">
-              <span class="font-weight-medium">
+              <v-chip :color="item.maintenanceRequired === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.maintenanceRequired }}
-              </span>
+              </v-chip>
             </template>
 
             <!-- Centered Action Buttons -->
@@ -177,8 +177,8 @@ import { useAppStore } from '@/stores/app'
 export default {
   name: "NoticePage",
   setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog, showConfirmDialog }
   },
   data() {
     return {
@@ -348,23 +348,29 @@ export default {
     viewProperty(property) { this.$router.push(`/view-notice-${property.id}`); },
     editProperty(property) { this.$router.push(`/edit-notice-${property.id}`); },
     async deleteProperty(property) {
-      if (confirm(`Are you sure you want to delete notice for ${property.unitName}?`)) {
-        try {
-          console.log('Deleting notice:', property.id);
-          await deleteDoc(doc(db, 'notices', property.id));
-          
-          // Remove from local array
-          const index = this.properties.findIndex((p) => p.id === property.id);
-          if (index > -1) {
-            this.properties.splice(index, 1);
-            this.filterProperties();
-          }
-          
-          this.showSuccessDialog(`Notice for ${property.unitName} deleted successfully!`, 'Success!', 'Continue');
-        } catch (error) {
-          console.error('Error deleting notice:', error);
-          this.showErrorDialog(`Failed to delete notice: ${error.message}`, 'Error', 'OK');
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete notice?',
+          message: `Are you sure you want to delete notice for ${property.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        console.log('Deleting notice:', property.id);
+        await deleteDoc(doc(db, 'notices', property.id));
+        const index = this.properties.findIndex((p) => p.id === property.id);
+        if (index > -1) {
+          this.properties.splice(index, 1);
+          this.filterProperties();
         }
+        this.showSuccessDialog(`Notice for ${property.unitName} deleted successfully!`, 'Success!', 'Continue');
+      } catch (error) {
+        console.error('Error deleting notice:', error);
+        this.showErrorDialog(`Failed to delete notice: ${error.message}`, 'Error', 'OK');
       }
     },
     addNotice() { this.$router.push('/add-notice'); },

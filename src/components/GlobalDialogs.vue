@@ -17,6 +17,18 @@
       :button-text="errorDialog.buttonText"
       @close="hideErrorDialog"
     />
+
+    <!-- Confirm Dialog -->
+    <ConfirmDialog
+      :show="confirmDialog.show"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :confirm-text="confirmDialog.confirmText"
+      :cancel-text="confirmDialog.cancelText"
+      :color="confirmDialog.color"
+      @confirm="confirm"
+      @cancel="cancel"
+    />
   </div>
 </template>
 
@@ -24,11 +36,15 @@
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import SuccessDialog from '@/components/SuccessDialog.vue'
 import ErrorDialog from '@/components/ErrorDialog.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const {
   successDialog,
   errorDialog,
+  confirmDialog,
   hideSuccessDialog,
-  hideErrorDialog
+  hideErrorDialog,
+  confirm,
+  cancel
 } = useCustomDialogs()
 </script>

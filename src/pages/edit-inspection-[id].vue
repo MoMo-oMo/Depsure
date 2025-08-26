@@ -5,7 +5,7 @@
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
-          <v-btn @click="$router.go(-1)" class="back-btn">Back</v-btn>
+          <v-btn @click="$router.push('/inspections')" class="back-btn">Back</v-btn>
         </v-col>
       </v-row>
 
@@ -167,7 +167,7 @@
               <!-- Action Buttons -->
               <v-card-actions class="pa-4">
                 <v-spacer />
-                <v-btn color="grey" variant="outlined" @click="$router.go(-1)" class="cancel-btn">
+                <v-btn color="grey" variant="outlined" @click="$router.push('/inspections')" class="cancel-btn">
                   Cancel
                 </v-btn>
                 <v-btn color="black" variant="elevated" @click="saveEntry" :disabled="!valid || saving" :loading="saving" class="save-btn">
@@ -284,7 +284,7 @@ export default {
           await updateDoc(docRef, updateData);
           
           console.log('Inspection entry updated successfully');
-          this.showSuccessDialog("Inspection entry saved successfully!", "Success!", "Continue", "/inspections");
+          this.showSuccessDialog("Inspection entry saved successfully!", "Success!", "Continue", `/view-inspection-${this.entry.id}`);
         } catch (error) {
           console.error('Error updating inspection entry:', error);
           this.showErrorDialog('Failed to save inspection entry. Please try again.', 'Error', 'OK');

@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/active-units')"
             class="back-btn"
           >
             Back
@@ -192,7 +192,7 @@
                 <v-btn
                   color="grey"
                   variant="outlined"
-                  @click="$router.go(-1)"
+                  @click="$router.push('/active-units')"
                   class="cancel-btn"
                 >
                   Cancel

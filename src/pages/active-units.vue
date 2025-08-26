@@ -117,6 +117,7 @@
           </v-card>
         </v-col>
       </v-row>
+      
 
       <!-- Properties Table -->
       <v-row>
@@ -132,6 +133,11 @@
             :loading="propertiesLoading"
             no-data-text="No data available"
           >
+            <template v-slot:item.paidOut="{ item }">
+              <v-chip :color="item.paidOut === 'Yes' ? 'success' : 'error'" size="small">
+                {{ item.paidOut }}
+              </v-chip>
+            </template>
             <template v-slot:item.maintenanceAmount="{ item }">
               <span class="font-weight-medium">
                 R{{ item.maintenanceAmount.toLocaleString() }}
@@ -186,9 +192,14 @@
 import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: "ActiveUnitsPage",
+  setup() {
+    const { showConfirmDialog } = useCustomDialogs()
+    return { showConfirmDialog }
+  },
   data() {
     return {
       searchQuery: "",
@@ -297,14 +308,19 @@ export default {
       console.log("Editing property:", property);
       this.$router.push(`/edit-property-${property.id}`);
     },
-    deleteProperty(property) {
-      if (confirm(`Are you sure you want to delete ${property.tenantRef}?`)) {
-        const index = this.properties.findIndex((p) => p.id === property.id);
-        if (index > -1) {
-          this.properties.splice(index, 1);
-          this.filterProperties();
-        }
+    async deleteProperty(item) {
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete item?',
+          message: `Are you sure you want to delete ${item.propertyName || item.unitName || 'this entry'}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
       }
+      // delete logic here
     },
     async fetchAgencies() {
       this.agenciesLoading = true;

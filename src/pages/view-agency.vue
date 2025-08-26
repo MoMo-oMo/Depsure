@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/agency')"
             class="back-btn"
           >
             Back
@@ -176,9 +176,14 @@
 <script>
 import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: 'ViewAgencyPage',
+  setup() {
+    const { showConfirmDialog } = useCustomDialogs()
+    return { showConfirmDialog }
+  },
   data() {
     return {
       searchQuery: '',
@@ -319,16 +324,23 @@ export default {
       // Navigate to edit property page
       this.$router.push(`/edit-property-${property.id}`);
     },
-    deleteProperty(property) {
+    async deleteProperty(property) {
       console.log('Deleting property:', property);
-      // Show confirmation dialog and delete property
-      if (confirm(`Are you sure you want to delete property ${property.tenantRef}?`)) {
-        // Remove from properties array
-        const index = this.properties.findIndex(p => p.id === property.id);
-        if (index > -1) {
-          this.properties.splice(index, 1);
-          this.filterProperties(); // Refresh filtered list
-        }
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete property?',
+          message: `Are you sure you want to delete property ${property.tenantRef}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      const index = this.properties.findIndex(p => p.id === property.id);
+      if (index > -1) {
+        this.properties.splice(index, 1);
+        this.filterProperties();
       }
     },
     addUnit() {

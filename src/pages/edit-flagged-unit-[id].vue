@@ -5,7 +5,7 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
-            @click="$router.go(-1)"
+            @click="$router.push('/flagged-units')"
             class="back-btn"
           >
             Back
@@ -172,7 +172,7 @@
                 <v-btn
                   color="grey"
                   variant="outlined"
-                  @click="$router.go(-1)"
+                  @click="$router.push('/flagged-units')"
                   class="cancel-btn"
                   :disabled="saving"
                 >

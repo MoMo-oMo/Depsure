@@ -29,27 +29,25 @@
         density="comfortable"
         nav
         color="transparent"
+        active-class="pill-active"
         class="drawer-list"
       >
       <v-list-item
           v-if="canAccessUserManagement"
           prepend-icon="mdi-account-group"
           title="USER MANAGEMENT"
-          :class="{ 'pill-active': selected.includes('user-management') }"
           value="user-management"
           @click="navigateTo('user-management')"
         />
         <v-list-item
           prepend-icon="mdi-domain"
           title="AGENCY"
-          :class="{ 'pill-active': selected.includes('agency') }"
           value="agency"
           @click="navigateTo('agency')"
         />
         <v-list-item
           prepend-icon="mdi-home"
           title="ACTIVE UNITS"
-          :class="{ 'pill-active': selected.includes('active-units') }"
           value="active-units"
           @click="navigateTo('active-units')"
         />
@@ -57,35 +55,30 @@
         <v-list-item
           prepend-icon="mdi-bell"
           title="NOTICES"
-          :class="{ 'pill-active': selected.includes('notices') }"
           value="notices"
           @click="navigateTo('notices')"
         />
         <v-list-item
           prepend-icon="mdi-flag"
           title="FLAGGED UNITS"
-          :class="{ 'pill-active': selected.includes('flagged-units') }"
           value="flagged-units"
           @click="navigateTo('flagged-units')"
         />
         <v-list-item
           prepend-icon="mdi-wrench"
           title="MAINTENANCE"
-          :class="{ 'pill-active': selected.includes('maintenance') }"
           value="maintenance"
           @click="navigateTo('maintenance')"
         />
         <v-list-item
           prepend-icon="mdi-clipboard-check"
           title="INSPECTIONS"
-          :class="{ 'pill-active': selected.includes('inspections') }"
           value="inspections"
           @click="navigateTo('inspections')"
         />
         <v-list-item
           prepend-icon="mdi-home-outline"
           title="VACANCIES"
-          :class="{ 'pill-active': selected.includes('vacancies') }"
           value="vacancies"
           @click="navigateTo('vacancies')"
         />
@@ -293,13 +286,13 @@ export default {
 }
 
 /* Active state */
-.pill-active {
+.drawer-list :deep(.v-list-item--active) {
   background-color: #ffffff !important;
 }
 
-.pill-active :deep(.v-list-item-title),
-.pill-active :deep(.v-list-item-subtitle),
-.pill-active :deep(.v-icon) {
+.drawer-list :deep(.v-list-item--active .v-list-item-title),
+.drawer-list :deep(.v-list-item--active .v-list-item-subtitle),
+.drawer-list :deep(.v-list-item--active .v-icon) {
   color: #000000 !important;
 }
 </style>

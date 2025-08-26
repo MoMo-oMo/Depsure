@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/vacancies')"
             class="back-btn"
           >
             Back
@@ -147,7 +147,7 @@
                 <v-btn
                   color="grey"
                   variant="outlined"
-                  @click="$router.go(-1)"
+                  @click="$router.push('/vacancies')"
                   class="cancel-btn"
                 >
                   Cancel
@@ -214,7 +214,7 @@ export default {
       ],
       contactNumberRules: [
         v => !!v || 'Contact Number is required',
-        v => /^[\+]?[1-9][\d]{0,15}$/.test(v) || 'Please enter a valid phone number'
+        v => /^\d{7,15}$/.test(v) || 'Please enter a valid phone number'
       ]
     }
   },
@@ -327,7 +327,7 @@ export default {
           await updateDoc(docRef, updateData);
           
           console.log('Vacancy updated successfully');
-          this.showSuccessDialog('Vacancy updated successfully!', 'Success!', 'Continue', '/vacancies');
+          this.showSuccessDialog('Vacancy updated successfully!', 'Success!', 'Continue', `/view-vacancy-${this.vacancy.id}`);
         } catch (err) {
           console.error('Error updating vacancy:', err);
           this.showErrorDialog('Failed to update vacancy. Please try again.', 'Error', 'OK');

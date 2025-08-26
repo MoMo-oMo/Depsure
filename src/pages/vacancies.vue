@@ -127,7 +127,7 @@
             <!-- New Tenant Found -->
             <template v-slot:item.newTenantFound="{ item }">
               <v-chip 
-                :color="item.newTenantFound === 'Yes' ? 'success' : 'warning'"
+                :color="item.newTenantFound === 'Yes' ? 'success' : 'error'"
                 size="small"
               >
                 {{ item.newTenantFound }}
@@ -189,8 +189,8 @@ import { useAppStore } from '@/stores/app'
 export default {
   name: "ViewVacancies",
   setup() {
-    const { showErrorDialog } = useCustomDialogs()
-    return { showErrorDialog }
+    const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
+    return { showErrorDialog, showConfirmDialog }
   },
   data() {
     return {
@@ -297,16 +297,25 @@ export default {
     },
     
     async deleteVacancy(vacancy) {
-      if (confirm(`Delete vacancy entry for ${vacancy.unitName}?`)) {
-        try {
-          await deleteDoc(doc(db, 'vacancies', vacancy.id));
-          const index = this.vacancies.findIndex(v => v.id === vacancy.id);
-          if (index > -1) this.vacancies.splice(index, 1);
-          this.filterVacancies();
-        } catch (error) {
-          console.error('Error deleting vacancy:', error);
-          this.showErrorDialog('Failed to delete vacancy. Please try again.', 'Error', 'OK');
-        }
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete vacancy?',
+          message: `Are you sure you want to delete ${vacancy.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        await deleteDoc(doc(db, 'vacancies', vacancy.id));
+        const index = this.vacancies.findIndex(v => v.id === vacancy.id);
+        if (index > -1) this.vacancies.splice(index, 1);
+        this.filterVacancies();
+      } catch (error) {
+        console.error('Error deleting vacancy:', error);
+        this.showErrorDialog('Failed to delete vacancy. Please try again.', 'Error', 'OK');
       }
     },
     

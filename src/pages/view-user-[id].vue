@@ -1,6 +1,7 @@
 <template>
-  <div class="view-notice-page">
+  <div class="view-user-page">
     <v-container fluid>
+
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
@@ -8,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/notices')"
+            @click="$router.push('/user-management')"
             class="back-btn"
           >
             Back
@@ -20,14 +21,14 @@
       <v-row justify="center">
         <v-col cols="12" lg="10" xl="8">
           <div class="title-section">
-            <h1 class="page-title">Notice Details</h1>
+            <h1 class="page-title">User Details</h1>
           </div>
 
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
               <v-progress-circular indeterminate color="primary" />
-              <p class="mt-4">Loading notice details...</p>
+              <p class="mt-4">Loading user details...</p>
             </v-card-text>
           </v-card>
 
@@ -39,59 +40,70 @@
             </v-card-text>
           </v-card>
 
-          <!-- Notice Info -->
+          <!-- User Info -->
           <div v-else class="form-card" elevation="0">
             <v-card-text>
               <v-row>
-                <!-- Unit Name -->
+                <!-- First Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.unitName"
-                    label="Unit Name"
+                    :model-value="user.firstName"
+                    label="First Name"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
                 </v-col>
 
-                <!-- Lease Start Date -->
+                <!-- Last Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.leaseStartDate"
-                    label="Lease Start Date"
+                    :model-value="user.lastName"
+                    label="Last Name"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
                 </v-col>
 
-                <!-- Notice Given Date -->
+                <!-- Email -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.noticeGivenDate"
-                    label="Notice Given Date"
+                    :model-value="user.email"
+                    label="Email"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
                 </v-col>
 
-                <!-- Vacate Date -->
+                <!-- User Type -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.vacateDate"
-                    label="Vacate Date"
+                    :model-value="user.userType"
+                    label="User Type"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
                 </v-col>
 
-                <!-- Maintenance Required -->
+                <!-- Agency Name (if Agency type) -->
+                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                  <v-text-field
+                    :model-value="user.agencyName"
+                    label="Agency Name"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Status -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.maintenanceRequired"
-                    label="Maintenance Required After Inspection"
+                    :model-value="user.status"
+                    label="Status"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -111,71 +123,62 @@ import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
 
 export default {
-  name: "ViewNoticePage",
+  name: "ViewUserPage",
   data() {
     return {
-      notice: {
-        id: '',
-        unitName: '',
-        leaseStartDate: '',
-        noticeGivenDate: '',
-        vacateDate: '',
-        maintenanceRequired: ''
+      user: {
+        id: null,
+        firstName: "",
+        lastName: "",
+        email: "",
+        userType: "",
+        agencyName: "",
+        status: ""
       },
       loading: true,
-      error: null,
-    };
+      error: null
+    }
   },
   async mounted() {
-    document.title = "Notice Details - Depsure";
-    const noticeId = this.$route.params.id;
-    if (noticeId) {
-      await this.loadNotice(noticeId);
+    document.title = "User Details - Depsure"
+    const userId = this.$route.params.id
+    if (userId) {
+      await this.loadUser(userId)
     } else {
-      this.error = 'No notice ID provided';
-      this.loading = false;
+      this.error = "No user ID provided"
+      this.loading = false
     }
   },
   methods: {
-    async loadNotice(noticeId) {
-      this.loading = true;
-      this.error = null;
-      
+    async loadUser(userId) {
       try {
-        console.log('Loading notice data for ID:', noticeId);
-        
-        // Fetch notice from Firestore
-        const noticeDoc = await getDoc(doc(db, 'notices', noticeId));
-        
-        if (noticeDoc.exists()) {
-          const noticeData = noticeDoc.data();
-          this.notice = {
-            id: noticeDoc.id,
-            ...noticeData
-          };
-          console.log('Notice loaded successfully:', this.notice);
+        const docRef = doc(db, 'users', userId)
+        const docSnap = await getDoc(docRef)
+        if (docSnap.exists()) {
+          this.user = {
+            id: docSnap.id,
+            ...docSnap.data()
+          }
         } else {
-          this.error = 'Notice not found';
-          console.log('Notice not found in Firestore');
+          this.error = "User not found"
         }
       } catch (error) {
-        console.error('Error loading notice:', error);
-        this.error = `Failed to load notice details: ${error.message}`;
+        console.error('Error loading user:', error)
+        this.error = "Failed to load user details"
       } finally {
-        this.loading = false;
+        this.loading = false
       }
-    },
-  },
-};
+    }
+  }
+}
 </script>
 
 <style scoped>
-.view-notice-page {
+.view-user-page {
   padding: 20px;
   min-height: 100vh;
 }
 
-/* Back button styling */
 .back-btn {
   font-weight: 500;
   text-transform: none;
@@ -187,7 +190,6 @@ export default {
   width: 160px;
   height: 44px;
 }
-
 .back-btn:hover {
   background-color: #333 !important;
   border-color: #333 !important;
@@ -195,7 +197,6 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-/* Title section */
 .title-section {
   background: black;
   color: white;
@@ -212,7 +213,6 @@ export default {
   text-align: left;
 }
 
-/* Form card */
 .form-card {
   background: white;
   border-radius: 0 0 12px 12px;
@@ -221,33 +221,14 @@ export default {
   overflow: hidden;
 }
 
-/* Input styling */
 .custom-input .v-field {
   border-radius: 8px;
 }
-
 .custom-input :deep(.v-field__input) {
   background-color: #f8f9fa !important;
   color: #000000 !important;
 }
-
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .view-notice-page {
-    padding: 10px;
-  }
-
-  .page-title {
-    font-size: 1.1rem;
-  }
-
-  .back-btn {
-    width: 140px;
-    height: 40px;
-  }
 }
 </style>

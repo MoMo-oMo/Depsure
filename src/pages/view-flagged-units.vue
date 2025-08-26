@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/flagged-units')"
             class="back-btn"
           >
             Back

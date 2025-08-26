@@ -8,7 +8,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/inspections')"
             class="back-btn"
           >
             Back
@@ -56,13 +56,12 @@
 
                 <!-- Inspection Required -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.inspectionRequired"
-                    label="Inspection Required"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <label class="mb-1 font-weight-bold">Inspection Required</label>
+                  <div>
+                    <v-chip :color="entry.inspectionRequired === 'Yes' ? 'success' : 'error'" size="small">
+                      {{ entry.inspectionRequired }}
+                    </v-chip>
+                  </div>
                 </v-col>
 
                 <!-- Contact Person -->
@@ -89,13 +88,12 @@
 
                 <!-- Appointment Made -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.appointmentMade"
-                    label="Appointment Made"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <label class="mb-1 font-weight-bold">Appointment Made</label>
+                  <div>
+                    <v-chip :color="entry.appointmentMade === 'Yes' ? 'success' : 'error'" size="small">
+                      {{ entry.appointmentMade }}
+                    </v-chip>
+                  </div>
                 </v-col>
 
                 <!-- Inspection Date -->
@@ -111,13 +109,12 @@
 
                 <!-- Quotes Needed -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.quotesNeeded"
-                    label="Quotes Needed"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <label class="mb-1 font-weight-bold">Quotes Needed</label>
+                  <div>
+                    <v-chip :color="entry.quotesNeeded === 'Yes' ? 'success' : 'error'" size="small">
+                      {{ entry.quotesNeeded }}
+                    </v-chip>
+                  </div>
                 </v-col>
 
                 <!-- Status -->
@@ -191,7 +188,7 @@
               <!-- Action Buttons -->
               <v-card-actions class="pa-4">
                 <v-spacer />
-                <v-btn color="grey" variant="outlined" @click="$router.go(-1)" class="cancel-btn">
+                <v-btn color="grey" variant="outlined" @click="$router.push('/inspections')" class="cancel-btn">
                   Back
                 </v-btn>
                 <v-btn color="black" variant="elevated" @click="editEntry" class="edit-btn">
@@ -212,9 +209,14 @@
 <script>
 import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: "ViewInspectionPage",
+  setup() {
+    const { showConfirmDialog } = useCustomDialogs()
+    return { showConfirmDialog }
+  },
   data() {
     return {
       entry: {},
@@ -259,16 +261,25 @@ export default {
     },
     
     async deleteEntry() {
-      if (confirm(`Are you sure you want to delete inspection entry for ${this.entry.unitName}?`)) {
-        try {
-          const { deleteDoc } = await import('firebase/firestore');
-          await deleteDoc(doc(db, 'inspections', this.entry.id));
-          console.log('Inspection entry deleted successfully');
-          this.$router.push('/inspections');
-        } catch (error) {
-          console.error('Error deleting inspection entry:', error);
-          alert('Failed to delete inspection entry');
-        }
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete inspection entry?',
+          message: `Are you sure you want to delete inspection entry for ${this.entry.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        const { deleteDoc } = await import('firebase/firestore');
+        await deleteDoc(doc(db, 'inspections', this.entry.id));
+        console.log('Inspection entry deleted successfully');
+        this.$router.push('/inspections');
+      } catch (error) {
+        console.error('Error deleting inspection entry:', error);
+        alert('Failed to delete inspection entry');
       }
     }
   }

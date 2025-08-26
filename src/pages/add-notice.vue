@@ -9,7 +9,7 @@
             icon
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/notices')"
             class="back-btn"
           >
             Back
@@ -121,7 +121,7 @@
                 <v-btn
                   color="grey"
                   variant="outlined"
-                  @click="$router.go(-1)"
+                  @click="$router.push('/notices')"
                   class="cancel-btn"
                 >
                   Cancel

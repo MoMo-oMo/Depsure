@@ -120,6 +120,11 @@
             :loading="loading"
             loading-text="Loading maintenance entries..."
           >
+            <template v-slot:item.noticeGiven="{ item }">
+              <v-chip :color="item.noticeGiven === 'Yes' ? 'success' : 'error'" size="small">
+                {{ item.noticeGiven }}
+              </v-chip>
+            </template>
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
                 <v-btn
@@ -166,8 +171,8 @@ import { useAppStore } from '@/stores/app'
 export default {
   name: "MaintenancePage",
   setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog, showConfirmDialog }
   },
   data() {
     return {
@@ -228,19 +233,28 @@ export default {
     viewEntry(entry) { this.$router.push(`/view-maintenance-${entry.id}`); },
     editEntry(entry) { this.$router.push(`/edit-maintenance-${entry.id}`); },
     async deleteEntry(entry) {
-      if(confirm(`Delete maintenance entry for ${entry.unitName}?`)) {
-        try {
-          await deleteDoc(doc(db, 'maintenance', entry.id))
-          const index = this.entries.findIndex(e => e.id === entry.id);
-          if(index > -1) {
-            this.entries.splice(index, 1);
-            this.filterEntries();
-            this.showSuccessDialog(`Maintenance entry for ${entry.unitName} deleted successfully!`, 'Success!', 'Continue');
-          }
-        } catch (error) {
-          console.error('Error deleting maintenance entry:', error)
-          this.showErrorDialog('Failed to delete maintenance entry. Please try again.', 'Error', 'OK')
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete maintenance entry?',
+          message: `Are you sure you want to delete entry for ${entry.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        await deleteDoc(doc(db, 'maintenance', entry.id))
+        const index = this.entries.findIndex(e => e.id === entry.id);
+        if(index > -1) {
+          this.entries.splice(index, 1);
+          this.filterEntries();
+          this.showSuccessDialog(`Maintenance entry for ${entry.unitName} deleted successfully!`, 'Success!', 'Continue');
         }
+      } catch (error) {
+        console.error('Error deleting maintenance entry:', error)
+        this.showErrorDialog('Failed to delete maintenance entry. Please try again.', 'Error', 'OK')
       }
     },
     addMaintenance() { 

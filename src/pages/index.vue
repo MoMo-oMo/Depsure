@@ -36,6 +36,14 @@
               :rules="passwordRules"
               dense
             />
+          <NotificationDialog
+            :show="!!loginError"
+            title="Error!"
+            :message="loginError"
+            buttonText="Try Again"
+            @close="loginError = ''"
+            />
+
           </v-form>
 
           <!-- Forgot Password (Left-aligned) -->
@@ -51,11 +59,6 @@
           >
             {{ loading ? 'Logging in...' : 'Login' }}
           </button>
-
-
-
-
-
         </div>
       </div>
 
@@ -75,13 +78,17 @@ import { auth, db } from '@/firebaseConfig'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import NotificationDialog from '@/components/NotificationDialog.vue'
+
 
 export default {
+  components: { NotificationDialog },
   setup() {
     const { showSuccess, showError, showWarning, showInfo } = useNotification()
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const appStore = useAppStore()
     return { showSuccess, showError, showWarning, showInfo, showSuccessDialog, showErrorDialog, appStore }
+    
   },
   data() {
     return {
@@ -90,6 +97,7 @@ export default {
       valid: false,
       showPassword: false,
       loading: false,
+      loginError: '',
       emailRules: [
         v => !!v || 'Email is required',
         v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
@@ -140,20 +148,21 @@ export default {
         } catch (error) {
           console.error('Login error:', error);
           let errorMessage = 'Login failed. Please check your credentials.';
-          
+
           if (error.code === 'auth/user-not-found') {
-            errorMessage = 'No account found with this email address.';
-          } else if (error.code === 'auth/wrong-password') {
-            errorMessage = 'Incorrect password. Please try again.';
-          } else if (error.code === 'auth/invalid-email') {
-            errorMessage = 'Please enter a valid email address.';
-          } else if (error.code === 'auth/too-many-requests') {
-            errorMessage = 'Too many failed attempts. Please try again later.';
-          } else if (error.code === 'auth/user-disabled') {
-            errorMessage = 'This account has been disabled. Please contact administrator.';
-          }
-          
-          this.showError(errorMessage);
+          errorMessage = 'No account found with this email address.';
+        } else if (error.code === 'auth/invalid-credential' || 
+                   error.code === 'auth/wrong-password') {
+          errorMessage = 'Email or password is incorrect';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (error.code === 'auth/too-many-requests') {
+          errorMessage = 'Too many failed attempts. Please try again later.';
+        } else if (error.code === 'auth/user-disabled') {
+          errorMessage = 'This account has been disabled. Please contact administrator.';
+        }
+
+        this.loginError = errorMessage;
         } finally {
           this.loading = false;
         }

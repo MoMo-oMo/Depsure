@@ -36,6 +36,7 @@ declare module 'vue-router/auto-routes' {
     '/edit-maintenance-[id]': RouteRecordInfo<'/edit-maintenance-[id]', '/edit-maintenance-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/edit-notice-[id]': RouteRecordInfo<'/edit-notice-[id]', '/edit-notice-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/edit-property-[id]': RouteRecordInfo<'/edit-property-[id]', '/edit-property-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    '/edit-user-[id]': RouteRecordInfo<'/edit-user-[id]', '/edit-user-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/edit-vacancy-[id]': RouteRecordInfo<'/edit-vacancy-[id]', '/edit-vacancy-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/flagged-units': RouteRecordInfo<'/flagged-units', '/flagged-units', Record<never, never>, Record<never, never>>,
     '/inspections': RouteRecordInfo<'/inspections', '/inspections', Record<never, never>, Record<never, never>>,
@@ -54,6 +55,8 @@ declare module 'vue-router/auto-routes' {
     '/view-notice-[id]': RouteRecordInfo<'/view-notice-[id]', '/view-notice-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/view-property': RouteRecordInfo<'/view-property', '/view-property', Record<never, never>, Record<never, never>>,
     '/view-property-[id]': RouteRecordInfo<'/view-property-[id]', '/view-property-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    '/view-user': RouteRecordInfo<'/view-user', '/view-user', Record<never, never>, Record<never, never>>,
+    '/view-user-[id]': RouteRecordInfo<'/view-user-[id]', '/view-user-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/view-vacancy-[id]': RouteRecordInfo<'/view-vacancy-[id]', '/view-vacancy-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
   }
 }

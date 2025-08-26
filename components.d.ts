@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppBar: typeof import('./src/components/AppBar.vue')['default']
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
+    ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     ErrorDialog: typeof import('./src/components/ErrorDialog.vue')['default']
     GlobalDialogs: typeof import('./src/components/GlobalDialogs.vue')['default']
     GlobalNotification: typeof import('./src/components/GlobalNotification.vue')['default']

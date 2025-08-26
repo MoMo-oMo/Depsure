@@ -34,13 +34,12 @@
       <v-row>
         <v-col cols="12">
           <!-- Loading state -->
-          <div v-if="loading" class="text-center pa-8">
-            <v-progress-circular
-              indeterminate
-              color="primary"
-              size="64"
-            ></v-progress-circular>
-            <p class="mt-4">Loading agencies...</p>
+          <div v-if="loading" class="pa-4">
+            <v-row>
+              <v-col cols="12" sm="6" md="4" lg="3" v-for="n in 8" :key="n">
+                <v-skeleton-loader type="image, article" />
+              </v-col>
+            </v-row>
           </div>
           
           <!-- No agencies found -->

@@ -1,14 +1,10 @@
 <template>
-  <div class="edit-notice-page">
+  <div class="edit-user-page">
     <v-container fluid>
-
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
-          <v-btn
-            @click="$router.push('/notices')"
-            class="back-btn"
-          >
+          <v-btn @click="$router.push('/user-management')" class="back-btn">
             Back
           </v-btn>
         </v-col>
@@ -18,14 +14,14 @@
       <v-row justify="center">
         <v-col cols="12" lg="10" xl="8">
           <div class="title-section">
-            <h1 class="page-title">Edit Notice</h1>
+            <h1 class="page-title">Edit User Information</h1>
           </div>
 
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
               <v-progress-circular indeterminate color="primary" />
-              <p class="mt-4">Loading notice details...</p>
+              <p class="mt-4">Loading User Information Details...</p>
             </v-card-text>
           </v-card>
 
@@ -38,70 +34,81 @@
           </v-card>
 
           <!-- Form -->
-          <div v-else class="form-card" elevation="0">
+          <v-card v-else class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
-                  <!-- Unit Name -->
+                  <!-- First Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.unitName"
-                      label="Unit Name"
+                      v-model="entry.firstName"
+                      label="First Name"
                       variant="outlined"
                       class="custom-input"
-                      :rules="unitNameRules"
+                      :rules="[v => !!v || 'First name is required']"
                       required
                     />
                   </v-col>
 
-                  <!-- Lease Start Date -->
+                  <!-- Last Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.leaseStartDate"
-                      label="Lease Start Date"
-                      type="date"
+                      v-model="entry.lastName"
+                      label="Last Name"
                       variant="outlined"
                       class="custom-input"
-                      :rules="leaseStartDateRules"
+                      :rules="[v => !!v || 'Last name is required']"
                       required
                     />
                   </v-col>
 
-                  <!-- Notice Given Date -->
+                  <!-- Email -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.noticeGivenDate"
-                      label="Notice Given Date"
-                      type="date"
+                      v-model="entry.email"
+                      label="Email"
                       variant="outlined"
                       class="custom-input"
-                      :rules="noticeGivenDateRules"
+                      :rules="emailRules"
                       required
+                      readonly
                     />
                   </v-col>
 
-                  <!-- Vacate Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.vacateDate"
-                      label="Vacate Date"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="vacateDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Maintenance Required -->
+                  <!-- User Type -->
                   <v-col cols="12" md="6">
                     <v-select
-                      v-model="notice.maintenanceRequired"
-                      label="Maintenance Required (Yes/No)"
+                      v-model="entry.userType"
+                      label="User Type"
                       variant="outlined"
                       class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="maintenanceRequiredRules"
+                      :items="['Agency', 'Admin', 'Super Admin']"
+                      :rules="[v => !!v || 'User type is required']"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Agency Name -->
+                  <v-col cols="12" md="6" v-if="entry.userType === 'Agency'">
+                    <v-text-field
+                      v-model="entry.agencyName"
+                      label="Agency Name"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="[v => !!v || 'Agency name is required']"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Status -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.status"
+                      label="Status"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Active', 'Inactive']"
+                      :rules="[v => !!v || 'Status is required']"
                       required
                     />
                   </v-col>
@@ -114,24 +121,25 @@
                 <v-btn
                   color="grey"
                   variant="outlined"
-                  @click="$router.push('/notices')"
                   class="cancel-btn"
+                  @click="$router.push('/user-management')"
+                  :disabled="saving"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
                   color="black"
                   variant="elevated"
-                  @click="saveNotice"
-                  :disabled="!valid || loading"
-                  :loading="loading"
-                  class="save-btn"
+                  class="submit-btn"
+                  :disabled="!valid || saving"
+                  :loading="saving"
+                  @click="saveEntry"
                 >
-                  {{ loading ? 'Saving...' : 'Save Changes' }}
+                  {{ saving ? 'Saving...' : 'Save Changes' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
-          </div>
+          </v-card>
         </v-col>
       </v-row>
     </v-container>
@@ -144,125 +152,108 @@ import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 
 export default {
-  name: "EditNoticePage",
+  name: "EditUserPage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
-      notice: {
-        id: '',
-        unitName: '',
-        leaseStartDate: '',
-        noticeGivenDate: '',
-        vacateDate: '',
-        maintenanceRequired: ''
+      entry: {
+        id: null,
+        firstName: "",
+        lastName: "",
+        email: "",
+        userType: "",
+        agencyName: "",
+        status: "Active"
       },
       loading: true,
+      saving: false,
       error: null,
       valid: true,
-      // Validation rules
-      unitNameRules: [
-        v => !!v || "Unit Name is required",
-        v => v.length >= 5 || "Unit Name must be at least 5 characters"
-      ],
-      leaseStartDateRules: [
-        v => !!v || "Lease Start Date is required"
-      ],
-      noticeGivenDateRules: [
-        v => !!v || "Notice Given Date is required"
-      ],
-      vacateDateRules: [
-        v => !!v || "Vacate Date is required"
-      ],
-      maintenanceRequiredRules: [
-        v => !!v || "Maintenance Required is required"
+      emailRules: [
+        v => !!v || "Email is required",
+        v => /.+@.+\..+/.test(v) || "Enter a valid email"
       ]
     };
   },
   async mounted() {
-    document.title = "Edit Notice - Depsure";
-    const noticeId = this.$route.params.id;
-    if (noticeId) {
-      await this.loadNoticeData(noticeId);
+    document.title = "Edit User Information - Depsure"
+    const entryId = this.$route.params.id
+    if (entryId) {
+      await this.loadEntryData(entryId)
     } else {
-      this.error = "Notice ID not found";
-      this.loading = false;
+      this.error = "User ID not found"
+      this.loading = false
     }
   },
   methods: {
-    async loadNoticeData(noticeId) {
-      this.loading = true;
-      this.error = null;
-      
+    async loadEntryData(id) {
       try {
-        console.log('Loading notice data for ID:', noticeId);
-        
-        // Fetch notice from Firestore
-        const noticeDoc = await getDoc(doc(db, 'notices', noticeId));
-        
-        if (noticeDoc.exists()) {
-          const noticeData = noticeDoc.data();
-          this.notice = {
-            id: noticeDoc.id,
-            ...noticeData
-          };
-          console.log('Notice loaded successfully:', this.notice);
+        const docRef = doc(db, 'users', id)
+        const docSnap = await getDoc(docRef)
+
+        if (docSnap.exists()) {
+          this.entry = {
+            id: docSnap.id,
+            ...docSnap.data()
+          }
         } else {
-          this.error = 'Notice not found';
-          console.log('Notice not found in Firestore');
+          this.error = "User not found"
         }
       } catch (error) {
-        console.error('Error loading notice:', error);
-        this.error = `Failed to load notice details: ${error.message}`;
+        console.error('Error loading user:', error)
+        this.error = "Failed to load user"
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
-    
-    async saveNotice() {
+
+    async saveEntry() {
       if (this.$refs.form.validate()) {
-        this.loading = true;
+        this.saving = true
         try {
-          console.log('Saving notice:', this.notice);
-          
-          // Validate that we have an ID
-          if (!this.notice.id) {
-            throw new Error('Notice ID is missing');
+          console.log("Saving user information:", this.entry)
+
+          const userData = {
+            firstName: this.entry.firstName,
+            lastName: this.entry.lastName,
+            email: this.entry.email,
+            userType: this.entry.userType,
+            agencyName: this.entry.userType === 'Agency' ? this.entry.agencyName : '',
+            status: this.entry.status,
+            updatedAt: new Date()
           }
-          
-          // Prepare notice data for Firestore (remove id field)
-          const { id, ...noticeData } = this.notice;
-          
-          // Add updated timestamp
-          noticeData.updatedAt = new Date();
-          
-          console.log('Notice data to save:', noticeData);
-          
-          // Update notice in Firestore
-          await updateDoc(doc(db, 'notices', id), noticeData);
-          
-          console.log('Notice updated successfully');
-          this.showSuccessDialog('Notice saved successfully!', 'Success!', 'Continue', `/view-notice-${id}`);
-          
+
+          const docRef = doc(db, 'users', this.entry.id)
+          await updateDoc(docRef, userData)
+
+          console.log('User data updated in Firestore')
+          this.showSuccessDialog(
+            'User information updated successfully!',
+            'Success!',
+            'Continue',
+            `/view-user-${this.entry.id}`
+          )
         } catch (error) {
-          console.error('Error saving notice:', error);
-          this.showErrorDialog(`Failed to save notice: ${error.message}`, 'Error', 'OK');
+          console.error('Error updating user:', error)
+          this.showErrorDialog(
+            'Failed to update user information. Please try again.',
+            'Error',
+            'OK'
+          )
         } finally {
-          this.loading = false;
+          this.saving = false
         }
-      } else {
-        console.log('Form validation failed');
-        this.showErrorDialog('Please fix the form errors before saving.', 'Validation Error', 'OK');
       }
     }
   }
-};
+}
 </script>
 
 <style scoped>
-.edit-notice-page {
+.edit-user-page {
   padding: 20px;
   min-height: 100vh;
 }
@@ -292,12 +283,10 @@ export default {
   color: white;
   padding: 0.75rem;
   border-radius: 12px 12px 0 0;
-  margin-bottom: 0;
 }
 .page-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: white;
   margin: 0;
   text-align: left;
 }
@@ -307,7 +296,7 @@ export default {
   background: white;
   border-radius: 12px;
   padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
@@ -315,12 +304,10 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
 .custom-input :deep(.v-field__input) {
   background-color: white !important;
   color: #000000 !important;
 }
-
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
@@ -333,8 +320,7 @@ export default {
   width: 120px;
   height: 44px;
 }
-
-.save-btn {
+.submit-btn {
   font-weight: 500;
   text-transform: none;
   border-radius: 8px;
@@ -343,14 +329,13 @@ export default {
   background-color: black !important;
   color: white !important;
 }
-
-.save-btn:hover:not(:disabled) {
+.submit-btn:hover:not(:disabled) {
   background-color: #333 !important;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .edit-notice-page {
+  .edit-user-page {
     padding: 10px;
   }
   .page-title {

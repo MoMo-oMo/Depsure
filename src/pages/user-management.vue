@@ -144,8 +144,8 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 export default {
   name: "UserManagement",
   setup() {
-    const { showErrorDialog } = useCustomDialogs()
-    return { showErrorDialog }
+    const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
+    return { showErrorDialog, showConfirmDialog }
   },
   data() {
     return {
@@ -214,19 +214,28 @@ export default {
       this.$router.push(`/edit-user-${user.id}`); 
     },
     
-         async deleteUser(user) {
-       if (confirm(`Delete user ${user.email}?`)) {
-         try {
-           await deleteDoc(doc(db, 'users', user.id));
-           const index = this.users.findIndex(u => u.id === user.id);
-           if (index > -1) this.users.splice(index, 1);
-           this.filterUsers();
-         } catch (error) {
-           console.error('Error deleting user:', error);
-           this.showErrorDialog('Failed to delete user. Please try again.', 'Error', 'OK');
-         }
-       }
-     },
+    async deleteUser(user) {
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete user?',
+          message: `Are you sure you want to delete ${user.email}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        await deleteDoc(doc(db, 'users', user.id));
+        const index = this.users.findIndex(u => u.id === user.id);
+        if (index > -1) this.users.splice(index, 1);
+        this.filterUsers();
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        this.showErrorDialog('Failed to delete user. Please try again.', 'Error', 'OK');
+      }
+    },
     
     addUser() { 
       this.$router.push('/add-user'); 

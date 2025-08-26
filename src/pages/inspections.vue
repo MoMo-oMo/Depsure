@@ -119,6 +119,21 @@
             hover
             :loading="entriesLoading"
           >
+            <template v-slot:item.inspectionRequired="{ item }">
+              <v-chip :color="item.inspectionRequired === 'Yes' ? 'success' : 'error'" size="small">
+                {{ item.inspectionRequired }}
+              </v-chip>
+            </template>
+            <template v-slot:item.appointmentMade="{ item }">
+              <v-chip :color="item.appointmentMade === 'Yes' ? 'success' : 'error'" size="small">
+                {{ item.appointmentMade }}
+              </v-chip>
+            </template>
+            <template v-slot:item.quotesNeeded="{ item }">
+              <v-chip :color="item.quotesNeeded === 'Yes' ? 'success' : 'error'" size="small">
+                {{ item.quotesNeeded }}
+              </v-chip>
+            </template>
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
                 <v-btn
@@ -165,9 +180,14 @@
 import { db } from '@/firebaseConfig'
 import { collection, getDocs, deleteDoc, doc, query, where, addDoc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: "InspectionPage",
+  setup() {
+    const { showConfirmDialog } = useCustomDialogs()
+    return { showConfirmDialog }
+  },
   data() {
     return {
       searchQuery: "",
@@ -480,21 +500,30 @@ export default {
     },
     
     async deleteEntry(entry) {
-      if(confirm(`Delete inspection entry for ${entry.unitName}?`)) {
-        try {
-          await deleteDoc(doc(db, 'inspections', entry.id))
-          const index = this.entries.findIndex(e => e.id === entry.id);
-          if(index > -1) {
-            this.entries.splice(index, 1);
-            this.filterEntries();
-            this.snackbarMessage = `Deleted inspection entry for ${entry.unitName}`;
-            this.snackbar = true;
-          }
-        } catch (error) {
-          console.error('Error deleting inspection:', error)
-          this.snackbarMessage = 'Failed to delete inspection entry'
-          this.snackbar = true
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete inspection entry?',
+          message: `Are you sure you want to delete inspection entry for ${entry.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        await deleteDoc(doc(db, 'inspections', entry.id))
+        const index = this.entries.findIndex(e => e.id === entry.id);
+        if(index > -1) {
+          this.entries.splice(index, 1);
+          this.filterEntries();
+          this.snackbarMessage = `Deleted inspection entry for ${entry.unitName}`;
+          this.snackbar = true;
         }
+      } catch (error) {
+        console.error('Error deleting inspection:', error)
+        this.snackbarMessage = 'Failed to delete inspection entry'
+        this.snackbar = true
       }
     },
     

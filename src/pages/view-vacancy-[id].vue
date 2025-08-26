@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.go(-1)"
+            @click="$router.push('/vacancies')"
             class="back-btn"
           >
             Back
@@ -67,7 +67,7 @@
                       <label class="detail-label">New Tenant Found</label>
                       <div class="detail-value">
                         <v-chip 
-                          :color="vacancy.newTenantFound === 'Yes' ? 'success' : 'warning'"
+                          :color="vacancy.newTenantFound === 'Yes' ? 'success' : 'error'"
                           size="small"
                         >
                           {{ vacancy.newTenantFound }}
@@ -181,8 +181,8 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 export default {
   name: 'ViewVacancyPage',
   setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog, showConfirmDialog }
   },
   data() {
     return {
@@ -258,16 +258,25 @@ export default {
     },
     
     async deleteVacancy() {
-      if (confirm(`Are you sure you want to delete the vacancy for ${this.vacancy.unitName}?`)) {
-        try {
-          console.log('Deleting vacancy:', this.vacancy.id);
-          await deleteDoc(doc(db, 'vacancies', this.vacancy.id));
-          console.log('Vacancy deleted successfully');
-          this.showSuccessDialog('Vacancy deleted successfully!', 'Success!', 'Continue', '/vacancies');
-        } catch (error) {
-          console.error('Error deleting vacancy:', error);
-          this.showErrorDialog('Failed to delete vacancy. Please try again.', 'Error', 'OK');
-        }
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete vacancy?',
+          message: `Are you sure you want to delete the vacancy for ${this.vacancy.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        console.log('Deleting vacancy:', this.vacancy.id);
+        await deleteDoc(doc(db, 'vacancies', this.vacancy.id));
+        console.log('Vacancy deleted successfully');
+        this.showSuccessDialog('Vacancy deleted successfully!', 'Success!', 'Continue', '/vacancies');
+      } catch (error) {
+        console.error('Error deleting vacancy:', error);
+        this.showErrorDialog('Failed to delete vacancy. Please try again.', 'Error', 'OK');
       }
     }
   }

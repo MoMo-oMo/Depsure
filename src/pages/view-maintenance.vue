@@ -5,7 +5,7 @@
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
-          <v-btn icon="mdi-arrow-left" variant="outlined" color="primary" @click="$router.back()" class="back-btn">
+          <v-btn icon="mdi-arrow-left" variant="outlined" color="primary" @click="$router.push('/maintenance')" class="back-btn">
             Back
           </v-btn>
         </v-col>
@@ -110,12 +110,14 @@
 
 <script>
 import { useNotification } from '@/composables/useNotification'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: "ViewMaintenanceEntry",
   setup() {
     const { showSuccess } = useNotification()
-    return { showSuccess }
+    const { showConfirmDialog } = useCustomDialogs()
+    return { showSuccess, showConfirmDialog }
   },
   data() {
     return {
@@ -175,15 +177,22 @@ export default {
       ];
       this.entry = entries.find(e => e.id === id);
     },
-    editEntry() {
-      this.$router.push(`/edit-maintenance-entry-${this.entry.id}`);
-    },
-    deleteEntry() {
-      if (confirm(`Are you sure you want to delete maintenance entry for ${this.entry.unitName}?`)) {
-        // Delete logic here (API or store)
-        this.showSuccess("Maintenance entry deleted successfully!");
-        this.$router.back();
+    editEntry() { this.$router.push(`/edit-maintenance-${this.entry.id}`); },
+    async deleteEntry() {
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete maintenance entry?',
+          message: `Are you sure you want to delete maintenance entry for ${this.entry.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
       }
+      // Delete logic here (API or store)
+      this.showSuccess("Maintenance entry deleted successfully!");
+      this.$router.back();
     }
   },
   mounted() {

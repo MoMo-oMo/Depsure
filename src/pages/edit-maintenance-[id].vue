@@ -6,7 +6,7 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
-            @click="$router.go(-1)"
+            @click="$router.push('/maintenance')"
             class="back-btn"
           >
             Back
@@ -194,7 +194,7 @@
                   color="grey"
                   variant="outlined"
                   class="cancel-btn"
-                  @click="$router.go(-1)"
+                  @click="$router.push('/maintenance')"
                   :disabled="saving"
                 >
                   Cancel
@@ -378,7 +378,7 @@ export default {
           await updateDoc(docRef, maintenanceData)
           
           console.log('Maintenance data updated in Firestore')
-          this.showSuccessDialog('Maintenance entry updated successfully!', 'Success!', 'Continue', '/maintenance')
+          this.showSuccessDialog('Maintenance entry updated successfully!', 'Success!', 'Continue', `/view-maintenance-${this.entry.id}`)
           
         } catch (error) {
           console.error('Error updating maintenance entry:', error)

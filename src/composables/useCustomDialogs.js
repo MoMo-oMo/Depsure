@@ -15,6 +15,17 @@ const dialogStore = reactive({
     message: 'An error occurred. Please try again.',
     buttonText: 'OK',
     redirectTo: null
+  },
+  confirmDialog: {
+    show: false,
+    title: 'Are you sure?',
+    message: 'Do you really want to delete this item?',
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    color: '#dc3545',
+    // internal
+    _resolver: null,
+    _rejecter: null
   }
 })
 
@@ -33,6 +44,46 @@ export function useCustomDialogs() {
     dialogStore.errorDialog.buttonText = buttonText
     dialogStore.errorDialog.redirectTo = redirectTo
     dialogStore.errorDialog.show = true
+  }
+
+  const showConfirmDialog = ({
+    message = 'Do you really want to delete this item?',
+    title = 'Are you sure?',
+    confirmText = 'Delete',
+    cancelText = 'Cancel',
+    color = '#dc3545'
+  } = {}) => {
+    // Set props
+    dialogStore.confirmDialog.message = message
+    dialogStore.confirmDialog.title = title
+    dialogStore.confirmDialog.confirmText = confirmText
+    dialogStore.confirmDialog.cancelText = cancelText
+    dialogStore.confirmDialog.color = color
+    dialogStore.confirmDialog.show = true
+
+    // Return a promise that resolves on confirm, rejects on cancel
+    return new Promise((resolve, reject) => {
+      dialogStore.confirmDialog._resolver = () => {
+        dialogStore.confirmDialog.show = false
+        dialogStore.confirmDialog._resolver = null
+        dialogStore.confirmDialog._rejecter = null
+        resolve(true)
+      }
+      dialogStore.confirmDialog._rejecter = () => {
+        dialogStore.confirmDialog.show = false
+        dialogStore.confirmDialog._resolver = null
+        dialogStore.confirmDialog._rejecter = null
+        reject(new Error('cancelled'))
+      }
+    })
+  }
+
+  const confirm = () => {
+    if (dialogStore.confirmDialog._resolver) dialogStore.confirmDialog._resolver()
+  }
+
+  const cancel = () => {
+    if (dialogStore.confirmDialog._rejecter) dialogStore.confirmDialog._rejecter()
   }
 
   const hideSuccessDialog = () => {
@@ -59,9 +110,13 @@ export function useCustomDialogs() {
   return {
     successDialog: computed(() => dialogStore.successDialog),
     errorDialog: computed(() => dialogStore.errorDialog),
+    confirmDialog: computed(() => dialogStore.confirmDialog),
     showSuccessDialog,
     showErrorDialog,
+    showConfirmDialog,
     hideSuccessDialog,
-    hideErrorDialog
+    hideErrorDialog,
+    confirm,
+    cancel
   }
 }
