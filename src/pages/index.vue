@@ -21,30 +21,23 @@
               dense
             />
 
-            <!-- Password Field -->
-            <v-text-field
-              v-model="password"
-              :type="showPassword ? 'text' : 'password'"
-              label="Password"
-              density="comfortable"
-              prepend-inner-icon="mdi-lock"
-              :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-              @click:append-inner="showPassword = !showPassword"
-              flat="true"
-              variant="outlined"
-              class="custom-input animate-input"
-              :rules="passwordRules"
-              dense
-            />
-          <NotificationDialog
-            :show="!!loginError"
-            title="Error!"
-            :message="loginError"
-            buttonText="Try Again"
-            @close="loginError = ''"
-            />
+                         <!-- Password Field -->
+             <v-text-field
+               v-model="password"
+               :type="showPassword ? 'text' : 'password'"
+               label="Password"
+               density="comfortable"
+               prepend-inner-icon="mdi-lock"
+               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+               @click:append-inner="showPassword = !showPassword"
+               flat="true"
+               variant="outlined"
+               class="custom-input animate-input"
+               :rules="passwordRules"
+               dense
+             />
 
-          </v-form>
+           </v-form>
 
           <!-- Forgot Password (Left-aligned) -->
           <div class="forgot-password animate-forgot">
@@ -62,13 +55,23 @@
         </div>
       </div>
 
-      <!-- Right Panel: Image background with overlay -->
-      <div class="right-panel">
-        <div class="overlay"></div>
-        <img src="@/assets/ds.png" alt="Brand Logo" class="brand-image animate-logo"/>
-      </div>
-    </v-main>
-  </v-app>
+             <!-- Right Panel: Image background with overlay -->
+       <div class="right-panel">
+         <div class="overlay"></div>
+         <img src="@/assets/ds.png" alt="Brand Logo" class="brand-image animate-logo"/>
+       </div>
+     </v-main>
+     
+     <!-- Error Dialog Overlay -->
+     <NotificationDialog
+       :visible="!!loginError"
+       type="error"
+       title="Login Error!"
+       :message="loginError"
+       buttonText="Try Again"
+       @close="loginError = ''"
+     />
+   </v-app>
 </template>
 
 <script>
@@ -150,19 +153,19 @@ export default {
           let errorMessage = 'Login failed. Please check your credentials.';
 
           if (error.code === 'auth/user-not-found') {
-          errorMessage = 'No account found with this email address.';
-        } else if (error.code === 'auth/invalid-credential' || 
-                   error.code === 'auth/wrong-password') {
-          errorMessage = 'Email or password is incorrect';
-        } else if (error.code === 'auth/invalid-email') {
-          errorMessage = 'Please enter a valid email address.';
-        } else if (error.code === 'auth/too-many-requests') {
-          errorMessage = 'Too many failed attempts. Please try again later.';
-        } else if (error.code === 'auth/user-disabled') {
-          errorMessage = 'This account has been disabled. Please contact administrator.';
-        }
+            errorMessage = 'No account found with this email address.';
+          } else if (error.code === 'auth/invalid-credential' || 
+                     error.code === 'auth/wrong-password') {
+            errorMessage = 'Email or password is incorrect';
+          } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Please enter a valid email address.';
+          } else if (error.code === 'auth/too-many-requests') {
+            errorMessage = 'Email or password is incorrect';
+          } else if (error.code === 'auth/user-disabled') {
+            errorMessage = 'This account has been disabled. Please contact administrator.';
+          }
 
-        this.loginError = errorMessage;
+          this.loginError = errorMessage;
         } finally {
           this.loading = false;
         }
