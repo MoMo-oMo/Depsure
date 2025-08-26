@@ -32,6 +32,7 @@
         class="drawer-list"
       >
       <v-list-item
+          v-if="canAccessUserManagement"
           prepend-icon="mdi-account-group"
           title="USER MANAGEMENT"
           :class="{ 'pill-active': selected.includes('user-management') }"
@@ -142,6 +143,11 @@ export default {
     const userName = computed(() => appStore.userName)
     const userType = computed(() => appStore.userType)
     const userAvatar = computed(() => appStore.userAvatar)
+    
+    // Role-based access control
+    const canAccessUserManagement = computed(() => {
+      return userType.value === 'Super Admin' || userType.value === 'Admin'
+    })
 
     const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
 
@@ -183,7 +189,8 @@ export default {
       headerStyle,
       logoutLoading,
       onLogout,
-      navigateTo
+      navigateTo,
+      canAccessUserManagement
     }
   }
 }

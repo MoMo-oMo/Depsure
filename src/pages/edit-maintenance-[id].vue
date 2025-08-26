@@ -42,6 +42,22 @@
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
+                  <!-- Agency Selection -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.agencyId"
+                      label="Select Agency"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="agencies"
+                      item-title="agencyName"
+                      item-value="id"
+                      :rules="agencyRules"
+                      required
+                      :loading="agenciesLoading"
+                    />
+                  </v-col>
+
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -104,6 +120,45 @@
                     />
                   </v-col>
 
+                  <!-- Maintenance Status -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.status"
+                      label="Maintenance Status"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Pending', 'In Progress', 'Completed', 'Cancelled']"
+                      :rules="statusRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Priority Level -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.priority"
+                      label="Priority Level"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Low', 'Medium', 'High', 'Urgent']"
+                      :rules="priorityRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Estimated Cost -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="entry.estimatedCost"
+                      label="Estimated Cost (R)"
+                      type="number"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="estimatedCostRules"
+                      prefix="R"
+                    />
+                  </v-col>
+
                   <!-- Quote Instructions Upload -->
                   <v-col cols="12" md="6">
                     <v-file-input
@@ -114,6 +169,19 @@
                       accept=".pdf,.doc,.docx"
                       show-size
                       prepend-icon="mdi-upload"
+                      :loading="uploading"
+                    />
+                  </v-col>
+
+                  <!-- Notes -->
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="entry.notes"
+                      label="Additional Notes"
+                      variant="outlined"
+                      class="custom-input"
+                      rows="3"
+                      auto-grow
                     />
                   </v-col>
                 </v-row>
@@ -125,19 +193,21 @@
                 <v-btn
                   color="grey"
                   variant="outlined"
-                  @click="$router.go(-1)"
                   class="cancel-btn"
+                  @click="$router.go(-1)"
+                  :disabled="saving"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
                   color="black"
                   variant="elevated"
+                  class="submit-btn"
+                  :disabled="!valid || saving"
+                  :loading="saving"
                   @click="saveEntry"
-                  :disabled="!valid"
-                  class="save-btn"
                 >
-                  Save Changes
+                  {{ saving ? 'Saving...' : 'Save Changes' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -150,39 +220,57 @@
 
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db, storage } from '@/firebaseConfig'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 
 export default {
   name: "EditMaintenancePage",
   setup() {
-    const { showSuccessDialog } = useCustomDialogs()
-    return { showSuccessDialog }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
       entry: {
         id: null,
+        agencyId: "",
         unitName: "",
         noticeGiven: "No",
         vacateDate: "",
         contactNumber: "",
         address: "",
-        quoteFile: null, // For uploaded file
+        status: "Pending",
+        priority: "Medium",
+        estimatedCost: 0,
+        notes: "",
+        quoteFile: null
       },
+      agencies: [],
+      agenciesLoading: false,
       loading: true,
+      saving: false,
+      uploading: false,
       error: null,
       valid: true,
       // Validation rules
+      agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
       noticeGivenRules: [v => !!v || "Notice Given is required"],
       vacateDateRules: [v => !!v || "Vacate Date is required"],
       contactNumberRules: [v => !!v || "Contact Number is required"],
       addressRules: [v => !!v || "Address is required"],
+      statusRules: [v => !!v || "Status is required"],
+      priorityRules: [v => !!v || "Priority is required"],
+      estimatedCostRules: [v => v >= 0 || "Estimated cost cannot be negative"]
     };
   },
-  mounted() {
+  async mounted() {
     document.title = "Edit Maintenance Entry - Depsure";
     const entryId = this.$route.params.id;
     if (entryId) {
+      await this.fetchAgencies();
       this.loadEntryData(entryId);
     } else {
       this.error = "Entry ID not found";
@@ -190,44 +278,114 @@ export default {
     }
   },
   methods: {
-    loadEntryData(id) {
-      const mockEntries = [
-        {
-          id: 1,
-          unitName: "123 Main Street, Cape Town",
-          noticeGiven: "Yes",
-          vacateDate: "2025-01-15",
-          contactNumber: "0821234567",
-          address: "123 Main Street, Cape Town",
-          quoteFile: null
-        },
-        {
-          id: 2,
-          unitName: "456 Ocean Drive, Camps Bay",
-          noticeGiven: "No",
-          vacateDate: "2024-06-01",
-          contactNumber: "0839876543",
-          address: "456 Ocean Drive, Camps Bay",
-          quoteFile: null
+    async loadEntryData(id) {
+      try {
+        const docRef = doc(db, 'maintenance', id);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          this.entry = {
+            id: docSnap.id,
+            agencyId: data.agencyId || "",
+            unitName: data.unitName || "",
+            noticeGiven: data.noticeGiven || "No",
+            vacateDate: data.vacateDate || "",
+            contactNumber: data.contactNumber || "",
+            address: data.address || "",
+            status: data.status || "Pending",
+            priority: data.priority || "Medium",
+            estimatedCost: data.estimatedCost || 0,
+            notes: data.notes || "",
+            quoteFile: null
+          };
+          this.loading = false;
+        } else {
+          this.error = "Maintenance entry not found";
+          this.loading = false;
         }
-      ];
-
-      const foundEntry = mockEntries.find(e => e.id == id);
-      if (foundEntry) {
-        this.entry = { ...foundEntry };
-        this.loading = false;
-      } else {
-        this.error = "Entry not found";
+      } catch (error) {
+        console.error('Error loading maintenance entry:', error);
+        this.error = "Failed to load maintenance entry";
         this.loading = false;
       }
     },
-    saveEntry() {
+
+    async fetchAgencies() {
+      this.agenciesLoading = true
+      try {
+        const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+        const querySnapshot = await getDocs(q)
+        this.agencies = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        console.log('Agencies loaded:', this.agencies.length)
+      } catch (error) {
+        console.error('Error fetching agencies:', error)
+        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+      } finally {
+        this.agenciesLoading = false
+      }
+    },
+
+    async saveEntry() {
       if (this.$refs.form.validate()) {
-        console.log("Saving maintenance entry:", this.entry);
-        if (this.entry.quoteFile) {
-          console.log("Uploaded file:", this.entry.quoteFile.name);
+        this.saving = true
+        try {
+          console.log("Saving maintenance entry:", this.entry);
+          
+          // Get agency name from selected agency
+          const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
+          
+          // Prepare maintenance data for Firestore
+          const maintenanceData = {
+            agencyId: this.entry.agencyId,
+            agencyName: selectedAgency ? selectedAgency.agencyName : '',
+            unitName: this.entry.unitName,
+            noticeGiven: this.entry.noticeGiven,
+            vacateDate: this.entry.vacateDate,
+            contactNumber: this.entry.contactNumber,
+            address: this.entry.address,
+            status: this.entry.status,
+            priority: this.entry.priority,
+            estimatedCost: this.entry.estimatedCost || 0,
+            notes: this.entry.notes || "",
+            updatedAt: new Date()
+          }
+
+          // Upload file if provided
+          if (this.entry.quoteFile) {
+            this.uploading = true
+            try {
+              const fileRef = ref(storage, `maintenance-quotes/${Date.now()}_${this.entry.quoteFile.name}`)
+              const snapshot = await uploadBytes(fileRef, this.entry.quoteFile)
+              const downloadURL = await getDownloadURL(snapshot.ref)
+              maintenanceData.quoteFileURL = downloadURL
+              maintenanceData.quoteFileName = this.entry.quoteFile.name
+              console.log('File uploaded successfully:', downloadURL)
+            } catch (uploadError) {
+              console.error('Error uploading file:', uploadError)
+              this.showErrorDialog('Failed to upload file. Please try again.', 'Upload Error', 'OK')
+              return
+            } finally {
+              this.uploading = false
+            }
+          }
+          
+          // Update maintenance data in Firestore
+          const docRef = doc(db, 'maintenance', this.entry.id)
+          await updateDoc(docRef, maintenanceData)
+          
+          console.log('Maintenance data updated in Firestore')
+          this.showSuccessDialog('Maintenance entry updated successfully!', 'Success!', 'Continue', '/maintenance')
+          
+        } catch (error) {
+          console.error('Error updating maintenance entry:', error)
+          this.showErrorDialog('Failed to update maintenance entry. Please try again.', 'Error', 'OK')
+        } finally {
+          this.saving = false
         }
-        this.showSuccessDialog("Maintenance entry saved successfully!", "Success!", "Continue", "/maintenance");
       }
     }
   }
@@ -307,7 +465,7 @@ export default {
   height: 44px;
 }
 
-.save-btn {
+.submit-btn {
   font-weight: 500;
   text-transform: none;
   border-radius: 8px;
@@ -317,7 +475,7 @@ export default {
   color: white !important;
 }
 
-.save-btn:hover:not(:disabled) {
+.submit-btn:hover:not(:disabled) {
   background-color: #333 !important;
 }
 

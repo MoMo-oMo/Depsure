@@ -19,20 +19,21 @@
           />
         </v-col>
 
-        <v-col cols="12" md="3" class="pa-4">
+        <v-col v-if="!isAgencyUser" cols="12" md="3" class="pa-4">
           <v-select
             v-model="selectedAgency"
             :items="agencies"
-            item-title="name"
-            item-value="name"
+            item-title="agencyName"
+            item-value="id"
             label="Select Agency"
             prepend-inner-icon="mdi-domain"
             density="comfortable"
             variant="outlined"
             hide-details
             clearable
+            :loading="agenciesLoading"
             class="custom-input"
-            @change="filterEntries"
+            @update:model-value="onAgencyChange"
           />
         </v-col>
 
@@ -66,7 +67,8 @@
             <v-row class="no-gutters" align="stretch">
               <v-col cols="12" md="3">
                 <v-img
-                  :src="selectedAgencyDetails.logo"
+                  :src="selectedAgencyDetails.profileImageUrl || selectedAgencyDetails.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
+                  :alt="selectedAgencyDetails.agencyName"
                   height="100%"
                   cover
                   class="agency-logo-black"
@@ -74,30 +76,30 @@
               </v-col>
               <v-col cols="12" md="9">
                 <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.name }}
+                  {{ selectedAgencyDetails.agencyName }}
                 </v-card-title>
                 <v-card-text class="text-white">
                   <div class="agency-details-black">
                     <div class="detail-item-black">
-                      <v-icon class="mr-2 text-white">mdi-map-marker</v-icon>
-                      {{ selectedAgencyDetails.location }}
+                      <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
+                      <span>{{ selectedAgencyDetails.location || 'Location not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon class="mr-2 text-white">mdi-calendar</v-icon>
-                      Established: {{ selectedAgencyDetails.established }}
+                      <v-icon icon="mdi-calendar" class="mr-2 text-white" />
+                      <span>Established: {{ selectedAgencyDetails.establishedYear || 'Year not specified' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon class="mr-2 text-white">mdi-home</v-icon>
-                      {{ selectedAgencyDetails.properties }} Properties
+                      <v-icon icon="mdi-home" class="mr-2 text-white" />
+                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon class="mr-2 text-white">mdi-star</v-icon>
-                      Rating: {{ selectedAgencyDetails.rating }}/5
+                      <v-icon icon="mdi-star" class="mr-2 text-white" />
+                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
                     </div>
                   </div>
-                  <v-divider class="my-4 bg-white"/>
+                  <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
-                    {{ selectedAgencyDetails.description }}
+                    {{ selectedAgencyDetails.agencyDescription || selectedAgencyDetails.agencyTagline || 'No description available' }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -115,6 +117,8 @@
             class="custom-header"
             density="comfortable"
             hover
+            :loading="loading"
+            loading-text="Loading maintenance entries..."
           >
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -155,12 +159,15 @@
 
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "MaintenancePage",
   setup() {
-    const { showSuccessDialog } = useCustomDialogs()
-    return { showSuccessDialog }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
@@ -168,33 +175,31 @@ export default {
       monthFilter: this.getCurrentMonth(),
       selectedAgency: null,
       filteredEntries: [],
+      loading: false,
+      agenciesLoading: false,
 
-      agencies: [
-        { name: "Pam Golding Properties", logo: "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg", location: "Cape Town, South Africa", established: "1976", properties: 1250, rating: 4.8, description: "Premium real estate agency specializing in luxury properties." },
-        { name: "RE/MAX Properties", logo: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg", location: "Johannesburg, South Africa", established: "1973", properties: 890, rating: 4.6, description: "Global real estate network with local expertise." },
-        { name: "Seeff Properties" },
-        { name: "Lew Geffen Sotheby's" },
-        { name: "Chas Everitt International" },
-        { name: "Keller Williams Realty" }
-      ],
-      entries: [
-        { id: 1, unitName: "123 Main Street, Cape Town", noticeGiven: "2024-12-01", vacateDate: "2025-01-15", contactNumber: "0821234567", address: "123 Main Street, Cape Town", quoteInstructions: "Upload required quote PDF here.", agency: "Pam Golding Properties" },
-        { id: 2, unitName: "456 Ocean Drive, Camps Bay", noticeGiven: "2024-05-01", vacateDate: "2024-06-01", contactNumber: "0839876543", address: "456 Ocean Drive, Camps Bay", quoteInstructions: "", agency: "RE/MAX Properties" }
-      ],
+      agencies: [],
+      entries: [],
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
+        { title: "Agency", key: "agencyName", sortable: true },
         { title: "Notice Given", key: "noticeGiven", sortable: true, align: "center" },
         { title: "Vacate Date", key: "vacateDate", sortable: true, align: "center" },
         { title: "Contact Number", key: "contactNumber", sortable: true },
         { title: "Address", key: "address", sortable: true },
-        { title: "Quote Instructions", key: "quoteInstructions", sortable: false },
+        { title: "Status", key: "status", sortable: true, align: "center" },
+        { title: "Priority", key: "priority", sortable: true, align: "center" },
         { title: "Actions", key: "actions", sortable: false, align: "center" }
       ]
     };
   },
   computed: {
     selectedAgencyDetails() {
-      return this.agencies.find(a => a.name === this.selectedAgency) || null;
+      return this.agencies.find(a => a.id === this.selectedAgency) || null;
+    },
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
     }
   },
   methods: {
@@ -207,9 +212,13 @@ export default {
         const textMatch = entry.unitName.toLowerCase().includes(this.searchQuery.toLowerCase());
         let agencyMatch = true;
         let monthMatch = true;
-        if (this.selectedAgency) agencyMatch = entry.agency === this.selectedAgency;
+        
+        if (this.selectedAgency) {
+          agencyMatch = entry.agencyId === this.selectedAgency;
+        }
+        
         if (this.monthFilter) {
-          const entryDate = new Date(entry.noticeGiven);
+          const entryDate = new Date(entry.vacateDate);
           const filterDate = new Date(this.monthFilter+"-01");
           monthMatch = entryDate.getMonth() === filterDate.getMonth() && entryDate.getFullYear() === filterDate.getFullYear();
         }
@@ -218,21 +227,138 @@ export default {
     },
     viewEntry(entry) { this.$router.push(`/view-maintenance-${entry.id}`); },
     editEntry(entry) { this.$router.push(`/edit-maintenance-${entry.id}`); },
-    deleteEntry(entry) {
+    async deleteEntry(entry) {
       if(confirm(`Delete maintenance entry for ${entry.unitName}?`)) {
-        const index = this.entries.findIndex(e => e.id === entry.id);
-        if(index>-1) {
-          this.entries.splice(index,1);
-          this.filterEntries();
-          this.showSuccessDialog(`Maintenance entry for ${entry.unitName} deleted successfully!`, 'Success!', 'Continue');
+        try {
+          await deleteDoc(doc(db, 'maintenance', entry.id))
+          const index = this.entries.findIndex(e => e.id === entry.id);
+          if(index > -1) {
+            this.entries.splice(index, 1);
+            this.filterEntries();
+            this.showSuccessDialog(`Maintenance entry for ${entry.unitName} deleted successfully!`, 'Success!', 'Continue');
+          }
+        } catch (error) {
+          console.error('Error deleting maintenance entry:', error)
+          this.showErrorDialog('Failed to delete maintenance entry. Please try again.', 'Error', 'OK')
         }
       }
     },
-    addMaintenance() { this.$router.push('/add-maintenance'); }
+    addMaintenance() { 
+      this.$router.push('/add-maintenance'); 
+    },
+    async fetchMaintenanceEntries(agencyId = null) {
+      this.loading = true
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        let maintenanceQuery;
+        
+        if (userType === 'Agency') {
+          // Agency users can only see their own maintenance entries
+          maintenanceQuery = query(
+            collection(db, 'maintenance'),
+            where('agencyId', '==', currentUser.uid)
+          );
+        } else if (agencyId) {
+          // Super Admin/Admin users query maintenance entries for specific agency
+          maintenanceQuery = query(
+            collection(db, 'maintenance'),
+            where('agencyId', '==', agencyId)
+          );
+        } else {
+          // Super Admin/Admin users query all maintenance entries when no agency selected
+          maintenanceQuery = collection(db, 'maintenance');
+        }
+        
+        const querySnapshot = await getDocs(maintenanceQuery)
+        this.entries = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate(),
+          updatedAt: doc.data().updatedAt?.toDate()
+        }))
+        console.log('Maintenance entries loaded:', this.entries.length)
+        console.log('User type:', userType, 'Agency ID filter:', agencyId)
+        this.filterEntries()
+      } catch (error) {
+        console.error('Error fetching maintenance entries:', error)
+        this.showErrorDialog('Failed to load maintenance entries. Please try again.', 'Error', 'OK')
+      } finally {
+        this.loading = false
+      }
+    },
+    
+    onAgencyChange(agencyId) {
+      console.log('Agency changed to:', agencyId);
+      if (this.isAgencyUser) {
+        // Agency users can't change agency selection
+        return;
+      }
+      
+      if (agencyId) {
+        // Fetch maintenance entries for selected agency
+        this.fetchMaintenanceEntries(agencyId);
+      } else {
+        // Fetch all maintenance entries when no agency is selected
+        this.fetchMaintenanceEntries();
+      }
+    },
+    async fetchAgencies() {
+      this.agenciesLoading = true
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        if (userType === 'Agency') {
+          // Agency users can only see their own agency
+          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data();
+            this.agencies = [{
+              id: agencyDoc.id,
+              ...agencyData
+            }];
+            // Pre-select the agency for agency users
+            this.selectedAgency = agencyDoc.id;
+          } else {
+            this.agencies = [];
+          }
+          console.log('Agency user - own agency loaded:', this.agencies);
+        } else {
+          // Super Admin and Admin users can see all agencies
+          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+          const querySnapshot = await getDocs(q)
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          console.log('All agencies loaded:', this.agencies.length)
+        }
+      } catch (error) {
+        console.error('Error fetching agencies:', error)
+        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+      } finally {
+        this.agenciesLoading = false
+      }
+    }
   },
-  mounted() { 
+  async mounted() { 
     document.title = "Maintenance - Depsure";
-    this.filteredEntries = this.entries;
+    
+    // Fetch agencies first
+    await this.fetchAgencies();
+    
+    // Fetch maintenance entries based on user role and selected agency
+    if (this.isAgencyUser) {
+      // Agency users will automatically get their own maintenance entries
+      await this.fetchMaintenanceEntries();
+    } else {
+      // Super Admin/Admin users get all maintenance entries initially
+      await this.fetchMaintenanceEntries();
+    }
   }
 };
 </script>

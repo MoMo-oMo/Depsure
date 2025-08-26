@@ -13,14 +13,35 @@
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
-                  <!-- Unit Name -->
+                  <!-- Agency Selection -->
                   <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="entry.unitName"
-                      label="Unit Name"
+                    <v-select
+                      v-model="entry.agencyId"
+                      label="Select Agency"
                       variant="outlined"
                       class="custom-input"
+                      :items="agencies"
+                      item-title="agencyName"
+                      item-value="id"
+                      :rules="agencyRules"
+                      required
+                      :loading="agenciesLoading"
+                      :disabled="isAgencyUser"
+                    />
+                  </v-col>
+
+                  <!-- Unit Name -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.unitName"
+                      label="Select Unit"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="units"
+                      item-title="propertyName"
+                      item-value="propertyName"
                       :rules="unitNameRules"
+                      :loading="unitsLoading"
                       required
                     />
                   </v-col>
@@ -85,6 +106,58 @@
                       accept=".pdf,.doc,.docx"
                       show-size
                       prepend-icon="mdi-upload"
+                      :loading="uploading"
+                    />
+                  </v-col>
+
+                  <!-- Maintenance Status -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.status"
+                      label="Maintenance Status"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Pending', 'In Progress', 'Completed', 'Cancelled']"
+                      :rules="statusRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Priority Level -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.priority"
+                      label="Priority Level"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Low', 'Medium', 'High', 'Urgent']"
+                      :rules="priorityRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Estimated Cost -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="entry.estimatedCost"
+                      label="Estimated Cost (R)"
+                      type="number"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="estimatedCostRules"
+                      prefix="R"
+                    />
+                  </v-col>
+
+                  <!-- Notes -->
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="entry.notes"
+                      label="Additional Notes"
+                      variant="outlined"
+                      class="custom-input"
+                      rows="3"
+                      auto-grow
                     />
                   </v-col>
                 </v-row>
@@ -98,6 +171,7 @@
                   variant="outlined"
                   class="cancel-btn"
                   @click="goBack"
+                  :disabled="loading"
                 >
                   Cancel
                 </v-btn>
@@ -105,10 +179,11 @@
                   color="black"
                   variant="elevated"
                   class="submit-btn"
-                  :disabled="!valid"
+                  :disabled="!valid || loading"
+                  :loading="loading"
                   @click="submitForm"
                 >
-                  Add Maintenance Entry
+                  {{ loading ? 'Adding...' : 'Add Maintenance Entry' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -121,43 +196,278 @@
 
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db, storage } from '@/firebaseConfig'
+import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "AddMaintenancePage",
   setup() {
-    const { showSuccessDialog } = useCustomDialogs()
-    return { showSuccessDialog }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
       valid: false,
+      loading: false,
+      uploading: false,
+      agenciesLoading: false,
+      unitsLoading: false,
+      agencies: [],
+      units: [],
       entry: {
+        agencyId: "",
         unitName: "",
         noticeGiven: "No",
         vacateDate: "",
         contactNumber: "",
         address: "",
-        quoteFile: null
+        quoteFile: null,
+        status: "Pending",
+        priority: "Medium",
+        estimatedCost: 0,
+        notes: ""
       },
+      agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
       noticeGivenRules: [v => !!v || "Notice Given is required"],
       vacateDateRules: [v => !!v || "Vacate Date is required"],
       contactNumberRules: [v => !!v || "Contact Number is required"],
       addressRules: [v => !!v || "Address is required"],
+      statusRules: [v => !!v || "Status is required"],
+      priorityRules: [v => !!v || "Priority is required"],
+      estimatedCostRules: [v => v >= 0 || "Estimated cost cannot be negative"]
     };
   },
+  computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    }
+  },
   methods: {
-    submitForm() {
+    async submitForm() {
       if (this.$refs.form.validate()) {
-        console.log("Adding maintenance entry:", this.entry);
-        if (this.entry.quoteFile) {
-          console.log("Uploaded file:", this.entry.quoteFile.name);
+        this.loading = true
+        try {
+          console.log("Adding maintenance entry:", this.entry);
+          
+          // Get agency name from selected agency
+          const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
+          console.log('Selected agency ID:', this.entry.agencyId)
+          console.log('Selected agency object:', selectedAgency)
+          console.log('Available agencies:', this.agencies)
+          
+          // Prepare maintenance data for Firestore
+          const maintenanceData = {
+            agencyId: this.entry.agencyId,
+            agencyName: selectedAgency ? selectedAgency.agencyName : '',
+            unitName: this.entry.unitName,
+            noticeGiven: this.entry.noticeGiven,
+            vacateDate: this.entry.vacateDate,
+            contactNumber: this.entry.contactNumber,
+            address: this.entry.address,
+            status: this.entry.status,
+            priority: this.entry.priority,
+            estimatedCost: this.entry.estimatedCost || 0,
+            notes: this.entry.notes || "",
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+
+          // Upload file if provided
+          if (this.entry.quoteFile) {
+            this.uploading = true
+            try {
+              const fileRef = ref(storage, `maintenance-quotes/${Date.now()}_${this.entry.quoteFile.name}`)
+              const snapshot = await uploadBytes(fileRef, this.entry.quoteFile)
+              const downloadURL = await getDownloadURL(snapshot.ref)
+              maintenanceData.quoteFileURL = downloadURL
+              maintenanceData.quoteFileName = this.entry.quoteFile.name
+              console.log('File uploaded successfully:', downloadURL)
+            } catch (uploadError) {
+              console.error('Error uploading file:', uploadError)
+              this.showErrorDialog('Failed to upload file. Please try again.', 'Upload Error', 'OK')
+              return
+            } finally {
+              this.uploading = false
+            }
+          }
+          
+          // Store maintenance data in Firestore
+          await addDoc(collection(db, 'maintenance'), maintenanceData)
+          
+          console.log('Maintenance data stored in Firestore')
+          this.showSuccessDialog('Maintenance entry added successfully!', 'Success!', 'Continue', '/maintenance')
+          
+        } catch (error) {
+          console.error('Error creating maintenance entry:', error)
+          this.showErrorDialog('Failed to create maintenance entry. Please try again.', 'Error', 'OK')
+        } finally {
+          this.loading = false
         }
-        this.showSuccessDialog("Maintenance entry added successfully!", "Success!", "Continue", "/maintenance");
       }
     },
+
+    async fetchAgencies() {
+      this.agenciesLoading = true
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        if (userType === 'Agency') {
+          // Agency users can only add maintenance entries to their own agency
+          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data();
+            this.agencies = [{
+              id: agencyDoc.id,
+              ...agencyData
+            }];
+            // Pre-select the agency for agency users
+            this.entry.agencyId = agencyDoc.id;
+          } else {
+            this.agencies = [];
+          }
+          console.log('Agency user - own agency loaded:', this.agencies);
+        } else {
+          // Super Admin and Admin users can see all agencies
+          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+          const querySnapshot = await getDocs(q)
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          console.log('All agencies loaded:', this.agencies.length)
+          console.log('Agencies data:', this.agencies)
+          // Check if agencies have the correct field names
+          if (this.agencies.length > 0) {
+            console.log('First agency structure:', this.agencies[0])
+            console.log('First agency agencyName:', this.agencies[0].agencyName)
+          } else {
+            console.log('No agencies found in database')
+            // Create some test agencies in the database
+            await this.createTestAgencies()
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching agencies:', error)
+        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+      } finally {
+        this.agenciesLoading = false
+      }
+    },
+
+    async createTestAgencies() {
+      try {
+        const testAgencies = [
+          {
+            agencyName: 'Pam Golding Properties',
+            userType: 'Agency',
+            location: 'Cape Town, South Africa',
+            establishedYear: 1976,
+            numberOfProperties: 1250,
+            rating: '5 Stars',
+            agencyDescription: 'Premium real estate agency specializing in luxury properties.',
+            agencyTagline: 'Excellence in Real Estate'
+          },
+          {
+            agencyName: 'RE/MAX Properties',
+            userType: 'Agency',
+            location: 'Johannesburg, South Africa',
+            establishedYear: 1973,
+            numberOfProperties: 890,
+            rating: '4 Stars',
+            agencyDescription: 'Global real estate network with local expertise.',
+            agencyTagline: 'Above the Crowd'
+          }
+        ]
+
+        for (const agencyData of testAgencies) {
+          await addDoc(collection(db, 'users'), agencyData)
+        }
+
+        console.log('Test agencies created successfully')
+        
+        // Fetch agencies again
+        await this.fetchAgencies()
+      } catch (error) {
+        console.error('Error creating test agencies:', error)
+      }
+    },
+
+    async fetchUnits(agencyId = null) {
+      this.unitsLoading = true;
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        let unitsQuery;
+        
+        if (userType === 'Agency') {
+          // Agency users can only see units from their own agency
+          unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', currentUser.uid)
+          );
+        } else if (agencyId) {
+          // Super Admin/Admin users query units for specific agency
+          unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', agencyId)
+          );
+        } else {
+          // Super Admin/Admin users query all units when no agency selected
+          unitsQuery = collection(db, 'units');
+        }
+        
+        const querySnapshot = await getDocs(unitsQuery);
+        this.units = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        console.log('Units fetched:', this.units);
+        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+      } catch (error) {
+        console.error('Error fetching units:', error);
+        this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK');
+      } finally {
+        this.unitsLoading = false;
+      }
+    },
+
     goBack() {
-      this.$router.push("/maintenance-entries");
+      this.$router.push("/maintenance");
+    }
+  },
+  async mounted() {
+    // Fetch agencies first
+    await this.fetchAgencies()
+    
+    // For agency users, fetch their units automatically
+    if (this.isAgencyUser) {
+      await this.fetchUnits();
+    }
+  },
+  watch: {
+    'entry.agencyId': {
+      handler(newAgencyId) {
+        if (this.isAgencyUser) {
+          // Agency users automatically get their own units
+          this.fetchUnits();
+        } else if (newAgencyId) {
+          // Super Admin/Admin users get units for selected agency
+          this.fetchUnits(newAgencyId);
+        } else {
+          this.units = [];
+          this.entry.unitName = '';
+        }
+      },
+      immediate: false
     }
   }
 };

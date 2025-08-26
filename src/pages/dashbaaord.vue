@@ -17,7 +17,7 @@
 
       <!-- Quick Actions -->
       <v-row>
-        <v-col cols="12" md="6" lg="4">
+        <v-col v-if="canAccessUserManagement" cols="12" md="6" lg="4">
           <v-card class="action-card" @click="navigateTo('user-management')">
             <v-card-title>
               <v-icon icon="mdi-account-group" class="mr-2" />
@@ -106,6 +106,11 @@ export default {
     
     const userName = computed(() => appStore.userName)
     const userType = computed(() => appStore.userType)
+    
+    // Role-based access control
+    const canAccessUserManagement = computed(() => {
+      return userType.value === 'Super Admin' || userType.value === 'Admin'
+    })
 
     const navigateTo = (route) => {
       router.push(`/${route}`)
@@ -114,7 +119,8 @@ export default {
     return {
       userName,
       userType,
-      navigateTo
+      navigateTo,
+      canAccessUserManagement
     }
   },
   mounted() {

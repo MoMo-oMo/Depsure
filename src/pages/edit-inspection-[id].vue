@@ -112,16 +112,53 @@
                     />
                   </v-col>
 
-                  <!-- Quotes Needed Upload -->
+                  <!-- Quotes Needed -->
                   <v-col cols="12" md="6">
-                    <v-file-input
-                      v-model="entry.quotesFile"
-                      label="Upload Quotes"
+                    <v-select
+                      v-model="entry.quotesNeeded"
+                      label="Quotes Needed"
                       variant="outlined"
                       class="custom-input"
-                      accept=".pdf,.doc,.docx"
-                      show-size
-                      prepend-icon="mdi-upload"
+                      :items="['Yes','No']"
+                      :rules="quotesNeededRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Status -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.status"
+                      label="Status"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Pending', 'In Progress', 'Completed', 'Cancelled']"
+                      :rules="statusRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Priority -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.priority"
+                      label="Priority"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Low', 'Medium', 'High', 'Urgent']"
+                      :rules="priorityRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Notes -->
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="entry.notes"
+                      label="Notes"
+                      variant="outlined"
+                      rows="3"
+                      class="custom-input"
                     />
                   </v-col>
                 </v-row>
@@ -133,8 +170,8 @@
                 <v-btn color="grey" variant="outlined" @click="$router.go(-1)" class="cancel-btn">
                   Cancel
                 </v-btn>
-                <v-btn color="black" variant="elevated" @click="saveEntry" :disabled="!valid" class="save-btn">
-                  Save Changes
+                <v-btn color="black" variant="elevated" @click="saveEntry" :disabled="!valid || saving" :loading="saving" class="save-btn">
+                  {{ saving ? 'Saving...' : 'Save Changes' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -146,13 +183,15 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: "EditInspectionPage",
   setup() {
-    const { showSuccessDialog } = useCustomDialogs()
-    return { showSuccessDialog }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
@@ -164,9 +203,15 @@ export default {
         contactNumber: "",
         appointmentMade: "No",
         inspectionDate: "",
-        quotesFile: null
+        quotesNeeded: "No",
+        status: "Pending",
+        priority: "Medium",
+        notes: "",
+        agencyId: "",
+        agencyName: ""
       },
       loading: true,
+      saving: false,
       error: null,
       valid: true,
       unitNameRules: [v => !!v || "Unit Name is required"],
@@ -174,7 +219,10 @@ export default {
       contactPersonRules: [v => !!v || "Contact Person is required"],
       contactNumberRules: [v => !!v || "Contact Number is required"],
       appointmentMadeRules: [v => !!v || "Appointment Made is required"],
-      inspectionDateRules: [v => !!v || "Inspection Date is required"]
+      inspectionDateRules: [v => !!v || "Inspection Date is required"],
+      quotesNeededRules: [v => !!v || "Quotes Needed is required"],
+      statusRules: [v => !!v || "Status is required"],
+      priorityRules: [v => !!v || "Priority is required"]
     };
   },
   mounted() {
@@ -184,38 +232,65 @@ export default {
     else { this.error = "Entry ID not found"; this.loading = false; }
   },
   methods: {
-    loadEntryData(id) {
-      const mockEntries = [
-        {
-          id: 1,
-          unitName: "123 Main Street, Cape Town",
-          inspectionRequired: "Yes",
-          contactPerson: "John Doe",
-          contactNumber: "0821234567",
-          appointmentMade: "Yes",
-          inspectionDate: "2024-12-01",
-          quotesFile: null
-        },
-        {
-          id: 2,
-          unitName: "456 Ocean Drive, Camps Bay",
-          inspectionRequired: "No",
-          contactPerson: "Jane Smith",
-          contactNumber: "0839876543",
-          appointmentMade: "No",
-          inspectionDate: "2024-11-15",
-          quotesFile: null
+    async loadEntryData(id) {
+      try {
+        console.log('Loading inspection entry with ID:', id);
+        const docRef = doc(db, 'inspections', id);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          this.entry = {
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate(),
+            updatedAt: docSnap.data().updatedAt?.toDate()
+          };
+          console.log('Inspection entry loaded:', this.entry);
+        } else {
+          this.error = "Inspection entry not found";
+          console.log('Inspection entry not found with ID:', id);
         }
-      ];
-      const foundEntry = mockEntries.find(e => e.id == id);
-      if (foundEntry) this.entry = { ...foundEntry }, this.loading = false;
-      else this.error = "Entry not found", this.loading = false;
+      } catch (error) {
+        console.error('Error loading inspection entry:', error);
+        this.error = "Failed to load inspection entry";
+      } finally {
+        this.loading = false;
+      }
     },
-    saveEntry() {
+    
+    async saveEntry() {
       if (this.$refs.form.validate()) {
-        console.log("Saving inspection entry:", this.entry);
-        if (this.entry.quotesFile) console.log("Uploaded file:", this.entry.quotesFile.name);
-        this.showSuccessDialog("Inspection entry saved successfully!", "Success!", "Continue", "/inspections");
+        this.saving = true;
+        try {
+          console.log("Saving inspection entry:", this.entry);
+          
+          // Prepare update data
+          const updateData = {
+            unitName: this.entry.unitName,
+            inspectionRequired: this.entry.inspectionRequired,
+            contactPerson: this.entry.contactPerson,
+            contactNumber: this.entry.contactNumber,
+            appointmentMade: this.entry.appointmentMade,
+            inspectionDate: this.entry.inspectionDate,
+            quotesNeeded: this.entry.quotesNeeded,
+            status: this.entry.status,
+            priority: this.entry.priority,
+            notes: this.entry.notes || "",
+            updatedAt: new Date()
+          };
+          
+          // Update the document
+          const docRef = doc(db, 'inspections', this.entry.id);
+          await updateDoc(docRef, updateData);
+          
+          console.log('Inspection entry updated successfully');
+          this.showSuccessDialog("Inspection entry saved successfully!", "Success!", "Continue", "/inspections");
+        } catch (error) {
+          console.error('Error updating inspection entry:', error);
+          this.showErrorDialog('Failed to save inspection entry. Please try again.', 'Error', 'OK');
+        } finally {
+          this.saving = false;
+        }
       }
     }
   }

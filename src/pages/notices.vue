@@ -21,7 +21,7 @@
         </v-col>
 
         <!-- Agency Select -->
-        <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-col v-if="!isAgencyUser" cols="12" md="2" lg="2" class="pa-4">
           <v-select
             v-model="selectedAgency"
             :items="agencies"
@@ -171,7 +171,8 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore'
+import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "NoticePage",
@@ -208,6 +209,10 @@ export default {
     selectedAgencyDetails() {
       return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    }
   },
   methods: {
     getCurrentMonth() {
@@ -247,15 +252,37 @@ export default {
     async fetchAgencies() {
       this.agenciesLoading = true;
       try {
-        console.log('Fetching agencies...');
-        const agenciesQuery = query(collection(db, 'users'), where('userType', '==', 'Agency'));
-        const agenciesSnapshot = await getDocs(agenciesQuery);
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
         
-        this.agencies = agenciesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        console.log('Agencies loaded:', this.agencies);
+        if (userType === 'Agency') {
+          // Agency users can only see their own agency
+          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data();
+            this.agencies = [{
+              id: agencyDoc.id,
+              ...agencyData
+            }];
+            // Pre-select the agency for agency users
+            this.selectedAgency = agencyDoc.id;
+          } else {
+            this.agencies = [];
+          }
+          console.log('Agency user - own agency loaded:', this.agencies);
+        } else {
+          // Super Admin and Admin users can see all agencies
+          console.log('Fetching agencies...');
+          const agenciesQuery = query(collection(db, 'users'), where('userType', '==', 'Agency'));
+          const agenciesSnapshot = await getDocs(agenciesQuery);
+          
+          this.agencies = agenciesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('All agencies loaded:', this.agencies);
+        }
       } catch (error) {
         console.error('Error fetching agencies:', error);
       } finally {
@@ -266,12 +293,21 @@ export default {
     async fetchNotices(agencyId = null) {
       this.propertiesLoading = true;
       try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
         console.log('Fetching notices...');
         let noticesQuery;
         
-        if (agencyId) {
+        if (userType === 'Agency') {
+          // Agency users can only see their own notices
+          noticesQuery = query(collection(db, 'notices'), where('agencyId', '==', currentUser.uid));
+        } else if (agencyId) {
+          // Super Admin/Admin users query notices for specific agency
           noticesQuery = query(collection(db, 'notices'), where('agencyId', '==', agencyId));
         } else {
+          // Super Admin/Admin users query all notices when no agency selected
           noticesQuery = collection(db, 'notices');
         }
         
@@ -283,6 +319,7 @@ export default {
         }));
         console.log('Notices loaded:', this.properties);
         console.log('Number of notices found:', this.properties.length);
+        console.log('User type:', userType, 'Agency ID filter:', agencyId);
         
         // Log the first notice structure if available
         if (this.properties.length > 0) {
@@ -300,6 +337,11 @@ export default {
     
     onAgencyChange(agencyId) {
       console.log('Agency changed to:', agencyId);
+      if (this.isAgencyUser) {
+        // Agency users can't change agency selection
+        return;
+      }
+      
       this.fetchNotices(agencyId);
     },
     
@@ -329,8 +371,18 @@ export default {
   },
   async mounted() {
     document.title = "Notice Page - Depsure";
+    
+    // Fetch agencies first
     await this.fetchAgencies();
-    await this.fetchNotices();
+    
+    // Fetch notices based on user role and selected agency
+    if (this.isAgencyUser) {
+      // Agency users will automatically get their own notices
+      await this.fetchNotices();
+    } else {
+      // Super Admin/Admin users get all notices initially
+      await this.fetchNotices();
+    }
   },
 };
 </script>

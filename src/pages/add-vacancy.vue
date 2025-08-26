@@ -41,17 +41,22 @@
                       :rules="agencyRules"
                       :loading="agenciesLoading"
                       required
+                      :disabled="isAgencyUser"
                     />
                   </v-col>
 
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
-                    <v-text-field
+                    <v-select
                       v-model="vacancy.unitName"
-                      label="Unit Name/Address"
+                      label="Select Unit"
                       variant="outlined"
                       class="custom-input"
+                      :items="units"
+                      item-title="propertyName"
+                      item-value="propertyName"
                       :rules="unitNameRules"
+                      :loading="unitsLoading"
                       required
                     />
                   </v-col>
@@ -167,7 +172,8 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore'
+import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'AddVacancyPage',
@@ -189,6 +195,8 @@ export default {
       },
       agencies: [],
       agenciesLoading: false,
+      units: [],
+      unitsLoading: false,
       valid: true,
       loading: false,
       // Validation rules
@@ -219,6 +227,12 @@ export default {
         v => !!v || 'Contact number is required'
       ],
       notesRules: []
+    }
+  },
+  computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
     }
   },
   methods: {
@@ -260,23 +274,110 @@ export default {
     async fetchAgencies() {
       this.agenciesLoading = true
       try {
-        const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
-        const querySnapshot = await getDocs(q)
-        this.agencies = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        console.log('Agencies loaded:', this.agencies.length)
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        if (userType === 'Agency') {
+          // Agency users can only add vacancy entries to their own agency
+          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data();
+            this.agencies = [{
+              id: agencyDoc.id,
+              ...agencyData
+            }];
+            // Pre-select the agency for agency users
+            this.vacancy.agencyId = agencyDoc.id;
+          } else {
+            this.agencies = [];
+          }
+          console.log('Agency user - own agency loaded:', this.agencies);
+        } else {
+          // Super Admin and Admin users can see all agencies
+          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+          const querySnapshot = await getDocs(q)
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          console.log('All agencies loaded:', this.agencies.length)
+        }
       } catch (error) {
         console.error('Error fetching agencies:', error)
         this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
       } finally {
         this.agenciesLoading = false
       }
+    },
+
+    async fetchUnits(agencyId = null) {
+      this.unitsLoading = true;
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        let unitsQuery;
+        
+        if (userType === 'Agency') {
+          // Agency users can only see units from their own agency
+          unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', currentUser.uid)
+          );
+        } else if (agencyId) {
+          // Super Admin/Admin users query units for specific agency
+          unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', agencyId)
+          );
+        } else {
+          // Super Admin/Admin users query all units when no agency selected
+          unitsQuery = collection(db, 'units');
+        }
+        
+        const querySnapshot = await getDocs(unitsQuery);
+        this.units = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        console.log('Units fetched:', this.units);
+        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+      } catch (error) {
+        console.error('Error fetching units:', error);
+        this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK');
+      } finally {
+        this.unitsLoading = false;
+      }
     }
   },
   async mounted() {
+    // Fetch agencies first
     await this.fetchAgencies()
+    
+    // For agency users, fetch their units automatically
+    if (this.isAgencyUser) {
+      await this.fetchUnits();
+    }
+  },
+  watch: {
+    'vacancy.agencyId': {
+      handler(newAgencyId) {
+        if (this.isAgencyUser) {
+          // Agency users automatically get their own units
+          this.fetchUnits();
+        } else if (newAgencyId) {
+          // Super Admin/Admin users get units for selected agency
+          this.fetchUnits(newAgencyId);
+        } else {
+          this.units = [];
+          this.vacancy.unitName = '';
+        }
+      },
+      immediate: false
+    }
   }
 }
 </script>

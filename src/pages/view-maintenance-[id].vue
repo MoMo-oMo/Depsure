@@ -43,6 +43,17 @@
           <div v-else class="form-card" elevation="0">
             <v-card-text>
               <v-row>
+                <!-- Agency -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.agencyName || 'Not specified'"
+                    label="Agency"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
                 <!-- Unit Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
@@ -57,13 +68,13 @@
                 <!-- Notice Given -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.noticeGiven ? 'Yes' : 'No'"
+                    :model-value="entry.noticeGiven"
                     label="Notice Given"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
-               </v-col>
+                </v-col>
 
                 <!-- Vacate Date -->
                 <v-col cols="12" md="6">
@@ -98,11 +109,79 @@
                   />
                 </v-col>
 
-                <!-- Quote Instructions -->
+                <!-- Status -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.quoteInstructions || 'N/A'"
-                    label="Quote Instructions"
+                    :model-value="entry.status"
+                    label="Maintenance Status"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Priority -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.priority"
+                    label="Priority Level"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Estimated Cost -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.estimatedCost ? `R${entry.estimatedCost.toLocaleString()}` : 'Not specified'"
+                    label="Estimated Cost"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Quote File -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.quoteFileName || 'No file uploaded'"
+                    label="Quote Instructions File"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Notes -->
+                <v-col cols="12">
+                  <v-textarea
+                    :model-value="entry.notes || 'No additional notes'"
+                    label="Additional Notes"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                    rows="3"
+                    auto-grow
+                  />
+                </v-col>
+
+                <!-- Created Date -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : 'Not available'"
+                    label="Created Date"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Last Updated -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : 'Not available'"
+                    label="Last Updated"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -110,6 +189,19 @@
                 </v-col>
               </v-row>
             </v-card-text>
+
+            <!-- Action Buttons -->
+            <v-card-actions class="pa-4">
+              <v-spacer />
+              <v-btn
+                color="black"
+                variant="elevated"
+                class="edit-btn"
+                @click="editEntry"
+              >
+                Edit Entry
+              </v-btn>
+            </v-card-actions>
           </div>
         </v-col>
       </v-row>
@@ -118,52 +210,67 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { doc, getDoc } from 'firebase/firestore'
+
 export default {
   name: "ViewMaintenancePage",
+  setup() {
+    const { showErrorDialog } = useCustomDialogs()
+    return { showErrorDialog }
+  },
   data() {
     return {
       entry: {},
       loading: true,
-      error: null,
-      entries: [
-        {
-          id: 1,
-          unitName: "123 Main Street, Cape Town",
-          noticeGiven: "2024-12-01",
-          vacateDate: "2025-01-15",
-          contactNumber: "0821234567",
-          address: "123 Main Street, Cape Town",
-          quoteInstructions: "Upload required quote PDF here.",
-          agency: "Pam Golding Properties"
-        },
-        {
-          id: 2,
-          unitName: "456 Ocean Drive, Camps Bay",
-          noticeGiven: "2024-05-01",
-          vacateDate: "2024-06-01",
-          contactNumber: "0839876543",
-          address: "456 Ocean Drive, Camps Bay",
-          quoteInstructions: "",
-          agency: "RE/MAX Properties"
-        }
-      ]
+      error: null
     };
   },
-  mounted() {
+  async mounted() {
     document.title = "Maintenance Entry Details - Depsure";
     const entryId = this.$route.params.id;
     this.loadEntry(entryId);
   },
   methods: {
-    loadEntry(entryId) {
-      const foundEntry = this.entries.find(e => e.id == entryId);
-      if (foundEntry) {
-        this.entry = foundEntry;
-        this.loading = false;
-      } else {
-        this.error = "Maintenance entry not found";
+    async loadEntry(entryId) {
+      try {
+        const docRef = doc(db, 'maintenance', entryId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          this.entry = {
+            id: docSnap.id,
+            agencyName: data.agencyName || 'Not specified',
+            unitName: data.unitName || '',
+            noticeGiven: data.noticeGiven || 'No',
+            vacateDate: data.vacateDate || '',
+            contactNumber: data.contactNumber || '',
+            address: data.address || '',
+            status: data.status || 'Pending',
+            priority: data.priority || 'Medium',
+            estimatedCost: data.estimatedCost || 0,
+            notes: data.notes || '',
+            quoteFileName: data.quoteFileName || '',
+            quoteFileURL: data.quoteFileURL || '',
+            createdAt: data.createdAt?.toDate() || data.createdAt,
+            updatedAt: data.updatedAt?.toDate() || data.updatedAt
+          };
+          this.loading = false;
+        } else {
+          this.error = "Maintenance entry not found";
+          this.loading = false;
+        }
+      } catch (error) {
+        console.error('Error loading maintenance entry:', error);
+        this.error = "Failed to load maintenance entry";
         this.loading = false;
       }
+    },
+
+    editEntry() {
+      this.$router.push(`/edit-maintenance-${this.entry.id}`);
     }
   }
 };
@@ -217,22 +324,38 @@ export default {
   background: white;
   border-radius: 0 0 12px 12px;
   padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* Input styling */
 .custom-input .v-field {
   border-radius: 8px;
 }
 
 .custom-input :deep(.v-field__input) {
-  background-color: #f8f9fa !important;
-  color: #000000 !important;
+  padding: 10px !important;
+  background-color: white !important;
+  color: #000 !important;
 }
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
+}
+
+.edit-btn {
+  width: 160px;
+  height: 44px;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  background-color: black !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.edit-btn:hover {
+  background-color: #333 !important;
+  transform: translateY(-1px);
 }
 
 /* Responsive */

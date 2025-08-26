@@ -177,6 +177,7 @@
 <script>
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'ViewAgencyPage',
@@ -304,6 +305,17 @@ export default {
     async fetchAgencyData(agencyId) {
       this.loading = true;
       try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        // Check if user has permission to view this agency
+        if (userType === 'Agency' && currentUser.uid !== agencyId) {
+          console.error('Agency user can only view their own agency');
+          this.$router.push('/agency');
+          return;
+        }
+        
         const agencyDoc = await getDoc(doc(db, 'users', agencyId));
         
         if (agencyDoc.exists()) {

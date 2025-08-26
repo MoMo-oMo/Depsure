@@ -54,6 +54,7 @@
                       class="custom-input"
                       :rules="unitNameRules"
                       required
+                      @input="validateForm"
                     />
                   </v-col>
 
@@ -67,6 +68,7 @@
                       class="custom-input"
                       :rules="dateVacatedRules"
                       required
+                      @input="validateForm"
                     />
                   </v-col>
 
@@ -80,6 +82,7 @@
                       :items="['Yes', 'No']"
                       :rules="newTenantFoundRules"
                       required
+                      @update:model-value="validateForm"
                     />
                   </v-col>
 
@@ -93,6 +96,7 @@
                       class="custom-input"
                       :rules="moveInDateRules"
                       :disabled="vacancy.newTenantFound === 'No'"
+                      @input="validateForm"
                     />
                   </v-col>
 
@@ -105,6 +109,7 @@
                       class="custom-input"
                       :rules="propertyManagerRules"
                       required
+                      @input="validateForm"
                     />
                   </v-col>
 
@@ -118,58 +123,7 @@
                       class="custom-input"
                       :rules="contactNumberRules"
                       required
-                    />
-                  </v-col>
-
-                  <!-- Monthly Rent -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="vacancy.monthlyRent"
-                      label="Monthly Rent ($)"
-                      variant="outlined"
-                      type="number"
-                      class="custom-input"
-                      :rules="monthlyRentRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Security Deposit -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="vacancy.securityDeposit"
-                      label="Security Deposit ($)"
-                      variant="outlined"
-                      type="number"
-                      class="custom-input"
-                      :rules="securityDepositRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Property Status -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="vacancy.propertyStatus"
-                      label="Property Status"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Available', 'Under Maintenance', 'Reserved', 'Rented']"
-                      :rules="propertyStatusRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Cleaning Required -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="vacancy.cleaningRequired"
-                      label="Cleaning Required"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="cleaningRequiredRules"
-                      required
+                      @input="validateForm"
                     />
                   </v-col>
 
@@ -218,13 +172,15 @@
 </template>
 
 <script>
-import { useNotification } from '@/composables/useNotification'
+import { db } from '@/firebaseConfig'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: 'EditVacancyPage',
   setup() {
-    const { showSuccess, showError } = useNotification()
-    return { showSuccess, showError }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
@@ -232,7 +188,7 @@ export default {
       loading: true,
       saving: false,
       error: null,
-      valid: true,
+      valid: false,
       // Validation rules
       unitNameRules: [
         v => !!v || 'Unit Name is required',
@@ -259,18 +215,6 @@ export default {
       contactNumberRules: [
         v => !!v || 'Contact Number is required',
         v => /^[\+]?[1-9][\d]{0,15}$/.test(v) || 'Please enter a valid phone number'
-      ],
-      monthlyRentRules: [
-        v => v >= 0 || 'Monthly Rent cannot be negative'
-      ],
-      securityDepositRules: [
-        v => v >= 0 || 'Security Deposit cannot be negative'
-      ],
-      propertyStatusRules: [
-        v => !!v || 'Property Status is required'
-      ],
-      cleaningRequiredRules: [
-        v => !!v || 'Cleaning Required is required'
       ]
     }
   },
@@ -279,30 +223,56 @@ export default {
     document.title = 'Edit Vacancy - Depsure';
     this.loadVacancy();
   },
+  watch: {
+    vacancy: {
+      handler(newVacancy) {
+        if (newVacancy) {
+          // Trigger form validation after vacancy is loaded
+          this.$nextTick(() => {
+            if (this.$refs.form) {
+              this.valid = this.$refs.form.validate();
+            }
+          });
+        }
+      },
+      immediate: true
+    },
+    'vacancy.newTenantFound': {
+      handler() {
+        // Re-validate when newTenantFound changes (affects moveInDate validation)
+        this.$nextTick(() => {
+          this.validateForm();
+        });
+      }
+    }
+  },
   methods: {
     async loadVacancy() {
       this.loading = true;
       this.error = null;
       
       try {
-        // Simulate API call - in real app, fetch from API
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('Loading vacancy with ID:', this.$route.params.id);
+        const docRef = doc(db, 'vacancies', this.$route.params.id);
+        const docSnap = await getDoc(docRef);
         
-        // Mock data - replace with actual API call
-        this.vacancy = {
-          id: this.$route.params.id,
-          unitName: '123 Main Street, Apt 4B',
-          dateVacated: '2024-12-01',
-          newTenantFound: 'Yes',
-          moveInDate: '2025-01-15',
-          propertyManager: 'John Smith',
-          contactNumber: '+1 (555) 123-4567',
-          monthlyRent: 2500,
-          securityDeposit: 5000,
-          propertyStatus: 'Reserved',
-          cleaningRequired: 'No',
-          notes: 'Tenant left the property in excellent condition. New tenant has been approved and will move in on January 15th, 2025.'
-        };
+        if (docSnap.exists()) {
+          this.vacancy = {
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate(),
+            updatedAt: docSnap.data().updatedAt?.toDate()
+          };
+          console.log('Vacancy loaded:', this.vacancy);
+          
+          // If agencyId exists but no agencyName, try to fetch agency name
+          if (this.vacancy.agencyId && !this.vacancy.agencyName) {
+            await this.fetchAgencyName(this.vacancy.agencyId);
+          }
+        } else {
+          this.error = 'Vacancy not found';
+          console.log('Vacancy not found with ID:', this.$route.params.id);
+        }
         
         this.loading = false;
       } catch (err) {
@@ -311,21 +281,56 @@ export default {
         console.error('Error loading vacancy:', err);
       }
     },
+
+    async fetchAgencyName(agencyId) {
+      try {
+        const agencyRef = doc(db, 'users', agencyId);
+        const agencySnap = await getDoc(agencyRef);
+        if (agencySnap.exists()) {
+          this.vacancy.agencyName = agencySnap.data().agencyName;
+        }
+      } catch (error) {
+        console.error('Error fetching agency name:', error);
+      }
+    },
+    
+    validateForm() {
+      if (this.$refs.form) {
+        this.valid = this.$refs.form.validate();
+        console.log('Form validation result:', this.valid);
+        console.log('Form errors:', this.$refs.form.errors);
+      }
+    },
     
     async saveVacancy() {
-      if (this.$refs.form.validate()) {
+      this.validateForm();
+      if (this.valid) {
         this.saving = true;
         
         try {
-          // Simulate API call - in real app, make API call to update
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
           console.log('Updating vacancy:', this.vacancy);
-          this.showSuccess('Vacancy updated successfully!');
-          this.$router.go(-1); // Go back to previous page
+          
+          // Prepare update data
+          const updateData = {
+            unitName: this.vacancy.unitName,
+            dateVacated: this.vacancy.dateVacated,
+            newTenantFound: this.vacancy.newTenantFound,
+            moveInDate: this.vacancy.newTenantFound === 'Yes' ? this.vacancy.moveInDate : null,
+            propertyManager: this.vacancy.propertyManager,
+            contactNumber: this.vacancy.contactNumber,
+            notes: this.vacancy.notes || "",
+            updatedAt: new Date()
+          };
+          
+          // Update the document
+          const docRef = doc(db, 'vacancies', this.vacancy.id);
+          await updateDoc(docRef, updateData);
+          
+          console.log('Vacancy updated successfully');
+          this.showSuccessDialog('Vacancy updated successfully!', 'Success!', 'Continue', '/vacancies');
         } catch (err) {
           console.error('Error updating vacancy:', err);
-                      this.showError('Failed to update vacancy. Please try again.');
+          this.showErrorDialog('Failed to update vacancy. Please try again.', 'Error', 'OK');
         } finally {
           this.saving = false;
         }

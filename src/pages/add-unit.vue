@@ -41,6 +41,7 @@
                       :rules="agencyRules"
                       required
                       :loading="agenciesLoading"
+                      :disabled="isAgencyUser"
                     />
                   </v-col>
 
@@ -220,7 +221,8 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, addDoc, query, where } from 'firebase/firestore'
+import { collection, getDocs, addDoc, query, where, doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'AddUnitPage',
@@ -290,6 +292,12 @@ export default {
       ]
     }
   },
+  computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    }
+  },
   async mounted() {
     console.log('AddUnitPage mounted');
     // Set the page title for the app bar
@@ -310,18 +318,39 @@ export default {
     async fetchAgencies() {
       this.agenciesLoading = true;
       try {
-        // Query users collection for agencies only
-        const agenciesQuery = query(
-          collection(db, 'users'),
-          where('userType', '==', 'Agency')
-        );
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
         
-        const querySnapshot = await getDocs(agenciesQuery);
-        this.agencies = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        console.log('Agencies fetched:', this.agencies);
+        if (userType === 'Agency') {
+          // Agency users can only add units to their own agency
+          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data();
+            this.agencies = [{
+              id: agencyDoc.id,
+              ...agencyData
+            }];
+            // Pre-select the agency for agency users
+            this.property.agencyId = agencyDoc.id;
+          } else {
+            this.agencies = [];
+          }
+          console.log('Agency user - own agency loaded:', this.agencies);
+        } else {
+          // Super Admin and Admin users can see all agencies
+          const agenciesQuery = query(
+            collection(db, 'users'),
+            where('userType', '==', 'Agency')
+          );
+          
+          const querySnapshot = await getDocs(agenciesQuery);
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('All agencies fetched:', this.agencies);
+        }
       } catch (error) {
         console.error('Error fetching agencies:', error);
         this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK');

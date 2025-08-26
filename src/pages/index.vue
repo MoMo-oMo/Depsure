@@ -3,20 +3,20 @@
     <v-main class="split-login">
       <!-- Left Panel: Form -->
       <div class="left-panel">
-        <div class="login-card">
-          <h2 class="login-title">Hello!</h2>
-          <small>Login to Get Started</small>
+        <div class="login-card animate-form">
+          <h2 class="login-title animate-title">Hello!</h2>
+          <small class="animate-subtitle">Login to Get Started</small>
 
-          <v-form ref="form" v-model="valid" class="my-3" lazy-validation>
+          <v-form ref="form" v-model="valid" class="pa-0 animate-form-fields" lazy-validation>
             <!-- Email Field -->
             <v-text-field
               v-model="email"
               label="Email Address"
               prepend-inner-icon="mdi-email"
               flat="true"
-                     density="comfortable"
+              density="comfortable"
               variant="outlined"
-              class="custom-input"
+              class="custom-input animate-input pa-0"
               :rules="emailRules"
               dense
             />
@@ -27,36 +27,32 @@
               :type="showPassword ? 'text' : 'password'"
               label="Password"
               density="comfortable"
-
               prepend-inner-icon="mdi-lock"
               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
               @click:append-inner="showPassword = !showPassword"
               flat="true"
               variant="outlined"
-              class="custom-input"
+              class="custom-input animate-input"
               :rules="passwordRules"
               dense
             />
           </v-form>
 
           <!-- Forgot Password (Left-aligned) -->
-          <div class="forgot-password">
+          <div class="forgot-password animate-forgot">
             <a href="#" @click.prevent="onForgotPassword">Forgot Password?</a>
           </div>
 
           <!-- Custom Black Login Button -->
           <button
-            class="custom-btn"
+            class="custom-btn animate-button"
             :disabled="!valid || loading"
             @click="onSubmit"
           >
             {{ loading ? 'Logging in...' : 'Login' }}
           </button>
 
-          <!-- Register as plain text -->
-          <div class="register-text" @click="onRegister">
-            Register
-          </div>
+
 
 
 
@@ -66,7 +62,7 @@
       <!-- Right Panel: Image background with overlay -->
       <div class="right-panel">
         <div class="overlay"></div>
-        <img src="@/assets/ds.png" alt="Brand Logo" class="brand-image"/>
+        <img src="@/assets/ds.png" alt="Brand Logo" class="brand-image animate-logo"/>
       </div>
     </v-main>
   </v-app>
@@ -134,7 +130,7 @@ export default {
             if (userData.userType === 'Agency') {
               this.$router.push('/agency');
             } else {
-              this.$router.push('/dashboard');
+              this.$router.push('/user-management');
             }
           } else {
             // User exists in Auth but not in Firestore
@@ -166,9 +162,6 @@ export default {
     onForgotPassword() {
       this.showInfo('Redirecting to Forgot Password page...')
     },
-    onRegister() {
-      this.showInfo('Redirecting to Register page...')
-    },
     testSuccess() {
       this.showSuccess('This is a success notification!')
     },
@@ -192,19 +185,24 @@ export default {
 </script>
 
 <style scoped>
+/* Main Layout */
 .split-login {
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
+/* Left Panel - Form Side */
 .left-panel {
   flex: 1;
-  background-color: #f6f7fa;
+  background: linear-gradient(135deg, #f6f7fa 0%, #ffffff 100%);
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 2rem;
 }
 
+/* Right Panel - Image Side */
 .right-panel {
   flex: 1;
   position: relative;
@@ -223,155 +221,325 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.6);
+  background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%);
   z-index: 1;
 }
 
+/* Logo Animation */
 .brand-image {
   max-width: 400px;
   height: auto;
   z-index: 2;
   position: relative;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
 }
 
+.animate-logo {
+  animation: logoSlideUp 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  transform: translateY(100px);
+  opacity: 0;
+}
+
+@keyframes logoSlideUp {
+  0% {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Login Card */
 .login-card {
   width: 100%;
   max-width: 400px;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: none;
+  padding: 2.5rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   z-index: 3;
   position: relative;
   display: flex;
   flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.animate-form {
+  animation: formSlideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s forwards;
+  transform: translateX(-50px);
+  opacity: 0;
+}
+
+@keyframes formSlideIn {
+  0% {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Title Animations */
 .login-title {
-  margin: 0;
-  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #333 0%, #000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.animate-title {
+  animation: titleFadeIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes titleFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-subtitle {
+  animation: subtitleFadeIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.7s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+}
+
+@keyframes subtitleFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Form Fields */
+.animate-form-fields {
+  animation: formFieldsSlideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.9s forwards;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+@keyframes formFieldsSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-input {
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
 }
 
 .custom-input .v-field {
-  border-radius: 8px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
-/* Buttons */
+.custom-input:hover .v-field {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.animate-input {
+  animation: inputFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.animate-input:nth-child(1) {
+  animation-delay: 1.1s;
+}
+
+.animate-input:nth-child(2) {
+  animation-delay: 1.3s;
+}
+
+@keyframes inputFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Forgot Password */
+.forgot-password {
+  text-align: left;
+  margin-top: -10px;
+  margin-bottom: 1rem;
+}
+
+.animate-forgot {
+  animation: forgotFadeIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.5s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes forgotFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.forgot-password a {
+  font-size: 0.9rem;
+  color: #666;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.forgot-password a:hover {
+  color: #000;
+  text-decoration: none;
+}
+
+.forgot-password a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background-color: #000;
+  transition: width 0.3s ease;
+}
+
+.forgot-password a:hover::after {
+  width: 100%;
+}
+
+/* Login Button */
 .custom-btn {
   width: 100%;
-  padding: 10px 24px;
-  background-color: black;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #000 0%, #333 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   margin-top: 1rem;
-  transition: background-color 0.3s;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 3;
   min-width: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.custom-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.custom-btn:hover::before {
+  left: 100%;
 }
 
 .custom-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .custom-btn:hover:not(:disabled) {
-  background-color: #222;
+  background: linear-gradient(135deg, #333 0%, #000 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-/* Forgot Password */
-.forgot-password {
-  text-align: left; /* left aligned */
-  margin-top: -20px;
+.animate-button {
+  animation: buttonSlideIn 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) 1.7s forwards;
+  opacity: 0;
+  transform: translateY(30px);
 }
 
-.forgot-password a {
-  font-size: 0.9rem;
-  color: #555;
-  text-decoration: none;
+@keyframes buttonSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.forgot-password a:hover {
-  text-decoration: underline;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .split-login {
+    flex-direction: column;
+  }
+  
+  .right-panel {
+    display: none;
+  }
+  
+  .left-panel {
+    padding: 1rem;
+  }
+  
+  .login-card {
+    padding: 2rem;
+    max-width: 100%;
+  }
+  
+  .brand-image {
+    max-width: 300px;
+  }
 }
 
-/* Register text */
-.register-text {
-  text-align: center;
-  margin-top: 1rem;
-  font-size: 1rem;
-  color: #555;
-  cursor: pointer;
-  transition: color 0.3s;
+/* Loading State */
+.custom-btn:disabled {
+  background: linear-gradient(135deg, #666 0%, #999 100%);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.register-text:hover {
-  color: black;
-  text-decoration: underline;
-}
-
-/* Test notification buttons */
-.test-notifications {
-  margin-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.test-dialogs {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.test-dialogs h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-  color: #333;
-  text-align: center;
-}
-
-.test-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  color: white;
-}
-
-.test-btn.success {
-  background-color: #4caf50;
-}
-
-.test-btn.success:hover {
-  background-color: #45a049;
-}
-
-.test-btn.error {
-  background-color: #f44336;
-}
-
-.test-btn.error:hover {
-  background-color: #da190b;
-}
-
-.test-btn.warning {
-  background-color: #ff9800;
-}
-
-.test-btn.warning:hover {
-  background-color: #e68900;
-}
-
-.test-btn.info {
-  background-color: #2196f3;
-}
-
-.test-btn.info:hover {
-  background-color: #0b7dda;
+/* Focus States */
+.custom-input .v-field--focused {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 </style>

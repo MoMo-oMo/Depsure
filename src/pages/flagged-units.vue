@@ -22,7 +22,7 @@
         </v-col>
 
         <!-- Agency Select -->
-        <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-col v-if="!isAgencyUser" cols="12" md="2" lg="2" class="pa-4">
           <v-select
             v-model="selectedAgency"
             :items="agencies"
@@ -164,8 +164,9 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore'
+import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "FlaggedUnitsPage",
@@ -195,6 +196,10 @@ export default {
   computed: {
     selectedAgencyDetails() {
       return this.agencies.find((a) => a.id === this.selectedAgency) || null;
+    },
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
     }
   },
   methods: {
@@ -271,18 +276,39 @@ export default {
     async fetchAgencies() {
       this.agenciesLoading = true;
       try {
-        // Query users collection for agencies only
-        const agenciesQuery = query(
-          collection(db, 'users'),
-          where('userType', '==', 'Agency')
-        );
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
         
-        const querySnapshot = await getDocs(agenciesQuery);
-        this.agencies = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        console.log('Agencies fetched:', this.agencies);
+        if (userType === 'Agency') {
+          // Agency users can only see their own agency
+          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data();
+            this.agencies = [{
+              id: agencyDoc.id,
+              ...agencyData
+            }];
+            // Pre-select the agency for agency users
+            this.selectedAgency = agencyDoc.id;
+          } else {
+            this.agencies = [];
+          }
+          console.log('Agency user - own agency loaded:', this.agencies);
+        } else {
+          // Super Admin and Admin users can see all agencies
+          const agenciesQuery = query(
+            collection(db, 'users'),
+            where('userType', '==', 'Agency')
+          );
+          
+          const querySnapshot = await getDocs(agenciesQuery);
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log('All agencies fetched:', this.agencies);
+        }
       } catch (error) {
         console.error('Error fetching agencies:', error);
       } finally {
@@ -293,16 +319,26 @@ export default {
     async fetchFlaggedUnits(agencyId = null) {
       this.unitsLoading = true;
       try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
         let unitsQuery;
         
-        if (agencyId) {
-          // Query flagged units for specific agency
+        if (userType === 'Agency') {
+          // Agency users can only see their own flagged units
+          unitsQuery = query(
+            collection(db, 'flaggedUnits'),
+            where('agencyId', '==', currentUser.uid)
+          );
+        } else if (agencyId) {
+          // Super Admin/Admin users query flagged units for specific agency
           unitsQuery = query(
             collection(db, 'flaggedUnits'),
             where('agencyId', '==', agencyId)
           );
         } else {
-          // Query all flagged units
+          // Super Admin/Admin users query all flagged units when no agency selected
           unitsQuery = collection(db, 'flaggedUnits');
         }
         
@@ -315,6 +351,7 @@ export default {
         // Apply initial filtering
         this.filterUnits();
         console.log('Flagged units fetched:', this.units);
+        console.log('User type:', userType, 'Agency ID filter:', agencyId);
       } catch (error) {
         console.error('Error fetching flagged units:', error);
       } finally {
@@ -324,6 +361,11 @@ export default {
     
     onAgencyChange(agencyId) {
       console.log('Agency changed to:', agencyId);
+      if (this.isAgencyUser) {
+        // Agency users can't change agency selection
+        return;
+      }
+      
       if (agencyId) {
         // Fetch flagged units for selected agency
         this.fetchFlaggedUnits(agencyId);
@@ -336,9 +378,17 @@ export default {
   async mounted() {
     document.title = "Flagged Units - Depsure";
     
-    // Fetch agencies and all flagged units
+    // Fetch agencies first
     await this.fetchAgencies();
-    await this.fetchFlaggedUnits();
+    
+    // Fetch flagged units based on user role and selected agency
+    if (this.isAgencyUser) {
+      // Agency users will automatically get their own flagged units
+      await this.fetchFlaggedUnits();
+    } else {
+      // Super Admin/Admin users get all flagged units initially
+      await this.fetchFlaggedUnits();
+    }
   }
 };
 </script>

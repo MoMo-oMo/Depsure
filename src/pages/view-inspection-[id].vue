@@ -119,7 +119,88 @@
                     class="custom-input"
                   />
                 </v-col>
+
+                <!-- Status -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.status"
+                    label="Status"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Priority -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.priority"
+                    label="Priority"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Agency Name -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.agencyName"
+                    label="Agency"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Notes -->
+                <v-col cols="12">
+                  <v-textarea
+                    :model-value="entry.notes"
+                    label="Notes"
+                    variant="outlined"
+                    readonly
+                    rows="3"
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Created At -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.createdAt ? entry.createdAt.toLocaleDateString() : ''"
+                    label="Created At"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Updated At -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.updatedAt ? entry.updatedAt.toLocaleDateString() : ''"
+                    label="Updated At"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
               </v-row>
+
+              <!-- Action Buttons -->
+              <v-card-actions class="pa-4">
+                <v-spacer />
+                <v-btn color="grey" variant="outlined" @click="$router.go(-1)" class="cancel-btn">
+                  Back
+                </v-btn>
+                <v-btn color="black" variant="elevated" @click="editEntry" class="edit-btn">
+                  Edit Entry
+                </v-btn>
+                <v-btn color="error" variant="outlined" @click="deleteEntry" class="delete-btn">
+                  Delete Entry
+                </v-btn>
+              </v-card-actions>
             </v-card-text>
           </div>
         </v-col>
@@ -129,37 +210,16 @@
 </template>
 
 <script>
+import { db } from '@/firebaseConfig'
+import { doc, getDoc } from 'firebase/firestore'
+
 export default {
   name: "ViewInspectionPage",
   data() {
     return {
       entry: {},
       loading: true,
-      error: null,
-      entries: [
-        {
-          id: 1,
-          unitName: "123 Main Street, Cape Town",
-          inspectionRequired: "Yes",
-          contactPerson: "John Doe",
-          contactNumber: "0821234567",
-          appointmentMade: "Yes",
-          inspectionDate: "2024-12-01",
-          quotesNeeded: "Yes",
-          agency: "Pam Golding Properties"
-        },
-        {
-          id: 2,
-          unitName: "456 Ocean Drive, Camps Bay",
-          inspectionRequired: "No",
-          contactPerson: "Jane Smith",
-          contactNumber: "0839876543",
-          appointmentMade: "No",
-          inspectionDate: "2024-11-15",
-          quotesNeeded: "No",
-          agency: "RE/MAX Properties"
-        }
-      ]
+      error: null
     };
   },
   mounted() {
@@ -168,14 +228,47 @@ export default {
     this.loadEntry(entryId);
   },
   methods: {
-    loadEntry(entryId) {
-      const foundEntry = this.entries.find(e => e.id == entryId);
-      if (foundEntry) {
-        this.entry = foundEntry;
+    async loadEntry(entryId) {
+      try {
+        console.log('Loading inspection entry with ID:', entryId);
+        const docRef = doc(db, 'inspections', entryId);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          this.entry = {
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate(),
+            updatedAt: docSnap.data().updatedAt?.toDate()
+          };
+          console.log('Inspection entry loaded:', this.entry);
+        } else {
+          this.error = "Inspection entry not found";
+          console.log('Inspection entry not found with ID:', entryId);
+        }
+      } catch (error) {
+        console.error('Error loading inspection entry:', error);
+        this.error = "Failed to load inspection entry";
+      } finally {
         this.loading = false;
-      } else {
-        this.error = "Inspection entry not found";
-        this.loading = false;
+      }
+    },
+    
+    editEntry() {
+      this.$router.push(`/edit-inspection-${this.entry.id}`);
+    },
+    
+    async deleteEntry() {
+      if (confirm(`Are you sure you want to delete inspection entry for ${this.entry.unitName}?`)) {
+        try {
+          const { deleteDoc } = await import('firebase/firestore');
+          await deleteDoc(doc(db, 'inspections', this.entry.id));
+          console.log('Inspection entry deleted successfully');
+          this.$router.push('/inspections');
+        } catch (error) {
+          console.error('Error deleting inspection entry:', error);
+          alert('Failed to delete inspection entry');
+        }
       }
     }
   }
@@ -248,6 +341,29 @@ export default {
   border-color: #e9ecef !important;
 }
 
+/* Buttons */
+.cancel-btn, .edit-btn, .delete-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  width: 120px;
+  height: 44px;
+}
+
+.edit-btn {
+  background-color: black !important;
+  color: white !important;
+}
+
+.edit-btn:hover {
+  background-color: #333 !important;
+}
+
+.delete-btn:hover {
+  background-color: #d32f2f !important;
+  color: white !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .view-inspection-page {
@@ -260,6 +376,11 @@ export default {
 
   .back-btn {
     width: 140px;
+    height: 40px;
+  }
+  
+  .cancel-btn, .edit-btn, .delete-btn {
+    width: 100px;
     height: 40px;
   }
 }

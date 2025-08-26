@@ -105,7 +105,8 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'AgencyPage',
@@ -137,19 +138,94 @@ export default {
     async fetchAgencies() {
       this.loading = true;
       try {
-        // Query users collection for agencies only
-        const agenciesQuery = query(
-          collection(db, 'users'),
-          where('userType', '==', 'Agency')
-        );
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
         
-        const querySnapshot = await getDocs(agenciesQuery);
-        this.agencies = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        this.filteredAgencies = this.agencies;
-        console.log('Agencies fetched:', this.agencies);
+        console.log('Current user data:', currentUser);
+        console.log('User type:', userType);
+        console.log('User UID:', currentUser?.uid);
+        
+        let agenciesQuery;
+        
+        if (userType === 'Agency') {
+          // Agency users can only see their own agency
+          // Try multiple approaches to find the agency data
+          let agencyData = null;
+          
+          // First try: Use the current user's document ID
+          try {
+            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (agencyDoc.exists()) {
+              agencyData = {
+                id: agencyDoc.id,
+                ...agencyDoc.data()
+              };
+            }
+          } catch (error) {
+            console.log('Could not fetch agency by UID:', error);
+          }
+          
+          // Second try: If first approach failed, try to find by email
+          if (!agencyData && currentUser.email) {
+            try {
+              const emailQuery = query(
+                collection(db, 'users'),
+                where('email', '==', currentUser.email),
+                where('userType', '==', 'Agency')
+              );
+              const emailSnapshot = await getDocs(emailQuery);
+              if (!emailSnapshot.empty) {
+                const doc = emailSnapshot.docs[0];
+                agencyData = {
+                  id: doc.id,
+                  ...doc.data()
+                };
+              }
+            } catch (error) {
+              console.log('Could not fetch agency by email:', error);
+            }
+          }
+          
+          // Third try: If still no data, use the current user data directly
+          if (!agencyData && currentUser) {
+            agencyData = {
+              id: currentUser.uid || 'unknown',
+              agencyName: currentUser.agencyName || currentUser.firstName || 'My Agency',
+              agencyDescription: currentUser.agencyDescription || currentUser.agencyTagline || 'Agency Description',
+              location: currentUser.location || 'Location not specified',
+              profileImageUrl: currentUser.profileImageUrl || currentUser.profileImage,
+              ...currentUser
+            };
+          }
+          
+          if (agencyData) {
+            this.agencies = [agencyData];
+            this.filteredAgencies = this.agencies;
+            console.log('Agency user data found:', this.agencies);
+          } else {
+            this.agencies = [];
+            this.filteredAgencies = [];
+            console.log('No agency data found for current user');
+          }
+          return; // Exit early for agency users
+        } else {
+          // Super Admin and Admin users can see all agencies
+          agenciesQuery = query(
+            collection(db, 'users'),
+            where('userType', '==', 'Agency')
+          );
+          
+          const querySnapshot = await getDocs(agenciesQuery);
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          this.filteredAgencies = this.agencies;
+          console.log('Agencies fetched:', this.agencies);
+        }
+        
+        console.log('User type:', userType, 'Current user:', currentUser);
       } catch (error) {
         console.error('Error fetching agencies:', error);
       } finally {

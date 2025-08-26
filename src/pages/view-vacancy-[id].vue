@@ -106,49 +106,27 @@
                     </div>
                   </v-col>
 
-                  <!-- Monthly Rent -->
+                  <!-- Agency Name -->
                   <v-col cols="12" md="6">
                     <div class="detail-item">
-                      <label class="detail-label">Monthly Rent</label>
-                      <div class="detail-value">${{ formatCurrency(vacancy.monthlyRent) }}</div>
+                      <label class="detail-label">Agency</label>
+                      <div class="detail-value">{{ vacancy.agencyName || 'Not specified' }}</div>
                     </div>
                   </v-col>
 
-                  <!-- Security Deposit -->
+                  <!-- Created At -->
                   <v-col cols="12" md="6">
                     <div class="detail-item">
-                      <label class="detail-label">Security Deposit</label>
-                      <div class="detail-value">${{ formatCurrency(vacancy.securityDeposit) }}</div>
+                      <label class="detail-label">Created At</label>
+                      <div class="detail-value">{{ vacancy.createdAt ? formatDate(vacancy.createdAt) : 'Not specified' }}</div>
                     </div>
                   </v-col>
 
-                  <!-- Property Status -->
+                  <!-- Updated At -->
                   <v-col cols="12" md="6">
                     <div class="detail-item">
-                      <label class="detail-label">Property Status</label>
-                      <div class="detail-value">
-                        <v-chip 
-                          :color="getStatusColor(vacancy.propertyStatus)"
-                          size="small"
-                        >
-                          {{ vacancy.propertyStatus }}
-                        </v-chip>
-                      </div>
-                    </div>
-                  </v-col>
-
-                  <!-- Cleaning Required -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Cleaning Required</label>
-                      <div class="detail-value">
-                        <v-chip 
-                          :color="vacancy.cleaningRequired === 'Yes' ? 'error' : 'success'"
-                          size="small"
-                        >
-                          {{ vacancy.cleaningRequired }}
-                        </v-chip>
-                      </div>
+                      <label class="detail-label">Updated At</label>
+                      <div class="detail-value">{{ vacancy.updatedAt ? formatDate(vacancy.updatedAt) : 'Not specified' }}</div>
                     </div>
                   </v-col>
 
@@ -196,13 +174,15 @@
 </template>
 
 <script>
-import { useNotification } from '@/composables/useNotification'
+import { db } from '@/firebaseConfig'
+import { doc, getDoc, deleteDoc } from 'firebase/firestore'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: 'ViewVacancyPage',
   setup() {
-    const { showSuccess } = useNotification()
-    return { showSuccess }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
@@ -222,24 +202,27 @@ export default {
       this.error = null;
       
       try {
-        // Simulate API call - in real app, fetch from API
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('Loading vacancy with ID:', this.$route.params.id);
+        const docRef = doc(db, 'vacancies', this.$route.params.id);
+        const docSnap = await getDoc(docRef);
         
-        // Mock data - replace with actual API call
-        this.vacancy = {
-          id: this.$route.params.id,
-          unitName: '123 Main Street, Apt 4B',
-          dateVacated: '2024-12-01',
-          newTenantFound: 'Yes',
-          moveInDate: '2025-01-15',
-          propertyManager: 'John Smith',
-          contactNumber: '+1 (555) 123-4567',
-          monthlyRent: 2500,
-          securityDeposit: 5000,
-          propertyStatus: 'Reserved',
-          cleaningRequired: 'No',
-          notes: 'Tenant left the property in excellent condition. New tenant has been approved and will move in on January 15th, 2025.'
-        };
+        if (docSnap.exists()) {
+          this.vacancy = {
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate(),
+            updatedAt: docSnap.data().updatedAt?.toDate()
+          };
+          console.log('Vacancy loaded:', this.vacancy);
+          
+          // If agencyId exists but no agencyName, try to fetch agency name
+          if (this.vacancy.agencyId && !this.vacancy.agencyName) {
+            await this.fetchAgencyName(this.vacancy.agencyId);
+          }
+        } else {
+          this.error = 'Vacancy not found';
+          console.log('Vacancy not found with ID:', this.$route.params.id);
+        }
         
         this.loading = false;
       } catch (err) {
@@ -257,31 +240,34 @@ export default {
         day: 'numeric'
       });
     },
-    
-    formatCurrency(amount) {
-      return new Intl.NumberFormat('en-US').format(amount);
-    },
-    
-    getStatusColor(status) {
-      const colors = {
-        'Available': 'success',
-        'Under Maintenance': 'warning',
-        'Reserved': 'info',
-        'Rented': 'primary'
-      };
-      return colors[status] || 'default';
+
+    async fetchAgencyName(agencyId) {
+      try {
+        const agencyRef = doc(db, 'users', agencyId);
+        const agencySnap = await getDoc(agencyRef);
+        if (agencySnap.exists()) {
+          this.vacancy.agencyName = agencySnap.data().agencyName;
+        }
+      } catch (error) {
+        console.error('Error fetching agency name:', error);
+      }
     },
     
     editVacancy() {
       this.$router.push(`/edit-vacancy-${this.vacancy.id}`);
     },
     
-    deleteVacancy() {
+    async deleteVacancy() {
       if (confirm(`Are you sure you want to delete the vacancy for ${this.vacancy.unitName}?`)) {
-        // In a real app, make API call to delete
-        console.log('Deleting vacancy:', this.vacancy.id);
-        this.showSuccess('Vacancy deleted successfully!');
-        this.$router.push('/vacancies');
+        try {
+          console.log('Deleting vacancy:', this.vacancy.id);
+          await deleteDoc(doc(db, 'vacancies', this.vacancy.id));
+          console.log('Vacancy deleted successfully');
+          this.showSuccessDialog('Vacancy deleted successfully!', 'Success!', 'Continue', '/vacancies');
+        } catch (error) {
+          console.error('Error deleting vacancy:', error);
+          this.showErrorDialog('Failed to delete vacancy. Please try again.', 'Error', 'OK');
+        }
       }
     }
   }

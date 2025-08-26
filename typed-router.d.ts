@@ -47,7 +47,6 @@ declare module 'vue-router/auto-routes' {
     '/view-agency-[id]': RouteRecordInfo<'/view-agency-[id]', '/view-agency-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/view-flagged-unit-[id]': RouteRecordInfo<'/view-flagged-unit-[id]', '/view-flagged-unit-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/view-flagged-units': RouteRecordInfo<'/view-flagged-units', '/view-flagged-units', Record<never, never>, Record<never, never>>,
-    '/view-inspection': RouteRecordInfo<'/view-inspection', '/view-inspection', Record<never, never>, Record<never, never>>,
     '/view-inspection-[id]': RouteRecordInfo<'/view-inspection-[id]', '/view-inspection-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/view-maintenance': RouteRecordInfo<'/view-maintenance', '/view-maintenance', Record<never, never>, Record<never, never>>,
     '/view-maintenance-[id]': RouteRecordInfo<'/view-maintenance-[id]', '/view-maintenance-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,

@@ -13,14 +13,35 @@
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
-                  <!-- Unit Name -->
+                  <!-- Agency Selection -->
                   <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="entry.unitName"
-                      label="Unit Name"
+                    <v-select
+                      v-model="entry.agencyId"
+                      label="Select Agency"
                       variant="outlined"
                       class="custom-input"
+                      :items="agencies"
+                      item-title="agencyName"
+                      item-value="id"
+                      :rules="agencyRules"
+                      required
+                      :loading="agenciesLoading"
+                      :disabled="isAgencyUser"
+                    />
+                  </v-col>
+
+                  <!-- Unit Name -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.unitName"
+                      label="Select Unit"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="units"
+                      item-title="propertyName"
+                      item-value="propertyName"
                       :rules="unitNameRules"
+                      :loading="unitsLoading"
                       required
                     />
                   </v-col>
@@ -100,6 +121,44 @@
                       required
                     />
                   </v-col>
+
+                  <!-- Inspection Status -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.status"
+                      label="Inspection Status"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Pending', 'Scheduled', 'In Progress', 'Completed', 'Cancelled']"
+                      :rules="statusRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Priority Level -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="entry.priority"
+                      label="Priority Level"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Low', 'Medium', 'High', 'Urgent']"
+                      :rules="priorityRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Notes -->
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="entry.notes"
+                      label="Additional Notes"
+                      variant="outlined"
+                      class="custom-input"
+                      rows="3"
+                      auto-grow
+                    />
+                  </v-col>
                 </v-row>
               </v-card-text>
 
@@ -111,6 +170,7 @@
                   variant="outlined"
                   class="cancel-btn"
                   @click="goBack"
+                  :disabled="loading"
                 >
                   Cancel
                 </v-btn>
@@ -118,10 +178,11 @@
                   color="black"
                   variant="elevated"
                   class="submit-btn"
-                  :disabled="!valid"
+                  :disabled="!valid || loading"
+                  :loading="loading"
                   @click="submitForm"
                 >
-                  Add Inspection Entry
+                  {{ loading ? 'Adding...' : 'Add Inspection Entry' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -134,17 +195,26 @@
 
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { db } from '@/firebaseConfig'
+import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "AddInspectionPage",
   setup() {
-    const { showSuccessDialog } = useCustomDialogs()
-    return { showSuccessDialog }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    return { showSuccessDialog, showErrorDialog }
   },
   data() {
     return {
       valid: false,
+      loading: false,
+      agenciesLoading: false,
+      unitsLoading: false,
+      agencies: [],
+      units: [],
       entry: {
+        agencyId: "",
         unitName: "",
         inspectionRequired: "No",
         contactPerson: "",
@@ -152,7 +222,11 @@ export default {
         appointmentMade: "No",
         inspectionDate: "",
         quotesNeeded: "No",
+        status: "Pending",
+        priority: "Medium",
+        notes: ""
       },
+      agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
       inspectionRequiredRules: [v => !!v || "Inspection Required is required"],
       contactPersonRules: [v => !!v || "Contact Person is required"],
@@ -160,17 +234,210 @@ export default {
       appointmentMadeRules: [v => !!v || "Appointment Made is required"],
       inspectionDateRules: [v => !!v || "Inspection Date is required"],
       quotesNeededRules: [v => !!v || "Quotes Needed is required"],
+      statusRules: [v => !!v || "Status is required"],
+      priorityRules: [v => !!v || "Priority is required"]
     };
   },
+  computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    }
+  },
   methods: {
-    submitForm() {
+    async submitForm() {
       if (this.$refs.form.validate()) {
-        console.log("Adding inspection entry:", this.entry);
-        this.showSuccessDialog("Inspection entry added successfully!", "Success!", "Continue", "/inspections");
+        this.loading = true
+        try {
+          console.log("Adding inspection entry:", this.entry);
+          
+          // Get agency name from selected agency
+          const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
+          console.log('Selected agency ID:', this.entry.agencyId)
+          console.log('Selected agency object:', selectedAgency)
+          console.log('Available agencies:', this.agencies)
+          
+          // Prepare inspection data for Firestore
+          const inspectionData = {
+            agencyId: this.entry.agencyId,
+            agencyName: selectedAgency ? selectedAgency.agencyName : '',
+            unitName: this.entry.unitName,
+            inspectionRequired: this.entry.inspectionRequired,
+            contactPerson: this.entry.contactPerson,
+            contactNumber: this.entry.contactNumber,
+            appointmentMade: this.entry.appointmentMade,
+            inspectionDate: this.entry.inspectionDate,
+            quotesNeeded: this.entry.quotesNeeded,
+            status: this.entry.status,
+            priority: this.entry.priority,
+            notes: this.entry.notes || "",
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+          
+          // Store inspection data in Firestore
+          await addDoc(collection(db, 'inspections'), inspectionData)
+          
+          console.log('Inspection data stored in Firestore')
+          this.showSuccessDialog('Inspection entry added successfully!', 'Success!', 'Continue', '/inspections')
+          
+        } catch (error) {
+          console.error('Error creating inspection entry:', error)
+          this.showErrorDialog('Failed to create inspection entry. Please try again.', 'Error', 'OK')
+        } finally {
+          this.loading = false
+        }
       }
     },
+
+    async fetchAgencies() {
+      this.agenciesLoading = true
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        if (userType === 'Agency') {
+          // Agency users can only add inspection entries to their own agency
+          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data();
+            this.agencies = [{
+              id: agencyDoc.id,
+              ...agencyData
+            }];
+            // Pre-select the agency for agency users
+            this.entry.agencyId = agencyDoc.id;
+          } else {
+            this.agencies = [];
+          }
+          console.log('Agency user - own agency loaded:', this.agencies);
+        } else {
+          // Super Admin and Admin users can see all agencies
+          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+          const querySnapshot = await getDocs(q)
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          console.log('All agencies loaded:', this.agencies.length)
+          console.log('Agencies data:', this.agencies)
+          // Check if agencies have the correct field names
+          if (this.agencies.length > 0) {
+            console.log('First agency structure:', this.agencies[0])
+            console.log('First agency agencyName:', this.agencies[0].agencyName)
+          } else {
+            console.log('No agencies found in database')
+            // Create some test agencies in the database
+            await this.createTestAgencies()
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching agencies:', error)
+        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+      } finally {
+        this.agenciesLoading = false
+      }
+    },
+
+    async fetchUnits(agencyId = null) {
+      this.unitsLoading = true;
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        
+        let unitsQuery;
+        
+        if (userType === 'Agency') {
+          // Agency users can only see units from their own agency
+          unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', currentUser.uid)
+          );
+        } else if (agencyId) {
+          // Super Admin/Admin users query units for specific agency
+          unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', agencyId)
+          );
+        } else {
+          // Super Admin/Admin users query all units when no agency selected
+          unitsQuery = collection(db, 'units');
+        }
+        
+        const querySnapshot = await getDocs(unitsQuery);
+        this.units = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        console.log('Units fetched:', this.units);
+        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+      } catch (error) {
+        console.error('Error fetching units:', error);
+        this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK');
+      } finally {
+        this.unitsLoading = false;
+      }
+    },
+
+    async createTestAgencies() {
+      try {
+        const testAgencies = [
+          {
+            agencyName: 'Pam Golding Properties',
+            userType: 'Agency',
+            location: 'Cape Town, South Africa',
+            establishedYear: 1976,
+            numberOfProperties: 1250,
+            rating: '5 Stars',
+            agencyDescription: 'Premium real estate agency specializing in inspections.',
+            agencyTagline: 'Excellence in Real Estate'
+          },
+          {
+            agencyName: 'RE/MAX Properties',
+            userType: 'Agency',
+            location: 'Johannesburg, South Africa',
+            establishedYear: 1973,
+            numberOfProperties: 890,
+            rating: '4 Stars',
+            agencyDescription: 'Global real estate network with local expertise.',
+            agencyTagline: 'Above the Crowd'
+          }
+        ]
+
+        for (const agencyData of testAgencies) {
+          await addDoc(collection(db, 'users'), agencyData)
+        }
+
+        console.log('Test agencies created successfully')
+        
+        // Fetch agencies again
+        await this.fetchAgencies()
+      } catch (error) {
+        console.error('Error creating test agencies:', error)
+      }
+    },
+
     goBack() {
       this.$router.push("/inspections");
+    }
+  },
+  async mounted() {
+    await this.fetchAgencies()
+  },
+  watch: {
+    'entry.agencyId': {
+      handler(newAgencyId) {
+        if (newAgencyId) {
+          this.fetchUnits(newAgencyId);
+        } else {
+          this.units = [];
+          this.entry.unitName = '';
+        }
+      },
+      immediate: false
     }
   }
 };

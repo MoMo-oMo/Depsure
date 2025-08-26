@@ -41,10 +41,40 @@
     return protectedRoutes.some(protectedRoute => route.path.startsWith(protectedRoute))
   })
 
-  // Watch for route changes and check authentication
+  // Role-based route protection
+  const roleProtectedRoutes = {
+    '/user-management': ['Super Admin', 'Admin'],
+    '/add-user': ['Super Admin', 'Admin'],
+    '/add-agency': ['Super Admin'],
+    '/add-unit': ['Super Admin', 'Admin', 'Agency'],
+    '/add-notice': ['Super Admin', 'Admin', 'Agency'],
+    '/add-flagged-unit': ['Super Admin', 'Admin', 'Agency'],
+    '/add-maintenance': ['Super Admin', 'Admin', 'Agency'],
+    '/add-inspection': ['Super Admin', 'Admin', 'Agency'],
+    '/add-vacancy': ['Super Admin', 'Admin', 'Agency']
+  }
+
+  // Agency-specific route protection (agency users can only access their own data)
+  const agencyProtectedRoutes = [
+    '/edit-agency-',
+    '/view-agency-'
+  ]
+
+  // Watch for route changes and check authentication and authorization
   watch(() => route.path, (newPath) => {
     if (newPath !== '/' && !appStore.isLoggedIn) {
       router.push('/')
+      return
+    }
+    
+    // Check role-based access
+    const userType = appStore.userType
+    const requiredRoles = roleProtectedRoutes[newPath]
+    
+    if (requiredRoles && !requiredRoles.includes(userType)) {
+      // Redirect to dashboard if user doesn't have access
+      router.push('/dashboard')
+      return
     }
   }, { immediate: true })
 </script>
