@@ -333,7 +333,7 @@ export default {
           await updateDoc(doc(db, 'flaggedUnits', this.unit.id), updateData);
           
           console.log('Flagged unit updated successfully');
-          this.showSuccessDialog("Flagged unit updated successfully!", "Success!", "Continue", "/flagged-units");
+          this.showSuccessDialog("Flagged unit updated successfully!", "Success!", "Continue", `/view-flagged-unit-${this.unit.id}`);
         } catch (error) {
           console.error('Error saving flagged unit:', error);
           this.showErrorDialog('Failed to save flagged unit. Please try again.');

@@ -58,14 +58,61 @@
         </v-col>
       </v-row>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="text-center pa-8">
-        <v-progress-circular
-          indeterminate
-          color="primary"
-          size="64"
-        ></v-progress-circular>
-        <p class="mt-4">Loading agency details...</p>
+      <!-- Loading State with Skeleton -->
+      <div v-if="loading">
+        <!-- Skeleton for Agency Info Card -->
+        <v-row class="mb-6">
+          <v-col cols="12">
+            <v-card class="agency-info-card-black skeleton-card">
+              <v-row align="stretch" class="no-gutters">
+                <v-col cols="12" md="3" class="pa-0 ma-0">
+                  <v-skeleton-loader
+                    type="image"
+                    height="100%"
+                    class="agency-logo-black"
+                  />
+                </v-col>
+                <v-col cols="12" md="9" class="pa-4">
+                  <v-skeleton-loader
+                    type="heading"
+                    class="mb-4"
+                  />
+                  <div class="agency-details-black">
+                    <v-skeleton-loader
+                      v-for="i in 4"
+                      :key="i"
+                      type="list-item-two-line"
+                      class="mb-2"
+                    />
+                  </div>
+                  <v-divider class="my-4 bg-white" />
+                  <v-skeleton-loader
+                    type="paragraph"
+                    class="mt-4"
+                  />
+                </v-col>
+              </v-row>
+            </v-card>
+          </v-col>
+        </v-row>
+        
+        <!-- Skeleton for Properties Table -->
+        <v-row>
+          <v-col cols="12" class="pa-4">
+            <v-card class="table-card">
+              <v-skeleton-loader
+                type="table-heading"
+                class="mb-4"
+              />
+              <v-skeleton-loader
+                v-for="i in 5"
+                :key="i"
+                type="table-row"
+                class="mb-2"
+              />
+            </v-card>
+          </v-col>
+        </v-row>
       </div>
 
       <!-- Agency Information Card - Black Rectangle -->
@@ -479,6 +526,32 @@ export default {
 
 :deep(.custom-header .v-data-table-header .v-data-table-header__content) {
   color: white !important;
+}
+
+/* Skeleton Loading Styles */
+.skeleton-card {
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%) !important;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.v-skeleton-loader) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:deep(.v-skeleton-loader__bone) {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%) !important;
+  animation: skeleton-loading 1.5s infinite !important;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
 }
 
 /* Responsive adjustments */
