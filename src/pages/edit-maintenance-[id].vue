@@ -224,12 +224,14 @@ import { db, storage } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { collection, query, where, getDocs } from 'firebase/firestore'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "EditMaintenancePage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -372,6 +374,19 @@ export default {
               this.uploading = false
             }
           }
+          
+          // Log the update action before saving
+          await this.logAuditEvent(
+            this.auditActions.UPDATE,
+            {
+              maintenanceId: this.entry.id,
+              maintenanceType: maintenanceData.maintenanceType,
+              updatedFields: Object.keys(maintenanceData),
+              updatedData: maintenanceData
+            },
+            this.resourceTypes.MAINTENANCE,
+            this.entry.id
+          )
           
           // Update maintenance data in Firestore
           const docRef = doc(db, 'maintenance', this.entry.id)

@@ -193,12 +193,14 @@ import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "ActiveUnitsPage",
   setup() {
     const { showConfirmDialog } = useCustomDialogs()
-    return { showConfirmDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showConfirmDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -311,16 +313,55 @@ export default {
     async deleteProperty(item) {
       try {
         await this.showConfirmDialog({
-          title: 'Delete item?',
-          message: `Are you sure you want to delete ${item.propertyName || item.unitName || 'this entry'}?`,
+          title: 'Delete Unit?',
+          message: `Are you sure you want to delete ${item.propertyName || item.unitName || 'this unit'}?`,
           confirmText: 'Delete',
           cancelText: 'Cancel',
           color: '#dc3545'
         })
-      } catch (_) {
-        return
+        
+        // If user confirms, proceed with deletion
+        const { deleteDoc } = await import('firebase/firestore')
+        const unitRef = doc(db, 'units', item.id)
+        
+        // Log the delete action before deletion
+        await this.logAuditEvent(
+          this.auditActions.DELETE,
+          {
+            unitId: item.id,
+            unitName: item.propertyName || item.unitName,
+            tenantRef: item.tenantRef,
+            agencyId: item.agencyId,
+            deletedData: {
+              propertyName: item.propertyName,
+              tenantRef: item.tenantRef,
+              leaseStartDate: item.leaseStartDate,
+              maintenanceAmount: item.maintenanceAmount,
+              paidOut: item.paidOut
+            }
+          },
+          this.resourceTypes.UNIT,
+          item.id
+        )
+        
+        await deleteDoc(unitRef)
+        
+        // Remove from local arrays
+        this.properties = this.properties.filter(prop => prop.id !== item.id)
+        this.filteredProperties = this.filteredProperties.filter(prop => prop.id !== item.id)
+        
+        // Show success message
+        this.$nextTick(() => {
+          // You can add a success notification here if you have a notification system
+          console.log('Unit deleted successfully')
+        })
+        
+      } catch (error) {
+        if (error.message !== 'User cancelled') {
+          console.error('Error deleting unit:', error)
+          // You can add an error notification here if you have a notification system
+        }
       }
-      // delete logic here
     },
     async fetchAgencies() {
       this.agenciesLoading = true;

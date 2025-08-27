@@ -200,12 +200,14 @@ import { db, storage } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "AddMaintenancePage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -296,7 +298,23 @@ export default {
           }
           
           // Store maintenance data in Firestore
-          await addDoc(collection(db, 'maintenance'), maintenanceData)
+          const docRef = await addDoc(collection(db, 'maintenance'), maintenanceData)
+          
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.CREATE,
+            {
+              unitName: this.entry.unitName,
+              agencyId: this.entry.agencyId,
+              agencyName: selectedAgency ? selectedAgency.agencyName : '',
+              status: this.entry.status,
+              priority: this.entry.priority,
+              estimatedCost: this.entry.estimatedCost,
+              hasQuoteFile: !!this.entry.quoteFile
+            },
+            this.resourceTypes.MAINTENANCE,
+            docRef.id
+          )
           
           console.log('Maintenance data stored in Firestore')
           this.showSuccessDialog('Maintenance entry added successfully!', 'Success!', 'Continue', '/maintenance')

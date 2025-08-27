@@ -12,6 +12,7 @@ declare module 'vue' {
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     ErrorDialog: typeof import('./src/components/ErrorDialog.vue')['default']
+    ForgotPasswordDialog: typeof import('./src/components/ForgotPasswordDialog.vue')['default']
     GlobalDialogs: typeof import('./src/components/GlobalDialogs.vue')['default']
     GlobalNotification: typeof import('./src/components/GlobalNotification.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']

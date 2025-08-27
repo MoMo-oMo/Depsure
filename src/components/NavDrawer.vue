@@ -8,37 +8,44 @@
     theme="dark"
   >
     <div class="drawer-content">
-      <!-- Profile / Header -->
-      <div class="drawer-header" :style="headerStyle">
-        <div class="header-bg"></div>
-        <div class="header-fade"></div>
-        <div class="header-content">
-          <v-avatar size="56">
-            <v-img :src="userAvatar" alt="User" />
-          </v-avatar>
-          <div class="user-meta">
-            <div class="name">{{ userName }}</div>
-            <div class="user-type">{{ userType }}</div>
-          </div>
-        </div>
-      </div>
+             <!-- Profile / Header -->
+       <div class="drawer-header clickable" :style="headerStyle" @click="navigateToProfile">
+         <div class="header-bg"></div>
+         <div class="header-fade"></div>
+         <div class="header-content">
+           <v-avatar size="56">
+             <v-img :src="userAvatar" alt="User" />
+           </v-avatar>
+           <div class="user-meta">
+             <div class="name">{{ userName }}</div>
+             <div class="user-type">{{ userType }}</div>
+           </div>
+         </div>
+       </div>
 
-      <!-- Menu -->
-      <v-list
-        v-model:selected="selected"
-        density="comfortable"
-        nav
-        color="transparent"
-        active-class="pill-active"
-        class="drawer-list"
-      >
-      <v-list-item
-          v-if="canAccessUserManagement"
-          prepend-icon="mdi-account-group"
-          title="USER MANAGEMENT"
-          value="user-management"
-          @click="navigateTo('user-management')"
-        />
+             <!-- Menu -->
+       <v-list
+         v-model:selected="selected"
+         density="comfortable"
+         nav
+         color="transparent"
+         active-class="pill-active"
+         class="drawer-list"
+       >
+         <v-list-item
+           v-if="canAccessUserManagement"
+           prepend-icon="mdi-account-group"
+           title="USER MANAGEMENT"
+           value="user-management"
+           @click="navigateTo('user-management')"
+         />
+         <v-list-item
+           v-if="canAccessAuditTrail"
+           prepend-icon="mdi-clipboard-list"
+           title="AUDIT TRAIL"
+           value="audit-trail"
+           @click="navigateTo('audit-trail')"
+         />
         <v-list-item
           prepend-icon="mdi-domain"
           title="AGENCY"
@@ -110,6 +117,7 @@ import { useDrawer } from '@/composables/useDrawer'
 import { useNav } from '@/composables/useNav'
 import { useAppStore } from '@/stores/app'
 import { useNotification } from '@/composables/useNotification'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: 'NavDrawer',
@@ -121,6 +129,7 @@ export default {
     const { selectedKey, setSelected } = useNav()
     const appStore = useAppStore()
     const { showSuccess, showError } = useNotification()
+    const { logAuditEvent, auditActions } = useAuditTrail()
     
     const logoutLoading = ref(false)
     
@@ -142,6 +151,10 @@ export default {
       return userType.value === 'Super Admin' || userType.value === 'Admin'
     })
 
+    const canAccessAuditTrail = computed(() => {
+      return userType.value === 'Super Admin'
+    })
+
     const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
 
     const headerStyle = computed(() => ({
@@ -153,6 +166,17 @@ export default {
     async function onLogout() {
       logoutLoading.value = true
       try {
+        // Log audit event before logout
+        await logAuditEvent(
+          auditActions.LOGOUT,
+          { 
+            logoutMethod: 'manual',
+            userType: userType.value
+          },
+          'USER',
+          appStore.userId
+        )
+        
         const success = await appStore.logout()
         if (success) {
           showSuccess('Logged out successfully')
@@ -168,23 +192,29 @@ export default {
       }
     }
 
-    function navigateTo(route) {
-      router.push(`/${route}`)
-    }
+         function navigateTo(route) {
+       router.push(`/${route}`)
+     }
 
-    return {
-      isDesktop,
-      isOpen,
-      selected,
-      userName,
-      userType,
-      userAvatar,
-      headerStyle,
-      logoutLoading,
-      onLogout,
-      navigateTo,
-      canAccessUserManagement
-    }
+     function navigateToProfile() {
+       router.push('/profile')
+     }
+
+     return {
+       isDesktop,
+       isOpen,
+       selected,
+       userName,
+       userType,
+       userAvatar,
+       headerStyle,
+       logoutLoading,
+       onLogout,
+       navigateTo,
+       navigateToProfile,
+       canAccessUserManagement,
+       canAccessAuditTrail
+     }
   }
 }
 </script>
@@ -200,6 +230,13 @@ export default {
   position: relative;
   padding: 16px;
   height: 96px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drawer-header.clickable:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .header-bg {

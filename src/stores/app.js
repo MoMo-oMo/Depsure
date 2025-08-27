@@ -35,7 +35,9 @@ export const useAppStore = defineStore('app', {
       // Fallback for users without name fields
       return user.email || 'Unknown User';
     },
-    userAvatar: (state) => state.currentUser?.profileImageUrl || 'https://i.pravatar.cc/100?img=5'
+    userAvatar: (state) => state.currentUser?.profileImageUrl || 'https://i.pravatar.cc/100?img=5',
+    userEmail: (state) => state.currentUser?.email || '',
+    userId: (state) => state.currentUser?.uid || ''
   },
 
   actions: {
@@ -73,6 +75,13 @@ export const useAppStore = defineStore('app', {
           console.error('Error parsing user data:', error);
           this.clearUser();
         }
+      }
+    },
+
+    updateUserAvatar(imageUrl) {
+      if (this.currentUser) {
+        this.currentUser.profileImageUrl = imageUrl;
+        localStorage.setItem('userInfo', JSON.stringify(this.currentUser));
       }
     }
   }

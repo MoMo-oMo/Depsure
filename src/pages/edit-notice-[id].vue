@@ -142,12 +142,14 @@
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
-  name: "EditNoticePage",
+  name: 'EditNoticePage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -239,6 +241,19 @@ export default {
           noticeData.updatedAt = new Date();
           
           console.log('Notice data to save:', noticeData);
+          
+          // Log the update action before saving
+          await this.logAuditEvent(
+            this.auditActions.UPDATE,
+            {
+              noticeId: id,
+              noticeTitle: noticeData.noticeTitle,
+              updatedFields: Object.keys(noticeData),
+              updatedData: noticeData
+            },
+            this.resourceTypes.NOTICE,
+            id
+          )
           
           // Update notice in Firestore
           await updateDoc(doc(db, 'notices', id), noticeData);

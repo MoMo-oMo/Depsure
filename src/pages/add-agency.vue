@@ -198,12 +198,14 @@
   
   <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: 'AddAgencyPage',
   setup() {
     const { showSuccessDialog } = useCustomDialogs()
-    return { showSuccessDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -270,11 +272,30 @@ export default {
         this.$refs.logoInput.value = ''
       }
     },
-    submitForm() {
+    async submitForm() {
       if (this.$refs.form.validate()) {
-        // Send to backend here
-        console.log('Submitting agency data:', this.agencyData)
-        this.showSuccessDialog('Agency created successfully!', 'Success!', 'Continue', '/agency')
+        try {
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.CREATE,
+            {
+              agencyName: this.agencyData.name,
+              location: this.agencyData.location,
+              established: this.agencyData.established,
+              properties: this.agencyData.properties,
+              rating: this.agencyData.rating,
+              hasLogo: !!this.agencyData.logo
+            },
+            this.resourceTypes.AGENCY,
+            null // No resource ID yet since agency is being created
+          )
+          
+          // Send to backend here
+          console.log('Submitting agency data:', this.agencyData)
+          this.showSuccessDialog('Agency created successfully!', 'Success!', 'Continue', '/agency')
+        } catch (error) {
+          console.error('Error creating agency:', error);
+        }
       }
     },
     goBack() {

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 const items = [
 	{ key: 'agency', title: 'AGENCY', background: 'linear-gradient(90deg, #0f2027 0%, #203a43 50%, #2c5364 100%)' },
 	{ key: 'user-management', title: 'USER MANAGEMENT', background: 'linear-gradient(90deg, #141e30 0%, #243b55 100%)' },
+	{ key: 'audit-trail', title: 'AUDIT TRAIL', background: 'linear-gradient(90deg, #2c3e50 0%, #34495e 100%)' },
 	{ key: 'active-units', title: 'ACTIVE UNITS', background: 'linear-gradient(90deg, #3a1c71 0%, #d76d77 50%, #ffaf7b 100%)' },
 	{ key: 'documents', title: 'DOCUMENTS', background: 'linear-gradient(90deg, #232526 0%, #414345 100%)' },
 	{ key: 'notices', title: 'NOTICES', background: 'linear-gradient(90deg, #000428 0%, #004e92 100%)' },
@@ -26,6 +27,8 @@ function mapPathToKey (path) {
 		{ prefix: '/view-user-', key: 'user-management' },
 		{ prefix: '/edit-user-', key: 'user-management' },
 		{ prefix: '/add-user', key: 'user-management' },
+
+		{ prefix: '/audit-trail', key: 'audit-trail' },
 
 		{ prefix: '/agency', key: 'agency' },
 		{ prefix: '/view-agency', key: 'agency' },

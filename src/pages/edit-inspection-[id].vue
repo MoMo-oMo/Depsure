@@ -183,15 +183,17 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
-  name: "EditInspectionPage",
+  name: 'EditInspectionPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -278,6 +280,19 @@ export default {
             notes: this.entry.notes || "",
             updatedAt: new Date()
           };
+          
+          // Log the update action before saving
+          await this.logAuditEvent(
+            this.auditActions.UPDATE,
+            {
+              inspectionId: this.entry.id,
+              unitName: updateData.unitName,
+              updatedFields: Object.keys(updateData),
+              updatedData: updateData
+            },
+            this.resourceTypes.INSPECTION,
+            this.entry.id
+          )
           
           // Update the document
           const docRef = doc(db, 'inspections', this.entry.id);

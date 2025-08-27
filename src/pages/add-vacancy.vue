@@ -174,12 +174,14 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: 'AddVacancyPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -257,7 +259,22 @@ export default {
           }
           
           // Store vacancy data in Firestore
-          await addDoc(collection(db, 'vacancies'), vacancyData)
+          const docRef = await addDoc(collection(db, 'vacancies'), vacancyData)
+          
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.CREATE,
+            {
+              unitName: this.vacancy.unitName,
+              agencyId: this.vacancy.agencyId,
+              dateVacated: this.vacancy.dateVacated,
+              newTenantFound: this.vacancy.newTenantFound,
+              moveInDate: this.vacancy.moveInDate,
+              propertyManager: this.vacancy.propertyManager
+            },
+            this.resourceTypes.VACANCY,
+            docRef.id
+          )
           
           console.log('Vacancy data stored in Firestore')
           this.showSuccessDialog('Vacancy added successfully!', 'Success!', 'Continue', '/vacancies')

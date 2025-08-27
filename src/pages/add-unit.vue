@@ -223,12 +223,14 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { collection, getDocs, addDoc, query, where, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: 'AddUnitPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -374,6 +376,21 @@ export default {
           
           // Add unit to Firestore
           const docRef = await addDoc(collection(db, 'units'), unitData);
+          
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.CREATE,
+            {
+              propertyName: this.property.propertyName,
+              tenantRef: this.property.tenantRef,
+              agencyId: this.property.agencyId,
+              leaseStartDate: this.property.leaseStartDate,
+              leaseEndDate: this.property.leaseEndDate,
+              maintenanceAmount: this.property.maintenanceAmount
+            },
+            this.resourceTypes.UNIT,
+            docRef.id
+          )
           
           console.log('Unit added with ID:', docRef.id);
           this.showSuccessDialog('Unit added successfully!', 'Success!', 'Continue', '/active-units');

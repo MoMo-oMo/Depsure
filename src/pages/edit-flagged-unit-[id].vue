@@ -198,15 +198,17 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
-  name: "EditFlaggedUnitPage",
+  name: 'EditFlaggedUnitPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -328,6 +330,19 @@ export default {
             notes: this.unit.notes,
             updatedAt: new Date()
           };
+
+          // Log the update action before saving
+          await this.logAuditEvent(
+            this.auditActions.UPDATE,
+            {
+              flaggedUnitId: this.unit.id,
+              unitName: updateData.unitName,
+              updatedFields: Object.keys(updateData),
+              updatedData: updateData
+            },
+            this.resourceTypes.UNIT,
+            this.unit.id
+          )
 
           // Update the flagged unit in Firestore
           await updateDoc(doc(db, 'flaggedUnits', this.unit.id), updateData);

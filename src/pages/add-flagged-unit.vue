@@ -187,12 +187,14 @@ import { db } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "AddFlaggedUnitPage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -292,6 +294,23 @@ export default {
 
           // Add to flaggedUnits collection
           const docRef = await addDoc(collection(db, 'flaggedUnits'), flaggedUnitData);
+          
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.CREATE,
+            {
+              unitName: this.unit.unitName,
+              agencyId: this.unit.agencyId,
+              tenantRef: this.unit.tenantRef,
+              flagReason: this.unit.flagReason,
+              dateFlagged: this.unit.dateFlagged,
+              missedPaymentFlag: this.unit.missedPaymentFlag,
+              noticeToVacateGiven: this.unit.noticeToVacateGiven,
+              actionTaken: this.unit.actionTaken
+            },
+            this.resourceTypes.UNIT,
+            docRef.id
+          )
           
           console.log("Flagged unit added successfully with ID:", docRef.id);
           this.showSuccessDialog("Flagged unit added successfully!", "Success!", "Continue", "/flagged-units");

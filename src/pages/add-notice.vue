@@ -150,12 +150,14 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: 'AddNoticePage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -260,6 +262,21 @@ export default {
           
           // Add notice to Firestore
           const docRef = await addDoc(collection(db, 'notices'), noticeData);
+          
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.CREATE,
+            {
+              unitName: this.notice.unitName,
+              agencyId: this.notice.agencyId,
+              leaseStartDate: this.notice.leaseStartDate,
+              noticeGivenDate: this.notice.noticeGivenDate,
+              vacateDate: this.notice.vacateDate,
+              maintenanceRequired: this.notice.maintenanceRequired
+            },
+            this.resourceTypes.NOTICE,
+            docRef.id
+          )
           
           console.log('Notice added successfully with ID:', docRef.id);
           this.showSuccessDialog('Notice added successfully!', 'Success!', 'Continue', '/notices');

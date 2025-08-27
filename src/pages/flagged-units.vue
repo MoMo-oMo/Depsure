@@ -176,12 +176,14 @@ import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "FlaggedUnitsPage",
   setup() {
     const { showConfirmDialog } = useCustomDialogs()
-    return { showConfirmDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showConfirmDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -276,6 +278,20 @@ export default {
       }
       try {
           await deleteDoc(doc(db, 'flaggedUnits', unit.id));
+          
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.DELETE,
+            {
+              unitName: unit.unitName,
+              agencyId: unit.agencyId,
+              tenantRef: unit.tenantRef,
+              flagReason: unit.flagReason,
+              missedPaymentFlag: unit.missedPaymentFlag
+            },
+            this.resourceTypes.UNIT,
+            unit.id
+          )
           
           // Remove from local array
           const index = this.units.findIndex(u => u.id === unit.id);

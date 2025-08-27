@@ -220,12 +220,14 @@
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: 'EditPropertyPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -368,6 +370,20 @@ export default {
           propertyData.updatedAt = new Date();
           
           console.log('Property data to save:', propertyData);
+          
+          // Log the update action before saving
+          await this.logAuditEvent(
+            this.auditActions.UPDATE,
+            {
+              unitId: id,
+              unitName: propertyData.propertyName,
+              tenantRef: propertyData.tenantRef,
+              updatedFields: Object.keys(propertyData),
+              updatedData: propertyData
+            },
+            this.resourceTypes.UNIT,
+            id
+          )
           
           // Update property in Firestore
           await updateDoc(doc(db, 'units', id), propertyData);

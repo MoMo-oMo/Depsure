@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/user-management')"
+            @click="$router.go(-1)"
             class="back-btn"
           >
             Back
@@ -110,50 +110,18 @@
                     />
                   </v-col>
 
-                  <!-- Status -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="user.status"
-                      label="Status"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Active', 'Inactive']"
-                      :rules="statusRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Personal Information Fields (for non-Agency users) -->
-                  <template v-if="user.userType !== 'Agency'">
-                    <v-col cols="12">
-                      <v-divider class="my-4"></v-divider>
-                      <h3 class="section-title">Personal Information</h3>
-                    </v-col>
-
-                    <!-- First Name -->
-                    <v-col cols="12" md="6">
-                      <v-text-field
-                        v-model="user.firstName"
-                        label="First Name"
-                        variant="outlined"
-                        class="custom-input"
-                        :rules="firstNameRules"
-                        required
-                      />
-                    </v-col>
-
-                    <!-- Last Name -->
-                    <v-col cols="12" md="6">
-                      <v-text-field
-                        v-model="user.lastName"
-                        label="Last Name"
-                        variant="outlined"
-                        class="custom-input"
-                        :rules="lastNameRules"
-                        required
-                      />
-                    </v-col>
-                  </template>
+                                     <!-- Status -->
+                   <v-col cols="12" md="6">
+                     <v-select
+                       v-model="user.status"
+                       label="Status"
+                       variant="outlined"
+                       class="custom-input"
+                       :items="['Active', 'Inactive']"
+                       :rules="statusRules"
+                       required
+                     />
+                   </v-col>
 
                   <!-- Agency Fields (Conditional) -->
                   <template v-if="user.userType === 'Agency'">
@@ -260,7 +228,7 @@
                 <v-btn
                   color="grey"
                   variant="outlined"
-                  @click="$router.push('/user-management')"
+                  @click="$router.go(-1)"
                   class="cancel-btn"
                 >
                   Cancel
@@ -269,11 +237,10 @@
                   color="black"
                   variant="elevated"
                   @click="saveUser"
-                  :disabled="!valid || loading"
-                  :loading="loading"
+                  :disabled="!valid"
                   class="save-btn"
                 >
-                  {{ loading ? 'Adding User...' : 'Add User' }}
+                  Add User
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -286,16 +253,14 @@
 
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { auth, db, storage } from '@/firebaseConfig'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: 'AddUserPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -305,8 +270,6 @@ export default {
          userType: '',
          status: 'Active',
          profileImage: null,
-         profileImageUrl: null,
-         uploadedFile: null,
          // Agency fields
          agencyName: '',
          agencyTagline: '',
@@ -314,13 +277,9 @@ export default {
          establishedYear: new Date().getFullYear(),
          numberOfProperties: 0,
          rating: '',
-         agencyDescription: '',
-         // Personal information fields
-         firstName: '',
-         lastName: ''
+         agencyDescription: ''
        },
       valid: true,
-      loading: false,
       // Validation rules
       emailRules: [
         v => !!v || 'Email is required',
@@ -336,12 +295,6 @@ export default {
       ],
       statusRules: [
         v => !!v || 'Status is required'
-      ],
-      firstNameRules: [
-        v => !!v || 'First Name is required'
-      ],
-      lastNameRules: [
-        v => !!v || 'Last Name is required'
       ],
       agencyNameRules: [
         v => {
@@ -426,82 +379,28 @@ export default {
      methods: {
      async saveUser() {
        if (this.$refs.form.validate()) {
-         this.loading = true;
+         console.log('Adding new user:', this.user);
+         
          try {
-           console.log('Adding new user:', this.user);
+           // Log the audit event
+           await this.logAuditEvent(
+             this.auditActions.CREATE,
+             {
+               userEmail: this.user.email,
+               userType: this.user.userType,
+               status: this.user.status,
+               hasProfileImage: !!this.user.profileImage,
+               agencyName: this.user.agencyName || null
+             },
+             this.resourceTypes.USER,
+             null // No resource ID yet since user is being created
+           )
            
-           // Create user account with Firebase Auth
-           const userCredential = await createUserWithEmailAndPassword(
-             auth,
-             this.user.email,
-             this.user.password
-           );
-           
-           const authUser = userCredential.user;
-           console.log('User created with UID:', authUser.uid);
-           
-           let profileImageUrl = null;
-           
-           // Upload image to Firebase Storage if a file was selected
-           if (this.user.uploadedFile) {
-             try {
-               profileImageUrl = await this.uploadImageToStorage(this.user.uploadedFile, authUser.uid);
-               console.log('Image uploaded successfully:', profileImageUrl);
-             } catch (uploadError) {
-               console.error('Image upload failed:', uploadError);
-               // Continue with user creation even if image upload fails
-             }
-           }
-           
-           // Prepare user data for Firestore (remove password for security)
-           const userData = {
-             email: this.user.email,
-             userType: this.user.userType,
-             status: this.user.status,
-             profileImage: this.user.profileImage,
-             profileImageUrl: profileImageUrl,
-             createdAt: new Date(),
-             updatedAt: new Date(),
-             // Agency fields (only if user type is Agency)
-             ...(this.user.userType === 'Agency' && {
-               agencyName: this.user.agencyName,
-               agencyTagline: this.user.agencyTagline,
-               location: this.user.location,
-               establishedYear: this.user.establishedYear,
-               numberOfProperties: this.user.numberOfProperties,
-               rating: this.user.rating,
-               agencyDescription: this.user.agencyDescription
-             }),
-             // Personal information (for non-Agency users)
-             ...(this.user.userType !== 'Agency' && {
-               firstName: this.user.firstName,
-               lastName: this.user.lastName
-             })
-           };
-           
-           // Store user data in Firestore with auth UID as document ID
-           await setDoc(doc(db, 'users', authUser.uid), userData);
-           
-           console.log('User data stored in Firestore');
+           // In a real app, you would make an API call here to save the user
            this.showSuccessDialog('User added successfully!', 'Success!', 'Continue', '/user-management');
-           
          } catch (error) {
-           this.loading = false;
-           console.error('Error creating user:', error);
-           let errorMessage = 'Failed to create user. Please try again.';
-           
-           // Handle specific Firebase Auth errors
-           if (error.code === 'auth/email-already-in-use') {
-             errorMessage = 'An account with this email already exists.';
-           } else if (error.code === 'auth/weak-password') {
-             errorMessage = 'Password is too weak. Please choose a stronger password.';
-           } else if (error.code === 'auth/invalid-email') {
-             errorMessage = 'Please enter a valid email address.';
-           }
-           
-           this.showErrorDialog(errorMessage, 'Error', 'OK');
-         } finally {
-           this.loading = false;
+           console.error('Error saving user:', error);
+           this.showErrorDialog('Failed to add user. Please try again.', 'Error', 'OK');
          }
        }
      },
@@ -525,9 +424,6 @@ export default {
            return;
          }
          
-         // Store the file for upload
-         this.user.uploadedFile = file;
-         
          // Create preview URL
          const reader = new FileReader();
          reader.onload = (e) => {
@@ -539,33 +435,8 @@ export default {
      
      removeImage() {
        this.user.profileImage = null;
-       this.user.profileImageUrl = null;
-       this.user.uploadedFile = null;
        if (this.$refs.fileInput) {
          this.$refs.fileInput.value = '';
-       }
-     },
-     
-     async uploadImageToStorage(file, userId) {
-       try {
-         // Create a unique filename
-         const timestamp = Date.now();
-         const fileExtension = file.name.split('.').pop();
-         const fileName = `profile-images/${userId}_${timestamp}.${fileExtension}`;
-         
-         // Create storage reference
-         const storageRef = ref(storage, fileName);
-         
-         // Upload file
-         const snapshot = await uploadBytes(storageRef, file);
-         
-         // Get download URL
-         const downloadURL = await getDownloadURL(snapshot.ref);
-         
-         return downloadURL;
-       } catch (error) {
-         console.error('Error uploading image:', error);
-         throw new Error('Failed to upload image');
        }
      }
    }

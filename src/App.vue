@@ -33,7 +33,8 @@ onMounted(() => {
 const protectedRoutes = [
   '/agency', '/active-units', '/notices', '/flagged-units', 
   '/maintenance', '/inspections', '/vacancies', '/user-management',
-  '/dashboard', '/add-user', '/add-unit', '/add-notice', '/add-flagged-unit'
+  '/audit-trail', '/dashboard', '/add-user', '/add-unit', '/add-notice', '/add-flagged-unit',
+  '/profile'
 ]
 
 // Computed to check if current route is protected
@@ -44,6 +45,7 @@ const isProtectedRoute = computed(() => {
 // Role-based access
 const roleProtectedRoutes = {
   '/user-management': ['Super Admin', 'Admin'],
+  '/audit-trail': ['Super Admin'],
   '/add-user': ['Super Admin', 'Admin'],
   '/add-agency': ['Super Admin'],
   '/add-unit': ['Super Admin', 'Admin', 'Agency'],

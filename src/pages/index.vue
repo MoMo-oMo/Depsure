@@ -71,26 +71,35 @@
        buttonText="Try Again"
        @close="loginError = ''"
      />
+
+     <!-- Forgot Password Dialog -->
+     <ForgotPasswordDialog
+       v-model:visible="showForgotPasswordDialog"
+       @close="showForgotPasswordDialog = false"
+     />
    </v-app>
 </template>
 
 <script>
 import { useNotification } from '@/composables/useNotification'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 import { auth, db } from '@/firebaseConfig'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import NotificationDialog from '@/components/NotificationDialog.vue'
+import ForgotPasswordDialog from '@/components/ForgotPasswordDialog.vue'
 
 
 export default {
-  components: { NotificationDialog },
+  components: { NotificationDialog, ForgotPasswordDialog },
   setup() {
     const { showSuccess, showError, showWarning, showInfo } = useNotification()
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+    const { logAuditEvent, auditActions } = useAuditTrail()
     const appStore = useAppStore()
-    return { showSuccess, showError, showWarning, showInfo, showSuccessDialog, showErrorDialog, appStore }
+    return { showSuccess, showError, showWarning, showInfo, showSuccessDialog, showErrorDialog, appStore, logAuditEvent, auditActions }
     
   },
   data() {
@@ -101,6 +110,7 @@ export default {
       showPassword: false,
       loading: false,
       loginError: '',
+      showForgotPasswordDialog: false,
       emailRules: [
         v => !!v || 'Email is required',
         v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
@@ -133,6 +143,18 @@ export default {
               ...userData
             };
             this.appStore.setUser(userInfo);
+            
+            // Log audit event
+            await this.logAuditEvent(
+              this.auditActions.LOGIN,
+              { 
+                loginMethod: 'email',
+                userType: userData.userType,
+                redirectPath: userData.userType === 'Agency' ? '/agency' : '/user-management'
+              },
+              'USER',
+              user.uid
+            );
             
             console.log('User logged in:', userInfo);
             this.showSuccess('Login successful!');
@@ -172,7 +194,7 @@ export default {
       }
     },
     onForgotPassword() {
-      this.showInfo('Redirecting to Forgot Password page...')
+      this.showForgotPasswordDialog = true
     },
     testSuccess() {
       this.showSuccess('This is a success notification!')

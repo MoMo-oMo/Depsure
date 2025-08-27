@@ -140,12 +140,14 @@
 import { db } from '@/firebaseConfig'
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "UserManagement",
   setup() {
     const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    return { showErrorDialog, showConfirmDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showErrorDialog, showConfirmDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -231,6 +233,18 @@ export default {
         const index = this.users.findIndex(u => u.id === user.id);
         if (index > -1) this.users.splice(index, 1);
         this.filterUsers();
+        
+        // Log the audit event
+        await this.logAuditEvent(
+          this.auditActions.DELETE,
+          {
+            email: user.email,
+            userType: user.userType,
+            displayName: user.displayName
+          },
+          this.resourceTypes.USER,
+          user.id
+        );
       } catch (error) {
         console.error('Error deleting user:', error);
         this.showErrorDialog('Failed to delete user. Please try again.', 'Error', 'OK');

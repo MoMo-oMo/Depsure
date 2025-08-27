@@ -198,12 +198,14 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "AddInspectionPage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -276,7 +278,24 @@ export default {
           }
           
           // Store inspection data in Firestore
-          await addDoc(collection(db, 'inspections'), inspectionData)
+          const docRef = await addDoc(collection(db, 'inspections'), inspectionData)
+          
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.CREATE,
+            {
+              unitName: this.entry.unitName,
+              agencyId: this.entry.agencyId,
+              agencyName: selectedAgency ? selectedAgency.agencyName : '',
+              inspectionRequired: this.entry.inspectionRequired,
+              appointmentMade: this.entry.appointmentMade,
+              inspectionDate: this.entry.inspectionDate,
+              status: this.entry.status,
+              priority: this.entry.priority
+            },
+            this.resourceTypes.INSPECTION,
+            docRef.id
+          )
           
           console.log('Inspection data stored in Firestore')
           this.showSuccessDialog('Inspection entry added successfully!', 'Success!', 'Continue', '/inspections')

@@ -150,12 +150,14 @@
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "EditUserPage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -228,6 +230,22 @@ export default {
 
           const docRef = doc(db, 'users', this.entry.id)
           await updateDoc(docRef, userData)
+
+          // Log the audit event
+          await this.logAuditEvent(
+            this.auditActions.UPDATE,
+            {
+              userId: this.entry.id,
+              email: this.entry.email,
+              userType: this.entry.userType,
+              agencyName: this.entry.agencyName,
+              status: this.entry.status,
+              firstName: this.entry.firstName,
+              lastName: this.entry.lastName
+            },
+            this.resourceTypes.USER,
+            this.entry.id
+          )
 
           console.log('User data updated in Firestore')
           this.showSuccessDialog(
