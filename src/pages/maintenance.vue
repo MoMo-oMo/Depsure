@@ -53,7 +53,24 @@
           />
         </v-col>
 
-        <v-col cols="12" md="3" class="pa-4 d-flex align-center">
+        <v-col cols="12" md="2" class="pa-4">
+          <v-select
+            v-model="propertyTypeFilter"
+            :items="propertyTypeFilterOptions"
+            item-title="title"
+            item-value="value"
+            label="Property Type"
+            prepend-inner-icon="mdi-home"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            clearable
+            class="custom-input"
+            @update:model-value="filterEntries"
+          />
+        </v-col>
+
+        <v-col cols="12" md="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addMaintenance" class="back-btn">
             Add Maintenance
           </v-btn>
@@ -120,11 +137,21 @@
             :loading="loading"
             loading-text="Loading maintenance entries..."
           >
+            <template v-slot:item.propertyType="{ item }">
+              <v-chip 
+                :color="getColor(item.propertyType)" 
+                size="small"
+                variant="elevated"
+              >
+                {{ getLabel(item.propertyType) }}
+              </v-chip>
+            </template>
             <template v-slot:item.noticeGiven="{ item }">
               <v-chip :color="item.noticeGiven === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.noticeGiven }}
               </v-chip>
             </template>
+            <!-- Action buttons - Edit/Delete hidden for Super Admin -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
                 <v-btn
@@ -136,6 +163,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="isAgencyUser || userType === 'Admin'"
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
@@ -144,6 +172,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="isAgencyUser || userType === 'Admin'"
                   icon="mdi-delete"
                   size="small"
                   variant="text"
@@ -167,17 +196,20 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "MaintenancePage",
   setup() {
     const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog, showConfirmDialog }
+    const { getOptions, getLabel, getColor, resolvePropertyTypeFromUnit } = usePropertyType()
+    return { showSuccessDialog, showErrorDialog, showConfirmDialog, getOptions, getLabel, getColor, resolvePropertyTypeFromUnit }
   },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
+      propertyTypeFilter: null,
       selectedAgency: null,
       filteredEntries: [],
       loading: false,
@@ -187,6 +219,7 @@ export default {
       entries: [],
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
+        { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
         { title: "Agency", key: "agencyName", sortable: true },
         { title: "Notice Given", key: "noticeGiven", sortable: true, align: "center" },
         { title: "Vacate Date", key: "vacateDate", sortable: true, align: "center" },
@@ -205,6 +238,23 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      const userType = appStore.currentUser?.userType;
+      const isSuper = userType === 'Super Admin';
+      console.log('Maintenance - User Type:', userType, 'Is Super Admin:', isSuper);
+      return isSuper;
+    },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
+    },
+    propertyTypeFilterOptions() {
+      return [
+        { value: null, title: 'All Types' },
+        ...this.getOptions()
+      ];
     }
   },
   methods: {
@@ -217,9 +267,14 @@ export default {
         const textMatch = entry.unitName.toLowerCase().includes(this.searchQuery.toLowerCase());
         let agencyMatch = true;
         let monthMatch = true;
+        let propertyTypeMatch = true;
         
         if (this.selectedAgency) {
           agencyMatch = entry.agencyId === this.selectedAgency;
+        }
+        
+        if (this.propertyTypeFilter) {
+          propertyTypeMatch = entry.propertyType === this.propertyTypeFilter;
         }
         
         if (this.monthFilter) {
@@ -227,7 +282,7 @@ export default {
           const filterDate = new Date(this.monthFilter+"-01");
           monthMatch = entryDate.getMonth() === filterDate.getMonth() && entryDate.getFullYear() === filterDate.getFullYear();
         }
-        return textMatch && agencyMatch && monthMatch;
+        return textMatch && agencyMatch && monthMatch && propertyTypeMatch;
       });
     },
     viewEntry(entry) { this.$router.push(`/view-maintenance-${entry.id}`); },
@@ -287,13 +342,49 @@ export default {
         }
         
         const querySnapshot = await getDocs(maintenanceQuery)
-        this.entries = querySnapshot.docs.map(doc => ({
+        
+        // First, get all maintenance entries
+        const entries = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate(),
           updatedAt: doc.data().updatedAt?.toDate()
         }))
-        console.log('Maintenance entries loaded:', this.entries.length)
+        
+        // Resolve property types for each entry
+        const entriesWithPropertyTypes = await Promise.all(
+          entries.map(async (entry) => {
+            try {
+              // Try to resolve property type from unitId if available
+              if (entry.unitId) {
+                const propertyType = await this.resolvePropertyTypeFromUnit(entry.unitId);
+                return { ...entry, propertyType };
+              }
+              // If no unitId, try to resolve from unitName by finding the unit
+              else if (entry.unitName) {
+                // Find the unit by name in the units collection
+                const unitsQuery = query(
+                  collection(db, 'units'),
+                  where('propertyName', '==', entry.unitName)
+                );
+                const unitsSnapshot = await getDocs(unitsQuery);
+                if (!unitsSnapshot.empty) {
+                  const unitDoc = unitsSnapshot.docs[0];
+                  const unitData = unitDoc.data();
+                  return { ...entry, propertyType: unitData.propertyType || 'OTHER' };
+                }
+              }
+              // Default to OTHER if we can't resolve
+              return { ...entry, propertyType: 'OTHER' };
+            } catch (error) {
+              console.error('Error resolving property type for maintenance entry:', entry.id, error);
+              return { ...entry, propertyType: 'OTHER' };
+            }
+          })
+        );
+        
+        this.entries = entriesWithPropertyTypes;
+        console.log('Maintenance entries loaded with property types:', this.entries.length)
         console.log('User type:', userType, 'Agency ID filter:', agencyId)
         this.filterEntries()
       } catch (error) {

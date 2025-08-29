@@ -56,8 +56,26 @@
           />
         </v-col>
 
-        <!-- Add Unit Button -->
-        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center">
+        <!-- Property Type filter -->
+        <v-col cols="12" md="2" lg="2" class="pa-4">
+          <v-select
+            v-model="propertyTypeFilter"
+            :items="propertyTypeFilterOptions"
+            item-title="title"
+            item-value="value"
+            label="Property Type"
+            prepend-inner-icon="mdi-home"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            clearable
+            class="custom-input"
+            @update:model-value="filterProperties"
+          />
+        </v-col>
+
+        <!-- Add Unit Button - Only visible to Super Admin -->
+        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
           <v-btn
             icon="mdi-plus"
             variant="outlined"
@@ -133,6 +151,15 @@
             :loading="propertiesLoading"
             no-data-text="No data available"
           >
+            <template v-slot:item.propertyType="{ item }">
+              <v-chip 
+                :color="getColor(item.propertyType)" 
+                size="small"
+                variant="elevated"
+              >
+                {{ getLabel(item.propertyType) }}
+              </v-chip>
+            </template>
             <template v-slot:item.paidOut="{ item }">
               <v-chip :color="item.paidOut === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.paidOut }}
@@ -190,22 +217,26 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc, getDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "ActiveUnitsPage",
   setup() {
+    const appStore = useAppStore()
     const { showConfirmDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showConfirmDialog, logAuditEvent, auditActions, resourceTypes }
+    const { getOptions, getLabel, getColor } = usePropertyType()
+    return { appStore, showConfirmDialog, logAuditEvent, auditActions, resourceTypes, getOptions, getLabel, getColor }
   },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
+      propertyTypeFilter: null,
       filteredProperties: [],
       selectedAgency: null,
       agencies: [],
@@ -215,6 +246,7 @@ export default {
       headers: [
         { title: "TENANT REF", key: "tenantRef", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
+        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         {
           title: "LEASE STARTING DATE",
           key: "leaseStartDate",
@@ -245,6 +277,16 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Super Admin';
+    },
+    propertyTypeFilterOptions() {
+      return [
+        { value: null, title: 'All Types' },
+        ...this.getOptions()
+      ];
     }
   },
   methods: {
@@ -273,7 +315,14 @@ export default {
             .toLowerCase()
             .includes(this.searchQuery.toLowerCase());
 
+        // Property Type filter
+        let propertyTypeMatch = true;
+        if (this.propertyTypeFilter) {
+          propertyTypeMatch = property.propertyType === this.propertyTypeFilter;
+        }
+
         // Month filter - now filtering by createdAt date
+        let monthMatch = true;
         if (this.monthFilter) {
           // Handle Firestore Timestamp objects
           let propertyDate;
@@ -285,7 +334,7 @@ export default {
             propertyDate = new Date(property.createdAt);
           } else {
             // No createdAt date, skip this property
-            return textMatch;
+            return textMatch && propertyTypeMatch;
           }
           
           const filterDate = new Date(this.monthFilter + "-01");
@@ -296,10 +345,10 @@ export default {
             filterDate.getMonth() + 1
           ).padStart(2, "0")}`;
 
-          return textMatch && propertyMonth === filterMonth;
+          monthMatch = propertyMonth === filterMonth;
         }
 
-        return textMatch;
+        return textMatch && propertyTypeMatch && monthMatch;
       });
     },
     viewProperty(property) {
@@ -314,17 +363,32 @@ export default {
       try {
         await this.showConfirmDialog({
           title: 'Delete Unit?',
-          message: `Are you sure you want to delete ${item.propertyName || item.unitName || 'this unit'}?`,
+          message: `Are you sure you want to delete ${item.propertyName || item.unitName || 'this unit'}? This action cannot be undone.`,
           confirmText: 'Delete',
           cancelText: 'Cancel',
           color: '#dc3545'
         })
         
-        // If user confirms, proceed with deletion
-        const { deleteDoc } = await import('firebase/firestore')
+        // If user confirms, proceed with archiving
         const unitRef = doc(db, 'units', item.id)
         
-        // Log the delete action before deletion
+        // Create exact duplicate in archivedUnits collection
+        const archivedUnitData = {
+          ...item,
+          originalId: item.id, // Keep reference to original ID
+          archivedAt: new Date(),
+          archivedBy: this.appStore.currentUser?.uid || 'unknown',
+          archivedByUserType: this.appStore.currentUser?.userType || 'unknown'
+        }
+        
+        // Remove the id field since addDoc will generate a new one
+        delete archivedUnitData.id
+        
+        // Add to archivedUnits collection
+        const archivedUnitsRef = collection(db, 'archivedUnits')
+        await addDoc(archivedUnitsRef, archivedUnitData)
+        
+        // Log the archive action
         await this.logAuditEvent(
           this.auditActions.DELETE,
           {
@@ -332,18 +396,20 @@ export default {
             unitName: item.propertyName || item.unitName,
             tenantRef: item.tenantRef,
             agencyId: item.agencyId,
-            deletedData: {
+            archivedData: {
               propertyName: item.propertyName,
               tenantRef: item.tenantRef,
               leaseStartDate: item.leaseStartDate,
               maintenanceAmount: item.maintenanceAmount,
-              paidOut: item.paidOut
+              paidOut: item.paidOut,
+              archivedAt: archivedUnitData.archivedAt
             }
           },
           this.resourceTypes.UNIT,
           item.id
         )
         
+        // Delete from original units collection
         await deleteDoc(unitRef)
         
         // Remove from local arrays
@@ -352,14 +418,12 @@ export default {
         
         // Show success message
         this.$nextTick(() => {
-          // You can add a success notification here if you have a notification system
-          console.log('Unit deleted successfully')
+          console.log('Unit archived successfully')
         })
         
       } catch (error) {
         if (error.message !== 'User cancelled') {
-          console.error('Error deleting unit:', error)
-          // You can add an error notification here if you have a notification system
+          console.error('Error archiving unit:', error)
         }
       }
     },

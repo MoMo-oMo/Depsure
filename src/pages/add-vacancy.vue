@@ -61,6 +61,18 @@
                     />
                   </v-col>
 
+                  <!-- Property Type (read-only) -->
+                  <v-col v-if="selectedUnitPropertyType" cols="12" md="6">
+                    <v-text-field
+                      :model-value="propertyTypeLabel"
+                      label="Property Type"
+                      variant="outlined"
+                      class="custom-input"
+                      readonly
+                      prepend-inner-icon="mdi-home"
+                    />
+                  </v-col>
+
                   <!-- Date Vacated -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -175,13 +187,22 @@ import { db } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: 'AddVacancyPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
+    const { getLabel } = usePropertyType()
+    return { 
+      showSuccessDialog, 
+      showErrorDialog, 
+      logAuditEvent, 
+      auditActions, 
+      resourceTypes,
+      getPropertyTypeLabel: getLabel
+    }
   },
   data() {
     return {
@@ -235,6 +256,19 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    selectedUnitPropertyType() {
+      if (!this.vacancy.unitName) return null;
+      
+      // Find the selected unit to get its propertyType
+      const selectedUnit = this.units.find(u => u.propertyName === this.vacancy.unitName);
+      if (!selectedUnit) return null;
+      
+      return selectedUnit.propertyType || 'OTHER';
+    },
+    propertyTypeLabel() {
+      if (!this.selectedUnitPropertyType) return '';
+      return this.getPropertyTypeLabel(this.selectedUnitPropertyType);
     }
   },
   methods: {

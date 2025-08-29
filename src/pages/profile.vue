@@ -255,6 +255,31 @@
             </v-card-text>
             </v-card>
           </div>
+
+          <!-- Super Admin Actions -->
+          <div v-if="userType === 'Super Admin'" class="form-card-container mt-4">
+            <div class="form-card-header">
+              <h2 class="form-card-title">
+                <v-icon class="mr-2">mdi-shield-crown</v-icon>
+                Super Admin Actions
+              </h2>
+            </div>
+            <v-card class="form-card">
+              <v-card-text>
+                <v-row>
+                  <v-col cols="12">
+                    <button
+                      class="archived-units-btn"
+                      @click="showArchivedUnitsDialog = true"
+                    >
+                      <v-icon class="mr-2">mdi-eye</v-icon>
+                      View Deleted Archived Units
+                    </button>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </div>
         </v-col>
       </v-row>
 
@@ -268,6 +293,55 @@
         @click="toggleEditMode"
         elevation="8"
       />
+
+      <!-- PIN Dialog for Archived Units -->
+      <div v-if="showArchivedUnitsDialog" class="notification-overlay" @click.self="showArchivedUnitsDialog = false">
+        <div class="notification-dialog">
+          <!-- colored card behind -->
+          <div class="notification-dialog-bg primary"></div>
+          <!-- main white card -->
+          <div class="notification-dialog-inner">
+            <button class="notification-close" @click="showArchivedUnitsDialog = false">&times;</button>
+    
+            <div class="notification-icon black">
+              <v-icon>mdi-eye</v-icon>
+            </div>
+    
+            <h2 class="notification-title">Access Archived Units</h2>
+            <p class="notification-message">Enter the PIN to view deleted/archived property units</p>
+            
+            <v-form ref="pinForm" v-model="pinFormValid" class="mt-4">
+              <v-text-field
+                v-model="pinInput"
+                label="Enter PIN"
+                type="password"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-lock"
+                :rules="pinRules"
+                @keyup.enter="validatePin"
+                autocomplete="off"
+                class="mb-4"
+                hide-details
+              />
+            </v-form>
+            
+            <div class="dialog-buttons">
+              <button class="notification-button secondary" @click="showArchivedUnitsDialog = false">
+                Cancel
+              </button>
+              <button 
+                :class="['notification-button', 'black']" 
+                @click="validatePin"
+                :disabled="!pinFormValid || pinLoading"
+              >
+                <span v-if="pinLoading">Validating...</span>
+                <span v-else>Access</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Hidden file input for image upload -->
       <input
@@ -283,6 +357,7 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useNotification } from '@/composables/useNotification'
 import { useAuditTrail } from '@/composables/useAuditTrail'
@@ -294,6 +369,7 @@ import { doc, updateDoc } from 'firebase/firestore'
 export default {
   name: 'ProfilePage',
   setup() {
+    const router = useRouter()
     const appStore = useAppStore()
     const { showSuccess, showError } = useNotification()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
@@ -319,6 +395,12 @@ export default {
     // Image upload
     const selectedImage = ref(null)
     const imageError = ref('')
+
+    // PIN Dialog Data
+    const showArchivedUnitsDialog = ref(false)
+    const pinInput = ref('')
+    const pinFormValid = ref(false)
+    const pinLoading = ref(false)
 
     // User data
     const userName = computed(() => appStore.userName)
@@ -560,6 +642,29 @@ export default {
       }
     }
 
+    const validatePin = async () => {
+      pinLoading.value = true
+      try {
+        // Check if PIN is correct (Pass123!)
+        if (pinInput.value === 'Pass123!') {
+          showSuccess('PIN validated successfully')
+          showArchivedUnitsDialog.value = false
+          pinInput.value = ''
+          
+          // Navigate to archived units page
+          router.push('/archived-units')
+        } else {
+          showError('Incorrect PIN. Please try again.')
+          pinInput.value = ''
+        }
+      } catch (error) {
+        console.error('Error validating PIN:', error)
+        showError('Failed to validate PIN. Please try again.')
+      } finally {
+        pinLoading.value = false
+      }
+    }
+
     // Initialize form data
     onMounted(() => {
       resetForm()
@@ -583,6 +688,12 @@ export default {
       agencyInfo,
       memberSince,
 
+      // PIN Dialog Data
+      showArchivedUnitsDialog,
+      pinInput,
+      pinFormValid,
+      pinLoading,
+
       // Computed
       userName,
       userType,
@@ -594,6 +705,10 @@ export default {
       nameRules,
       emailRules,
       imageRules,
+      pinRules: [
+        v => !!v || 'PIN is required',
+        v => v.length >= 4 || 'PIN must be at least 4 characters'
+      ],
 
       // Methods
       getRoleColor,
@@ -604,7 +719,9 @@ export default {
       saveAgencyInfo,
       selectFile,
       handleFileSelect,
-      uploadImage
+      uploadImage,
+      validatePin,
+      router
     }
   }
 }
@@ -851,6 +968,31 @@ export default {
   cursor: not-allowed;
 }
 
+.archived-units-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background-color: black;
+  color: white;
+  border: 2px solid black;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.archived-units-btn:hover {
+  background-color: #333;
+  border-color: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
 
 
 .upload-preview {
@@ -858,6 +1000,175 @@ export default {
   border-radius: 8px;
   padding: 16px;
   text-align: center;
+}
+
+/* PIN Dialog Styles - matching NotificationDialog */
+.notification-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+}
+
+.notification-dialog {
+  position: relative;
+  width: 500px;
+  max-width: 90vw;
+  min-height: 200px;
+}
+
+.notification-dialog-bg {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 96%;
+  height: 100%;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.notification-dialog-bg.primary {
+  background-color: black;
+}
+
+.notification-dialog-inner {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.notification-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.notification-icon {
+  position: relative;
+  margin: 0 auto 24px auto;
+  margin-top: -16%;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInCircle 0.3s ease-out forwards;
+}
+
+.notification-icon.primary {
+  background-color: #1976d2;
+}
+
+.notification-icon.black {
+  background-color: #000000;
+}
+
+.notification-icon .v-icon {
+  font-size: 40px;
+  color: #ffffff;
+}
+
+.notification-icon::before {
+  content: '';
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  opacity: 0.2;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.notification-icon.primary::before {
+  background-color: #1976d2;
+}
+
+.notification-icon.black::before {
+  background-color: #000000;
+}
+
+@keyframes fadeInCircle {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+.notification-title {
+  font-size: 2em;
+  margin: 0 0 12px 0;
+}
+
+.notification-message {
+  font-size: 1.2em;
+  margin: 0 0 32px 0;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.notification-button {
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 1.1em;
+  padding: 12px 24px;
+  cursor: pointer;
+  min-width: 100px;
+}
+
+.notification-button.primary {
+  background-color: #1976d2;
+}
+
+.notification-button.black {
+  background-color: #000000;
+}
+
+.notification-button.secondary {
+  background-color: #6c757d;
+}
+
+.notification-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.notification-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

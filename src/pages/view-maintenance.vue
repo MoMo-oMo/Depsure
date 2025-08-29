@@ -90,20 +90,112 @@
               </v-row>
               <v-row class="mb-3">
                 <v-col cols="5" class="font-weight-bold">Quote Instructions:</v-col>
-                <v-col cols="7">{{ entry.quoteInstructions || "N/A" }}</v-col>
+                <v-col cols="7">
+                  <div v-if="entry.quoteFileName && entry.quoteFileURL" class="quote-file-display">
+                    <v-btn
+                      :href="entry.quoteFileURL"
+                      target="_blank"
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                      prepend-icon="mdi-file-pdf-box"
+                      class="quote-file-btn"
+                    >
+                      <span class="quote-file-name">{{ entry.quoteFileName }}</span>
+                      <v-icon right>mdi-open-in-new</v-icon>
+                    </v-btn>
+                  </div>
+                  <div v-else class="no-file-message">
+                    No file uploaded
+                  </div>
+                </v-col>
               </v-row>
             </v-card-text>
             <v-card-actions class="mt-4">
-              <v-btn color="primary" @click="editEntry">
+              <v-btn 
+                v-if="entry.quoteFileName && entry.quoteFileURL"
+                color="primary"
+                variant="outlined"
+                @click="showQuoteDialog = true"
+                prepend-icon="mdi-file-pdf-box"
+                class="view-quote-btn"
+              >
+                View Quote Instructions
+              </v-btn>
+              <v-btn 
+                v-if="isAgencyUser || userType === 'Admin'"
+                color="primary" 
+                @click="editEntry"
+              >
                 Edit Entry
               </v-btn>
-              <v-btn color="error" @click="deleteEntry">
+              <v-btn 
+                v-if="isAgencyUser || userType === 'Admin'"
+                color="error" 
+                @click="deleteEntry"
+              >
                 Delete Entry
               </v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
       </v-row>
+
+      <!-- Quote Instructions Dialog -->
+    <v-dialog
+      v-model="showQuoteDialog"
+      max-width="90vw"
+      max-height="90vh"
+      persistent
+    >
+      <v-card class="quote-dialog">
+        <v-card-title class="quote-dialog-title">
+          <v-icon left color="primary">mdi-file-pdf-box</v-icon>
+          Quote Instructions - {{ entry.quoteFileName }}
+          <v-spacer />
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            @click="showQuoteDialog = false"
+            class="close-btn"
+          />
+        </v-card-title>
+        <v-card-text class="quote-dialog-content">
+          <div v-if="entry.quoteFileURL" class="pdf-container">
+            <iframe
+              :src="entry.quoteFileURL"
+              width="100%"
+              height="600"
+              frameborder="0"
+              class="pdf-iframe"
+            />
+          </div>
+          <div v-else class="no-pdf-message">
+            <v-icon color="error" size="64">mdi-file-pdf-box</v-icon>
+            <p>PDF file not available</p>
+          </div>
+        </v-card-text>
+        <v-card-actions class="quote-dialog-actions">
+          <v-spacer />
+          <v-btn
+            color="primary"
+            variant="outlined"
+            @click="showQuoteDialog = false"
+          >
+            Close
+          </v-btn>
+          <v-btn
+            :href="entry.quoteFileURL"
+            target="_blank"
+            color="primary"
+            variant="elevated"
+            prepend-icon="mdi-open-in-new"
+          >
+            Open in New Tab
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     </v-container>
   </div>
 </template>
@@ -111,6 +203,7 @@
 <script>
 import { useNotification } from '@/composables/useNotification'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "ViewMaintenanceEntry",
@@ -122,6 +215,7 @@ export default {
   data() {
     return {
       entry: null,
+      showQuoteDialog: false,
       agencies: [
         {
           name: "Pam Golding Properties",
@@ -147,6 +241,14 @@ export default {
   computed: {
     agencyDetails() {
       return this.entry ? this.agencies.find(a => a.name === this.entry.agency) : null;
+    },
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
     }
   },
   methods: {
@@ -238,6 +340,113 @@ export default {
 .agency-details-black { margin-bottom: 16px; }
 .detail-item-black { display: flex; align-items: center; margin-bottom: 12px; color: #fff; }
 .agency-description-black { color: #e0e0e0; }
+
+/* Quote file display */
+.quote-file-display {
+  display: flex;
+  align-items: center;
+}
+
+.quote-file-btn {
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.quote-file-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.quote-file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  display: inline-block;
+}
+
+.no-file-message {
+  color: #666;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* View Quote Button */
+.view-quote-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-right: 12px;
+}
+
+.view-quote-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Quote Dialog */
+.quote-dialog {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.quote-dialog-title {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.close-btn {
+  margin-left: 8px;
+}
+
+.quote-dialog-content {
+  padding: 0;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.pdf-container {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+}
+
+.pdf-iframe {
+  border: none;
+  border-radius: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+}
+
+.no-pdf-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #666;
+}
+
+.no-pdf-message p {
+  margin-top: 16px;
+  font-size: 1.1rem;
+}
+
+.quote-dialog-actions {
+  background: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+  padding: 16px 24px;
+}
 
 @media (max-width: 768px) {
   .agency-logo-black { height: 220px; }

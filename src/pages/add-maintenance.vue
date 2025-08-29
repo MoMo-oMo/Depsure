@@ -46,6 +46,18 @@
                     />
                   </v-col>
 
+                  <!-- Property Type (Read-only) -->
+                  <v-col cols="12" md="6" v-if="selectedUnitPropertyType">
+                    <v-text-field
+                      :model-value="propertyTypeLabel"
+                      label="Property Type"
+                      variant="outlined"
+                      class="custom-input"
+                      readonly
+                      prepend-inner-icon="mdi-home"
+                    />
+                  </v-col>
+
                   <!-- Notice Given (Yes/No) -->
                   <v-col cols="12" md="6">
                     <v-select
@@ -100,13 +112,16 @@
                   <v-col cols="12" md="6">
                     <v-file-input
                       v-model="entry.quoteFile"
-                      label="Upload Quote Instructions"
+                      label="Upload Quote Instructions (PDF only)"
                       variant="outlined"
                       class="custom-input"
-                      accept=".pdf,.doc,.docx"
+                      accept=".pdf"
                       show-size
-                      prepend-icon="mdi-upload"
+                      prepend-icon="mdi-file-pdf-box"
                       :loading="uploading"
+                      :rules="quoteFileRules"
+                      hint="Only PDF files are allowed. Maximum size: 50MB"
+                      persistent-hint
                     />
                   </v-col>
 
@@ -136,11 +151,11 @@
                     />
                   </v-col>
 
-                  <!-- Estimated Cost -->
+                  <!-- Project Budget -->
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="entry.estimatedCost"
-                      label="Estimated Cost (R)"
+                      label="Project Budget (R)"
                       type="number"
                       variant="outlined"
                       class="custom-input"
@@ -201,13 +216,15 @@ import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "AddMaintenancePage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
+    const { getLabel } = usePropertyType()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getLabel }
   },
   data() {
     return {
@@ -239,13 +256,25 @@ export default {
       addressRules: [v => !!v || "Address is required"],
       statusRules: [v => !!v || "Status is required"],
       priorityRules: [v => !!v || "Priority is required"],
-      estimatedCostRules: [v => v >= 0 || "Estimated cost cannot be negative"]
+      estimatedCostRules: [v => v >= 0 || "Project budget cannot be negative"],
+      quoteFileRules: [
+        v => !v || v.size <= 50 * 1024 * 1024 || "File size must be less than 50MB",
+        v => !v || v.type === 'application/pdf' || "Only PDF files are allowed"
+      ]
     };
   },
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    selectedUnitPropertyType() {
+      if (!this.entry.unitName) return null;
+      const selectedUnit = this.units.find(unit => unit.propertyName === this.entry.unitName);
+      return selectedUnit?.propertyType || null;
+    },
+    propertyTypeLabel() {
+      return this.selectedUnitPropertyType ? this.getLabel(this.selectedUnitPropertyType) : '';
     }
   },
   methods: {

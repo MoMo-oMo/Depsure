@@ -145,6 +145,7 @@
                 <v-row class="mt-6">
                   <v-col cols="12" class="d-flex justify-center gap-4">
                     <v-btn
+                      v-if="isAgencyUser || userType === 'Admin'"
                       color="black"
                       variant="elevated"
                       @click="editVacancy"
@@ -154,6 +155,7 @@
                       Edit Vacancy
                     </v-btn>
                     <v-btn
+                      v-if="isAgencyUser || userType === 'Admin'"
                       color="error"
                       variant="outlined"
                       @click="deleteVacancy"
@@ -177,12 +179,23 @@
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, deleteDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'ViewVacancyPage',
   setup() {
     const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
     return { showSuccessDialog, showErrorDialog, showConfirmDialog }
+  },
+  computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
+    }
   },
   data() {
     return {

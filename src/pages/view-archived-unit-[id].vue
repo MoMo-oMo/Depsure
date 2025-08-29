@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/active-units')"
+            @click="$router.push('/archived-units')"
             class="back-btn"
           >
             Back
@@ -17,32 +17,33 @@
         </v-col>
       </v-row>
 
-             <!-- Title Section -->
-       <v-row justify="center">
-         <v-col cols="12" lg="10" xl="8">
-           <div class="title-section">
-             <h1 class="page-title">Property Details</h1>
-           </div>
-           
-           <!-- Property Information Card -->
-           <v-card v-if="loading" class="form-card" elevation="0">
-             <v-card-text class="text-center">
-               <v-progress-circular indeterminate color="primary" />
-               <p class="mt-4">Loading property details...</p>
-             </v-card-text>
-           </v-card>
+      <!-- Title Section -->
+      <v-row justify="center">
+        <v-col cols="12" lg="10" xl="8">
+          <div class="title-section">
+            <h1 class="page-title">Archived Property Details</h1>
+          </div>
+          
+          <!-- Property Information Card -->
+          <v-card v-if="loading" class="form-card" elevation="0">
+            <v-card-text class="text-center">
+              <v-progress-circular indeterminate color="primary" />
+              <p class="mt-4">Loading archived property details...</p>
+            </v-card-text>
+          </v-card>
 
-           <v-card v-else-if="error" class="form-card" elevation="0">
-             <v-card-text class="text-center">
-               <v-icon icon="mdi-alert" color="error" size="large" />
-               <p class="mt-4 text-error">{{ error }}</p>
-             </v-card-text>
-           </v-card>
+          <v-card v-else-if="error" class="form-card" elevation="0">
+            <v-card-text class="text-center">
+              <v-icon icon="mdi-alert" color="error" size="large" />
+              <p class="mt-4 text-error">{{ error }}</p>
+            </v-card-text>
+          </v-card>
 
-           <div v-else class="form-card" elevation="0">
+          <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
             <v-tabs v-model="activeTab" class="property-tabs">
               <v-tab value="details">Property Details</v-tab>
+              <v-tab value="archive">Archive Information</v-tab>
               <v-tab value="documents">Documents</v-tab>
             </v-tabs>
 
@@ -51,138 +52,206 @@
               <v-window-item value="details">
                 <v-card-text>
                   <v-row>
-                <!-- Tenant Reference -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.tenantRef"
-                    label="Tenant Reference"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Tenant Reference -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.tenantRef"
+                        label="Tenant Reference"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Property Name -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.propertyName"
-                    label="Property Name"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Property Name -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.propertyName"
+                        label="Property Name"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Property Type -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="propertyTypeLabel"
-                    label="Property Type"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Property Type -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="propertyTypeLabel"
+                        label="Property Type"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- New Occupation -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.newOccupation"
-                    label="New Occupation Yes/No"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- New Occupation -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.newOccupation"
+                        label="New Occupation Yes/No"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Lease Starting Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.leaseStartDate"
-                    label="Lease Starting Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Lease Starting Date -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.leaseStartDate"
+                        label="Lease Starting Date"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Lease End Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.leaseEndDate"
-                    label="Lease End Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Lease End Date -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.leaseEndDate"
+                        label="Lease End Date"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Months Missed Rent Payment -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.monthsMissed"
-                    label="Months Missed Rent Payment"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Months Missed Rent Payment -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.monthsMissed"
+                        label="Months Missed Rent Payment"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Maintenance Amount -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="`R${property.maintenanceAmount.toLocaleString()}`"
-                    label="Maintenance Amount"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Maintenance Amount -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="`R${property.maintenanceAmount?.toLocaleString()}`"
+                        label="Maintenance Amount"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Contractor Requested -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.contractorRequested"
-                    label="Contractor Requested"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Contractor Requested -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.contractorRequested"
+                        label="Contractor Requested"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Paid Towards Fund -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="`R${property.paidTowardsFund.toLocaleString()}`"
-                    label="Paid Towards Fund"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Paid Towards Fund -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="`R${property.paidTowardsFund?.toLocaleString()}`"
+                        label="Paid Towards Fund"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Amount to be Paid Out -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="`R${property.amountToBePaidOut.toLocaleString()}`"
-                    label="Amount to be Paid Out (Inc Interest)"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                    <!-- Amount to be Paid Out -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="`R${property.amountToBePaidOut?.toLocaleString()}`"
+                        label="Amount to be Paid Out (Inc Interest)"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
 
-                <!-- Paid Out -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property.paidOut"
-                    label="Paid Out Yes/No"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-              </v-row>
+                    <!-- Paid Out -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.paidOut"
+                        label="Paid Out Yes/No"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+              </v-window-item>
+
+              <!-- Archive Information Tab -->
+              <v-window-item value="archive">
+                <v-card-text>
+                  <v-row>
+                    <!-- Archived Date -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="formatDate(property.archivedAt)"
+                        label="Archived Date"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
+
+                    <!-- Archived By -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.archivedByUserType || 'Unknown'"
+                        label="Archived By"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
+
+                    <!-- Original Unit ID -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="property.originalId"
+                        label="Original Unit ID"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
+
+                    <!-- Current Archive ID -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        :model-value="unitId"
+                        label="Current Archive ID"
+                        variant="outlined"
+                        readonly
+                        class="custom-input"
+                      />
+                    </v-col>
+                  </v-row>
+
+                  <!-- Restore Button -->
+                  <v-row class="mt-6">
+                    <v-col cols="12" class="text-center">
+                      <v-btn
+                        prepend-icon="mdi-restore"
+                        variant="outlined"
+                        color="success"
+                        size="large"
+                        @click="restoreUnit"
+                        :loading="restoring"
+                        class="restore-btn"
+                      >
+                        Restore Unit
+                      </v-btn>
+                    </v-col>
+                  </v-row>
                 </v-card-text>
               </v-window-item>
 
@@ -338,14 +407,22 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, deleteDoc, addDoc, collection } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
+import { useNotification } from '@/composables/useNotification'
 
 export default {
-  name: 'ViewPropertyPage',
+  name: 'ViewArchivedPropertyPage',
   setup() {
+    const appStore = useAppStore()
+    const { showConfirmDialog } = useCustomDialogs()
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
     const { getLabel } = usePropertyType()
-    return { getLabel }
+    const { showSuccess, showError } = useNotification()
+    return { appStore, showConfirmDialog, logAuditEvent, auditActions, resourceTypes, getLabel, showSuccess, showError }
   },
   data() {
     return {
@@ -373,26 +450,29 @@ export default {
       showDocumentDialog: false,
       currentDocumentURL: '',
       currentDocumentName: '',
-      zoomLevel: 1
+      zoomLevel: 1,
+      restoring: false
     }
   },
   computed: {
     propertyTypeLabel() {
       return this.getLabel(this.property.propertyType) || 'Unknown'
+    },
+    unitId() {
+      return this.$route.params.id
     }
   },
   mounted() {
-    console.log('ViewPropertyPage mounted');
+    console.log('ViewArchivedPropertyPage mounted');
     // Set the page title for the app bar
-    document.title = 'Property Details - Depsure';
+    document.title = 'Archived Property Details - Depsure';
     
     // Get property ID from route params
     const propertyId = this.$route.params.id;
     console.log('Property ID from route:', propertyId);
     if (propertyId) {
       // Load property data based on ID
-      console.log('Loading property with ID:', propertyId);
-      // In a real app, you would fetch the property data here
+      console.log('Loading archived property with ID:', propertyId);
       this.loadPropertyData(propertyId);
     } else {
       console.log('No property ID found in route params');
@@ -404,10 +484,10 @@ export default {
       this.error = null;
       
       try {
-        console.log('Loading property data for ID:', propertyId);
+        console.log('Loading archived property data for ID:', propertyId);
         
-        // Fetch property from Firestore
-        const propertyDoc = await getDoc(doc(db, 'units', propertyId));
+        // Fetch property from archivedUnits collection
+        const propertyDoc = await getDoc(doc(db, 'archivedUnits', propertyId));
         
         if (propertyDoc.exists()) {
           const propertyData = propertyDoc.data();
@@ -415,16 +495,83 @@ export default {
             id: propertyDoc.id,
             ...propertyData
           };
-          console.log('Property loaded successfully:', this.property);
+          console.log('Archived property loaded successfully:', this.property);
         } else {
-          this.error = 'Property not found';
-          console.log('Property not found in Firestore');
+          this.error = 'Archived property not found';
+          console.log('Archived property not found in Firestore');
         }
       } catch (error) {
-        console.error('Error loading property:', error);
-        this.error = 'Failed to load property details';
+        console.error('Error loading archived property:', error);
+        this.error = 'Failed to load archived property details';
       } finally {
         this.loading = false;
+      }
+    },
+
+    formatDate(date) {
+      if (!date) return 'N/A'
+      // Handle both Firestore Timestamp and regular Date objects
+      if (date.toDate) {
+        return new Date(date.toDate()).toLocaleDateString()
+      } else {
+        return new Date(date).toLocaleDateString()
+      }
+    },
+
+    async restoreUnit() {
+      const confirmed = await this.showConfirmDialog({
+        title: 'Restore Unit',
+        message: `Are you sure you want to restore "${this.property.propertyName}"? This will move it back to active units.`,
+        confirmText: 'Restore',
+        color: '#28a745'
+      })
+
+      if (confirmed) {
+        this.restoring = true
+        try {
+          // Create exact duplicate in units collection
+          const restoredUnitData = {
+            ...this.property,
+            restoredAt: new Date(),
+            restoredBy: this.appStore.currentUser?.uid || 'unknown',
+            restoredByUserType: this.appStore.currentUser?.userType || 'unknown'
+          }
+          
+          // Remove fields that shouldn't be in active units
+          delete restoredUnitData.id
+          delete restoredUnitData.originalId
+          delete restoredUnitData.archivedAt
+          delete restoredUnitData.archivedBy
+          delete restoredUnitData.archivedByUserType
+          
+          // Add to units collection
+          const unitsRef = collection(db, 'units')
+          await addDoc(unitsRef, restoredUnitData)
+          
+          // Log audit event
+          await this.logAuditEvent(
+            this.auditActions.RESTORE,
+            {
+              propertyName: this.property.propertyName,
+              tenantRef: this.property.tenantRef,
+              originalId: this.property.originalId
+            },
+            this.resourceTypes.PROPERTY,
+            this.property.id
+          )
+          
+          // Delete from archivedUnits collection
+          const archivedUnitRef = doc(db, 'archivedUnits', this.property.id)
+          await deleteDoc(archivedUnitRef)
+          
+          this.showSuccess('Unit restored successfully')
+          this.$router.push('/archived-units')
+        } catch (error) {
+          console.error('Error restoring unit:', error)
+          this.showError('Failed to restore unit')
+        } finally {
+          this.restoring = false
+        }
       }
     },
     
@@ -542,6 +689,24 @@ export default {
 .property-tabs :deep(.v-tab--selected) {
   color: #000;
   background-color: white;
+}
+
+/* Restore button styling */
+.restore-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: 2px solid #28a745 !important;
+  color: #28a745 !important;
+  background-color: transparent !important;
+}
+
+.restore-btn:hover {
+  background-color: #28a745 !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
 /* Documents section */

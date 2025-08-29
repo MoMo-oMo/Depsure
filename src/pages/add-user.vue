@@ -237,10 +237,11 @@
                   color="black"
                   variant="elevated"
                   @click="saveUser"
-                  :disabled="!valid"
+                  :disabled="!valid || loading"
+                  :loading="loading"
                   class="save-btn"
                 >
-                  Add User
+                  {{ loading ? 'Adding User...' : 'Add User' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -254,13 +255,18 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { auth, db } from '@/firebaseConfig'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'AddUserPage',
   setup() {
+    const appStore = useAppStore()
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
+    return { appStore, showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -280,6 +286,7 @@ export default {
          agencyDescription: ''
        },
       valid: true,
+      loading: false,
       // Validation rules
       emailRules: [
         v => !!v || 'Email is required',
@@ -379,9 +386,40 @@ export default {
      methods: {
      async saveUser() {
        if (this.$refs.form.validate()) {
+         this.loading = true;
          console.log('Adding new user:', this.user);
          
          try {
+           // Create user in Firebase Auth
+           const userCredential = await createUserWithEmailAndPassword(
+             auth,
+             this.user.email,
+             this.user.password
+           );
+           
+           const newUser = userCredential.user;
+           
+           // Prepare user data for Firestore
+           const userData = {
+             email: this.user.email,
+             userType: this.user.userType,
+             status: this.user.status,
+             createdAt: new Date(),
+             createdBy: this.appStore.userId,
+             profileImageUrl: this.user.profileImage || null,
+             // Agency-specific fields
+             agencyName: this.user.userType === 'Agency' ? this.user.agencyName : null,
+             agencyTagline: this.user.userType === 'Agency' ? this.user.agencyTagline : null,
+             location: this.user.userType === 'Agency' ? this.user.location : null,
+             establishedYear: this.user.userType === 'Agency' ? this.user.establishedYear : null,
+             numberOfProperties: this.user.userType === 'Agency' ? this.user.numberOfProperties : null,
+             rating: this.user.userType === 'Agency' ? this.user.rating : null,
+             agencyDescription: this.user.userType === 'Agency' ? this.user.agencyDescription : null
+           };
+           
+           // Save user data to Firestore
+           await setDoc(doc(db, 'users', newUser.uid), userData);
+           
            // Log the audit event
            await this.logAuditEvent(
              this.auditActions.CREATE,
@@ -393,14 +431,25 @@ export default {
                agencyName: this.user.agencyName || null
              },
              this.resourceTypes.USER,
-             null // No resource ID yet since user is being created
-           )
+             newUser.uid
+           );
            
-           // In a real app, you would make an API call here to save the user
            this.showSuccessDialog('User added successfully!', 'Success!', 'Continue', '/user-management');
          } catch (error) {
            console.error('Error saving user:', error);
-           this.showErrorDialog('Failed to add user. Please try again.', 'Error', 'OK');
+           
+           let errorMessage = 'Failed to add user. Please try again.';
+           if (error.code === 'auth/email-already-in-use') {
+             errorMessage = 'A user with this email already exists.';
+           } else if (error.code === 'auth/weak-password') {
+             errorMessage = 'Password is too weak. Please choose a stronger password.';
+           } else if (error.code === 'auth/invalid-email') {
+             errorMessage = 'Invalid email address.';
+           }
+           
+           this.showErrorDialog(errorMessage, 'Error', 'OK');
+         } finally {
+           this.loading = false;
          }
        }
      },

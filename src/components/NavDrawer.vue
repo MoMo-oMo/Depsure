@@ -47,6 +47,7 @@
            @click="navigateTo('audit-trail')"
          />
         <v-list-item
+          v-if="!isAgencyUser"
           prepend-icon="mdi-domain"
           title="AGENCY"
           value="agency"
@@ -155,6 +156,10 @@ export default {
       return userType.value === 'Super Admin'
     })
 
+    const isAgencyUser = computed(() => {
+      return userType.value === 'Agency'
+    })
+
     const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
 
     const headerStyle = computed(() => ({
@@ -213,7 +218,8 @@ export default {
        navigateTo,
        navigateToProfile,
        canAccessUserManagement,
-       canAccessAuditTrail
+       canAccessAuditTrail,
+       isAgencyUser
      }
   }
 }

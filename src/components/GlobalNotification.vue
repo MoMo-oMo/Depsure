@@ -60,7 +60,7 @@ const getIconColor = () => {
 
 <style scoped>
 .global-notification {
-  z-index: 9999;
+  z-index: 100000;
 }
 
 .notification-message {

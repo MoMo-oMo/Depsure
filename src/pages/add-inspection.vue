@@ -46,6 +46,18 @@
                     />
                   </v-col>
 
+                  <!-- Property Type (Read-only) -->
+                  <v-col cols="12" md="6" v-if="selectedUnitPropertyType">
+                    <v-text-field
+                      :model-value="propertyTypeLabel"
+                      label="Property Type"
+                      variant="outlined"
+                      class="custom-input"
+                      readonly
+                      prepend-inner-icon="mdi-home"
+                    />
+                  </v-col>
+
                   <!-- Inspection Required (Yes/No) -->
                   <v-col cols="12" md="6">
                     <v-select
@@ -199,13 +211,15 @@ import { db } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "AddInspectionPage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
+    const { getLabel } = usePropertyType()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getLabel }
   },
   data() {
     return {
@@ -244,6 +258,14 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    selectedUnitPropertyType() {
+      if (!this.entry.unitName) return null;
+      const selectedUnit = this.units.find(unit => unit.propertyName === this.entry.unitName);
+      return selectedUnit?.propertyType || null;
+    },
+    propertyTypeLabel() {
+      return this.selectedUnitPropertyType ? this.getLabel(this.selectedUnitPropertyType) : '';
     }
   },
   methods: {

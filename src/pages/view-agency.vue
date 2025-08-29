@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/agency')"
+            @click="$router.push('/active-units')"
             class="back-btn"
           >
             Back
@@ -45,7 +45,7 @@
             @input="filterProperties"
           />
         </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center">
+        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
           <v-btn
             icon="mdi-plus"
             variant="outlined"
@@ -177,6 +177,7 @@
 import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'ViewAgencyPage',
@@ -283,6 +284,10 @@ export default {
     },
     soldProperties() {
       return this.properties.filter(p => p.status === 'Sold').length;
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Super Admin';
     }
   },
   methods: {

@@ -46,6 +46,8 @@ const isProtectedRoute = computed(() => {
 const roleProtectedRoutes = {
   '/user-management': ['Super Admin', 'Admin'],
   '/audit-trail': ['Super Admin'],
+  '/archived-units': ['Super Admin'],
+  '/view-archived-unit-': ['Super Admin'],
   '/add-user': ['Super Admin', 'Admin'],
   '/add-agency': ['Super Admin'],
   '/add-unit': ['Super Admin', 'Admin', 'Agency'],
@@ -76,6 +78,13 @@ watch(() => route.path, (newPath) => {
 
   if (requiredRoles && !requiredRoles.includes(userType)) {
     router.push('/dashboard')
+    return
+  }
+
+  // Agency-specific route protection
+  const isAgencyRoute = agencyProtectedRoutes.some(route => newPath.startsWith(route))
+  if (isAgencyRoute && userType === 'Agency') {
+    router.push('/active-units')
     return
   }
 }, { immediate: true })

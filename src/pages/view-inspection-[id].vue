@@ -191,10 +191,22 @@
                 <v-btn color="grey" variant="outlined" @click="$router.push('/inspections')" class="cancel-btn">
                   Back
                 </v-btn>
-                <v-btn color="black" variant="elevated" @click="editEntry" class="edit-btn">
+                <v-btn 
+                  v-if="isAgencyUser || userType === 'Admin'"
+                  color="black" 
+                  variant="elevated" 
+                  @click="editEntry" 
+                  class="edit-btn"
+                >
                   Edit Entry
                 </v-btn>
-                <v-btn color="error" variant="outlined" @click="deleteEntry" class="delete-btn">
+                <v-btn 
+                  v-if="isAgencyUser || userType === 'Admin'"
+                  color="error" 
+                  variant="outlined" 
+                  @click="deleteEntry" 
+                  class="delete-btn"
+                >
                   Delete Entry
                 </v-btn>
               </v-card-actions>
@@ -210,12 +222,23 @@
 import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "ViewInspectionPage",
   setup() {
     const { showConfirmDialog } = useCustomDialogs()
     return { showConfirmDialog }
+  },
+  computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
+    }
   },
   data() {
     return {

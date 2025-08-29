@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/agency')"
+            @click="$router.push('/active-units')"
             class="back-btn"
           >
             Back
@@ -45,7 +45,7 @@
              @input="filterProperties"
            />
          </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center">
+        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
           <v-btn
             icon="mdi-plus"
             variant="outlined"
@@ -259,6 +259,10 @@ export default {
     },
     soldProperties() {
       return this.properties.filter(p => p.status === 'Sold').length;
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Super Admin';
     }
   },
   methods: {
@@ -371,7 +375,7 @@ export default {
         // Check if user has permission to view this agency
         if (userType === 'Agency' && currentUser.uid !== agencyId) {
           console.error('Agency user can only view their own agency');
-          this.$router.push('/agency');
+          this.$router.push('/active-units');
           return;
         }
         

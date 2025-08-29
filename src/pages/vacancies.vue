@@ -4,7 +4,7 @@
       <!-- Filters and Add Vacancy Button -->
       <v-row class="mb-4">
         <!-- Search -->
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="3" lg="2">
           <v-text-field
             v-model="searchQuery"
             label="Search vacancy entries..."
@@ -21,7 +21,7 @@
         </v-col>
 
         <!-- Agency Filter -->
-        <v-col v-if="!isAgencyUser" cols="12" md="3" class="pa-4">
+        <v-col v-if="!isAgencyUser" cols="12" md="2" lg="2" class="pa-4">
           <v-select
             v-model="selectedAgency"
             :items="agencies"
@@ -39,8 +39,26 @@
           />
         </v-col>
 
+        <!-- Property Type Filter -->
+        <v-col cols="12" md="2" lg="2" class="pa-4">
+          <v-select
+            v-model="propertyTypeFilter"
+            :items="propertyTypeFilterOptions"
+            item-title="title"
+            item-value="value"
+            label="Property Type"
+            prepend-inner-icon="mdi-home"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            clearable
+            class="custom-input"
+            @update:model-value="filterVacancies"
+          />
+        </v-col>
+
         <!-- Month filter -->
-        <v-col cols="12" md="2">
+        <v-col cols="12" md="2" lg="2">
           <v-text-field
             v-model="monthFilter"
             label="Filter by creation month"
@@ -56,8 +74,8 @@
           />
         </v-col>
 
-        <!-- Add Vacancy Button -->
-        <v-col cols="12" md="2" class="d-flex align-center">
+        <!-- Add Vacancy Button - Only visible to Agency users -->
+        <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addVacancy" class="back-btn">
             Add Vacancy
           </v-btn>
@@ -144,6 +162,17 @@
               {{ item.moveInDate ? formatDate(item.moveInDate) : 'Not specified' }}
             </template>
 
+            <!-- Property Type -->
+            <template v-slot:item.propertyType="{ item }">
+              <v-chip
+                :color="getPropertyTypeColor(item.propertyType)"
+                size="small"
+                variant="outlined"
+              >
+                {{ getPropertyTypeLabel(item.propertyType) }}
+              </v-chip>
+            </template>
+
             <!-- Action Buttons -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -156,6 +185,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="!isSuperAdmin"
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
@@ -164,6 +194,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="!isSuperAdmin"
                   icon="mdi-delete"
                   size="small"
                   variant="text"
@@ -185,18 +216,27 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "ViewVacancies",
   setup() {
     const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    return { showErrorDialog, showConfirmDialog }
+    const { getLabel, getColor, getOptions, resolvePropertyTypeFromUnit } = usePropertyType()
+    return { 
+      showErrorDialog, 
+      showConfirmDialog,
+      getPropertyTypeLabel: getLabel,
+      getPropertyTypeColor: getColor,
+      resolvePropertyTypeFromUnit
+    }
   },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
       selectedAgency: null,
+      propertyTypeFilter: null,
       filteredVacancies: [],
       vacancies: [],
       agencies: [],
@@ -207,6 +247,7 @@ export default {
         { title: "Date Vacated", key: "dateVacated", sortable: true, align: "center" },
         { title: "New Tenant Found", key: "newTenantFound", sortable: true, align: "center" },
         { title: "Move In Date", key: "moveInDate", sortable: true, align: "center" },
+        { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
         { title: "Property Manager", key: "propertyManager", sortable: true },
         { title: "Contact Number", key: "contactNumber", sortable: true },
         { title: "Notes", key: "notes", sortable: false },
@@ -221,6 +262,19 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      const userType = appStore.currentUser?.userType;
+      console.log('Vacancies - User Type:', userType, 'Is Super Admin:', userType === 'Super Admin');
+      return userType === 'Super Admin';
+    },
+    propertyTypeFilterOptions() {
+      const { getOptions } = usePropertyType()
+      return [
+        { value: null, title: 'All Types' },
+        ...getOptions()
+      ]
     }
   },
   methods: {
@@ -248,9 +302,14 @@ export default {
         
         let agencyMatch = true;
         let monthMatch = true;
+        let propertyTypeMatch = true;
         
         if (this.selectedAgency) {
           agencyMatch = vacancy.agencyId === this.selectedAgency;
+        }
+        
+        if (this.propertyTypeFilter) {
+          propertyTypeMatch = vacancy.propertyType === this.propertyTypeFilter;
         }
         
         if (this.monthFilter) {
@@ -259,7 +318,7 @@ export default {
           monthMatch = vacancyDate.getMonth() === filterDate.getMonth() && vacancyDate.getFullYear() === filterDate.getFullYear();
         }
         
-        return textMatch && agencyMatch && monthMatch;
+        return textMatch && agencyMatch && monthMatch && propertyTypeMatch;
       });
     },
 
@@ -423,6 +482,7 @@ export default {
             dateVacated: '2024-12-01',
             newTenantFound: 'Yes',
             moveInDate: '2025-01-15',
+            propertyType: 'APARTMENT',
             propertyManager: 'John Smith',
             contactNumber: '+27 82 123 4567',
             notes: 'Property in excellent condition, new tenant approved',
@@ -435,6 +495,7 @@ export default {
             dateVacated: '2024-11-15',
             newTenantFound: 'No',
             moveInDate: null,
+            propertyType: 'HOUSE',
             propertyManager: 'Sarah Johnson',
             contactNumber: '+27 83 234 5678',
             notes: 'Property needs minor repairs before new tenant',
@@ -447,6 +508,7 @@ export default {
             dateVacated: '2024-12-10',
             newTenantFound: 'Yes',
             moveInDate: '2025-02-01',
+            propertyType: 'SHOP',
             propertyManager: 'Mike Wilson',
             contactNumber: '+27 84 345 6789',
             notes: 'High-end property, tenant screening in progress',
@@ -488,12 +550,45 @@ export default {
         }
         
         const querySnapshot = await getDocs(q);
-        this.vacancies = querySnapshot.docs.map(doc => ({
+        const vacanciesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           createdAt: doc.data().createdAt?.toDate(),
           updatedAt: doc.data().updatedAt?.toDate()
         }));
+        
+        // Resolve property types for each vacancy
+        this.vacancies = await Promise.all(
+          vacanciesData.map(async (vacancy) => {
+            try {
+              // Try to resolve property type from unitId first
+              if (vacancy.unitId) {
+                const propertyType = await this.resolvePropertyTypeFromUnit(vacancy.unitId);
+                return { ...vacancy, propertyType };
+              }
+              // If no unitId, try to resolve from unitName (fallback)
+              else if (vacancy.unitName) {
+                // Query units collection to find the unit by name
+                const unitsQuery = query(
+                  collection(db, 'units'),
+                  where('unitName', '==', vacancy.unitName)
+                );
+                const unitSnapshot = await getDocs(unitsQuery);
+                if (!unitSnapshot.empty) {
+                  const unitDoc = unitSnapshot.docs[0];
+                  const propertyType = await this.resolvePropertyTypeFromUnit(unitDoc.id);
+                  return { ...vacancy, propertyType };
+                }
+              }
+              // Default to OTHER if no unit found
+              return { ...vacancy, propertyType: 'OTHER' };
+            } catch (error) {
+              console.error(`Error resolving property type for vacancy ${vacancy.id}:`, error);
+              return { ...vacancy, propertyType: 'OTHER' };
+            }
+          })
+        );
+        
         console.log('Vacancies loaded:', this.vacancies.length);
         console.log('User type:', userType, 'Agency ID filter:', agencyId);
         

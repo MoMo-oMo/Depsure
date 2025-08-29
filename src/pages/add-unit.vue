@@ -69,6 +69,21 @@
                     />
                   </v-col>
 
+                  <!-- Property Type -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="property.propertyType"
+                      label="Property Type"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="propertyTypeOptions"
+                      item-title="title"
+                      item-value="value"
+                      :rules="propertyTypeRules"
+                      required
+                    />
+                  </v-col>
+
                   <!-- New Occupation -->
                   <v-col cols="12" md="6">
                     <v-select
@@ -224,13 +239,15 @@ import { db } from '@/firebaseConfig'
 import { collection, getDocs, addDoc, query, where, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: 'AddUnitPage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
+    const { getOptions } = usePropertyType()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getOptions }
   },
   data() {
     return {
@@ -238,6 +255,7 @@ export default {
         agencyId: '',
         tenantRef: '',
         propertyName: '',
+        propertyType: '',
         newOccupation: '',
         leaseStartDate: '',
         leaseEndDate: '',
@@ -291,6 +309,9 @@ export default {
       ],
       paidOutRules: [
         v => !!v || 'Paid Out is required'
+      ],
+      propertyTypeRules: [
+        v => !!v || 'Property Type is required'
       ]
     }
   },
@@ -298,6 +319,9 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    propertyTypeOptions() {
+      return this.getOptions();
     }
   },
   async mounted() {

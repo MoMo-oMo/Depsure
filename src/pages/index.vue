@@ -150,7 +150,7 @@ export default {
               { 
                 loginMethod: 'email',
                 userType: userData.userType,
-                redirectPath: userData.userType === 'Agency' ? '/agency' : '/user-management'
+                redirectPath: userData.userType === 'Agency' ? '/active-units' : '/user-management'
               },
               'USER',
               user.uid
@@ -161,7 +161,7 @@ export default {
             
             // Redirect based on user type
             if (userData.userType === 'Agency') {
-              this.$router.push('/agency');
+              this.$router.push('/active-units');
             } else {
               this.$router.push('/user-management');
             }

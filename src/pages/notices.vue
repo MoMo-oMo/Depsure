@@ -56,8 +56,26 @@
           />
         </v-col>
 
-        <!-- Add Notice Button -->
-        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center">
+        <!-- Property Type filter -->
+        <v-col cols="12" md="2" lg="2" class="pa-4">
+          <v-select
+            v-model="propertyTypeFilter"
+            :items="propertyTypeFilterOptions"
+            item-title="title"
+            item-value="value"
+            label="Property Type"
+            prepend-inner-icon="mdi-home"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            clearable
+            class="custom-input"
+            @update:model-value="filterProperties"
+          />
+        </v-col>
+
+        <!-- Add Notice Button - Only visible to Agency users -->
+        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addNotice" class="back-btn">
             Add Notice
           </v-btn>
@@ -126,6 +144,15 @@
             :loading="propertiesLoading"
             no-data-text="No data available"
           >
+            <template v-slot:item.propertyType="{ item }">
+              <v-chip 
+                :color="getColor(item.propertyType)" 
+                size="small"
+                variant="elevated"
+              >
+                {{ getLabel(item.propertyType) }}
+              </v-chip>
+            </template>
             <template v-slot:item.maintenanceRequired="{ item }">
               <v-chip :color="item.maintenanceRequired === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.maintenanceRequired }}
@@ -144,6 +171,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="!isSuperAdmin"
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
@@ -152,6 +180,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="!isSuperAdmin"
                   icon="mdi-delete"
                   size="small"
                   variant="text"
@@ -173,17 +202,20 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "NoticePage",
   setup() {
     const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    return { showSuccessDialog, showErrorDialog, showConfirmDialog }
+    const { getOptions, getLabel, getColor, resolvePropertyTypeFromUnit } = usePropertyType()
+    return { showSuccessDialog, showErrorDialog, showConfirmDialog, getOptions, getLabel, getColor, resolvePropertyTypeFromUnit }
   },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
+      propertyTypeFilter: null,
       filteredProperties: [],
       selectedAgency: null,
       agencies: [],
@@ -192,6 +224,7 @@ export default {
       propertiesLoading: false,
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
+        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         { title: "LEASE START DATE", key: "leaseStartDate", sortable: true, align: "center" },
         { title: "NOTICE GIVEN DATE", key: "noticeGivenDate", sortable: true, align: "center" },
         { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
@@ -212,6 +245,18 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      const userType = appStore.currentUser?.userType;
+      console.log('Notices - User Type:', userType, 'Is Super Admin:', userType === 'Super Admin');
+      return userType === 'Super Admin';
+    },
+    propertyTypeFilterOptions() {
+      return [
+        { value: null, title: 'All Types' },
+        ...this.getOptions()
+      ];
     }
   },
   methods: {
@@ -226,7 +271,14 @@ export default {
         const textMatch =
           property.unitName.toLowerCase().includes(this.searchQuery.toLowerCase());
         
+        // Property Type filter
+        let propertyTypeMatch = true;
+        if (this.propertyTypeFilter) {
+          propertyTypeMatch = property.propertyType === this.propertyTypeFilter;
+        }
+        
         // Month filter - now filtering by createdAt date
+        let monthMatch = true;
         if (this.monthFilter) {
           // Handle Firestore Timestamp objects
           let propertyDate;
@@ -238,15 +290,15 @@ export default {
             propertyDate = new Date(property.createdAt);
           } else {
             // No createdAt date, skip this property
-            return textMatch;
+            return textMatch && propertyTypeMatch;
           }
           
           const filterDate = new Date(this.monthFilter + "-01");
           const propertyMonth = `${propertyDate.getFullYear()}-${String(propertyDate.getMonth() + 1).padStart(2, "0")}`;
           const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, "0")}`;
-          return textMatch && propertyMonth === filterMonth;
+          monthMatch = propertyMonth === filterMonth;
         }
-        return textMatch;
+        return textMatch && propertyTypeMatch && monthMatch;
       });
     },
     async fetchAgencies() {
@@ -313,11 +365,46 @@ export default {
         
         const noticesSnapshot = await getDocs(noticesQuery);
         
-        this.properties = noticesSnapshot.docs.map(doc => ({
+        // First, get all notices
+        const notices = noticesSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
-        console.log('Notices loaded:', this.properties);
+        
+        // Resolve property types for each notice
+        const noticesWithPropertyTypes = await Promise.all(
+          notices.map(async (notice) => {
+            try {
+              // Try to resolve property type from unitId if available
+              if (notice.unitId) {
+                const propertyType = await this.resolvePropertyTypeFromUnit(notice.unitId);
+                return { ...notice, propertyType };
+              }
+              // If no unitId, try to resolve from unitName by finding the unit
+              else if (notice.unitName) {
+                // Find the unit by name in the units collection
+                const unitsQuery = query(
+                  collection(db, 'units'),
+                  where('propertyName', '==', notice.unitName)
+                );
+                const unitsSnapshot = await getDocs(unitsQuery);
+                if (!unitsSnapshot.empty) {
+                  const unitDoc = unitsSnapshot.docs[0];
+                  const unitData = unitDoc.data();
+                  return { ...notice, propertyType: unitData.propertyType || 'OTHER' };
+                }
+              }
+              // Default to OTHER if we can't resolve
+              return { ...notice, propertyType: 'OTHER' };
+            } catch (error) {
+              console.error('Error resolving property type for notice:', notice.id, error);
+              return { ...notice, propertyType: 'OTHER' };
+            }
+          })
+        );
+        
+        this.properties = noticesWithPropertyTypes;
+        console.log('Notices loaded with property types:', this.properties);
         console.log('Number of notices found:', this.properties.length);
         console.log('User type:', userType, 'Agency ID filter:', agencyId);
         

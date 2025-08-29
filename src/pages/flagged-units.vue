@@ -5,7 +5,7 @@
       <!-- Filters and Add Flagged Unit Button -->
       <v-row class="mb-4">
         <!-- Search -->
-        <v-col cols="12" md="3" lg="3" class="pa-4">
+        <v-col cols="12" md="3" lg="2" class="pa-4">
           <v-text-field
             v-model="searchQuery"
             label="Search flagged units..."
@@ -40,6 +40,24 @@
           />
         </v-col>
 
+        <!-- Property Type Filter -->
+        <v-col cols="12" md="2" lg="2" class="pa-4">
+          <v-select
+            v-model="propertyTypeFilter"
+            :items="propertyTypeFilterOptions"
+            item-title="title"
+            item-value="value"
+            label="Property Type"
+            prepend-inner-icon="mdi-home"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            clearable
+            class="custom-input"
+            @update:model-value="filterUnits"
+          />
+        </v-col>
+
         <!-- Month filter -->
         <v-col cols="12" md="2" lg="2" class="pa-4">
           <v-text-field
@@ -57,8 +75,8 @@
           />
         </v-col>
 
-        <!-- Add Flagged Unit Button -->
-        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center">
+        <!-- Add Flagged Unit Button - Only visible to Agency users -->
+        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addFlaggedUnit" class="back-btn">
             Add Flagged Unit
           </v-btn>
@@ -135,6 +153,15 @@
             <template v-slot:item.noticeToVacateGiven="{ item }">
               <span class="font-weight-medium">{{ item.noticeToVacateGiven }}</span>
             </template>
+            <template v-slot:item.propertyType="{ item }">
+              <v-chip
+                :color="getPropertyTypeColor(item.propertyType)"
+                size="small"
+                variant="outlined"
+              >
+                {{ getPropertyTypeLabel(item.propertyType) }}
+              </v-chip>
+            </template>
             <!-- Centered Action Buttons -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -147,6 +174,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="!isSuperAdmin"
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
@@ -155,6 +183,7 @@
                   class="action-btn"
                 />
                 <v-btn
+                  v-if="!isSuperAdmin"
                   icon="mdi-delete"
                   size="small"
                   variant="text"
@@ -177,19 +206,30 @@ import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'fireb
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "FlaggedUnitsPage",
   setup() {
     const { showConfirmDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showConfirmDialog, logAuditEvent, auditActions, resourceTypes }
+    const { getLabel, getColor, getOptions, resolvePropertyTypeFromUnit } = usePropertyType()
+    return { 
+      showConfirmDialog, 
+      logAuditEvent, 
+      auditActions, 
+      resourceTypes,
+      getPropertyTypeLabel: getLabel,
+      getPropertyTypeColor: getColor,
+      resolvePropertyTypeFromUnit
+    }
   },
   data() {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
       selectedAgency: null,
+      propertyTypeFilter: null,
       filteredUnits: [],
       agencies: [],
       agenciesLoading: false,
@@ -199,6 +239,7 @@ export default {
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Missed Payment Flag", key: "missedPaymentFlag", sortable: true, align: "center" },
         { title: "Notice To Vacate Given", key: "noticeToVacateGiven", sortable: true, align: "center" },
+        { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
         { title: "Notes", key: "notes", sortable: true },
         { title: "Actions", key: "actions", sortable: false, align: "center" },
       ]
@@ -211,6 +252,19 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      const userType = appStore.currentUser?.userType;
+      console.log('Flagged Units - User Type:', userType, 'Is Super Admin:', userType === 'Super Admin');
+      return userType === 'Super Admin';
+    },
+    propertyTypeFilterOptions() {
+      const { getOptions } = usePropertyType()
+      return [
+        { value: null, title: 'All Types' },
+        ...getOptions()
+      ]
     }
   },
   methods: {
@@ -229,9 +283,14 @@ export default {
 
         let agencyMatch = true;
         let monthMatch = true;
+        let propertyTypeMatch = true;
 
         if (this.selectedAgency) {
           agencyMatch = unit.agencyId === this.selectedAgency;
+        }
+
+        if (this.propertyTypeFilter) {
+          propertyTypeMatch = unit.propertyType === this.propertyTypeFilter;
         }
 
         if (this.monthFilter) {
@@ -245,7 +304,7 @@ export default {
             unitDate = new Date(unit.createdAt);
           } else {
             // No createdAt date, skip this unit
-            return textMatch && agencyMatch;
+            return textMatch && agencyMatch && propertyTypeMatch;
           }
           
           const filterDate = new Date(this.monthFilter + "-01");
@@ -254,7 +313,7 @@ export default {
           monthMatch = unitMonth === filterMonth;
         }
 
-        return textMatch && agencyMatch && monthMatch;
+        return textMatch && agencyMatch && monthMatch && propertyTypeMatch;
       });
     },
     viewUnit(unit) {
@@ -377,10 +436,42 @@ export default {
         }
         
         const querySnapshot = await getDocs(unitsQuery);
-        this.units = querySnapshot.docs.map(doc => ({
+        const unitsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
+        
+        // Resolve property types for each flagged unit
+        this.units = await Promise.all(
+          unitsData.map(async (unit) => {
+            try {
+              // Try to resolve property type from unitId first
+              if (unit.unitId) {
+                const propertyType = await this.resolvePropertyTypeFromUnit(unit.unitId);
+                return { ...unit, propertyType };
+              }
+              // If no unitId, try to resolve from unitName (fallback)
+              else if (unit.unitName) {
+                // Query units collection to find the unit by name
+                const unitsQuery = query(
+                  collection(db, 'units'),
+                  where('unitName', '==', unit.unitName)
+                );
+                const unitSnapshot = await getDocs(unitsQuery);
+                if (!unitSnapshot.empty) {
+                  const unitDoc = unitSnapshot.docs[0];
+                  const propertyType = await this.resolvePropertyTypeFromUnit(unitDoc.id);
+                  return { ...unit, propertyType };
+                }
+              }
+              // Default to OTHER if no unit found
+              return { ...unit, propertyType: 'OTHER' };
+            } catch (error) {
+              console.error(`Error resolving property type for unit ${unit.id}:`, error);
+              return { ...unit, propertyType: 'OTHER' };
+            }
+          })
+        );
         
         // Apply initial filtering
         this.filterUnits();

@@ -45,6 +45,20 @@
                 </v-col>
               </v-row>
 
+              <!-- Row 0.5: Property Type (read-only) -->
+              <v-row v-if="selectedUnitPropertyType">
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="propertyTypeLabel"
+                    label="Property Type"
+                    variant="outlined"
+                    class="custom-input"
+                    readonly
+                    prepend-inner-icon="mdi-home"
+                  />
+                </v-col>
+              </v-row>
+
               <!-- Row 1: Tenant Info -->
               <v-row>
                 <v-col cols="12" md="6">
@@ -188,13 +202,23 @@ import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { usePropertyType } from '@/composables/usePropertyType'
 
 export default {
   name: "AddFlaggedUnitPage",
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
+    const { getLabel, resolvePropertyTypeFromUnit } = usePropertyType()
+    return { 
+      showSuccessDialog, 
+      showErrorDialog, 
+      logAuditEvent, 
+      auditActions, 
+      resourceTypes,
+      getPropertyTypeLabel: getLabel,
+      resolvePropertyTypeFromUnit
+    }
   },
   data() {
     return {
@@ -234,6 +258,19 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
+    },
+    selectedUnitPropertyType() {
+      if (!this.unit.unitName) return null;
+      
+      // Find the selected unit to get its propertyId
+      const selectedUnit = this.units.find(u => u.propertyName === this.unit.unitName);
+      if (!selectedUnit) return null;
+      
+      return selectedUnit.propertyType || 'OTHER';
+    },
+    propertyTypeLabel() {
+      if (!this.selectedUnitPropertyType) return '';
+      return this.getPropertyTypeLabel(this.selectedUnitPropertyType);
     }
   },
   methods: {
