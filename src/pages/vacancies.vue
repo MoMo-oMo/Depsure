@@ -482,7 +482,7 @@ export default {
             dateVacated: '2024-12-01',
             newTenantFound: 'Yes',
             moveInDate: '2025-01-15',
-            propertyType: 'APARTMENT',
+            propertyType: 'residential',
             propertyManager: 'John Smith',
             contactNumber: '+27 82 123 4567',
             notes: 'Property in excellent condition, new tenant approved',
@@ -495,7 +495,7 @@ export default {
             dateVacated: '2024-11-15',
             newTenantFound: 'No',
             moveInDate: null,
-            propertyType: 'HOUSE',
+            propertyType: 'residential',
             propertyManager: 'Sarah Johnson',
             contactNumber: '+27 83 234 5678',
             notes: 'Property needs minor repairs before new tenant',
@@ -508,7 +508,7 @@ export default {
             dateVacated: '2024-12-10',
             newTenantFound: 'Yes',
             moveInDate: '2025-02-01',
-            propertyType: 'SHOP',
+            propertyType: 'commercial',
             propertyManager: 'Mike Wilson',
             contactNumber: '+27 84 345 6789',
             notes: 'High-end property, tenant screening in progress',
@@ -580,11 +580,11 @@ export default {
                   return { ...vacancy, propertyType };
                 }
               }
-              // Default to OTHER if no unit found
-              return { ...vacancy, propertyType: 'OTHER' };
+              // Default to residential if no unit found
+              return { ...vacancy, propertyType: 'residential' };
             } catch (error) {
               console.error(`Error resolving property type for vacancy ${vacancy.id}:`, error);
-              return { ...vacancy, propertyType: 'OTHER' };
+              return { ...vacancy, propertyType: 'residential' };
             }
           })
         );

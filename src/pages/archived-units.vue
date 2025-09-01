@@ -261,11 +261,9 @@ export default {
       selectedAgencyDetails: null,
       propertyTypeFilterOptions: [
         { title: 'All Types', value: null },
-        { title: 'Apartment', value: 'apartment' },
-        { title: 'House', value: 'house' },
-        { title: 'Townhouse', value: 'townhouse' },
-        { title: 'Condo', value: 'condo' },
-        { title: 'Studio', value: 'studio' }
+        { title: 'Residential', value: 'residential' },
+        { title: 'Commercial', value: 'commercial' },
+        { title: 'Industrial', value: 'industrial' }
       ],
       headers: [
         { title: 'Tenant Ref', key: 'tenantRef', sortable: true },

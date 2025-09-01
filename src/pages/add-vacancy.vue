@@ -264,7 +264,7 @@ export default {
       const selectedUnit = this.units.find(u => u.propertyName === this.vacancy.unitName);
       if (!selectedUnit) return null;
       
-      return selectedUnit.propertyType || 'OTHER';
+              return selectedUnit.propertyType || 'residential';
     },
     propertyTypeLabel() {
       if (!this.selectedUnitPropertyType) return '';

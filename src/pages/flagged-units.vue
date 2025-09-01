@@ -464,11 +464,11 @@ export default {
                   return { ...unit, propertyType };
                 }
               }
-              // Default to OTHER if no unit found
-              return { ...unit, propertyType: 'OTHER' };
+              // Default to residential if no unit found
+              return { ...unit, propertyType: 'residential' };
             } catch (error) {
               console.error(`Error resolving property type for unit ${unit.id}:`, error);
-              return { ...unit, propertyType: 'OTHER' };
+              return { ...unit, propertyType: 'residential' };
             }
           })
         );

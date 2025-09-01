@@ -1,5 +1,5 @@
 // Utility script to backfill existing properties with default property type
-// Run this script once to set propertyType = 'OTHER' for all existing properties
+// Run this script once to set propertyType = 'residential' for all existing properties
 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -38,10 +38,10 @@ async function backfillPropertyTypes() {
       
       // Update the unit with default property type
       await updateDoc(doc(db, 'units', unitDoc.id), {
-        propertyType: 'OTHER'
+        propertyType: 'residential'
       });
       
-      console.log(`Updated unit ${unitDoc.id} with propertyType: OTHER`);
+      console.log(`Updated unit ${unitDoc.id} with propertyType: residential`);
       updatedCount++;
     }
     

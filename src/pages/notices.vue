@@ -391,14 +391,14 @@ export default {
                 if (!unitsSnapshot.empty) {
                   const unitDoc = unitsSnapshot.docs[0];
                   const unitData = unitDoc.data();
-                  return { ...notice, propertyType: unitData.propertyType || 'OTHER' };
+                  return { ...notice, propertyType: unitData.propertyType || 'residential' };
                 }
               }
-              // Default to OTHER if we can't resolve
-              return { ...notice, propertyType: 'OTHER' };
+              // Default to residential if we can't resolve
+              return { ...notice, propertyType: 'residential' };
             } catch (error) {
               console.error('Error resolving property type for notice:', notice.id, error);
-              return { ...notice, propertyType: 'OTHER' };
+              return { ...notice, propertyType: 'residential' };
             }
           })
         );

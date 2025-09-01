@@ -139,7 +139,7 @@ This document outlines the complete implementation of the Property Type feature 
 ### Property Type Resolution
 1. **Direct Resolution**: When `unitId` is available, query unit → property → propertyType
 2. **Fallback Resolution**: When only `unitName` is available, query units collection by name
-3. **Default Fallback**: Use 'OTHER' when no unit/property found
+3. **Default Fallback**: Use 'residential' when no unit/property found
 
 ### Performance Considerations
 - Property type resolution happens at query time for list pages
@@ -147,7 +147,7 @@ This document outlines the complete implementation of the Property Type feature 
 - Batch queries for multiple items to reduce Firestore calls
 
 ### Error Handling
-- Graceful fallback to 'OTHER' when resolution fails
+- Graceful fallback to 'residential' when resolution fails
 - Console logging for debugging resolution issues
 - User-friendly error messages for form validation
 
@@ -155,7 +155,7 @@ This document outlines the complete implementation of the Property Type feature 
 
 **File: `scripts/backfill-property-types.js`**
 - Iterates through all units in the database
-- Sets `propertyType: 'OTHER'` for units without property type
+- Sets `propertyType: 'residential'` for units without property type
 - Provides progress logging and summary statistics
 - Safe to run multiple times (skips already processed units)
 

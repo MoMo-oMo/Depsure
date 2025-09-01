@@ -1,49 +1,33 @@
 // Property type constants
 export const PROPERTY_TYPES = {
-  APARTMENT: 'apartment',
-  HOUSE: 'house',
-  TOWNHOUSE: 'townhouse',
-  DUPLEX: 'duplex',
-  PENTHOUSE: 'penthouse',
-  STUDIO: 'studio',
-  OTHER: 'other'
+  RESIDENTIAL: 'residential',
+  COMMERCIAL: 'commercial',
+  INDUSTRIAL: 'industrial'
 }
 
 // Property type labels for display
 export const PROPERTY_TYPE_LABELS = {
-  [PROPERTY_TYPES.APARTMENT]: 'Apartment',
-  [PROPERTY_TYPES.HOUSE]: 'House',
-  [PROPERTY_TYPES.TOWNHOUSE]: 'Townhouse',
-  [PROPERTY_TYPES.DUPLEX]: 'Duplex',
-  [PROPERTY_TYPES.PENTHOUSE]: 'Penthouse',
-  [PROPERTY_TYPES.STUDIO]: 'Studio',
-  [PROPERTY_TYPES.OTHER]: 'Other'
+  [PROPERTY_TYPES.RESIDENTIAL]: 'Residential',
+  [PROPERTY_TYPES.COMMERCIAL]: 'Commercial',
+  [PROPERTY_TYPES.INDUSTRIAL]: 'Industrial'
 }
 
 // Property type options for dropdowns
 export const PROPERTY_TYPE_OPTIONS = [
-  { value: PROPERTY_TYPES.APARTMENT, title: 'Apartment' },
-  { value: PROPERTY_TYPES.HOUSE, title: 'House' },
-  { value: PROPERTY_TYPES.TOWNHOUSE, title: 'Townhouse' },
-  { value: PROPERTY_TYPES.DUPLEX, title: 'Duplex' },
-  { value: PROPERTY_TYPES.PENTHOUSE, title: 'Penthouse' },
-  { value: PROPERTY_TYPES.STUDIO, title: 'Studio' },
-  { value: PROPERTY_TYPES.OTHER, title: 'Other' }
+  { value: PROPERTY_TYPES.RESIDENTIAL, title: 'Residential' },
+  { value: PROPERTY_TYPES.COMMERCIAL, title: 'Commercial' },
+  { value: PROPERTY_TYPES.INDUSTRIAL, title: 'Industrial' }
 ]
 
 // Property type colors for UI
 export const PROPERTY_TYPE_COLORS = {
-  [PROPERTY_TYPES.APARTMENT]: 'primary',
-  [PROPERTY_TYPES.HOUSE]: 'success',
-  [PROPERTY_TYPES.TOWNHOUSE]: 'info',
-  [PROPERTY_TYPES.DUPLEX]: 'warning',
-  [PROPERTY_TYPES.PENTHOUSE]: 'error',
-  [PROPERTY_TYPES.STUDIO]: 'secondary',
-  [PROPERTY_TYPES.OTHER]: 'grey'
+  [PROPERTY_TYPES.RESIDENTIAL]: 'primary',
+  [PROPERTY_TYPES.COMMERCIAL]: 'success',
+  [PROPERTY_TYPES.INDUSTRIAL]: 'warning'
 }
 
 // Default property type
-export const DEFAULT_PROPERTY_TYPE = PROPERTY_TYPES.OTHER
+export const DEFAULT_PROPERTY_TYPE = PROPERTY_TYPES.RESIDENTIAL
 
 // Helper function to get property type label
 export const getPropertyTypeLabel = (propertyType) => {
