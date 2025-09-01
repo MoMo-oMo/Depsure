@@ -113,11 +113,7 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
+                      <span>{{ activeUnitsCount }} Properties</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
@@ -235,6 +231,7 @@ export default {
       agenciesLoading: false,
       units: [],
       unitsLoading: false,
+      activeUnitsCount: 0,
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Missed Payment Flag", key: "missedPaymentFlag", sortable: true, align: "center" },
@@ -268,6 +265,27 @@ export default {
     }
   },
   methods: {
+    async refreshActiveUnitsCount(agencyId = null) {
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        let unitsQuery;
+        if (userType === 'Agency') {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid));
+        } else if (agencyId) {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
+        } else {
+          this.activeUnitsCount = 0;
+          return;
+        }
+        const snap = await getDocs(unitsQuery);
+        this.activeUnitsCount = snap.size;
+      } catch (error) {
+        console.error('Error counting active units:', error);
+        this.activeUnitsCount = 0;
+      }
+    },
     getCurrentMonth() {
       const now = new Date();
       const year = now.getFullYear();
@@ -384,6 +402,7 @@ export default {
             }];
             // Pre-select the agency for agency users
             this.selectedAgency = agencyDoc.id;
+            await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
           }
@@ -494,9 +513,11 @@ export default {
       if (agencyId) {
         // Fetch flagged units for selected agency
         this.fetchFlaggedUnits(agencyId);
+        this.refreshActiveUnitsCount(agencyId);
       } else {
         // Fetch all flagged units when no agency is selected
         this.fetchFlaggedUnits();
+        this.refreshActiveUnitsCount();
       }
     }
   },
@@ -510,9 +531,11 @@ export default {
     if (this.isAgencyUser) {
       // Agency users will automatically get their own flagged units
       await this.fetchFlaggedUnits();
+      await this.refreshActiveUnitsCount();
     } else {
       // Super Admin/Admin users get all flagged units initially
       await this.fetchFlaggedUnits();
+      if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
     }
   }
 };

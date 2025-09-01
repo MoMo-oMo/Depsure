@@ -107,11 +107,7 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
+                      <span>{{ activeUnitsCount }} Properties</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
@@ -217,6 +213,7 @@ export default {
 
       agencies: [],
       entries: [],
+      activeUnitsCount: 0,
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
@@ -261,6 +258,27 @@ export default {
     getCurrentMonth() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    },
+    async refreshActiveUnitsCount(agencyId = null) {
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        let unitsQuery;
+        if (userType === 'Agency') {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid));
+        } else if (agencyId) {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
+        } else {
+          this.activeUnitsCount = 0;
+          return;
+        }
+        const snap = await getDocs(unitsQuery);
+        this.activeUnitsCount = snap.size;
+      } catch (error) {
+        console.error('Error counting active units:', error);
+        this.activeUnitsCount = 0;
+      }
     },
     filterEntries() {
       this.filteredEntries = this.entries.filter(entry => {
@@ -405,9 +423,11 @@ export default {
       if (agencyId) {
         // Fetch maintenance entries for selected agency
         this.fetchMaintenanceEntries(agencyId);
+        this.refreshActiveUnitsCount(agencyId);
       } else {
         // Fetch all maintenance entries when no agency is selected
         this.fetchMaintenanceEntries();
+        this.refreshActiveUnitsCount();
       }
     },
     async fetchAgencies() {
@@ -428,6 +448,7 @@ export default {
             }];
             // Pre-select the agency for agency users
             this.selectedAgency = agencyDoc.id;
+            await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
           }
@@ -460,9 +481,11 @@ export default {
     if (this.isAgencyUser) {
       // Agency users will automatically get their own maintenance entries
       await this.fetchMaintenanceEntries();
+      await this.refreshActiveUnitsCount();
     } else {
       // Super Admin/Admin users get all maintenance entries initially
       await this.fetchMaintenanceEntries();
+      if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
     }
   }
 };

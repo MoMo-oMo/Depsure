@@ -72,7 +72,7 @@
 
         <v-col cols="12" md="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addInspection" class="back-btn">
-            Add Inspection
+            Request Inspection
           </v-btn>
         </v-col>
       </v-row>
@@ -107,11 +107,7 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
+                      <span>{{ activeUnitsCount }} Properties</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
@@ -232,6 +228,7 @@ export default {
       agenciesLoading: false,
       snackbar: false,
       snackbarMessage: "",
+      activeUnitsCount: 0,
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
@@ -272,6 +269,27 @@ export default {
     }
   },
   methods: {
+    async refreshActiveUnitsCount(agencyId = null) {
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        let unitsQuery;
+        if (userType === 'Agency') {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid));
+        } else if (agencyId) {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
+        } else {
+          this.activeUnitsCount = 0;
+          return;
+        }
+        const snap = await getDocs(unitsQuery);
+        this.activeUnitsCount = snap.size;
+      } catch (error) {
+        console.error('Error counting active units:', error);
+        this.activeUnitsCount = 0;
+      }
+    },
     getCurrentMonth() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
@@ -387,6 +405,7 @@ export default {
             }];
             // Pre-select the agency for agency users
             this.selectedAgency = agencyDoc.id;
+            await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
           }
@@ -640,10 +659,12 @@ export default {
         // Fetch inspection entries for selected agency
         console.log('Fetching inspections for agency:', agencyId);
         this.fetchInspections(agencyId);
+        this.refreshActiveUnitsCount(agencyId);
       } else {
         // Fetch all inspection entries when no agency is selected
         console.log('Fetching all inspections');
         this.fetchInspections();
+        this.refreshActiveUnitsCount();
       }
     }
   },
@@ -657,9 +678,11 @@ export default {
     if (this.isAgencyUser) {
       // Agency users will automatically get their own inspections
       await this.fetchInspections();
+      await this.refreshActiveUnitsCount();
     } else {
       // Super Admin/Admin users get all inspections initially
       await this.fetchInspections();
+      if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
     }
   }
 };
@@ -668,7 +691,7 @@ export default {
 <style scoped>
 /* reuse maintenance page styles */
 .view-inspection-page { padding:20px; min-height:100vh; }
-.back-btn { font-weight:500; text-transform:none; border-radius:8px; transition:all 0.3s; background:black; color:white; border:2px solid black; width:160px; height:44px; }
+.back-btn { font-weight:500; text-transform:none; border-radius:8px; transition:all 0.3s; background:black; color:white; border:2px solid black; width:180px; height:44px; }
 .back-btn:hover { background:#333; border-color:#333; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.5); }
 
 .agency-info-card-black { background:linear-gradient(135deg,#000,#1a1a1a); border-radius:12px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.3); color:white; padding:0; }

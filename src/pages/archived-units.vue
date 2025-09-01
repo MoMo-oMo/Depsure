@@ -136,11 +136,7 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
+                      <span>{{ activeUnitsCount }} Properties</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
@@ -259,6 +255,7 @@ export default {
       agenciesLoading: false,
       selectedAgency: null,
       selectedAgencyDetails: null,
+      activeUnitsCount: 0,
       propertyTypeFilterOptions: [
         { title: 'All Types', value: null },
         { title: 'Residential', value: 'residential' },
@@ -292,8 +289,33 @@ export default {
   async mounted() {
     await this.loadAgencies()
     await this.loadArchivedProperties()
+    if (this.isAgencyUser) {
+      await this.refreshActiveUnitsCount()
+    } else if (this.selectedAgency) {
+      await this.refreshActiveUnitsCount(this.selectedAgency)
+    }
   },
   methods: {
+    async refreshActiveUnitsCount(agencyId = null) {
+      try {
+        const currentUser = this.appStore.currentUser
+        const userType = currentUser?.userType
+        let unitsQuery
+        if (userType === 'Agency') {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid))
+        } else if (agencyId) {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId))
+        } else {
+          this.activeUnitsCount = 0
+          return
+        }
+        const snap = await getDocs(unitsQuery)
+        this.activeUnitsCount = snap.size
+      } catch (error) {
+        console.error('Error counting active units:', error)
+        this.activeUnitsCount = 0
+      }
+    },
     getCurrentMonth() {
       const now = new Date()
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -318,6 +340,7 @@ export default {
             }]
             // Pre-select the agency for agency users
             this.selectedAgency = agencyDoc.id
+            await this.refreshActiveUnitsCount(this.selectedAgency)
           } else {
             this.agencies = []
           }
@@ -381,6 +404,7 @@ export default {
 
     async onAgencyChange() {
       await this.loadArchivedProperties()
+      if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency)
     },
 
     filterProperties() {

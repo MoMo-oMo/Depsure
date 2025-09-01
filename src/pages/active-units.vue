@@ -118,12 +118,9 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
+                      <span>{{ activeUnitsCount }} Properties</span>
                     </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
-                    </div>
+                    
                   </div>
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
@@ -142,7 +139,7 @@
         <v-col cols="12" class="pa-4">
           <!-- Properties Table -->
           <v-data-table
-            :headers="headers"
+            :headers="tableHeaders"
             :items="filteredProperties"
             :search="searchQuery"
             class="custom-header"
@@ -151,6 +148,22 @@
             :loading="propertiesLoading"
             no-data-text="No data available"
           >
+            <!-- Super Admin: Flagged indicator column (click to view flagged entry) -->
+            <template v-slot:item.flag="{ item }" v-if="isSuperAdmin">
+              <v-btn
+                variant="text"
+                size="small"
+                :color="isUnitFlagged(item) ? 'error' : 'success'"
+                :icon="true"
+                :disabled="!isUnitFlagged(item)"
+                :title="isUnitFlagged(item) ? 'View flagged unit' : 'Not flagged'"
+                @click="gotoFlaggedUnit(item)"
+              >
+                <v-icon>
+                  {{ isUnitFlagged(item) ? 'mdi-flag' : 'mdi-flag-outline' }}
+                </v-icon>
+              </v-btn>
+            </template>
             <template v-slot:item.propertyType="{ item }">
               <v-chip 
                 :color="getColor(item.propertyType)" 
@@ -243,6 +256,9 @@ export default {
       agenciesLoading: false,
       properties: [],
       propertiesLoading: false,
+      // Maps for quick flagged lookup (store flagged docId for navigation)
+      flaggedUnitMap: {}, // by unitId -> flaggedDocId
+      flaggedUnitNamesMap: {}, // by unitName (lowercased) -> flaggedDocId
       headers: [
         { title: "TENANT REF", key: "tenantRef", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
@@ -274,6 +290,10 @@ export default {
     selectedAgencyDetails() {
       return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
+    activeUnitsCount() {
+      // When an agency is selected or for agency users, properties array is scoped accordingly
+      return Array.isArray(this.properties) ? this.properties.length : 0;
+    },
     isAgencyUser() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
@@ -281,6 +301,18 @@ export default {
     isSuperAdmin() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Super Admin';
+    },
+    // Build table headers dynamically to include Flag column for Super Admin
+    tableHeaders() {
+      const base = [...this.headers];
+      if (this.isSuperAdmin) {
+        // Insert the flagged column at the start
+        return [
+          { title: 'FLAGGED', key: 'flag', sortable: false, align: 'center' },
+          ...base
+        ];
+      }
+      return base;
     },
     propertyTypeFilterOptions() {
       return [
@@ -348,8 +380,27 @@ export default {
           monthMatch = propertyMonth === filterMonth;
         }
 
-        return textMatch && propertyTypeMatch && monthMatch;
-      });
+      return textMatch && propertyTypeMatch && monthMatch;
+    });
+  },
+    isUnitFlagged(item) {
+      // Prefer ID-based match; fallback to name-based
+      if (item?.id && this.flaggedUnitMap[item.id]) return true;
+      const name = (item?.unitName || item?.propertyName || '').toLowerCase();
+      if (name && this.flaggedUnitNamesMap[name]) return true;
+      return false;
+    },
+    getFlaggedDocIdForUnit(item) {
+      if (!item) return null;
+      if (item.id && this.flaggedUnitMap[item.id]) return this.flaggedUnitMap[item.id];
+      const name = (item.unitName || item.propertyName || '').toLowerCase();
+      if (name && this.flaggedUnitNamesMap[name]) return this.flaggedUnitNamesMap[name];
+      return null;
+    },
+    gotoFlaggedUnit(item) {
+      const flaggedId = this.getFlaggedDocIdForUnit(item);
+      if (!flaggedId) return;
+      this.$router.push(`/view-flagged-unit-${flaggedId}`);
     },
     viewProperty(property) {
       console.log("Viewing property:", property);
@@ -469,7 +520,7 @@ export default {
         this.agenciesLoading = false;
       }
     },
-    
+
     async fetchProperties(agencyId = null) {
       this.propertiesLoading = true;
       try {
@@ -502,6 +553,11 @@ export default {
           ...doc.data()
         }));
         
+        // If Super Admin, also refresh flagged units map for the same scope
+        if (this.isSuperAdmin) {
+          await this.fetchFlaggedUnits(agencyId);
+        }
+
         // Apply initial filtering
         this.filterProperties();
         console.log('Properties fetched:', this.properties);
@@ -510,6 +566,48 @@ export default {
         console.error('Error fetching properties:', error);
       } finally {
         this.propertiesLoading = false;
+      }
+    },
+
+    async fetchFlaggedUnits(agencyId = null) {
+      try {
+        let flaggedQuery;
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+
+        if (userType === 'Agency') {
+          // Agencies don't need flags here; return early
+          this.flaggedUnitMap = {};
+          this.flaggedUnitNamesMap = {};
+          return;
+        }
+
+        if (agencyId) {
+          flaggedQuery = query(
+            collection(db, 'flaggedUnits'),
+            where('agencyId', '==', agencyId)
+          );
+        } else {
+          flaggedQuery = collection(db, 'flaggedUnits');
+        }
+
+        const snapshot = await getDocs(flaggedQuery);
+        const byId = {};
+        const byName = {};
+        snapshot.docs.forEach(d => {
+          const data = d.data();
+          const flaggedDocId = d.id;
+          if (data?.unitId) byId[data.unitId] = flaggedDocId;
+          const name = (data?.unitName || '').toLowerCase();
+          if (name) byName[name] = flaggedDocId;
+        });
+        this.flaggedUnitMap = byId;
+        this.flaggedUnitNamesMap = byName;
+      } catch (error) {
+        console.error('Error fetching flagged units map:', error);
+        this.flaggedUnitMap = {};
+        this.flaggedUnitNamesMap = {};
       }
     },
     
@@ -523,9 +621,11 @@ export default {
       if (agencyId) {
         // Fetch properties for selected agency
         this.fetchProperties(agencyId);
+        if (this.isSuperAdmin) this.fetchFlaggedUnits(agencyId);
       } else {
         // Fetch all properties when no agency is selected
         this.fetchProperties();
+        if (this.isSuperAdmin) this.fetchFlaggedUnits();
       }
     },
     
@@ -547,6 +647,7 @@ export default {
     } else {
       // Super Admin/Admin users get all properties initially
       await this.fetchProperties();
+      if (this.isSuperAdmin) await this.fetchFlaggedUnits(this.selectedAgency);
     }
   },
 };

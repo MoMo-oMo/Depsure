@@ -115,40 +115,7 @@
                   </v-col>
                 </v-row>
   
-                <!-- Row 3: Properties Count & Rating -->
-                <v-row>
-                  <v-col>
-                    <v-text-field
-                      v-model="agencyData.properties"
-                      label="Number of Properties"
-                      prepend-inner-icon="mdi-home"
-                      variant="outlined"
-                      density="comfortable"
-                      class="custom-input"
-                      :rules="propertiesRules"
-                      type="number"
-                      hide-details="auto"
-                      required
-                    />
-                  </v-col>
-                  <v-col>
-                    <v-text-field
-                      v-model="agencyData.rating"
-                      label="Rating (1-5)"
-                      prepend-inner-icon="mdi-star"
-                      variant="outlined"
-                      density="comfortable"
-                      class="custom-input"
-                      :rules="ratingRules"
-                      type="number"
-                      step="0.1"
-                      min="1"
-                      max="5"
-                      hide-details="auto"
-                      required
-                    />
-                  </v-col>
-                </v-row>
+                <!-- Row 3 removed: properties count and rating are derived elsewhere -->
   
                 <!-- Row 4: Description (Full Width) -->
                 <v-row>
@@ -218,9 +185,7 @@ export default {
         established: '',
         // store data URL or uploaded file URL after upload
         logo: '',
-        description: '',
-        properties: '',
-        rating: ''
+        description: ''
       },
       nameRules: [
         v => !!v || 'Agency name is required',
@@ -241,14 +206,7 @@ export default {
         v => !!v || 'Description is required',
         v => v.length >= 20 || 'Description must be at least 20 characters'
       ],
-      propertiesRules: [
-        v => !!v || 'Number of properties is required',
-        v => v > 0 || 'Number of properties must be greater than 0'
-      ],
-      ratingRules: [
-        v => !!v || 'Rating is required',
-        v => (v >= 1 && v <= 5) || 'Rating must be between 1 and 5'
-      ]
+      // Removed propertiesRules and ratingRules: these fields are not collected
     }
   },
   methods: {
@@ -282,8 +240,6 @@ export default {
               agencyName: this.agencyData.name,
               location: this.agencyData.location,
               established: this.agencyData.established,
-              properties: this.agencyData.properties,
-              rating: this.agencyData.rating,
               hasLogo: !!this.agencyData.logo
             },
             this.resourceTypes.AGENCY,

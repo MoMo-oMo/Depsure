@@ -179,31 +179,7 @@
                       />
                     </v-col>
 
-                    <!-- Number of Properties -->
-                    <v-col cols="12" md="6">
-                      <v-text-field
-                        v-model.number="user.numberOfProperties"
-                        label="Number of Properties"
-                        variant="outlined"
-                        type="number"
-                        class="custom-input"
-                        :rules="numberOfPropertiesRules"
-                        required
-                      />
-                    </v-col>
-
-                    <!-- Rating -->
-                    <v-col cols="12" md="6">
-                      <v-select
-                        v-model="user.rating"
-                        label="Rating"
-                        variant="outlined"
-                        class="custom-input"
-                        :items="['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars']"
-                        :rules="ratingRules"
-                        required
-                      />
-                    </v-col>
+                    <!-- Removed Number of Properties and Rating: derived elsewhere -->
 
                     <!-- Agency Description -->
                     <v-col cols="12">
@@ -281,8 +257,6 @@ export default {
          agencyTagline: '',
          location: '',
          establishedYear: new Date().getFullYear(),
-         numberOfProperties: 0,
-         rating: '',
          agencyDescription: ''
        },
       valid: true,
@@ -347,22 +321,7 @@ export default {
           return true
         }
       ],
-      numberOfPropertiesRules: [
-        v => {
-          if (this.user.userType === 'Agency') {
-            return v >= 0 || 'Number of Properties cannot be negative'
-          }
-          return true
-        }
-      ],
-      ratingRules: [
-        v => {
-          if (this.user.userType === 'Agency') {
-            return !!v || 'Rating is required'
-          }
-          return true
-        }
-      ],
+      // Removed numberOfPropertiesRules and ratingRules: not collected for Agency
       agencyDescriptionRules: [
         v => {
           if (this.user.userType === 'Agency') {
@@ -412,8 +371,6 @@ export default {
              agencyTagline: this.user.userType === 'Agency' ? this.user.agencyTagline : null,
              location: this.user.userType === 'Agency' ? this.user.location : null,
              establishedYear: this.user.userType === 'Agency' ? this.user.establishedYear : null,
-             numberOfProperties: this.user.userType === 'Agency' ? this.user.numberOfProperties : null,
-             rating: this.user.userType === 'Agency' ? this.user.rating : null,
              agencyDescription: this.user.userType === 'Agency' ? this.user.agencyDescription : null
            };
            

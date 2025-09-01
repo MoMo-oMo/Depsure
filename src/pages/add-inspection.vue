@@ -6,7 +6,7 @@
       <v-row justify="center">
         <v-col cols="12" lg="10" xl="8">
           <div class="title-section">
-            <h1 class="page-title">Add Inspection Entry</h1>
+            <h1 class="page-title">Inspection Entry</h1>
           </div>
 
           <div class="form-card" elevation="0">

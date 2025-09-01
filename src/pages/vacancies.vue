@@ -112,11 +112,7 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.numberOfProperties || 0 }} Properties</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ selectedAgencyDetails.rating || 'Not rated' }}</span>
+                      <span>{{ activeUnitsCount }} Properties</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
@@ -242,6 +238,7 @@ export default {
       agencies: [],
       agenciesLoading: false,
       vacanciesLoading: false,
+      activeUnitsCount: 0,
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Date Vacated", key: "dateVacated", sortable: true, align: "center" },
@@ -281,6 +278,27 @@ export default {
     getCurrentMonth() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    },
+    async refreshActiveUnitsCount(agencyId = null) {
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const userType = currentUser?.userType;
+        let unitsQuery;
+        if (userType === 'Agency') {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid));
+        } else if (agencyId) {
+          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
+        } else {
+          this.activeUnitsCount = 0;
+          return;
+        }
+        const snap = await getDocs(unitsQuery);
+        this.activeUnitsCount = snap.size;
+      } catch (error) {
+        console.error('Error counting active units:', error);
+        this.activeUnitsCount = 0;
+      }
     },
     
     formatDate(dateString) {
@@ -340,10 +358,12 @@ export default {
         // Fetch vacancy entries for selected agency
         console.log('Fetching vacancies for agency:', agencyId);
         this.fetchVacancies(agencyId);
+        this.refreshActiveUnitsCount(agencyId);
       } else {
         // Fetch all vacancy entries when no agency is selected
         console.log('Fetching all vacancies');
         this.fetchVacancies();
+        this.refreshActiveUnitsCount();
       }
     },
 
@@ -400,6 +420,7 @@ export default {
             }];
             // Pre-select the agency for agency users
             this.selectedAgency = agencyDoc.id;
+            await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
           }
@@ -615,9 +636,11 @@ export default {
     if (this.isAgencyUser) {
       // Agency users will automatically get their own vacancies
       await this.fetchVacancies();
+      await this.refreshActiveUnitsCount();
     } else {
       // Super Admin/Admin users get all vacancies initially
       await this.fetchVacancies();
+      if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
     }
   }
 };
@@ -642,6 +665,7 @@ export default {
 .action-btn-container { display:flex; justify-content:center; align-items:center; gap:4px; }
 .action-btn { font-size:0.75rem; font-weight:500; text-transform:none; border-radius:6px; }
 .action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+    
 :deep(.custom-header .v-data-table-header) { background:#000; color:white; }
 @media(max-width:768px){ .back-btn { width:140px; height:40px; } .action-btn { font-size:0.7rem; } .agency-info-card-black { text-align:center; } .agency-logo-black { height:220px; } }
 </style>
