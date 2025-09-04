@@ -194,7 +194,7 @@
                   :loading="loading"
                   @click="submitForm"
                 >
-                  {{ loading ? 'Adding...' : 'Add Inspection Entry' }}
+                  {{ loading ? 'Adding...' : 'Upload Request' }}
                 </v-btn>
               </v-card-actions>
             </v-form>
