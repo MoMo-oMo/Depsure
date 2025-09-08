@@ -56,11 +56,11 @@
         </v-col>
 
         <!-- Month filter -->
-        <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-col cols="12" md="2" lg="3" class="pa-4">
           <v-text-field
             v-model="monthFilter"
             label="Filter by month"
-            prepend-inner-icon="mdi-calendar"
+   
             flat="true"
             density="comfortable"
             variant="outlined"
@@ -152,8 +152,8 @@
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black">
-                    {{ selectedAgencyDetails.notes || 'No notes available' }}
+                  <p class="agency-description-black" v-if="selectedAgencyDetails.notes">
+                    {{ selectedAgencyDetails.notes }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -184,25 +184,9 @@
                 {{ getLabel(item.propertyType) }}
               </v-chip>
             </template>
-            <template v-slot:item.paidOut="{ item }">
-              <v-chip :color="item.paidOut === 'Yes' ? 'success' : 'error'" size="small">
-                {{ item.paidOut }}
-              </v-chip>
-            </template>
-            <template v-slot:item.maintenanceAmount="{ item }">
-              <span class="font-weight-medium">
-                R{{ item.maintenanceAmount.toLocaleString() }}
-              </span>
-            </template>
-            <template v-slot:item.paidTowardsFund="{ item }">
-              <span class="font-weight-medium">
-                R{{ item.paidTowardsFund.toLocaleString() }}
-              </span>
-            </template>
-            <template v-slot:item.amountToBePaidOut="{ item }">
-              <span class="font-weight-medium">
-                R{{ item.amountToBePaidOut.toLocaleString() }}
-              </span>
+            <!-- Truncate long property names for alignment -->
+            <template v-slot:item.propertyName="{ item }">
+              <span class="truncate-cell" :title="item.propertyName">{{ item.propertyName }}</span>
             </template>
                          <template v-slot:item.archivedAt="{ item }">
                <span class="font-weight-medium text-grey">
@@ -278,11 +262,7 @@ export default {
         { title: 'Tenant Ref', key: 'tenantRef', sortable: true },
         { title: 'Property Name', key: 'propertyName', sortable: true },
         { title: 'Property Type', key: 'propertyType', sortable: true },
-        { title: 'Paid Out', key: 'paidOut', sortable: true },
-        { title: 'Maintenance Amount', key: 'maintenanceAmount', sortable: true },
-        { title: 'Paid Towards Fund', key: 'paidTowardsFund', sortable: true },
-        { title: 'Amount to be Paid Out', key: 'amountToBePaidOut', sortable: true },
-                 { title: 'Archived Date', key: 'archivedAt', sortable: true },
+        { title: 'Archived Date', key: 'archivedAt', sortable: true },
         { title: 'Actions', key: 'actions', sortable: false }
       ]
     }
@@ -696,6 +676,15 @@ export default {
   line-height: 1.6;
   color: #e0e0e0;
   margin: 0;
+}
+
+/* Truncate long table cell values without breaking layout */
+.truncate-cell {
+  display: inline-block;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Responsive design */

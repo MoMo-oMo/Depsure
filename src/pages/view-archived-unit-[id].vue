@@ -41,19 +41,10 @@
 
           <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
-            <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
-              <v-tab value="details">
-                <v-icon start size="small">mdi-home-outline</v-icon>
-                Property Details
-              </v-tab>
-              <v-tab value="archive">
-                <v-icon start size="small">mdi-archive-outline</v-icon>
-                Archive Information
-              </v-tab>
-              <v-tab value="documents">
-                <v-icon start size="small">mdi-file-document-outline</v-icon>
-                Documents
-              </v-tab>
+            <v-tabs v-model="activeTab" class="property-tabs" color="primary">
+              <v-tab value="details">Property Details</v-tab>
+              <v-tab value="archive">Archive Information</v-tab>
+              <v-tab value="documents">Documents</v-tab>
             </v-tabs>
 
             <!-- Property Details Tab -->
@@ -216,28 +207,6 @@
                       <v-text-field
                         :model-value="property.archivedByUserType || 'Unknown'"
                         label="Archived By"
-                        variant="outlined"
-                        readonly
-                        class="custom-input"
-                      />
-                    </v-col>
-
-                    <!-- Original Unit ID -->
-                    <v-col cols="12" md="6">
-                      <v-text-field
-                        :model-value="property.originalId"
-                        label="Original Unit ID"
-                        variant="outlined"
-                        readonly
-                        class="custom-input"
-                      />
-                    </v-col>
-
-                    <!-- Current Archive ID -->
-                    <v-col cols="12" md="6">
-                      <v-text-field
-                        :model-value="unitId"
-                        label="Current Archive ID"
                         variant="outlined"
                         readonly
                         class="custom-input"
@@ -778,6 +747,18 @@ export default {
   border-color: #e9ecef !important;
 }
 
+/* Color cue for tabs (active vs inactive) */
+::deep(.property-tabs .v-tab) {
+  color: #6b7280; /* neutral for inactive */
+}
+::deep(.property-tabs .v-tab.v-tab--selected) {
+  color: #000000 !important; /* brand primary */
+  font-weight: 600;
+}
+::deep(.property-tabs .v-tabs-slider) {
+  background-color: #000000 !important; /* brand primary */
+}
+
 /* Tabs styling */
 .property-tabs {
   background-color: #f8f9fa;
@@ -789,35 +770,9 @@ export default {
   color: #666;
 }
 
-.property-tabs {
-  background: transparent;
-  margin-bottom: 8px;
-}
-
-.property-tabs :deep(.v-slide-group__content) {
-  gap: 8px;
-}
-
-.property-tabs :deep(.v-tab) {
-  font-weight: 600;
-  text-transform: none;
-  color: #4a4a4a;
-  background: #ffffff;
-  border: 1px solid #e6e6e6;
-  border-radius: 999px;
-  min-height: 40px;
-  padding: 0 16px;
-  transition: all 0.2s ease;
-}
-
-.property-tabs :deep(.v-tab:hover) {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
 .property-tabs :deep(.v-tab--selected) {
-  color: #ffffff;
-  background-color: var(--v-theme-primary);
-  border-color: var(--v-theme-primary);
+  color: #000;
+  background-color: white;
 }
 
 /* Restore button styling */
