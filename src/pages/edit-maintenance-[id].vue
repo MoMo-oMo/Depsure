@@ -218,6 +218,7 @@
                 </v-window-item>
                 <v-window-item value="notes">
                   <v-card-text>
+                    <v-divider class="my-4" />
                     <div class="notes-section">
                       <h3 class="mb-2">Notes</h3>
                       <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
@@ -227,7 +228,10 @@
                           class="chat-message"
                           :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
                         >
-                          <div class="chat-avatar">{{ noteInitials(n.authorName) }}</div>
+                          <div class="chat-avatar">
+                            <img v-if="n.authorAvatarUrl" :src="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" />
+                            <template v-else>{{ noteInitials(n.authorName) }}</template>
+                          </div>
                           <div class="chat-bubble">
                             <div class="chat-header">
                               <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
@@ -238,7 +242,9 @@
                         </div>
                       </div>
                       <div v-else class="text-medium-emphasis">No notes yet.</div>
-                      <div class="chat-input mt-4">
+
+                      <!-- Append note input (Admin and Agency) -->
+                      <div v-if="userType === 'Admin' || userType === 'Super Admin' || isAgencyUser" class="chat-input mt-4">
                         <v-textarea
                           v-model="newNote"
                           placeholder="Write a note..."
@@ -250,7 +256,13 @@
                           auto-grow
                         />
                         <div class="d-flex justify-end mt-2">
-                          <v-btn color="black" variant="elevated" :disabled="!newNote || savingNote" :loading="savingNote" @click="appendNote">
+                          <v-btn
+                            color="black"
+                            variant="elevated"
+                            :disabled="!newNote || savingNote"
+                            :loading="savingNote"
+                            @click="appendNote"
+                          >
                             <v-icon start>mdi-send</v-icon>
                             Send
                           </v-btn>
@@ -384,10 +396,17 @@ export default {
     };
   },
   computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
+    },
     currentUserId() {
-      const appStore = useAppStore()
-      const possibleId = appStore.userId || appStore.currentUser?.userId || appStore.currentUser?.id || appStore.currentUser?.uid || ''
-      return String(possibleId || '').trim()
+      const appStore = useAppStore();
+      return appStore.userId;
     },
     sortedNotes() {
       const notes = this.entry?.notesLog || []
@@ -412,17 +431,26 @@ export default {
   methods: {
     scrollNotesToBottom() {
       this.$nextTick(() => {
-        const el = this.$refs?.chatLog
-        if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight
+        const el = this.$refs.chatLog
+        if (el && el.scrollHeight != null) {
+          el.scrollTop = el.scrollHeight
+        }
       })
     },
-    noteInitials(name) {
-      if (!name) return '?'
-      const parts = String(name).trim().split(/\s+/)
-      const a = parts[0]?.[0] || ''
-      const b = parts[1]?.[0] || ''
-      return (a + b).toUpperCase() || a.toUpperCase() || '?'
-    },
+     noteInitials(name) {
+       const raw = String(name || '').trim()
+       if (!raw) return '?'
+       const words = raw.split(/\s+/).filter(Boolean)
+       if (words.length === 1) {
+         const cleaned = words[0].replace(/[^A-Za-z0-9]/g, '')
+         if (!cleaned) return '?'
+         return cleaned.slice(0, 2).toUpperCase()
+       }
+       const first = (words[0] && words[0][0]) ? words[0][0] : ''
+       const second = (words[1] && words[1][0]) ? words[1][0] : ''
+       const res = (first + second).trim()
+       return res ? res.toUpperCase() : '?'
+     },
     formatNoteDate(ts) {
       try {
         if (!ts) return 'Just now'
@@ -565,20 +593,44 @@ export default {
       try {
         this.savingNote = true
         const appStore = useAppStore()
-        const safeAuthorId = String(appStore.userId || appStore.currentUser?.userId || appStore.currentUser?.id || appStore.currentUser?.uid || '').trim()
-        const safeAuthorName = String(appStore.userName || appStore.currentUser?.userName || `${appStore.currentUser?.firstName || ''} ${appStore.currentUser?.lastName || ''}` || '').trim()
-        const safeAuthorType = String(appStore.userType || appStore.currentUser?.userType || '').trim()
+        const currentUser = appStore.currentUser
+        const isAgency = currentUser?.userType === 'Agency'
+        
+        // Get proper author name based on user type
+        let authorName = 'Unknown User'
+        if (isAgency) {
+          authorName = currentUser?.agencyName || this.entry?.unitName || 'Property'
+        } else {
+          // For regular users, use firstName + lastName or fallback to email
+          if (currentUser?.firstName && currentUser?.lastName) {
+            authorName = `${currentUser.firstName} ${currentUser.lastName}`
+          } else if (currentUser?.firstName) {
+            authorName = currentUser.firstName
+          } else if (currentUser?.lastName) {
+            authorName = currentUser.lastName
+          } else if (currentUser?.email) {
+            authorName = currentUser.email
+          }
+        }
+        
         const note = {
-          text: String(this.newNote),
-          authorId: safeAuthorId,
-          authorName: safeAuthorName,
-          authorType: safeAuthorType,
-          // Match view page behavior: use client time in array, server time for updatedAt
+          text: this.newNote,
+          authorId: appStore.userId || currentUser?.uid || '',
+          authorName: authorName,
+          authorType: appStore.userType || currentUser?.userType || '',
+          authorAvatarUrl: isAgency 
+            ? (this.entry?.agencyProfileImageUrl || this.entry?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
+            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
           timestamp: new Date()
         }
-        await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        
+        await updateDoc(doc(db, 'maintenance', this.entry.id), { 
+          notesLog: arrayUnion(note), 
+          updatedAt: serverTimestamp() 
+        })
+        
         if (!this.entry.notesLog) this.entry.notesLog = []
-        this.entry.notesLog.push({ ...note })
+        this.entry.notesLog.push(note)
         this.newNote = ''
         this.scrollNotesToBottom()
       } catch (e) {
@@ -878,6 +930,7 @@ export default {
 .chat-message { display: flex; align-items: flex-end; gap: 8px; }
 .chat-message.mine { flex-direction: row-reverse; }
 .chat-avatar { width: 28px; height: 28px; border-radius: 50%; background: #6b7280; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.chat-avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .chat-bubble { max-width: 75%; background: #3a3f44; color: #fff; border-radius: 10px; padding: 8px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
 .chat-message.mine .chat-bubble { background: #000; }
 .chat-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }

@@ -152,6 +152,22 @@
                 {{ item.quotesNeeded }}
               </v-chip>
             </template>
+            <template v-slot:item.document="{ item }">
+              <div v-if="item.inspectionFileURL" class="d-flex align-center justify-center">
+                <v-btn
+                  icon="mdi-file-pdf-box"
+                  size="small"
+                  variant="text"
+                  color="success"
+                  @click="viewDocument(item)"
+                  class="document-btn"
+                  :title="item.inspectionFileName || 'View Document'"
+                />
+              </div>
+              <div v-else class="d-flex align-center justify-center">
+                <v-icon icon="mdi-file-remove" size="small" color="grey" />
+              </div>
+            </template>
             <!-- Action buttons - Edit/Delete hidden for Super Admin -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -231,6 +247,7 @@ export default {
         { title: "Inspection Required", key: "inspectionRequired", sortable: true, align: "center" },
         // { title: "Appointment Made", key: "appointmentMade", sortable: true, align: "center" },
         { title: "Inspection Date", key: "inspectionDate", sortable: true, align: "center" },
+        { title: "Document", key: "document", sortable: false, align: "center" },
         { title: "Status", key: "status", sortable: true, align: "center" },
         // { title: "Priority", key: "priority", sortable: true, align: "center" },
         { title: "Actions", key: "actions", sortable: false, align: "center" }
@@ -599,7 +616,8 @@ export default {
         }
         
         if (this.monthFilter) {
-          const entryDate = new Date(entry.inspectionDate);
+          // Use createdAt date for filtering since that's when the inspection was created
+          const entryDate = new Date(entry.createdAt);
           const filterDate = new Date(this.monthFilter+"-01");
           monthMatch = entryDate.getMonth() === filterDate.getMonth() && entryDate.getFullYear() === filterDate.getFullYear();
         }
@@ -645,6 +663,12 @@ export default {
     
     addInspection() { 
       this.$router.push('/add-inspection'); 
+    },
+    
+    viewDocument(item) {
+      if (item.inspectionFileURL) {
+        window.open(item.inspectionFileURL, '_blank');
+      }
     },
     
     onAgencyChange(agencyId) {
@@ -698,6 +722,18 @@ export default {
         if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
       }
     }
+  },
+  
+  // Add activated lifecycle hook to refresh data when navigating to this page
+  async activated() {
+    // Refresh data when the page is activated (e.g., when navigating back from add-inspection)
+    if (this.isAgencyUser) {
+      await this.fetchInspections();
+    } else if (this.selectedAgency) {
+      await this.fetchInspections(this.selectedAgency);
+    } else {
+      await this.fetchInspections();
+    }
   }
 };
 </script>
@@ -719,6 +755,8 @@ export default {
 .action-btn-container { display:flex; justify-content:center; align-items:center; gap:4px; }
 .action-btn { font-size:0.75rem; font-weight:500; text-transform:none; border-radius:6px; }
 .action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+.document-btn { font-size:0.75rem; font-weight:500; text-transform:none; border-radius:6px; }
+.document-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
 
 :deep(.custom-header .v-data-table-header) { background:#000; color:white; }
 

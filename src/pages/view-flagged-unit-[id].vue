@@ -209,9 +209,14 @@
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: "ViewFlaggedUnitPage",
+  setup() {
+    const { showErrorDialog } = useCustomDialogs()
+    return { showErrorDialog }
+  },
   data() {
     return {
       activeTab: 'details',
@@ -319,27 +324,53 @@ export default {
       } catch (_) { return String(ts) }
     },
     async appendNote() {
-      if (!this.newNote) return
+      if (!this.newNote || !this.unit?.id) return
       try {
         this.savingNote = true
         const appStore = useAppStore()
-        const isAgency = appStore.currentUser?.userType === 'Agency'
-        const fallbackName = this.unit?.unitName || this.unit?.address || 'Property'
+        const currentUser = appStore.currentUser
+        const isAgency = currentUser?.userType === 'Agency'
+        
+        // Get proper author name based on user type
+        let authorName = 'Unknown User'
+        if (isAgency) {
+          authorName = currentUser?.agencyName || this.unit?.unitName || 'Property'
+        } else {
+          // For regular users, use firstName + lastName or fallback to email
+          if (currentUser?.firstName && currentUser?.lastName) {
+            authorName = `${currentUser.firstName} ${currentUser.lastName}`
+          } else if (currentUser?.firstName) {
+            authorName = currentUser.firstName
+          } else if (currentUser?.lastName) {
+            authorName = currentUser.lastName
+          } else if (currentUser?.email) {
+            authorName = currentUser.email
+          }
+        }
+        
         const note = {
           text: this.newNote,
-          authorId: appStore.userId,
-          authorName: isAgency ? fallbackName : (appStore.userName || fallbackName),
-          authorAvatarUrl: isAgency ? (this.unit?.agencyProfileImageUrl || this.unit?.profileImageUrl || appStore.currentUser?.profileImageUrl || appStore.currentUser?.profileImage || '') : (appStore.currentUser?.profileImageUrl || appStore.currentUser?.profileImage || ''),
-          authorType: appStore.userType,
+          authorId: appStore.userId || currentUser?.uid || '',
+          authorName: authorName,
+          authorType: appStore.userType || currentUser?.userType || '',
+          authorAvatarUrl: isAgency 
+            ? (this.unit?.agencyProfileImageUrl || this.unit?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
+            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
           timestamp: new Date()
         }
-        await updateDoc(doc(db, 'flaggedUnits', this.unit.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        
+        await updateDoc(doc(db, 'flaggedUnits', this.unit.id), { 
+          notesLog: arrayUnion(note), 
+          updatedAt: serverTimestamp() 
+        })
+        
         if (!this.unit.notesLog) this.unit.notesLog = []
         this.unit.notesLog.push(note)
         this.newNote = ''
         this.scrollNotesToBottom()
       } catch (e) {
         console.error('Error adding note:', e)
+        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
       } finally {
         this.savingNote = false
       }

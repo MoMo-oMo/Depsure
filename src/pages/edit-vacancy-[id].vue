@@ -165,7 +165,10 @@
                       <h3 class="mb-2">Notes</h3>
                       <div v-if="(vacancy.notesLog && vacancy.notesLog.length)" class="chat-log" ref="chatLog">
                         <div v-for="(n, idx) in sortedNotes" :key="idx" class="chat-message" :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }">
-                          <div class="chat-avatar">{{ noteInitials(n.authorName) }}</div>
+                          <div class="chat-avatar">
+                            <img v-if="n.authorAvatarUrl" :src="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" />
+                            <template v-else>{{ noteInitials(n.authorName) }}</template>
+                          </div>
                           <div class="chat-bubble">
                             <div class="chat-header">
                               <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
@@ -430,14 +433,42 @@ export default {
       try {
         this.savingNote = true
         const appStore = useAppStore()
+        const currentUser = appStore.currentUser
+        const isAgency = currentUser?.userType === 'Agency'
+        
+        // Get proper author name based on user type
+        let authorName = 'Unknown User'
+        if (isAgency) {
+          authorName = currentUser?.agencyName || this.vacancy?.unitName || this.vacancy?.propertyName || 'Property'
+        } else {
+          // For regular users, use firstName + lastName or fallback to email
+          if (currentUser?.firstName && currentUser?.lastName) {
+            authorName = `${currentUser.firstName} ${currentUser.lastName}`
+          } else if (currentUser?.firstName) {
+            authorName = currentUser.firstName
+          } else if (currentUser?.lastName) {
+            authorName = currentUser.lastName
+          } else if (currentUser?.email) {
+            authorName = currentUser.email
+          }
+        }
+        
         const note = {
           text: this.newNote,
-          authorId: appStore.userId,
-          authorName: appStore.userName,
-          authorType: appStore.userType,
+          authorId: appStore.userId || currentUser?.uid || '',
+          authorName: authorName,
+          authorType: appStore.userType || currentUser?.userType || '',
+          authorAvatarUrl: isAgency 
+            ? (this.vacancy?.agencyProfileImageUrl || this.vacancy?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
+            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
           timestamp: new Date()
         }
-        await updateDoc(doc(db, 'vacancies', this.vacancy.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        
+        await updateDoc(doc(db, 'vacancies', this.vacancy.id), { 
+          notesLog: arrayUnion(note), 
+          updatedAt: serverTimestamp() 
+        })
+        
         if (!this.vacancy.notesLog) this.vacancy.notesLog = []
         this.vacancy.notesLog.push(note)
         this.newNote = ''
@@ -511,6 +542,7 @@ export default {
 .chat-message{display:flex;align-items:flex-end;gap:8px}
 .chat-message.mine{flex-direction:row-reverse}
 .chat-avatar{width:28px;height:28px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.chat-avatar-img{width:100%;height:100%;border-radius:50%;object-fit:cover}
 .chat-bubble{max-width:75%;background:#3a3f44;color:#fff;border-radius:10px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .chat-message.mine .chat-bubble{background:#000}
 .chat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}

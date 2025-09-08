@@ -192,7 +192,12 @@
                     <div class="notes-section">
                       <h3 class="mb-2">Notes</h3>
                       <div v-if="(unit.notesLog && unit.notesLog.length)" class="chat-log" ref="chatLog">
-                        <div v-for="(n, idx) in sortedNotes" :key="idx" class="chat-message" :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }">
+                        <div
+                          v-for="(n, idx) in sortedNotes"
+                          :key="idx"
+                          class="chat-message"
+                          :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
+                        >
                           <div class="chat-avatar">
                             <img v-if="n.authorAvatarUrl" :src="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" />
                             <template v-else>{{ noteInitials(n.authorName) }}</template>
@@ -208,7 +213,16 @@
                       </div>
                       <div v-else class="text-medium-emphasis">No notes yet.</div>
                       <div class="chat-input mt-4">
-                        <v-textarea v-model="newNote" placeholder="Write a note..." variant="outlined" class="custom-input" :counter="500" maxlength="500" rows="2" auto-grow />
+                        <v-textarea
+                          v-model="newNote"
+                          placeholder="Write a note..."
+                          variant="outlined"
+                          class="custom-input"
+                          :counter="500"
+                          maxlength="500"
+                          rows="2"
+                          auto-grow
+                        />
                         <div class="d-flex justify-end mt-2">
                           <v-btn color="black" variant="elevated" :disabled="!newNote || savingNote" :loading="savingNote" @click="appendNote">
                             <v-icon start>mdi-send</v-icon>
@@ -233,6 +247,7 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'EditFlaggedUnitPage',
@@ -243,7 +258,8 @@ export default {
   },
   computed: {
     currentUserId() {
-      return this.$pinia?.state?.app?.currentUser?.uid || ''
+      const appStore = useAppStore();
+      return appStore.userId;
     },
     sortedNotes() {
       const notes = this.unit?.notesLog || []
@@ -309,7 +325,7 @@ export default {
   methods: {
     scrollNotesToBottom() {
       this.$nextTick(() => {
-        const el = this.$refs?.chatLog
+        const el = this.$refs.chatLog
         if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight
       })
     },
@@ -444,19 +460,43 @@ export default {
       if (!this.newNote || !this.unit?.id) return
       try {
         this.savingNote = true
+        const appStore = useAppStore()
+        const currentUser = appStore.currentUser
+        const isAgency = currentUser?.userType === 'Agency'
+        
+        // Get proper author name based on user type
+        let authorName = 'Unknown User'
+        if (isAgency) {
+          authorName = currentUser?.agencyName || this.unit?.unitName || 'Property'
+        } else {
+          // For regular users, use firstName + lastName or fallback to email
+          if (currentUser?.firstName && currentUser?.lastName) {
+            authorName = `${currentUser.firstName} ${currentUser.lastName}`
+          } else if (currentUser?.firstName) {
+            authorName = currentUser.firstName
+          } else if (currentUser?.lastName) {
+            authorName = currentUser.lastName
+          } else if (currentUser?.email) {
+            authorName = currentUser.email
+          }
+        }
+        
         const note = {
           text: this.newNote,
-          authorId: this.$pinia?.state?.app?.currentUser?.uid || '',
-          authorName: (this.$pinia?.state?.app?.currentUser?.userType === 'Agency')
-            ? (this.unit?.unitName || this.unit?.address || 'Property')
-            : (((this.$pinia?.state?.app?.currentUser?.firstName || '') + ' ' + (this.$pinia?.state?.app?.currentUser?.lastName || '')).trim() || (this.unit?.unitName || 'Property')),
-          authorType: this.$pinia?.state?.app?.currentUser?.userType || '',
-          authorAvatarUrl: (this.$pinia?.state?.app?.currentUser?.userType === 'Agency')
-            ? (this.unit?.agencyProfileImageUrl || this.unit?.profileImageUrl || this.$pinia?.state?.app?.currentUser?.profileImageUrl || this.$pinia?.state?.app?.currentUser?.profileImage || '')
-            : (this.$pinia?.state?.app?.currentUser?.profileImageUrl || this.$pinia?.state?.app?.currentUser?.profileImage || ''),
+          authorId: appStore.userId || currentUser?.uid || '',
+          authorName: authorName,
+          authorType: appStore.userType || currentUser?.userType || '',
+          authorAvatarUrl: isAgency 
+            ? (this.unit?.agencyProfileImageUrl || this.unit?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
+            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
           timestamp: new Date()
         }
-        await updateDoc(doc(db, 'flaggedUnits', this.unit.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        
+        await updateDoc(doc(db, 'flaggedUnits', this.unit.id), { 
+          notesLog: arrayUnion(note), 
+          updatedAt: serverTimestamp() 
+        })
+        
         if (!this.unit.notesLog) this.unit.notesLog = []
         this.unit.notesLog.push(note)
         this.newNote = ''

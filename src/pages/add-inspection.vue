@@ -184,6 +184,23 @@
                     />
                   </v-col>
 
+                  <!-- Document Upload -->
+                  <v-col cols="12" md="6">
+                    <v-file-input
+                      v-model="entry.inspectionFile"
+                      label="Upload Inspection Document (PDF only)"
+                      variant="outlined"
+                      class="custom-input"
+                      accept=".pdf"
+                      show-size
+                      prepend-icon="mdi-file-pdf-box"
+                      :loading="uploading"
+                      :rules="inspectionFileRules"
+                      hint="Only PDF files are allowed. Maximum size: 50MB"
+                      persistent-hint
+                    />
+                  </v-col>
+
                   
                 </v-row>
               </v-card-text>
@@ -221,8 +238,9 @@
 
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db } from '@/firebaseConfig'
+import { db, storage } from '@/firebaseConfig'
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
@@ -239,6 +257,7 @@ export default {
     return {
       valid: false,
       loading: false,
+      uploading: false,
       agenciesLoading: false,
       unitsLoading: false,
       agencies: [],
@@ -254,7 +273,10 @@ export default {
         inspectionTime: "",
         quotesNeeded: "No",
         status: "Pending",
-        priority: "Medium"
+        priority: "Medium",
+        inspectionFile: null,
+        inspectionFileName: "",
+        inspectionFileURL: ""
       },
       agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
@@ -266,7 +288,11 @@ export default {
       requiredRule: [v => !!v || "This field is required"],
       quotesNeededRules: [v => !!v || "Quotes Needed is required"],
       statusRules: [v => !!v || "Status is required"],
-      priorityRules: [v => !!v || "Priority is required"]
+      priorityRules: [v => !!v || "Priority is required"],
+      inspectionFileRules: [
+        v => !v || v.size <= 50 * 1024 * 1024 || "File size must be less than 50MB",
+        v => !v || v.type === 'application/pdf' || "Only PDF files are allowed"
+      ]
     };
   },
   computed: {
@@ -319,6 +345,25 @@ export default {
             priority: this.entry.priority,
             createdAt: new Date(),
             updatedAt: new Date()
+          }
+
+          // Upload file if provided
+          if (this.entry.inspectionFile) {
+            this.uploading = true
+            try {
+              const fileRef = ref(storage, `inspection-documents/${Date.now()}_${this.entry.inspectionFile.name}`)
+              const snapshot = await uploadBytes(fileRef, this.entry.inspectionFile)
+              const downloadURL = await getDownloadURL(snapshot.ref)
+              inspectionData.inspectionFileURL = downloadURL
+              inspectionData.inspectionFileName = this.entry.inspectionFile.name
+              console.log('File uploaded successfully:', downloadURL)
+            } catch (uploadError) {
+              console.error('Error uploading file:', uploadError)
+              this.showErrorDialog('Failed to upload file. Please try again.', 'Upload Error', 'OK')
+              return
+            } finally {
+              this.uploading = false
+            }
           }
           
           // Store inspection data in Firestore

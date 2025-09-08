@@ -257,8 +257,8 @@ import { useAppStore } from '@/stores/app'
 export default {
   name: "ViewInspectionPage",
   setup() {
-    const { showConfirmDialog } = useCustomDialogs()
-    return { showConfirmDialog }
+    const { showConfirmDialog, showErrorDialog } = useCustomDialogs()
+    return { showConfirmDialog, showErrorDialog }
   },
   computed: {
     isAgencyUser() {
@@ -356,27 +356,53 @@ export default {
       this.$router.push(`/edit-inspection-${this.entry.id}`);
     },
     async appendNote() {
-      if (!this.newNote) return
+      if (!this.newNote || !this.entry?.id) return
       try {
         this.savingNote = true
         const appStore = useAppStore()
-        const isAgency = appStore.currentUser?.userType === 'Agency'
-        const fallbackName = this.entry?.unitName || this.entry?.propertyName || 'Property'
+        const currentUser = appStore.currentUser
+        const isAgency = currentUser?.userType === 'Agency'
+        
+        // Get proper author name based on user type
+        let authorName = 'Unknown User'
+        if (isAgency) {
+          authorName = currentUser?.agencyName || this.entry?.unitName || this.entry?.propertyName || 'Property'
+        } else {
+          // For regular users, use firstName + lastName or fallback to email
+          if (currentUser?.firstName && currentUser?.lastName) {
+            authorName = `${currentUser.firstName} ${currentUser.lastName}`
+          } else if (currentUser?.firstName) {
+            authorName = currentUser.firstName
+          } else if (currentUser?.lastName) {
+            authorName = currentUser.lastName
+          } else if (currentUser?.email) {
+            authorName = currentUser.email
+          }
+        }
+        
         const note = {
           text: this.newNote,
-          authorId: appStore.userId,
-          authorName: isAgency ? fallbackName : (appStore.userName || fallbackName),
-          authorAvatarUrl: isAgency ? (this.entry?.agencyProfileImageUrl || this.entry?.profileImageUrl || appStore.currentUser?.profileImageUrl || appStore.currentUser?.profileImage || '') : (appStore.currentUser?.profileImageUrl || appStore.currentUser?.profileImage || ''),
-          authorType: appStore.userType,
+          authorId: appStore.userId || currentUser?.uid || '',
+          authorName: authorName,
+          authorType: appStore.userType || currentUser?.userType || '',
+          authorAvatarUrl: isAgency 
+            ? (this.entry?.agencyProfileImageUrl || this.entry?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
+            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
           timestamp: new Date()
         }
-        await updateDoc(doc(db, 'inspections', this.entry.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        
+        await updateDoc(doc(db, 'inspections', this.entry.id), { 
+          notesLog: arrayUnion(note), 
+          updatedAt: serverTimestamp() 
+        })
+        
         if (!this.entry.notesLog) this.entry.notesLog = []
         this.entry.notesLog.push(note)
         this.newNote = ''
         this.scrollNotesToBottom()
       } catch (e) {
         console.error('Error adding note:', e)
+        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
       } finally {
         this.savingNote = false
       }
