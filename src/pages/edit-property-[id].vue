@@ -41,7 +41,7 @@
 
           <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
-            <v-tabs v-model="activeTab" class="property-tabs">
+            <v-tabs v-model="activeTab" class="property-tabs" color="primary">
               <v-tab value="details">Property Details</v-tab>
               <v-tab value="documents">Documents</v-tab>
             </v-tabs>
@@ -59,8 +59,7 @@
                           label="Tenant Reference"
                           variant="outlined"
                           class="custom-input"
-                          :rules="tenantRefRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -71,8 +70,7 @@
                           label="Property Name"
                           variant="outlined"
                           class="custom-input"
-                          :rules="propertyNameRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -86,8 +84,7 @@
                           :items="propertyTypeOptions"
                           item-title="title"
                           item-value="value"
-                          :rules="propertyTypeRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -99,8 +96,21 @@
                           variant="outlined"
                           class="custom-input"
                           :items="['Yes', 'No']"
-                          :rules="newOccupationRules"
-                          required
+                          :rules="[]"
+                        />
+                      </v-col>
+
+                      <!-- Flag dropdown -->
+                      <v-col cols="12" md="6">
+                        <v-select
+                          v-model="property.isFlagged"
+                          :items="flagOptions"
+                          item-title="title"
+                          item-value="value"
+                          label="Flag"
+                          variant="outlined"
+                          class="custom-input"
+                          hide-details
                         />
                       </v-col>
 
@@ -112,21 +122,30 @@
                           variant="outlined"
                           type="date"
                           class="custom-input"
-                          :rules="leaseStartDateRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
-                      <!-- Lease End Date -->
+                      <!-- Lease End mode as dropdown + date field -->
                       <v-col cols="12" md="6">
+                        <v-select
+                          v-model="leaseEndMode"
+                          :items="leaseEndModeOptions"
+                          item-title="title"
+                          item-value="value"
+                          label="Lease End"
+                          variant="outlined"
+                          class="custom-input"
+                          hide-details
+                        />
                         <v-text-field
                           v-model="property.leaseEndDate"
                           label="Lease End Date"
                           variant="outlined"
                           type="date"
-                          class="custom-input"
-                          :rules="leaseEndDateRules"
-                          required
+                          class="custom-input mt-2"
+                          :disabled="leaseEndMode === 'na'"
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -138,8 +157,7 @@
                           variant="outlined"
                           type="number"
                           class="custom-input"
-                          :rules="monthsMissedRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -151,8 +169,7 @@
                           variant="outlined"
                           type="number"
                           class="custom-input"
-                          :rules="maintenanceAmountRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -164,8 +181,7 @@
                           variant="outlined"
                           class="custom-input"
                           :items="['Yes', 'No']"
-                          :rules="contractorRequestedRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -177,8 +193,7 @@
                           variant="outlined"
                           type="number"
                           class="custom-input"
-                          :rules="paidTowardsFundRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -190,8 +205,7 @@
                           variant="outlined"
                           type="number"
                           class="custom-input"
-                          :rules="amountToBePaidOutRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
 
@@ -203,8 +217,7 @@
                           variant="outlined"
                           class="custom-input"
                           :items="['Yes', 'No']"
-                          :rules="paidOutRules"
-                          required
+                          :rules="[]"
                         />
                       </v-col>
                     </v-row>
@@ -214,11 +227,34 @@
                 <!-- Documents Tab -->
                 <v-window-item value="documents">
                   <v-card-text>
+                    <h3 class="documents-title">Upload Property Documents</h3>
+                    <!-- Shared filters: search and month placed under header -->
+                    <div class="doc-filters">
+                      <v-text-field
+                        v-model="docFilterSearch"
+                        label="Search documents..."
+                        prepend-inner-icon="mdi-magnify"
+                        density="comfortable"
+                        variant="outlined"
+                        clearable
+                        hide-details
+                        class="custom-input doc-search"
+                      />
+                      <v-text-field
+                        v-model="docFilterMonth"
+                        type="month"
+                        label="Month"
+                        density="comfortable"
+                        variant="outlined"
+                        hide-details
+                        clearable
+                        class="custom-input doc-month-input"
+                      />
+                    </div>
                     <div class="documents-section">
-                      <h3 class="documents-title">Upload Property Documents</h3>
                       
                       <!-- Quotes Upload Section -->
-                      <div class="document-category">
+                      <div class="document-category category-quotes">
                         <h4 class="category-title">
                           <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                           Quotes
@@ -237,10 +273,10 @@
                           hint="Only PDF files are allowed. Maximum size: 50MB per file"
                           persistent-hint
                         />
-                        <div v-if="property.quotes && property.quotes.length > 0" class="existing-documents">
+                        <div v-if="editFilteredQuotes.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Quotes:</h5>
                           <div class="document-list">
-                            <div v-for="(quote, index) in property.quotes" :key="`q-${index}`" class="document-item">
+                            <div v-for="(quote, index) in editFilteredQuotes" :key="`q-${index}`" class="document-item">
                               <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                               <span class="document-name">{{ quote.fileName }}</span>
                               <v-btn
@@ -267,7 +303,7 @@
                       </div>
 
                       <!-- Inspections Upload Section -->
-                      <div class="document-category">
+                      <div class="document-category category-inspections">
                         <h4 class="category-title">
                           <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
                           Inspections
@@ -286,10 +322,10 @@
                           hint="Only PDF files are allowed. Maximum size: 50MB per file"
                           persistent-hint
                         />
-                        <div v-if="property.inspections && property.inspections.length > 0" class="existing-documents">
+                        <div v-if="editFilteredInspections.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Inspections:</h5>
                           <div class="document-list">
-                            <div v-for="(inspection, index) in property.inspections" :key="`i-${index}`" class="document-item">
+                            <div v-for="(inspection, index) in editFilteredInspections" :key="`i-${index}`" class="document-item">
                               <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
                               <span class="document-name">{{ inspection.fileName }}</span>
                               <v-btn
@@ -316,7 +352,7 @@
                       </div>
 
                       <!-- Invoices Upload Section -->
-                      <div class="document-category">
+                      <div class="document-category category-invoices">
                         <h4 class="category-title">
                           <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
                           Invoices
@@ -335,10 +371,10 @@
                           hint="Only PDF files are allowed. Maximum size: 50MB per file"
                           persistent-hint
                         />
-                        <div v-if="property.invoices && property.invoices.length > 0" class="existing-documents">
+                        <div v-if="editFilteredInvoices.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Invoices:</h5>
                           <div class="document-list">
-                            <div v-for="(invoice, index) in property.invoices" :key="`inv-${index}`" class="document-item">
+                            <div v-for="(invoice, index) in editFilteredInvoices" :key="`inv-${index}`" class="document-item">
                               <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
                               <span class="document-name">{{ invoice.fileName }}</span>
                               <v-btn
@@ -383,7 +419,7 @@
                   color="black"
                   variant="elevated"
                   @click="saveProperty"
-                  :disabled="!valid || loading"
+                  :disabled="loading"
                   :loading="loading"
                   class="save-btn"
                 >
@@ -480,6 +516,7 @@ export default {
         newOccupation: '',
         leaseStartDate: '',
         leaseEndDate: '',
+        isFlagged: false,
         monthsMissed: 0,
         maintenanceAmount: 0,
         contractorRequested: '',
@@ -494,6 +531,7 @@ export default {
       error: null,
       valid: true,
       activeTab: 'details',
+      leaseEndMode: 'date',
       showDocumentDialog: false,
       currentDocumentURL: '',
       currentDocumentName: '',
@@ -504,6 +542,14 @@ export default {
       uploadingQuotes: false,
       uploadingInspections: false,
       uploadingInvoices: false,
+      // Shared docs filters in edit
+      docFilterMonth: '',
+      docFilterSearch: '',
+      // Flag dropdown options
+      flagOptions: [
+        { title: 'No', value: false },
+        { title: 'Yes', value: true }
+      ],
       // Validation rules
       tenantRefRules: [
         v => !!v || 'Tenant Reference is required',
@@ -555,12 +601,30 @@ export default {
       invoiceFileRules: [
         v => !v || v.length === 0 || v.every(file => file.size <= 50 * 1024 * 1024) || "Each file must be less than 50MB",
         v => !v || v.length === 0 || v.every(file => file.type === 'application/pdf') || "Only PDF files are allowed"
+      ],
+      leaseEndModeOptions: [
+        { title: 'Date', value: 'date' },
+        { title: 'Not Applicable', value: 'na' }
       ]
     }
   },
   computed: {
     propertyTypeOptions() {
       return this.getOptions();
+    },
+    leaseEndDateRulesComputed() {
+      // Allow empty when N/A is selected
+      if (this.leaseEndNotApplicable) return [];
+      return this.leaseEndDateRules;
+    },
+    editFilteredQuotes() {
+      return this.filterDocs(this.property?.quotes || [])
+    },
+    editFilteredInspections() {
+      return this.filterDocs(this.property?.inspections || [])
+    },
+    editFilteredInvoices() {
+      return this.filterDocs(this.property?.invoices || [])
     }
   },
   async mounted() {
@@ -576,7 +640,49 @@ export default {
       this.loading = false;
     }
   },
+  watch: {
+    leaseEndMode(newVal) {
+      if (newVal === 'na') this.property.leaseEndDate = '';
+    }
+  },
   methods: {
+    // Reuse the same helpers used on view page
+    resolveDocDate(entry) {
+      if (!entry) return null;
+      const v = entry.uploadedAt || entry.createdAt || entry.date || entry.timestamp || null;
+      if (!v) return null;
+      try {
+        if (typeof v.toDate === 'function') return v.toDate();
+        if (typeof v === 'number') return new Date(v);
+        return new Date(v);
+      } catch {
+        return null;
+      }
+    },
+    monthKey(d) {
+      if (!d || isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    },
+    latestMonthFrom(docs) {
+      const keys = (docs || [])
+        .map(e => this.resolveDocDate(e))
+        .filter(Boolean)
+        .map(d => this.monthKey(d));
+      if (!keys.length) return '';
+      return keys.sort().pop();
+    },
+    filterDocs(docs) {
+      if (!Array.isArray(docs) || docs.length === 0) return [];
+      const month = this.docFilterMonth || this.latestMonthFrom(docs);
+      const term = (this.docFilterSearch || '').toLowerCase();
+      return docs.filter(e => {
+        const d = this.monthKey(this.resolveDocDate(e));
+        const monthMatch = month ? d === month : true;
+        const name = (e.fileName || e.name || '').toLowerCase();
+        const searchMatch = term ? name.includes(term) : true;
+        return monthMatch && searchMatch;
+      });
+    },
     async loadPropertyData(propertyId) {
       this.loading = true;
       this.error = null;
@@ -607,6 +713,10 @@ export default {
           this.property.paidTowardsFund = this.property.paidTowardsFund || 0;
           this.property.amountToBePaidOut = this.property.amountToBePaidOut || 0;
           this.property.paidOut = this.property.paidOut || '';
+          this.property.isFlagged = (this.property.isFlagged === true || this.property.isFlagged === 'Yes') ? true : false;
+
+          // Set lease end mode based on data
+          this.leaseEndMode = (this.property.leaseEndNotApplicable || !this.property.leaseEndDate) ? 'na' : 'date';
 
           // Normalize existing doc arrays to objects with storagePath if missing (best-effort)
           ['quotes','inspections','invoices'].forEach(type => {
@@ -664,11 +774,9 @@ export default {
     },
 
     async saveProperty() {
-      console.log('Save property called, form valid:', this.valid);
-      console.log('Form ref exists:', !!this.$refs.form);
-      if (this.$refs.form && this.$refs.form.validate()) {
-        this.loading = true;
-        try {
+      // Allow saving without mandatory field validation
+      this.loading = true;
+      try {
           console.log('Saving property:', this.property);
           if (!this.property.id) throw new Error('Property ID is missing');
 
@@ -704,6 +812,12 @@ export default {
             updatedAt
           };
 
+          // Apply Lease End union and flag values
+          propertyData.leaseEndNotApplicable = this.leaseEndMode === 'na';
+          if (this.leaseEndMode === 'na') {
+            propertyData.leaseEndDate = '';
+          }
+
           // Log update
           await this.logAuditEvent(
             this.auditActions.UPDATE,
@@ -729,10 +843,6 @@ export default {
         } finally {
           this.loading = false;
         }
-      } else {
-        console.log('Form validation failed');
-        this.showErrorDialog('Please fix the form errors before saving.', 'Validation Error', 'OK');
-      }
     },
     
     async uploadDocuments() {
@@ -1116,13 +1226,40 @@ export default {
 }
 
 .custom-input :deep(.v-field__input) {
-  background-color: white !important;
+  background-color: #f8f9fa !important; /* match view page */
   color: #000000 !important;
 }
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
+
+/* Color cue for tabs (active vs inactive) */
+:deep(.property-tabs .v-tab) {
+  color: #6b7280; /* neutral inactive */
+}
+:deep(.property-tabs .v-tab.v-tab--selected) {
+  color: #000000 !important; /* brand primary */
+  font-weight: 600;
+}
+:deep(.property-tabs .v-tabs-slider) {
+  background-color: #000000 !important; /* brand primary */
+}
+
+/* Shared docs toolbar */
+.doc-filters {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0 16px 0;
+  align-items: center;
+  justify-content: center;
+}
+.doc-search,
+.doc-month-input {
+  width: 220px;
+  max-width: 220px;
+}
+.doc-month-input :deep(input) { min-width: 120px; }
 
 /* Tabs styling */
 .property-tabs {
@@ -1188,6 +1325,15 @@ export default {
   color: #333;
   margin-bottom: 12px;
 }
+
+/* Colored left tab per document category (match icons) */
+.document-category {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 12px;
+}
+.document-category.category-quotes { border-left-color: var(--v-theme-primary); }
+.document-category.category-inspections { border-left-color: var(--v-theme-warning); }
+.document-category.category-invoices { border-left-color: var(--v-theme-success); }
 
 .document-list {
   display: flex;

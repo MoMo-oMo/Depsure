@@ -146,18 +146,7 @@
                     />
                   </v-col>
 
-                  <!-- Estimated Cost -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="entry.estimatedCost"
-                      label="Estimated Cost (R)"
-                      type="number"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="estimatedCostRules"
-                      prefix="R"
-                    />
-                  </v-col>
+                  <!-- Estimated Cost hidden (non-essential in UI) -->
 
                   <!-- Quote Instructions Upload -->
                   <v-col cols="12" md="6">
@@ -176,16 +165,48 @@
                     />
                   </v-col>
 
-                  <!-- Notes -->
+                  <!-- Notes (chat-like) -->
                   <v-col cols="12">
-                    <v-textarea
-                      v-model="entry.notes"
-                      label="Additional Notes"
-                      variant="outlined"
-                      class="custom-input"
-                      rows="3"
-                      auto-grow
-                    />
+                    <v-divider class="my-4" />
+                    <div class="notes-section">
+                      <h3 class="mb-2">Notes</h3>
+                      <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
+                        <div
+                          v-for="(n, idx) in sortedNotes"
+                          :key="idx"
+                          class="chat-message"
+                          :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
+                        >
+                          <div class="chat-avatar">{{ noteInitials(n.authorName) }}</div>
+                          <div class="chat-bubble">
+                            <div class="chat-header">
+                              <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
+                              <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
+                            </div>
+                            <div class="chat-text">{{ n.text }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="text-medium-emphasis">No notes yet.</div>
+                      <div class="chat-input mt-4">
+                        <v-textarea
+                          v-model="newNote"
+                          placeholder="Write a note..."
+                          variant="outlined"
+                          class="custom-input"
+                          :counter="500"
+                          maxlength="500"
+                          rows="2"
+                          auto-grow
+                        />
+                        <div class="d-flex justify-end mt-2">
+                          <v-btn color="black" variant="elevated" :disabled="!newNote || savingNote" :loading="savingNote" @click="appendNote">
+                            <v-icon start>mdi-send</v-icon>
+                            Send
+                          </v-btn>
+                        </div>
+                      </div>
+                    </div>
                   </v-col>
                 </v-row>
               </v-card-text>
@@ -296,7 +317,7 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db, storage } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { useAuditTrail } from '@/composables/useAuditTrail'
@@ -335,6 +356,8 @@ export default {
       valid: true,
       showQuoteDialog: false,
       zoomLevel: 1,
+      newNote: '',
+      savingNote: false,
       // Validation rules
       agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
@@ -351,6 +374,21 @@ export default {
       ]
     };
   },
+  computed: {
+    currentUserId() {
+      // reuse app store getter
+      const appStore = useAppStore?.()
+      return appStore?.userId || ''
+    },
+    sortedNotes() {
+      const notes = this.entry?.notesLog || []
+      return [...notes].sort((a,b) => {
+        const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
+        const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
+        return ad - bd
+      })
+    }
+  },
   async mounted() {
     document.title = "Edit Maintenance Entry - Depsure";
     const entryId = this.$route.params.id;
@@ -363,6 +401,26 @@ export default {
     }
   },
   methods: {
+    scrollNotesToBottom() {
+      this.$nextTick(() => {
+        const el = this.$refs?.chatLog
+        if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight
+      })
+    },
+    noteInitials(name) {
+      if (!name) return '?'
+      const parts = String(name).trim().split(/\s+/)
+      const a = parts[0]?.[0] || ''
+      const b = parts[1]?.[0] || ''
+      return (a + b).toUpperCase() || a.toUpperCase() || '?'
+    },
+    formatNoteDate(ts) {
+      try {
+        if (!ts) return 'Just now'
+        const d = ts.toDate ? ts.toDate() : new Date(ts)
+        return d.toLocaleString()
+      } catch (_) { return String(ts) }
+    },
     async loadEntryData(id) {
       try {
         const docRef = doc(db, 'maintenance', id);
@@ -490,6 +548,32 @@ export default {
         } finally {
           this.saving = false
         }
+      }
+    },
+    async appendNote() {
+      if (!this.newNote || !this.entry?.id) return
+      try {
+        this.savingNote = true
+        const note = {
+          text: this.newNote,
+          authorId: (this.$pinia?.state?.app?.currentUser?.uid) || '',
+          authorName: (this.$pinia?.state?.app?.currentUser?.firstName || '') + ' ' + (this.$pinia?.state?.app?.currentUser?.lastName || ''),
+          authorType: (this.$pinia?.state?.app?.currentUser?.userType) || '',
+          timestamp: new Date()
+        }
+        await updateDoc(doc(db, 'maintenance', this.entry.id), {
+          notesLog: arrayUnion(note),
+          updatedAt: serverTimestamp()
+        })
+        if (!this.entry.notesLog) this.entry.notesLog = []
+        this.entry.notesLog.push(note)
+        this.newNote = ''
+        this.scrollNotesToBottom()
+      } catch (e) {
+        console.error('Error adding note:', e)
+        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
+      } finally {
+        this.savingNote = false
       }
     },
     
@@ -777,6 +861,18 @@ export default {
 </script>
 
 <style scoped>
+.notes-section { margin-top: 8px; }
+.chat-log { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding: 8px 0; }
+.chat-message { display: flex; align-items: flex-end; gap: 8px; }
+.chat-message.mine { flex-direction: row-reverse; }
+.chat-avatar { width: 28px; height: 28px; border-radius: 50%; background: #6b7280; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.chat-bubble { max-width: 75%; background: #3a3f44; color: #fff; border-radius: 10px; padding: 8px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+.chat-message.mine .chat-bubble { background: #000; }
+.chat-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.chat-author { font-weight: 700; font-size: 0.8rem; opacity: 0.95; }
+.chat-time { font-size: 0.7rem; opacity: 0.7; margin-left: 8px; }
+.chat-text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.35; }
+.chat-input :deep(.v-field__input) { min-height: 44px; }
 .edit-maintenance-page {
   padding: 20px;
   min-height: 100vh;

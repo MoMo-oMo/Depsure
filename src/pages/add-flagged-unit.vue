@@ -147,6 +147,8 @@
                     variant="outlined"
                     class="custom-input"
                     :rules="actionTakenRules"
+                    :counter="500"
+                    maxlength="500"
                     rows="3"
                     required
                   />
@@ -161,6 +163,9 @@
                     label="Additional Notes"
                     variant="outlined"
                     class="custom-input"
+                    :rules="notesRules"
+                    :counter="500"
+                    maxlength="500"
                     rows="3"
                   />
                 </v-col>
@@ -251,7 +256,13 @@ export default {
       dateFlaggedRules: [v => !!v || "Date Flagged is required"],
       missedPaymentFlagRules: [v => !!v || "Missed Payment Flag is required"],
       noticeToVacateGivenRules: [v => !!v || "Notice To Vacate Given is required"],
-      actionTakenRules: [v => !!v || "Action Taken is required"]
+      actionTakenRules: [
+        v => !!v || "Action Taken is required",
+        v => (v ? v.length <= 500 : true) || 'Action Taken cannot exceed 500 characters'
+      ],
+      notesRules: [
+        v => (v ? v.length <= 500 : true) || 'Additional Notes cannot exceed 500 characters'
+      ]
     };
   },
   computed: {

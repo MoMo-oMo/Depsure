@@ -41,7 +41,7 @@
 
            <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
-            <v-tabs v-model="activeTab" class="property-tabs">
+            <v-tabs v-model="activeTab" class="property-tabs" color="primary">
               <v-tab value="details">Property Details</v-tab>
               <v-tab value="documents">Documents</v-tab>
             </v-tabs>
@@ -67,6 +67,17 @@
                   <v-text-field
                     :model-value="property.propertyName"
                     label="Property Name"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Flag status -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="(property.isFlagged === true || property.isFlagged === 'Yes') ? 'Flagged' : 'Not Flagged'"
+                    label="Flag Status"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -191,15 +202,40 @@
                 <v-card-text>
                   <div class="documents-section">
                     <h3 class="documents-title">Property Documents</h3>
+                    <!-- Shared filters: search and month -->
+                    <div class="doc-filters">
+                      <v-text-field
+                        v-model="docFilterSearch"
+                        label="Search documents..."
+                        prepend-inner-icon="mdi-magnify"
+                        density="comfortable"
+                        variant="outlined"
+                        clearable
+                        hide-details
+                        class="custom-input doc-search"
+                      />
+                      <v-text-field
+                        v-model="docFilterMonth"
+                        type="month"
+                        label="Month"
+                        density="comfortable"
+                        variant="outlined"
+                        hide-details
+                        clearable
+                        class="custom-input doc-month-input"
+                      />
+                    </div>
                     
                     <!-- Quotes Section -->
-                    <div class="document-category">
-                      <h4 class="category-title">
-                        <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
-                        Quotes
-                      </h4>
-                      <div v-if="property.quotes && property.quotes.length > 0" class="document-list">
-                        <div v-for="(quote, index) in property.quotes" :key="index" class="document-item">
+                    <div class="document-category category-quotes">
+                      <div class="category-header">
+                        <h4 class="category-title">
+                          <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                          Quotes
+                        </h4>
+                      </div>
+                      <div v-if="filteredQuotes.length > 0" class="document-list">
+                        <div v-for="(quote, index) in filteredQuotes" :key="index" class="document-item">
                           <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                           <span class="document-name">{{ quote.fileName }}</span>
                           <v-btn
@@ -215,18 +251,20 @@
                       </div>
                       <div v-else class="no-documents">
                         <v-icon color="grey" class="mr-2">mdi-file-pdf-box</v-icon>
-                        No quotes uploaded
+                        No quotes uploaded for selected month
                       </div>
                     </div>
 
                     <!-- Inspections Section -->
-                    <div class="document-category">
-                      <h4 class="category-title">
-                        <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
-                        Inspections
-                      </h4>
-                      <div v-if="property.inspections && property.inspections.length > 0" class="document-list">
-                        <div v-for="(inspection, index) in property.inspections" :key="index" class="document-item">
+                    <div class="document-category category-inspections">
+                      <div class="category-header">
+                        <h4 class="category-title">
+                          <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
+                          Inspections
+                        </h4>
+                      </div>
+                      <div v-if="filteredInspections.length > 0" class="document-list">
+                        <div v-for="(inspection, index) in filteredInspections" :key="index" class="document-item">
                           <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
                           <span class="document-name">{{ inspection.fileName }}</span>
                           <v-btn
@@ -242,18 +280,20 @@
                       </div>
                       <div v-else class="no-documents">
                         <v-icon color="grey" class="mr-2">mdi-clipboard-check</v-icon>
-                        No inspections uploaded
+                        No inspections uploaded for selected month
                       </div>
                     </div>
 
                     <!-- Invoices Section -->
-                    <div class="document-category">
-                      <h4 class="category-title">
-                        <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
-                        Invoices
-                      </h4>
-                      <div v-if="property.invoices && property.invoices.length > 0" class="document-list">
-                        <div v-for="(invoice, index) in property.invoices" :key="index" class="document-item">
+                    <div class="document-category category-invoices">
+                      <div class="category-header">
+                        <h4 class="category-title">
+                          <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
+                          Invoices
+                        </h4>
+                      </div>
+                      <div v-if="filteredInvoices.length > 0" class="document-list">
+                        <div v-for="(invoice, index) in filteredInvoices" :key="index" class="document-item">
                           <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
                           <span class="document-name">{{ invoice.fileName }}</span>
                           <v-btn
@@ -269,7 +309,7 @@
                       </div>
                       <div v-else class="no-documents">
                         <v-icon color="grey" class="mr-2">mdi-receipt</v-icon>
-                        No invoices uploaded
+                        No invoices uploaded for selected month
                       </div>
                     </div>
                   </div>
@@ -373,12 +413,24 @@ export default {
       showDocumentDialog: false,
       currentDocumentURL: '',
       currentDocumentName: '',
-      zoomLevel: 1
+      zoomLevel: 1,
+      // Shared docs filters
+      docFilterMonth: '',
+      docFilterSearch: ''
     }
   },
   computed: {
     propertyTypeLabel() {
       return this.getLabel(this.property.propertyType) || 'Unknown'
+    },
+    filteredQuotes() {
+      return this.filterDocs(this.property?.quotes || [])
+    },
+    filteredInspections() {
+      return this.filterDocs(this.property?.inspections || [])
+    },
+    filteredInvoices() {
+      return this.filterDocs(this.property?.invoices || [])
     }
   },
   mounted() {
@@ -399,6 +451,43 @@ export default {
     }
   },
   methods: {
+    // Return a Date from a document entry
+    resolveDocDate(entry) {
+      if (!entry) return null;
+      const v = entry.uploadedAt || entry.createdAt || entry.date || entry.timestamp || null;
+      if (!v) return null;
+      try {
+        if (typeof v.toDate === 'function') return v.toDate();
+        if (typeof v === 'number') return new Date(v);
+        return new Date(v);
+      } catch {
+        return null;
+      }
+    },
+    monthKey(d) {
+      if (!d || isNaN(d.getTime())) return '';
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    },
+    latestMonthFrom(docs) {
+      const keys = docs
+        .map(e => this.resolveDocDate(e))
+        .filter(Boolean)
+        .map(d => this.monthKey(d));
+      if (!keys.length) return '';
+      return keys.sort().pop();
+    },
+    filterDocs(docs) {
+      if (!Array.isArray(docs) || docs.length === 0) return [];
+      const month = this.docFilterMonth || this.latestMonthFrom(docs);
+      const term = (this.docFilterSearch || '').toLowerCase();
+      return docs.filter(e => {
+        const d = this.monthKey(this.resolveDocDate(e));
+        const monthMatch = month ? d === month : true;
+        const name = (e.fileName || e.name || '').toLowerCase();
+        const searchMatch = term ? name.includes(term) : true;
+        return monthMatch && searchMatch;
+      });
+    },
     async loadPropertyData(propertyId) {
       this.loading = true;
       this.error = null;
@@ -528,6 +617,18 @@ export default {
   border-color: #e9ecef !important;
 }
 
+/* Color cue for tabs (active vs inactive) */
+:deep(.property-tabs .v-tab) {
+  color: #6b7280; /* neutral for inactive */
+}
+:deep(.property-tabs .v-tab.v-tab--selected) {
+  color: #000000 !important; /* brand primary */
+  font-weight: 600;
+}
+:deep(.property-tabs .v-tabs-slider) {
+  background-color: #000000 !important; /* brand primary */
+}
+
 /* Tabs styling */
 .property-tabs {
   background-color: #f8f9fa;
@@ -562,16 +663,13 @@ export default {
   padding: 20px;
   background-color: #f8f9fa;
   border-radius: 8px;
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #e5e7eb; /* neutral by default */
 }
 
-.document-category:nth-child(3) {
-  border-left-color: #ffc107;
-}
-
-.document-category:nth-child(4) {
-  border-left-color: #28a745;
-}
+/* Explicit per-category colors (match icon palettes) */
+.document-category.category-quotes { border-left-color: var(--v-theme-primary); }
+.document-category.category-inspections { border-left-color: var(--v-theme-warning); }
+.document-category.category-invoices { border-left-color: var(--v-theme-success); }
 
 .category-title {
   font-size: 1.2rem;
@@ -806,6 +904,29 @@ export default {
   height: 400px;
   display: block;
 }
+
+/* Compact month filter next to category title */
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Shared docs toolbar */
+.doc-filters {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0 16px 0;
+  align-items: center;
+  justify-content: center;
+}
+.doc-search,
+.doc-month-input {
+  width: 220px;
+  max-width: 220px;
+}
+.doc-month-input :deep(input) { min-width: 120px; }
 
 .no-pdf-message {
   display: flex;

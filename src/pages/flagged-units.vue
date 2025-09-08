@@ -5,10 +5,10 @@
       <!-- Filters and Add Flagged Unit Button -->
       <v-row class="mb-4">
         <!-- Search -->
-        <v-col cols="12" md="3" lg="2" class="pa-4">
+        <v-col cols="12" md="3" lg="3" class="pa-4">
           <v-text-field
             v-model="searchQuery"
-            label="Search flagged units..."
+            label="Search Unit"
             prepend-inner-icon="mdi-magnify"
             flat="true"
             density="comfortable"
@@ -21,23 +21,7 @@
           />
         </v-col>
 
-        <!-- Agency Select -->
-        <v-col v-if="!isAgencyUser && !hasCurrentAgency" cols="12" md="2" lg="2" class="pa-4">
-          <v-select
-            v-model="selectedAgency"
-            :items="agencies"
-            item-title="agencyName"
-            item-value="id"
-            label="Select Agency"
-            prepend-inner-icon="mdi-domain"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-            :loading="agenciesLoading"
-            class="custom-input top-filter"
-            @update:model-value="onAgencyChange"
-          />
-        </v-col>
+        <!-- Agency Select removed for header consistency -->
 
         <!-- Property Type Filter -->
         <v-col cols="12" md="2" lg="2" class="pa-4">
@@ -47,7 +31,7 @@
             item-title="title"
             item-value="value"
             label="Property Type"
-            prepend-inner-icon="mdi-home"
+
             density="comfortable"
             variant="outlined"
             hide-details
@@ -61,7 +45,7 @@
           <v-text-field
             v-model="monthFilter"
             label="Filter by month"
-
+            prepend-inner-icon="mdi-calendar-month"
             flat="true"
             density="comfortable"
             variant="outlined"
@@ -72,6 +56,7 @@
             ref="monthInput"
             @input="filterUnits"
             @click:prepend-inner="openMonthPicker"
+            clearable
           />
         </v-col>
 
@@ -159,7 +144,9 @@
               </v-chip>
             </template>
             <template v-slot:item.noticeToVacateGiven="{ item }">
-              <span class="font-weight-medium">{{ item.noticeToVacateGiven }}</span>
+              <span class="font-weight-medium">
+                {{ item.noticeToVacateGiven ? `Yes - ${item.noticeToVacateGiven}` : 'No' }}
+              </span>
             </template>
             <template v-slot:item.propertyType="{ item }">
               <v-chip
@@ -191,7 +178,7 @@
                   class="action-btn"
                 />
                 <v-btn
-                  v-if="!isSuperAdmin"
+
                   icon="mdi-delete"
                   size="small"
                   variant="text"
@@ -219,11 +206,13 @@ import { usePropertyType } from '@/composables/usePropertyType'
 export default {
   name: "FlaggedUnitsPage",
   setup() {
-    const { showConfirmDialog } = useCustomDialogs()
+    const { showConfirmDialog, showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
     const { getLabel, getColor, getOptions, resolvePropertyTypeFromUnit } = usePropertyType()
     return { 
-      showConfirmDialog, 
+      showConfirmDialog,
+      showSuccessDialog,
+      showErrorDialog,
       logAuditEvent, 
       auditActions, 
       resourceTypes,
@@ -398,6 +387,7 @@ export default {
           if (index > -1) {
             this.units.splice(index, 1);
             this.filterUnits();
+            this.showSuccessDialog(`Flagged unit for ${unit.unitName} deleted successfully!`, 'Success!', 'Continue');
           }
         } catch (error) {
           console.error('Error deleting flagged unit:', error);
@@ -678,6 +668,10 @@ export default {
 :deep(.custom-header .v-data-table-header .v-data-table-header__content) {
   color: white !important;
 }
+
+/* Month input UX tweaks */
+.month-input { min-width: 220px; }
+:deep(.month-input .v-field-label) { white-space: nowrap; }
 
 @media (max-width: 768px) {
   .view-agency-page {

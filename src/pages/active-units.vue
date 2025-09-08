@@ -22,42 +22,58 @@
 
         
 
-        <!-- Month filter -->
-        <v-col cols="12" md="2" lg="3" class="pa-4">
-          <v-text-field
-            v-model="monthFilter"
-            label="Filter by month"
-            
-            flat="true"
-            density="comfortable"
-            variant="outlined"
-            type="month"
-            hide-details
-            dense
-            class="custom-input top-filter month-input"
-            ref="monthInput"
-            @input="filterProperties"
-            @click:prepend-inner="openMonthPicker"
-            clearable
-          />
-        </v-col>
+      <!-- Month filter -->
+      <v-col cols="12" md="2" lg="3" class="pa-4">
+        <v-text-field
+          v-model="monthFilter"
+          label="Filter by month"
+          
+          flat="true"
+          density="comfortable"
+          variant="outlined"
+          type="month"
+          hide-details
+          dense
+          class="custom-input top-filter month-input"
+          ref="monthInput"
+          @input="filterProperties"
+          @click:prepend-inner="openMonthPicker"
+          clearable
+        />
+      </v-col>
 
-        <!-- Property Type filter -->
-        <v-col cols="12" md="2" lg="2" class="pa-4">
-          <v-select
-            v-model="propertyTypeFilter"
-            :items="propertyTypeFilterOptions"
-            item-title="title"
-            item-value="value"
-            label="Property Type"
-            prepend-inner-icon="mdi-home"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-            class="custom-input top-filter"
-            @update:model-value="filterProperties"
-          />
-        </v-col>
+      <!-- Property Type filter -->
+      <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-select
+          v-model="propertyTypeFilter"
+          :items="propertyTypeFilterOptions"
+          item-title="title"
+          item-value="value"
+          label="Property Type"
+          prepend-inner-icon="mdi-home"
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          class="custom-input top-filter"
+          @update:model-value="filterProperties"
+        />
+      </v-col>
+
+      <!-- Flagged filter -->
+      <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-select
+          v-model="flaggedFilter"
+          :items="flaggedFilterOptions"
+          item-title="title"
+          item-value="value"
+          label="Flagged"
+          density="comfortable"
+          variant="outlined"
+          hide-details
+          class="custom-input top-filter"
+          @update:model-value="filterProperties"
+        />
+      </v-col>
 
         
 
@@ -252,6 +268,7 @@ export default {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
       propertyTypeFilter: null,
+      flaggedFilter: 'all',
       filteredProperties: [],
       selectedAgency: null,
       agencies: [],
@@ -265,24 +282,19 @@ export default {
         { title: "TENANT REF", key: "tenantRef", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
         { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
-        {
-          title: "LEASE STARTING DATE",
-          key: "leaseStartDate",
-          sortable: true,
-          align: "center",
-        },
-        {
-          title: "LEASE END DATE",
-          key: "leaseEndDate",
-          sortable: true,
-          align: "center",
-        },
-        {
-          title: "MONTHS MISSED",
-          key: "monthsMissed",
-          sortable: true,
-          align: "center",
-        },
+        // {
+        //   title: "LEASE STARTING DATE",
+        //   key: "leaseStartDate",
+        //   sortable: true,
+        //   align: "center",
+        // },
+        // {
+        //   title: "LEASE END DATE",
+        //   key: "leaseEndDate",
+        //   sortable: true,
+        //   align: "center",
+        // },
+
         { title: "Actions", key: "actions", sortable: false, align: "center" },
       ],
     };
@@ -327,6 +339,12 @@ export default {
       return [
         { value: null, title: 'All Types' },
         ...this.getOptions()
+      ];
+    },
+    flaggedFilterOptions() {
+      return [
+        { value: 'all', title: 'All' },
+        { value: 'only', title: 'Only Flagged' }
       ];
     }
   },
@@ -396,12 +414,20 @@ export default {
           monthMatch = propertyMonth === filterMonth;
         }
 
-        return textMatch && propertyTypeMatch && monthMatch;
+        // Flagged filter
+        let flaggedMatch = true;
+        if (this.flaggedFilter === 'only') {
+          flaggedMatch = this.isUnitFlagged(property);
+        }
+
+        return textMatch && propertyTypeMatch && monthMatch && flaggedMatch;
       });
     },
     isUnitFlagged(item) {
       // Prefer ID-based match; fallback to name-based
       if (item?.id && this.flaggedUnitMap[item.id]) return true;
+      // Check boolean flag on unit, if present
+      if (item?.isFlagged === true || item?.isFlagged === 'Yes') return true;
       const name = (item?.unitName || item?.propertyName || '').toLowerCase();
       if (name && this.flaggedUnitNamesMap[name]) return true;
       return false;

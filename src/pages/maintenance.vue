@@ -19,28 +19,13 @@
           />
         </v-col>
 
-        <v-col v-if="!isAgencyUser && !hasCurrentAgency" cols="12" md="3" class="pa-4">
-          <v-select
-            v-model="selectedAgency"
-            :items="agencies"
-            item-title="agencyName"
-            item-value="id"
-            label="Select Agency"
-            prepend-inner-icon="mdi-domain"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-            :loading="agenciesLoading"
-            class="custom-input top-filter"
-            @update:model-value="onAgencyChange"
-          />
-        </v-col>
+        <!-- Agency Select removed for consistent header -->
 
         <v-col cols="12" md="3" class="pa-4">
           <v-text-field
             v-model="monthFilter"
             label="Filter by month"
-         
+
             flat
             density="comfortable"
             variant="outlined"
@@ -51,6 +36,7 @@
             ref="monthInput"
             @input="filterEntries"
             @click:prepend-inner="openMonthPicker"
+            clearable
           />
         </v-col>
 
@@ -66,6 +52,7 @@
             variant="outlined"
             hide-details
             class="custom-input top-filter"
+            :clearable="false"
             @update:model-value="filterEntries"
           />
         </v-col>
@@ -229,13 +216,13 @@ export default {
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
-        { title: "Agency", key: "agencyName", sortable: true },
+        // { title: "Agency", key: "agencyName", sortable: true },
         { title: "Notice Given", key: "noticeGiven", sortable: true, align: "center" },
         { title: "Vacate Date", key: "vacateDate", sortable: true, align: "center" },
         { title: "Contact Number", key: "contactNumber", sortable: true },
-        { title: "Address", key: "address", sortable: true },
+        // { title: "Address", key: "address", sortable: true },
         { title: "Status", key: "status", sortable: true, align: "center" },
-        { title: "Priority", key: "priority", sortable: true, align: "center" },
+        // { title: "Priority", key: "priority", sortable: true, align: "center" },
         { title: "Actions", key: "actions", sortable: false, align: "center" }
       ]
     };
@@ -540,6 +527,10 @@ export default {
 .action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
 
 :deep(.custom-header .v-data-table-header) { background:#000; color:white; }
+
+/* Month input usability */
+.month-input { min-width: 220px; }
+:deep(.month-input .v-field-label) { white-space: nowrap; }
 
 @media(max-width:768px){
   .back-btn { width:140px; height:40px; }

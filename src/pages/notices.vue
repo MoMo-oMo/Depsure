@@ -20,23 +20,7 @@
           />
         </v-col>
 
-        <!-- Agency Select -->
-        <v-col v-if="!isAgencyUser && !hasCurrentAgency" cols="12" md="2" lg="2" class="pa-4">
-          <v-select
-            v-model="selectedAgency"
-            :items="agencies"
-            item-title="agencyName"
-            item-value="id"
-            label="Select Agency"
-            prepend-inner-icon="mdi-domain"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-            :loading="agenciesLoading"
-            class="custom-input top-filter"
-            @update:model-value="onAgencyChange"
-          />
-        </v-col>
+        <!-- Agency Select removed for consistency across pages -->
 
         <!-- Month filter -->
         <v-col cols="12" md="2" lg="3" class="pa-4">
@@ -54,6 +38,7 @@
             ref="monthInput"
             @input="filterProperties"
             @click:prepend-inner="openMonthPicker"
+            clearable
           />
         </v-col>
 
@@ -179,7 +164,7 @@
                   class="action-btn"
                 />
                 <v-btn
-                  v-if="!isSuperAdmin"
+                  v-if="isAgencyUser || userType === 'Admin'"
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
@@ -188,7 +173,7 @@
                   class="action-btn"
                 />
                 <v-btn
-                  v-if="!isSuperAdmin"
+                
                   icon="mdi-delete"
                   size="small"
                   variant="text"
@@ -234,11 +219,10 @@ export default {
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
         { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
-        { title: "LEASE START DATE", key: "leaseStartDate", sortable: true, align: "center" },
-        { title: "NOTICE GIVEN DATE", key: "noticeGivenDate", sortable: true, align: "center" },
+        { title: "NOTICE GIVEN", key: "noticeGivenDate", sortable: true, align: "center" },
         { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
         {
-          title: "MAINTENANCE REQUIRED AFTER INSPECTION YES/NO",
+          title: "MAINTENANCE REQUIRED (YES/NO)",
           key: "maintenanceRequired",
           sortable: true,
           align: "center",
@@ -264,6 +248,10 @@ export default {
       const userType = appStore.currentUser?.userType;
       console.log('Notices - User Type:', userType, 'Is Super Admin:', userType === 'Super Admin');
       return userType === 'Super Admin';
+    },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
     },
     propertyTypeFilterOptions() {
       return [
@@ -578,6 +566,10 @@ export default {
 :deep(.custom-header .v-data-table-header) { background-color:#000 !important; }
 :deep(.custom-header .v-data-table-header th) { background-color:#000 !important; color:white !important; }
 :deep(.custom-header .v-data-table-header .v-data-table-header__content) { color:white !important; }
+
+/* Ensure month input label isn't truncated and calendar is usable */
+.month-input { min-width: 220px; }
+:deep(.month-input .v-field-label) { white-space: nowrap; }
 
 @media (max-width:768px){
   .view-agency-page { padding:10px; }

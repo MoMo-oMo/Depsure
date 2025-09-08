@@ -2,9 +2,9 @@
   <div class="view-agency-page">
     <v-container fluid>
       
-      <!-- Back Button and Add Unit -->
+      <!-- Back Button -->
       <v-row class="mb-4">
-        <v-col cols="6">
+        <v-col cols="12">
           <v-btn
             icon="mdi-arrow-left"
             variant="outlined"
@@ -13,49 +13,6 @@
             class="back-btn"
           >
             Back
-          </v-btn>
-        </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4">
-          <v-text-field
-            v-model="searchQuery"
-            label="Search properties..."
-            prepend-inner-icon="mdi-magnify"
-            flat="true"
-            density="comfortable"
-            variant="outlined"
-            clearable
-            hide-details
-            dense
-            class="custom-input"
-            @input="filterProperties"
-          />
-        </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4">
-          <v-text-field
-            v-model="monthFilter"
-            label="Filter by month"
-            prepend-inner-icon="mdi-calendar"
-            flat="true"
-            density="comfortable"
-            variant="outlined"
-            type="month"
-            hide-details
-            dense
-            class="custom-input top-filter month-input"
-            ref="monthInput"
-            @input="filterProperties"
-            @click:prepend-inner="openMonthPicker"
-          />
-        </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
-          <v-btn
-            icon="mdi-plus"
-            variant="outlined"
-            color="primary"
-            @click="addUnit"
-            class="back-btn"
-          >
-            Add Unit
           </v-btn>
         </v-col>
       </v-row>
@@ -119,62 +76,7 @@
         </v-col>
       </v-row>
 
-      <!-- Search Section -->
- 
-
-      <!-- Properties Table -->
-      <v-row>
-        <v-col cols="12" class="pa-4">
-
-
-              <v-data-table
-                :headers="headers"
-                :items="filteredProperties"
-                :search="searchQuery"
-                class="custom-header"
-                density="comfortable"
-                hover
-              >
-                <template v-slot:item.maintenanceAmount="{ item }">
-                  <span class="font-weight-medium">R{{ item.maintenanceAmount.toLocaleString() }}</span>
-                </template>
-                <template v-slot:item.paidTowardsFund="{ item }">
-                  <span class="font-weight-medium">R{{ item.paidTowardsFund.toLocaleString() }}</span>
-                </template>
-                <template v-slot:item.amountToBePaidOut="{ item }">
-                  <span class="font-weight-medium">R{{ item.amountToBePaidOut.toLocaleString() }}</span>
-                </template>
-                <template v-slot:item.actions="{ item }">
-                  <v-btn
-                    icon="mdi-eye"
-                    size="small"
-                    variant="text"
-                    color="black"
-                    @click="viewProperty(item)"
-                    class="action-btn"
-                  />
-                  <v-btn
-                    icon="mdi-pencil"
-                    size="small"
-                    variant="text"
-                    color="black"
-                    @click="editProperty(item)"
-                    class="action-btn"
-                  />
-                  <v-btn
-                    icon="mdi-delete"
-                    size="small"
-                    variant="text"
-                    color="error"
-                    @click="deleteProperty(item)"
-                    class="action-btn"
-                  />
-                </template>
-              </v-data-table>
-
-
-        </v-col>
-      </v-row>
+      <!-- Info-only: no table or actions below -->
     </v-container>
   </div>
 </template>

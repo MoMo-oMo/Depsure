@@ -41,7 +41,7 @@
 	left: 0;
 	bottom: 0;
 	height: 4px;
-	width: 75%;
+	width: 100%;
 	background-color: #000000;
 	transform: scaleX(0);
 	transform-origin: left center;

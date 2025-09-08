@@ -123,8 +123,8 @@
                 <!-- Notice to Vacate Given -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="unit.noticeToVacateGiven"
-                    label="Notice to Vacate Given"
+                    :model-value="noticeToVacateDisplay"
+                    label="Notice to Vacate"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -142,16 +142,6 @@
                   />
                 </v-col>
 
-                <!-- Notes -->
-                <v-col cols="12">
-                  <v-textarea
-                    :model-value="unit.notes"
-                    label="Additional Notes"
-                    readonly
-                    class="custom-input"
-                    rows="3"
-                  />
-                </v-col>
               </v-row>
             </v-card-text>
           </div>
@@ -174,6 +164,20 @@ export default {
       loading: true,
       error: null,
     };
+  },
+  computed: {
+    noticeToVacateDisplay() {
+      const v = this.unit?.noticeToVacateGiven
+      if (!v) return 'No'
+      // Keep original string or show formatted date appended to Yes
+      try {
+        const d = new Date(v)
+        const pretty = isNaN(d.getTime()) ? v : d.toLocaleDateString()
+        return `Yes - ${pretty}`
+      } catch (_) {
+        return `Yes - ${v}`
+      }
+    }
   },
   async mounted() {
     document.title = "Flagged Unit Details - Depsure";

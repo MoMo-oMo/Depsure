@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="view-maintenance-page">
     <v-container fluid>
       <!-- Back Button -->
@@ -41,7 +41,13 @@
 
           <!-- Maintenance Info -->
           <div v-else class="form-card" elevation="0">
-            <v-card-text>
+            <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
+              <v-tab value="details">Details</v-tab>
+              <v-tab value="notes">Notes</v-tab>
+            </v-tabs>
+            <v-window v-model="activeTab">
+              <v-window-item value="details">
+                <v-card-text>
               <v-row>
                 <!-- Agency -->
                 <v-col cols="12" md="6">
@@ -111,13 +117,24 @@
 
                 <!-- Status -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.status"
-                    label="Maintenance Status"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <template v-if="userType === 'Admin'">
+                    <v-select
+                      v-model="entry.status"
+                      :items="statusOptions"
+                      label="Maintenance Status"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </template>
+                  <template v-else>
+                    <v-text-field
+                      :model-value="entry.status"
+                      label="Maintenance Status"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </template>
                 </v-col>
 
                 <!-- Priority -->
@@ -131,36 +148,16 @@
                   />
                 </v-col>
 
-                <!-- Estimated Cost -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.estimatedCost ? `R${entry.estimatedCost.toLocaleString()}` : 'Not specified'"
-                    label="Estimated Cost"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                <!-- Estimated Cost hidden as non-essential in UI -->
 
                 
 
-                <!-- Notes -->
-                <v-col cols="12">
-                  <v-textarea
-                    :model-value="entry.notes || 'No additional notes'"
-                    label="Additional Notes"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                    rows="3"
-                    auto-grow
-                  />
-                </v-col>
+                <!-- Additional Notes removed (redundant; use Notes tab) -->
 
                 <!-- Created Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : 'Not available'"
+                    :model-value="formatDate(entry.createdAt)"
                     label="Created Date"
                     variant="outlined"
                     readonly
@@ -168,31 +165,32 @@
                   />
                 </v-col>
 
-                <!-- Last Updated -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : 'Not available'"
-                    label="Last Updated"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                <!-- Last Updated hidden as non-essential in UI -->
               </v-row>
             </v-card-text>
-
-            <!-- Action Buttons -->
+            <!-- Action Buttons (Details) -->
             <v-card-actions class="pa-4">
               <v-spacer />
-                             <v-btn
-                 v-if="entry.quoteFileName && entry.quoteFileURL"
-                 color="black"
-                 variant="elevated"
-                 class="view-quote-btn"
-                 @click="showQuoteDialog = true"
-               >
-                 View Quote Instructions
-               </v-btn>
+              <v-btn
+                v-if="userType === 'Admin'"
+                color="black"
+                variant="outlined"
+                class="update-status-btn"
+                :disabled="updatingStatus"
+                :loading="updatingStatus"
+                @click="updateStatus"
+              >
+                Update Status
+              </v-btn>
+              <v-btn
+                v-if="entry.quoteFileName && entry.quoteFileURL"
+                color="black"
+                variant="elevated"
+                class="view-quote-btn"
+                @click="showQuoteDialog = true"
+              >
+                View Quote Instructions
+              </v-btn>
               <v-btn
                 v-if="isAgencyUser || userType === 'Admin'"
                 color="black"
@@ -203,6 +201,62 @@
                 Edit Entry
               </v-btn>
             </v-card-actions>
+              </v-window-item>
+              <v-window-item value="notes">
+                <v-card-text>
+            <!-- Notes (Chat-like) -->
+            <v-divider class="my-4" />
+            <div class="notes-section">
+              <h3 class="mb-2">Notes</h3>
+                    <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
+                      <div
+                        v-for="(n, idx) in sortedNotes"
+                        :key="idx"
+                        class="chat-message"
+                        :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
+                      >
+                        <div class="chat-avatar">{{ noteInitials(n.authorName) }}</div>
+                        <div class="chat-bubble">
+                          <div class="chat-header">
+                            <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
+                            <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
+                          </div>
+                          <div class="chat-text">{{ n.text }}</div>
+                        </div>
+                      </div>
+                    </div>
+              <div v-else class="text-medium-emphasis">No notes yet.</div>
+
+              <!-- Append note input (Admin and Agency) -->
+                    <div v-if="userType === 'Admin' || userType === 'Super Admin' || isAgencyUser" class="chat-input mt-4">
+                      <v-textarea
+                        v-model="newNote"
+                        placeholder="Write a note..."
+                        variant="outlined"
+                        class="custom-input"
+                  :counter="500"
+                  maxlength="500"
+                  rows="2"
+                  auto-grow
+                />
+                <div class="d-flex justify-end mt-2">
+                  <v-btn
+                    color="black"
+                    variant="elevated"
+                    :disabled="!newNote || savingNote"
+                    :loading="savingNote"
+                    @click="appendNote"
+                  >
+                    <v-icon start>mdi-send</v-icon>
+                    Send
+                  </v-btn>
+                </div>
+              </div>
+            </div>
+
+                </v-card-text>
+              </v-window-item>
+            </v-window>
           </div>
         </v-col>
       </v-row>
@@ -256,6 +310,14 @@
             >
               Open in New Tab
             </button>
+            <a
+              v-if="entry.quoteFileURL"
+              class="quote-button primary"
+              :href="entry.quoteFileURL"
+              :download="entry.quoteFileName || 'instructions.pdf'"
+            >
+              Download
+            </a>
           </div>
         </div>
       </div>
@@ -266,7 +328,7 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 
 export default {
@@ -283,15 +345,32 @@ export default {
     userType() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType;
+    },
+    currentUserId() { const appStore = useAppStore(); return appStore.userId; },
+    statusOptions() {
+      return ['Active', 'Pending', 'Completed']
+    },
+    sortedNotes() {
+      const notes = this.entry?.notesLog || []
+      // Oldest at top, newest at bottom
+      return [...notes].sort((a,b) => {
+        const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
+        const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
+        return ad - bd
+      })
     }
   },
   data() {
     return {
+      activeTab: 'details',
       entry: {},
       loading: true,
       error: null,
       showQuoteDialog: false,
-      zoomLevel: 1
+      zoomLevel: 1,
+      newNote: '',
+      savingNote: false,
+      updatingStatus: false
     };
   },
   async mounted() {
@@ -300,6 +379,24 @@ export default {
     this.loadEntry(entryId);
   },
   methods: {
+    scrollNotesToBottom() {
+      this.$nextTick(() => {
+        const el = this.$refs.chatLog
+        if (el && el.scrollHeight != null) {
+          el.scrollTop = el.scrollHeight
+        }
+      })
+    },
+    formatDate(value) {
+      if (!value) return 'Not available';
+      try {
+        const d = value?.toDate ? value.toDate() : new Date(value);
+        return d.toLocaleDateString();
+      } catch (_) {
+        return String(value);
+      }
+    },
+    noteInitials(name) { if (!name) return '?'; const parts = String(name).trim().split(/\s+/); const a = parts[0]?.[0] || ''; const b = parts[1]?.[0] || ''; return (a + b).toUpperCase() || a.toUpperCase() || '?'; },
     async loadEntry(entryId) {
       try {
         const docRef = doc(db, 'maintenance', entryId);
@@ -319,12 +416,14 @@ export default {
             priority: data.priority || 'Medium',
             estimatedCost: data.estimatedCost || 0,
             notes: data.notes || '',
+            notesLog: data.notesLog || [],
             quoteFileName: data.quoteFileName || '',
             quoteFileURL: data.quoteFileURL || '',
             createdAt: data.createdAt?.toDate() || data.createdAt,
             updatedAt: data.updatedAt?.toDate() || data.updatedAt
           };
           this.loading = false;
+          this.scrollNotesToBottom()
         } else {
           this.error = "Maintenance entry not found";
           this.loading = false;
@@ -343,6 +442,52 @@ export default {
     openInNewTab() {
       if (this.entry.quoteFileURL) {
         window.open(this.entry.quoteFileURL, '_blank');
+      }
+    },
+    async updateStatus() {
+      if (this.userType !== 'Admin') return
+      try {
+        this.updatingStatus = true
+        const docRef = doc(db, 'maintenance', this.entry.id)
+        await updateDoc(docRef, { status: this.entry.status, updatedAt: serverTimestamp() })
+      } catch (error) {
+        console.error('Error updating status:', error)
+        this.showErrorDialog('Failed to update status. Please try again.', 'Error', 'OK')
+      } finally {
+        this.updatingStatus = false
+      }
+    },
+    formatNoteDate(ts) {
+      try {
+        if (!ts) return 'Just now'
+        const d = ts.toDate ? ts.toDate() : new Date(ts)
+        return d.toLocaleString()
+      } catch (_) { return String(ts) }
+    },
+    async appendNote() {
+      if (!this.newNote) return
+      try {
+        this.savingNote = true
+        const appStore = useAppStore()
+        const note = {
+          text: this.newNote,
+          authorId: appStore.userId,
+          authorName: appStore.userName,
+          authorType: appStore.userType,
+          // Use client time to avoid FieldValue inside array
+          timestamp: new Date()
+        }
+        const docRef = doc(db, 'maintenance', this.entry.id)
+        await updateDoc(docRef, { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        // Optimistic UI update (append to bottom)
+        this.entry.notesLog = [ ...(this.entry.notesLog || []), { ...note } ]
+        this.scrollNotesToBottom()
+        this.newNote = ''
+      } catch (error) {
+        console.error('Error appending note:', error)
+        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
+      } finally {
+        this.savingNote = false
       }
     },
     
@@ -425,6 +570,20 @@ export default {
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
+
+/* Chat-like notes styling (structured like example) */
+.notes-section { margin-top: 8px; }
+.chat-log { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding: 8px 0; }
+.chat-message { display: flex; align-items: flex-end; gap: 8px; }
+.chat-message.mine { flex-direction: row-reverse; }
+.chat-avatar { width: 28px; height: 28px; border-radius: 50%; background: #6b7280; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.chat-bubble { max-width: 75%; background: #3a3f44; color: #fff; border-radius: 10px; padding: 8px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+.chat-message.mine .chat-bubble { background: #000; }
+.chat-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.chat-author { font-weight: 700; font-size: 0.8rem; opacity: 0.95; }
+.chat-time { font-size: 0.7rem; opacity: 0.7; margin-left: 8px; }
+.chat-text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.35; }
+.chat-input :deep(.v-field__input) { min-height: 44px; }
 
 .edit-btn {
   width: 160px;
@@ -707,3 +866,8 @@ export default {
   }
 }
 </style>
+
+
+
+
+

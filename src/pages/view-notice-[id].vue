@@ -99,6 +99,30 @@
                 </v-col>
               </v-row>
             </v-card-text>
+
+            <!-- Action Buttons -->
+            <v-card-actions class="pa-4">
+              <v-spacer />
+              <v-btn
+                v-if="isAgencyUser || userType === 'Admin'"
+                color="black"
+                variant="elevated"
+                class="edit-btn"
+                @click="$router.push(`/edit-notice-${notice.id}`)"
+              >
+                Edit Notice
+              </v-btn>
+              <v-btn
+                v-if="isAgencyUser || userType === 'Admin'"
+                color="error"
+                variant="text"
+                class="delete-btn"
+                @click="deleteNotice"
+              >
+                <v-icon start>mdi-delete</v-icon>
+                Delete
+              </v-btn>
+            </v-card-actions>
           </div>
         </v-col>
       </v-row>
@@ -107,8 +131,10 @@
 </template>
 
 <script>
+import { useCustomDialogs } from '@/composables/useCustomDialogs'
+import { useAppStore } from '@/stores/app'
 import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, deleteDoc } from 'firebase/firestore'
 
 export default {
   name: "ViewNoticePage",
@@ -125,6 +151,16 @@ export default {
       loading: true,
       error: null,
     };
+  },
+  computed: {
+    isAgencyUser() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Agency';
+    },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
+    }
   },
   async mounted() {
     document.title = "Notice Details - Depsure";
@@ -165,6 +201,27 @@ export default {
         this.loading = false;
       }
     },
+    async deleteNotice() {
+      const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
+      try {
+        await showConfirmDialog({
+          title: 'Delete notice?',
+          message: `Are you sure you want to delete notice for ${this.notice.unitName}?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+      try {
+        await deleteDoc(doc(db, 'notices', this.notice.id))
+        showSuccessDialog('Notice deleted successfully!', 'Success!', 'Continue', '/notices')
+      } catch (error) {
+        console.error('Error deleting notice:', error)
+        showErrorDialog(`Failed to delete notice: ${error.message}`, 'Error', 'OK')
+      }
+    }
   },
 };
 </script>
