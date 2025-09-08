@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/active-units')"
+            @click="$router.push('/agencies')"
             class="back-btn"
           >
             Back
@@ -41,8 +41,10 @@
             type="month"
             hide-details
             dense
-            class="custom-input"
+            class="custom-input top-filter month-input"
+            ref="monthInput"
             @input="filterProperties"
+            @click:prepend-inner="openMonthPicker"
           />
         </v-col>
         <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
@@ -89,23 +91,27 @@
                   <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ agency.location || 'Location not specified' }}</span>
+                      <span>{{ agency.address || 'Address not provided' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ agency.establishedYear || 'Year not specified' }}</span>
+                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
+                      <span>Reg No: {{ agency.regNo || '—' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ agency.numberOfProperties || 0 }} Properties</span>
+                      <v-icon icon="mdi-account" class="mr-2 text-white" />
+                      <span>Primary Contact: {{ agency.primaryContactName || 'N/A' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ agency.rating || 'Not rated' }}</span>
+                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                      <span>{{ agency.contactNumber || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-email" class="mr-2 text-white" />
+                      <span>{{ agency.email || 'N/A' }}</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black">{{ agency.agencyDescription || agency.agencyTagline || 'No description available' }}</p>
+                  <p class="agency-description-black">{{ agency.notes || 'No notes available' }}</p>
                 </v-card-text>
               </v-col>
             </v-row>
@@ -291,6 +297,13 @@ export default {
     }
   },
   methods: {
+    openMonthPicker() {
+      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      if (el) {
+        if (typeof el.showPicker === 'function') el.showPicker();
+        else el.focus();
+      }
+    },
     getCurrentMonth() {
       const now = new Date();
       const year = now.getFullYear();

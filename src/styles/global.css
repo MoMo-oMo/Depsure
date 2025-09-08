@@ -11,4 +11,29 @@ html, body, #app {
 	font-family: var(--app-font-family) !important;
 }
 
+/* Top filter controls: enforce consistent height, alignment, spacing */
+.top-filter .v-field {
+  min-height: 44px !important;
+  height: 44px !important;
+  align-items: center !important;
+}
+
+.top-filter .v-field__input {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+.top-filter .v-field__append-inner,
+.top-filter .v-field__prepend-inner {
+  align-self: center !important;
+}
+
+/* Month field width so labels like "September 2025" don’t truncate */
+.month-input .v-field__input {
+  min-width: 200px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 

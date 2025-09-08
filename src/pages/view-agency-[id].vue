@@ -2,58 +2,17 @@
   <div class="view-agency-page">
     <v-container fluid>
       
-      <!-- Back Button and Add Unit -->
+      <!-- Back Button only -->
       <v-row class="mb-4">
-        <v-col cols="6">
+        <v-col cols="12" md="3">
           <v-btn
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/active-units')"
+            @click="$router.push('/agencies')"
             class="back-btn"
           >
             Back
-          </v-btn>
-        </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4">
-          <v-text-field
-            v-model="searchQuery"
-            label="Search properties..."
-            prepend-inner-icon="mdi-magnify"
-            flat="true"
-            density="comfortable"
-            variant="outlined"
-            clearable
-            hide-details
-            dense
-            class="custom-input"
-            @input="filterProperties"
-          />
-        </v-col>
-                 <v-col cols="12" md="2" lg="2" class="pa-4">
-           <v-text-field
-             v-model="monthFilter"
-             label="Filter by creation month"
-             prepend-inner-icon="mdi-calendar"
-             flat="true"
-             density="comfortable"
-             variant="outlined"
-             type="month"
-             hide-details
-             dense
-             class="custom-input"
-             @input="filterProperties"
-           />
-         </v-col>
-        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
-          <v-btn
-            icon="mdi-plus"
-            variant="outlined"
-            color="primary"
-            @click="addUnit"
-            class="back-btn"
-          >
-            Add Unit
           </v-btn>
         </v-col>
       </v-row>
@@ -132,27 +91,31 @@
               </v-col>
               <v-col cols="12" md="9">
                 <v-card-title class="text-white text-h4 mb-2">{{ agency.agencyName }}</v-card-title>
-                <v-card-text class="text-white">
-                  <div class="agency-details-black">
+               <v-card-text class="text-white">
+                 <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ agency.location || 'Location not specified' }}</span>
+                      <span>{{ agency.address || 'Address not provided' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ agency.establishedYear || 'Year not specified' }}</span>
+                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
+                      <span>Reg No: {{ agency.regNo || '—' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ agency.numberOfProperties || 0 }} Properties</span>
+                      <v-icon icon="mdi-account" class="mr-2 text-white" />
+                      <span>Primary Contact: {{ agency.primaryContactName || 'N/A' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ agency.rating || 'Not rated' }}</span>
+                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                      <span>{{ agency.contactNumber || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-email" class="mr-2 text-white" />
+                      <span>{{ agency.email || 'N/A' }}</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black">{{ agency.agencyDescription || agency.agencyTagline || 'No description available' }}</p>
+                  <p class="agency-description-black">{{ agency.notes || 'No notes available' }}</p>
                 </v-card-text>
               </v-col>
             </v-row>
@@ -163,67 +126,14 @@
       <!-- Search Section -->
  
 
-      <!-- Properties Table -->
-      <v-row>
-        <v-col cols="12" class="pa-4">
-          <!-- Properties Table -->
-          <v-data-table
-            :headers="headers"
-            :items="filteredProperties"
-            :search="searchQuery"
-            class="custom-header"
-            density="comfortable"
-            hover
-            :loading="propertiesLoading"
-            no-data-text="No data available"
-          >
-                <template v-slot:item.maintenanceAmount="{ item }">
-                  <span class="font-weight-medium">R{{ item.maintenanceAmount.toLocaleString() }}</span>
-                </template>
-                <template v-slot:item.paidTowardsFund="{ item }">
-                  <span class="font-weight-medium">R{{ item.paidTowardsFund.toLocaleString() }}</span>
-                </template>
-                <template v-slot:item.amountToBePaidOut="{ item }">
-                  <span class="font-weight-medium">R{{ item.amountToBePaidOut.toLocaleString() }}</span>
-                </template>
-                <template v-slot:item.actions="{ item }">
-                  <v-btn
-                    icon="mdi-eye"
-                    size="small"
-                    variant="text"
-                    color="black"
-                    @click="viewProperty(item)"
-                    class="action-btn"
-                  />
-                  <v-btn
-                    icon="mdi-pencil"
-                    size="small"
-                    variant="text"
-                    color="black"
-                    @click="editProperty(item)"
-                    class="action-btn"
-                  />
-                  <v-btn
-                    icon="mdi-delete"
-                    size="small"
-                    variant="text"
-                    color="error"
-                    @click="deleteProperty(item)"
-                    class="action-btn"
-                  />
-                </template>
-              </v-data-table>
-
-
-        </v-col>
-      </v-row>
+      <!-- Info-only: no table or actions below -->
     </v-container>
   </div>
 </template>
 
 <script>
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 
@@ -235,37 +145,18 @@ export default {
   },
   data() {
     return {
-      searchQuery: '',
-      monthFilter: this.getCurrentMonth(),
-      filteredProperties: [],
       agency: {},
-      loading: false,
-      properties: [],
-      propertiesLoading: false,
-      headers: [
-        { title: 'TENANT REF', key: 'tenantRef', sortable: true },
-        { title: 'PROPERTY NAME', key: 'propertyName', sortable: true },
-        { title: 'LEASE STARTING DATE', key: 'leaseStartDate', sortable: true, align: 'center' },
-        { title: 'MONTHS MISSED', key: 'monthsMissed', sortable: true, align: 'center' },
-        { title: 'MAINTENANCE AMOUNT', key: 'maintenanceAmount', sortable: true, align: 'end' },
-        { title: 'PAID OUT', key: 'paidOut', sortable: true, align: 'center' },
-        { title: 'Actions', key: 'actions', sortable: false, align: 'center' }
-      ]
-    }
-  },
-  computed: {
-    activeProperties() {
-      return this.properties.filter(p => p.status === 'Active').length;
-    },
-    soldProperties() {
-      return this.properties.filter(p => p.status === 'Sold').length;
-    },
-    isSuperAdmin() {
-      const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Super Admin';
+      loading: false
     }
   },
   methods: {
+    openMonthPicker() {
+      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      if (el) {
+        if (typeof el.showPicker === 'function') el.showPicker();
+        else el.focus();
+      }
+    },
     getCurrentMonth() {
       const now = new Date();
       const year = now.getFullYear();

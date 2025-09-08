@@ -15,44 +15,30 @@
             clearable
             hide-details
             dense
-            class="custom-input"
+            class="custom-input top-filter"
             @input="filterProperties"
           />
         </v-col>
 
-        <!-- Agency Select -->
-        <v-col v-if="!isAgencyUser" cols="12" md="2" lg="2" class="pa-4">
-          <v-select
-            v-model="selectedAgency"
-            :items="agencies"
-            item-title="agencyName"
-            item-value="id"
-            label="Select Agency"
-            prepend-inner-icon="mdi-domain"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-            clearable
-            :loading="agenciesLoading"
-            class="custom-input"
-            @update:model-value="onAgencyChange"
-          />
-        </v-col>
+        
 
         <!-- Month filter -->
-        <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-col cols="12" md="2" lg="3" class="pa-4">
           <v-text-field
             v-model="monthFilter"
             label="Filter by month"
-            prepend-inner-icon="mdi-calendar"
+            
             flat="true"
             density="comfortable"
             variant="outlined"
             type="month"
             hide-details
             dense
-            class="custom-input"
+            class="custom-input top-filter month-input"
+            ref="monthInput"
             @input="filterProperties"
+            @click:prepend-inner="openMonthPicker"
+            clearable
           />
         </v-col>
 
@@ -68,11 +54,12 @@
             density="comfortable"
             variant="outlined"
             hide-details
-            clearable
-            class="custom-input"
+            class="custom-input top-filter"
             @update:model-value="filterProperties"
           />
         </v-col>
+
+        
 
         <!-- Add Unit Button - Only visible to Super Admin -->
         <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
@@ -110,21 +97,32 @@
                   <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.location || 'Location not specified' }}</span>
+                      <span>{{ selectedAgencyDetails.address || 'Address not provided' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ selectedAgencyDetails.establishedYear || 'Year not specified' }}</span>
+                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
+                      <span>Reg No: {{ selectedAgencyDetails.regNo || '—' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-account" class="mr-2 text-white" />
+                      <span>Primary Contact: {{ selectedAgencyDetails.primaryContactName || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                      <span>{{ selectedAgencyDetails.contactNumber || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-email" class="mr-2 text-white" />
+                      <span>{{ selectedAgencyDetails.email || 'N/A' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
                       <span>{{ activeUnitsCount }} Properties</span>
                     </div>
-                    
                   </div>
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
-                    {{ selectedAgencyDetails.agencyDescription || selectedAgencyDetails.agencyTagline || 'No description available' }}
+                    {{ selectedAgencyDetails.notes || 'No notes available' }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -172,6 +170,10 @@
               >
                 {{ getLabel(item.propertyType) }}
               </v-chip>
+            </template>
+            <!-- Truncate long property names for alignment -->
+            <template v-slot:item.propertyName="{ item }">
+              <span class="truncate-cell" :title="item.propertyName">{{ item.propertyName }}</span>
             </template>
             <template v-slot:item.paidOut="{ item }">
               <v-chip :color="item.paidOut === 'Yes' ? 'success' : 'error'" size="small">
@@ -270,23 +272,30 @@ export default {
           align: "center",
         },
         {
+          title: "LEASE END DATE",
+          key: "leaseEndDate",
+          sortable: true,
+          align: "center",
+        },
+        {
           title: "MONTHS MISSED",
           key: "monthsMissed",
           sortable: true,
           align: "center",
         },
-        {
-          title: "MAINTENANCE AMOUNT",
-          key: "maintenanceAmount",
-          sortable: true,
-          align: "end",
-        },
-        { title: "PAID OUT", key: "paidOut", sortable: true, align: "center" },
         { title: "Actions", key: "actions", sortable: false, align: "center" },
       ],
     };
   },
   computed: {
+    hasCurrentAgency() {
+      const appStore = useAppStore();
+      return !!appStore.currentAgency;
+    },
+    globalAgencyId() {
+      const appStore = useAppStore();
+      return appStore.currentAgency?.id || null;
+    },
     selectedAgencyDetails() {
       return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
@@ -322,6 +331,13 @@ export default {
     }
   },
   methods: {
+    openMonthPicker() {
+      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      if (el) {
+        if (typeof el.showPicker === 'function') el.showPicker();
+        else el.focus();
+      }
+    },
     getCurrentMonth() {
       const now = new Date();
       const year = now.getFullYear();
@@ -380,9 +396,9 @@ export default {
           monthMatch = propertyMonth === filterMonth;
         }
 
-      return textMatch && propertyTypeMatch && monthMatch;
-    });
-  },
+        return textMatch && propertyTypeMatch && monthMatch;
+      });
+    },
     isUnitFlagged(item) {
       // Prefer ID-based match; fallback to name-based
       if (item?.id && this.flaggedUnitMap[item.id]) return true;
@@ -634,6 +650,23 @@ export default {
       this.$router.push('/add-unit');
     },
   },
+  watch: {
+    // React to global agency scope changes
+    globalAgencyId: {
+      immediate: false,
+      handler(newId, oldId) {
+        if (newId !== oldId) {
+          this.selectedAgency = newId || null;
+          if (this.isAgencyUser) {
+            this.fetchProperties();
+          } else {
+            this.fetchProperties(newId || undefined);
+            if (this.isSuperAdmin) this.fetchFlaggedUnits(newId || undefined);
+          }
+        }
+      }
+    }
+  },
   async mounted() {
     document.title = "Active Units - Depsure";
     
@@ -645,9 +678,16 @@ export default {
       // Agency users will automatically get their own units
       await this.fetchProperties();
     } else {
-      // Super Admin/Admin users get all properties initially
-      await this.fetchProperties();
-      if (this.isSuperAdmin) await this.fetchFlaggedUnits(this.selectedAgency);
+      // Super Admin/Admin users: if a global agency is selected, scope to it
+      if (this.globalAgencyId) {
+        this.selectedAgency = this.globalAgencyId;
+        await this.fetchProperties(this.globalAgencyId);
+        if (this.isSuperAdmin) await this.fetchFlaggedUnits(this.globalAgencyId);
+      } else {
+        // Otherwise load all
+        await this.fetchProperties();
+        if (this.isSuperAdmin) await this.fetchFlaggedUnits(this.selectedAgency);
+      }
     }
   },
 };
@@ -736,6 +776,21 @@ export default {
 
 .search-field {
   max-width: 300px;
+}
+
+/* Truncate long table cell values without breaking layout */
+.truncate-cell {
+  display: inline-block;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* Avoid month input truncation */
+.month-input :deep(input) {
+  min-width: 160px;
 }
 
 /* Action Button Styling */

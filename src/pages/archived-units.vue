@@ -32,13 +32,13 @@
             clearable
             hide-details
             dense
-            class="custom-input"
+            class="custom-input top-filter"
             @input="filterProperties"
           />
         </v-col>
 
         <!-- Agency Select -->
-        <v-col v-if="!isAgencyUser" cols="12" md="2" lg="2" class="pa-4">
+        <v-col v-if="!isAgencyUser && !hasCurrentAgency" cols="12" md="2" lg="2" class="pa-4">
           <v-select
             v-model="selectedAgency"
             :items="agencies"
@@ -49,9 +49,8 @@
             density="comfortable"
             variant="outlined"
             hide-details
-            clearable
             :loading="agenciesLoading"
-            class="custom-input"
+            class="custom-input top-filter"
             @update:model-value="onAgencyChange"
           />
         </v-col>
@@ -68,8 +67,10 @@
             type="month"
             hide-details
             dense
-            class="custom-input"
+            class="custom-input top-filter month-input"
+            ref="monthInput"
             @input="filterProperties"
+            @click:prepend-inner="openMonthPicker"
           />
         </v-col>
 
@@ -85,8 +86,7 @@
             density="comfortable"
             variant="outlined"
             hide-details
-            clearable
-            class="custom-input"
+            class="custom-input top-filter"
             @update:model-value="filterProperties"
           />
         </v-col>
@@ -128,11 +128,23 @@
                   <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.location || 'Location not specified' }}</span>
+                      <span>{{ selectedAgencyDetails.address || 'Address not provided' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ selectedAgencyDetails.establishedYear || 'Year not specified' }}</span>
+                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
+                      <span>Reg No: {{ selectedAgencyDetails.regNo || '—' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-account" class="mr-2 text-white" />
+                      <span>Primary Contact: {{ selectedAgencyDetails.primaryContactName || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                      <span>{{ selectedAgencyDetails.contactNumber || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-email" class="mr-2 text-white" />
+                      <span>{{ selectedAgencyDetails.email || 'N/A' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
@@ -141,7 +153,7 @@
                   </div>
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
-                    {{ selectedAgencyDetails.agencyDescription || selectedAgencyDetails.agencyTagline || 'No description available' }}
+                    {{ selectedAgencyDetails.notes || 'No notes available' }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -276,6 +288,10 @@ export default {
     }
   },
   computed: {
+    hasCurrentAgency() {
+      const appStore = useAppStore();
+      return !!appStore.currentAgency;
+    },
     selectedAgencyDetails() {
       return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
@@ -296,6 +312,13 @@ export default {
     }
   },
   methods: {
+    openMonthPicker() {
+      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      if (el) {
+        if (typeof el.showPicker === 'function') el.showPicker();
+        else el.focus();
+      }
+    },
     async refreshActiveUnitsCount(agencyId = null) {
       try {
         const currentUser = this.appStore.currentUser

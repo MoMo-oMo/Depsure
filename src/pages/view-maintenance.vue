@@ -33,24 +33,32 @@
                   <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ agencyDetails.location }}</span>
+                      <span>{{ agencyDetails.address || 'Address not provided' }}</span>
                     </div>
                     <div class="detail-item-black">
-                      <v-icon icon="mdi-calendar" class="mr-2 text-white" />
-                      <span>Established: {{ agencyDetails.established }}</span>
+                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
+                      <span>Reg No: {{ agencyDetails.regNo || '—' }}</span>
                     </div>
                     <div class="detail-item-black">
+                      <v-icon icon="mdi-account" class="mr-2 text-white" />
+                      <span>Primary Contact: {{ agencyDetails.primaryContactName || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                      <span>{{ agencyDetails.contactNumber || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black">
+                      <v-icon icon="mdi-email" class="mr-2 text-white" />
+                      <span>{{ agencyDetails.email || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item-black" v-if="agencyDetails.properties != null">
                       <v-icon icon="mdi-home" class="mr-2 text-white" />
                       <span>{{ agencyDetails.properties }} Properties</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-star" class="mr-2 text-white" />
-                      <span>Rating: {{ agencyDetails.rating }}/5</span>
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">
-                    {{ agencyDetails.description }}
+                    {{ agencyDetails.notes || 'No notes available' }}
                   </p>
                 </v-card-text>
               </v-col>

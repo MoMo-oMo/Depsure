@@ -28,6 +28,7 @@ declare module 'vue-router/auto-routes' {
     '/add-unit': RouteRecordInfo<'/add-unit', '/add-unit', Record<never, never>, Record<never, never>>,
     '/add-user': RouteRecordInfo<'/add-user', '/add-user', Record<never, never>, Record<never, never>>,
     '/add-vacancy': RouteRecordInfo<'/add-vacancy', '/add-vacancy', Record<never, never>, Record<never, never>>,
+    '/agencies': RouteRecordInfo<'/agencies', '/agencies', Record<never, never>, Record<never, never>>,
     '/agency': RouteRecordInfo<'/agency', '/agency', Record<never, never>, Record<never, never>>,
     '/archived-units': RouteRecordInfo<'/archived-units', '/archived-units', Record<never, never>, Record<never, never>>,
     '/audit-trail': RouteRecordInfo<'/audit-trail', '/audit-trail', Record<never, never>, Record<never, never>>,

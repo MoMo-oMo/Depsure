@@ -150,7 +150,7 @@ export default {
               { 
                 loginMethod: 'email',
                 userType: userData.userType,
-                redirectPath: userData.userType === 'Agency' ? '/active-units' : '/user-management'
+                redirectPath: '/agencies'
               },
               'USER',
               user.uid
@@ -159,12 +159,8 @@ export default {
             console.log('User logged in:', userInfo);
             this.showSuccess('Login successful!');
             
-            // Redirect based on user type
-            if (userData.userType === 'Agency') {
-              this.$router.push('/active-units');
-            } else {
-              this.$router.push('/user-management');
-            }
+            // Always land on Agencies after login
+            this.$router.push('/agencies');
           } else {
             // User exists in Auth but not in Firestore
             this.showError('User profile not found. Please contact administrator.');

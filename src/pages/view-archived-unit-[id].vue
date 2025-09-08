@@ -41,10 +41,19 @@
 
           <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
-            <v-tabs v-model="activeTab" class="property-tabs">
-              <v-tab value="details">Property Details</v-tab>
-              <v-tab value="archive">Archive Information</v-tab>
-              <v-tab value="documents">Documents</v-tab>
+            <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
+              <v-tab value="details">
+                <v-icon start size="small">mdi-home-outline</v-icon>
+                Property Details
+              </v-tab>
+              <v-tab value="archive">
+                <v-icon start size="small">mdi-archive-outline</v-icon>
+                Archive Information
+              </v-tab>
+              <v-tab value="documents">
+                <v-icon start size="small">mdi-file-document-outline</v-icon>
+                Documents
+              </v-tab>
             </v-tabs>
 
             <!-- Property Details Tab -->
@@ -267,8 +276,19 @@
                         <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                         Quotes
                       </h4>
-                      <div v-if="property.quotes && property.quotes.length > 0" class="document-list">
-                        <div v-for="(quote, index) in property.quotes" :key="index" class="document-item">
+                      <div class="doc-filter-row" v-if="quoteMonthOptions.length > 0">
+                        <v-select
+                          v-model="selectedQuotesMonth"
+                          :items="['Latest', ...quoteMonthOptions]"
+                          label="Month"
+                          hide-details
+                          density="compact"
+                          variant="outlined"
+                          class="doc-month-select"
+                        />
+                      </div>
+                      <div v-if="filteredQuotes.length > 0" class="document-list">
+                        <div v-for="(quote, index) in filteredQuotes" :key="index" class="document-item">
                           <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                           <span class="document-name">{{ quote.fileName }}</span>
                           <v-btn
@@ -294,8 +314,19 @@
                         <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
                         Inspections
                       </h4>
-                      <div v-if="property.inspections && property.inspections.length > 0" class="document-list">
-                        <div v-for="(inspection, index) in property.inspections" :key="index" class="document-item">
+                      <div class="doc-filter-row" v-if="inspectionMonthOptions.length > 0">
+                        <v-select
+                          v-model="selectedInspectionsMonth"
+                          :items="['Latest', ...inspectionMonthOptions]"
+                          label="Month"
+                          hide-details
+                          density="compact"
+                          variant="outlined"
+                          class="doc-month-select"
+                        />
+                      </div>
+                      <div v-if="filteredInspections.length > 0" class="document-list">
+                        <div v-for="(inspection, index) in filteredInspections" :key="index" class="document-item">
                           <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
                           <span class="document-name">{{ inspection.fileName }}</span>
                           <v-btn
@@ -321,8 +352,19 @@
                         <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
                         Invoices
                       </h4>
-                      <div v-if="property.invoices && property.invoices.length > 0" class="document-list">
-                        <div v-for="(invoice, index) in property.invoices" :key="index" class="document-item">
+                      <div class="doc-filter-row" v-if="invoiceMonthOptions.length > 0">
+                        <v-select
+                          v-model="selectedInvoicesMonth"
+                          :items="['Latest', ...invoiceMonthOptions]"
+                          label="Month"
+                          hide-details
+                          density="compact"
+                          variant="outlined"
+                          class="doc-month-select"
+                        />
+                      </div>
+                      <div v-if="filteredInvoices.length > 0" class="document-list">
+                        <div v-for="(invoice, index) in filteredInvoices" :key="index" class="document-item">
                           <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
                           <span class="document-name">{{ invoice.fileName }}</span>
                           <v-btn
@@ -451,12 +493,36 @@ export default {
       currentDocumentURL: '',
       currentDocumentName: '',
       zoomLevel: 1,
+      // Document month filters
+      selectedQuotesMonth: 'Latest',
+      selectedInspectionsMonth: 'Latest',
+      selectedInvoicesMonth: 'Latest',
       restoring: false
     }
   },
   computed: {
     propertyTypeLabel() {
       return this.getLabel(this.property.propertyType) || 'Unknown'
+    },
+    // Month option lists per doc type (YYYY-MM strings, newest first)
+    quoteMonthOptions() {
+      return this.buildMonthOptions(this.property?.quotes)
+    },
+    inspectionMonthOptions() {
+      return this.buildMonthOptions(this.property?.inspections)
+    },
+    invoiceMonthOptions() {
+      return this.buildMonthOptions(this.property?.invoices)
+    },
+    // Filtered docs based on selected month or latest
+    filteredQuotes() {
+      return this.filterDocsByMonth(this.property?.quotes, this.selectedQuotesMonth)
+    },
+    filteredInspections() {
+      return this.filterDocsByMonth(this.property?.inspections, this.selectedInspectionsMonth)
+    },
+    filteredInvoices() {
+      return this.filterDocsByMonth(this.property?.invoices, this.selectedInvoicesMonth)
     },
     unitId() {
       return this.$route.params.id
@@ -479,6 +545,43 @@ export default {
     }
   },
   methods: {
+    // Build a descending list of distinct YYYY-MM keys from uploadedAt
+    buildMonthOptions(list) {
+      if (!Array.isArray(list)) return []
+      const keys = new Set()
+      for (const doc of list) {
+        const key = this.getMonthKey(doc?.uploadedAt)
+        if (key) keys.add(key)
+      }
+      return Array.from(keys).sort().reverse()
+    },
+    getMonthKey(ts) {
+      if (!ts) return null
+      try {
+        const d = new Date(ts)
+        if (isNaN(d)) return null
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        return `${y}-${m}`
+      } catch (e) {
+        return null
+      }
+    },
+    latestMonthFor(list) {
+      const opts = this.buildMonthOptions(list)
+      return opts.length ? opts[0] : null
+    },
+    filterDocsByMonth(list, sel) {
+      if (!Array.isArray(list) || list.length === 0) return []
+      // If Latest, find the newest month among items; if none have uploadedAt, return all
+      let target = sel
+      if (!target || target === 'Latest') {
+        const lm = this.latestMonthFor(list)
+        if (lm) target = lm
+        else return list // no dates available; show all
+      }
+      return list.filter(d => this.getMonthKey(d?.uploadedAt) === target)
+    },
     async loadPropertyData(propertyId) {
       this.loading = true;
       this.error = null;
@@ -686,9 +789,35 @@ export default {
   color: #666;
 }
 
+.property-tabs {
+  background: transparent;
+  margin-bottom: 8px;
+}
+
+.property-tabs :deep(.v-slide-group__content) {
+  gap: 8px;
+}
+
+.property-tabs :deep(.v-tab) {
+  font-weight: 600;
+  text-transform: none;
+  color: #4a4a4a;
+  background: #ffffff;
+  border: 1px solid #e6e6e6;
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 16px;
+  transition: all 0.2s ease;
+}
+
+.property-tabs :deep(.v-tab:hover) {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 .property-tabs :deep(.v-tab--selected) {
-  color: #000;
-  background-color: white;
+  color: #ffffff;
+  background-color: var(--v-theme-primary);
+  border-color: var(--v-theme-primary);
 }
 
 /* Restore button styling */
@@ -712,6 +841,15 @@ export default {
 /* Documents section */
 .documents-section {
   padding: 20px 0;
+}
+
+.doc-filter-row {
+  margin: 8px 0 12px 0;
+}
+
+.doc-month-select :deep(.v-field__input) {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .documents-title {

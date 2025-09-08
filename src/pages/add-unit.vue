@@ -28,21 +28,32 @@
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
                 <v-row>
-                  <!-- Agency Selection -->
+                  <!-- Agency Selection / Read-only field when scoped -->
                   <v-col cols="12" md="6">
-                    <v-select
-                      v-model="property.agencyId"
-                      label="Select Agency"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="agencies"
-                      item-title="agencyName"
-                      item-value="id"
-                      :rules="agencyRules"
-                      required
-                      :loading="agenciesLoading"
-                      :disabled="isAgencyUser"
-                    />
+                    <template v-if="hasCurrentAgency || isAgencyUser">
+                      <v-text-field
+                        :model-value="currentAgencyName"
+                        label="Agency"
+                        variant="outlined"
+                        class="custom-input"
+                        readonly
+                        prepend-inner-icon="mdi-domain"
+                      />
+                    </template>
+                    <template v-else>
+                      <v-select
+                        v-model="property.agencyId"
+                        label="Select Agency"
+                        variant="outlined"
+                        class="custom-input"
+                        :items="agencies"
+                        item-title="agencyName"
+                        item-value="id"
+                        :rules="agencyRules"
+                        required
+                        :loading="agenciesLoading"
+                      />
+                    </template>
                   </v-col>
 
                   <!-- Tenant Reference -->
@@ -110,96 +121,7 @@
                     />
                   </v-col>
 
-                  <!-- Lease End Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="property.leaseEndDate"
-                      label="Lease End Date"
-                      variant="outlined"
-                      type="date"
-                      class="custom-input"
-                      :rules="leaseEndDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Months Missed Rent Payment -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="property.monthsMissed"
-                      label="Months Missed Rent Payment"
-                      variant="outlined"
-                      type="number"
-                      class="custom-input"
-                      :rules="monthsMissedRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Maintenance Amount -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="property.maintenanceAmount"
-                      label="Maintenance Amount"
-                      variant="outlined"
-                      type="number"
-                      class="custom-input"
-                      :rules="maintenanceAmountRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Contractor Requested -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="property.contractorRequested"
-                      label="Contractor Requested"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="contractorRequestedRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Paid Towards Fund -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="property.paidTowardsFund"
-                      label="Paid Towards Fund"
-                      variant="outlined"
-                      type="number"
-                      class="custom-input"
-                      :rules="paidTowardsFundRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Amount to be Paid Out -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="property.amountToBePaidOut"
-                      label="Amount to be Paid Out (Inc Interest)"
-                      variant="outlined"
-                      type="number"
-                      class="custom-input"
-                      :rules="amountToBePaidOutRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Paid Out -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="property.paidOut"
-                      label="Paid Out Yes/No"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="paidOutRules"
-                      required
-                    />
-                  </v-col>
+                  <!-- Removed advanced fields from minimal form -->
                 </v-row>
               </v-card-text>
 
@@ -320,6 +242,14 @@ export default {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
     },
+    hasCurrentAgency() {
+      const appStore = useAppStore();
+      return !!appStore.currentAgency;
+    },
+    currentAgencyName() {
+      const appStore = useAppStore();
+      return appStore.currentAgency?.agencyName || '';
+    },
     propertyTypeOptions() {
       return this.getOptions();
     }
@@ -332,12 +262,18 @@ export default {
     // Fetch agencies for dropdown
     await this.fetchAgencies();
     
-    // Check if agencyId is provided in URL params (from view-agency page)
-    const urlParams = new URLSearchParams(window.location.search);
-    const agencyId = urlParams.get('agencyId');
-    if (agencyId) {
-      this.property.agencyId = agencyId;
-      console.log('Pre-selected agency ID:', agencyId);
+    // Scope to selected agency when available (either Agency user or globally selected agency)
+    const appStore = useAppStore();
+    if (appStore.currentAgency?.id) {
+      this.property.agencyId = appStore.currentAgency.id;
+    } else {
+      // Fallback: check if agencyId is provided in URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const agencyId = urlParams.get('agencyId');
+      if (agencyId) {
+        this.property.agencyId = agencyId;
+        console.log('Pre-selected agency ID:', agencyId);
+      }
     }
   },
   methods: {

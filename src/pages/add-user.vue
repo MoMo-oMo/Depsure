@@ -130,7 +130,7 @@
                       <h3 class="section-title">Agency Information</h3>
                     </v-col>
 
-                    <!-- Agency Name -->
+                    <!-- Agency Name (required) -->
                     <v-col cols="12" md="6">
                       <v-text-field
                         v-model="user.agencyName"
@@ -142,56 +142,61 @@
                       />
                     </v-col>
 
-                    <!-- Agency Tagline -->
+                    <!-- Registration Number (optional) -->
                     <v-col cols="12" md="6">
                       <v-text-field
-                        v-model="user.agencyTagline"
-                        label="Agency Tagline"
+                        v-model="user.regNo"
+                        label="Registration Number (optional)"
                         variant="outlined"
                         class="custom-input"
-                        :rules="agencyTaglineRules"
+                      />
+                    </v-col>
+
+                    <!-- Address (required) -->
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="user.address"
+                        label="Address"
+                        variant="outlined"
+                        class="custom-input"
+                        :rules="addressRules"
                         required
                       />
                     </v-col>
 
-                    <!-- Location -->
+                    <!-- Primary Contact Name (required) -->
                     <v-col cols="12" md="6">
                       <v-text-field
-                        v-model="user.location"
-                        label="Location"
+                        v-model="user.primaryContactName"
+                        label="Primary Contact Name"
                         variant="outlined"
                         class="custom-input"
-                        :rules="locationRules"
+                        :rules="primaryContactNameRules"
                         required
                       />
                     </v-col>
 
-                    <!-- Established Year -->
+                    <!-- Contact Number (required; SA format) -->
                     <v-col cols="12" md="6">
                       <v-text-field
-                        v-model.number="user.establishedYear"
-                        label="Established Year"
+                        v-model="user.contactNumber"
+                        label="Contact Number"
                         variant="outlined"
-                        type="number"
                         class="custom-input"
-                        :rules="establishedYearRules"
+                        :rules="phoneRules"
                         required
                       />
                     </v-col>
 
-                    <!-- Removed Number of Properties and Rating: derived elsewhere -->
-
-                    <!-- Agency Description -->
+                    <!-- Notes (optional) -->
                     <v-col cols="12">
                       <v-textarea
-                        v-model="user.agencyDescription"
-                        label="Agency Description"
+                        v-model="user.notes"
+                        label="Notes (optional)"
                         variant="outlined"
                         class="custom-input"
-                        rows="4"
+                        rows="3"
                         auto-grow
-                        :rules="agencyDescriptionRules"
-                        required
                       />
                     </v-col>
                   </template>
@@ -252,12 +257,13 @@ export default {
          userType: '',
          status: 'Active',
          profileImage: null,
-         // Agency fields
+         // Agency fields (mirror View Agency)
          agencyName: '',
-         agencyTagline: '',
-         location: '',
-         establishedYear: new Date().getFullYear(),
-         agencyDescription: ''
+         regNo: '',
+         address: '',
+         primaryContactName: '',
+         contactNumber: '',
+         notes: ''
        },
       valid: true,
       loading: false,
@@ -278,69 +284,27 @@ export default {
         v => !!v || 'Status is required'
       ],
       agencyNameRules: [
-        v => {
-          if (this.user.userType === 'Agency') {
-            return !!v || 'Agency Name is required'
-          }
-          return true
-        },
-        v => {
-          if (this.user.userType === 'Agency' && v) {
-            return v.length >= 3 || 'Agency Name must be at least 3 characters'
-          }
-          return true
-        }
+        v => (this.user.userType !== 'Agency') || (!!v && v.length >= 3) || 'Agency Name is required (min 3 chars)'
       ],
-      agencyTaglineRules: [
-        v => {
-          if (this.user.userType === 'Agency') {
-            return !!v || 'Agency Tagline is required'
-          }
-          return true
-        }
+      addressRules: [
+        v => (this.user.userType !== 'Agency') || !!v || 'Address is required'
       ],
-      locationRules: [
-        v => {
-          if (this.user.userType === 'Agency') {
-            return !!v || 'Location is required'
-          }
-          return true
-        }
+      primaryContactNameRules: [
+        v => (this.user.userType !== 'Agency') || !!v || 'Primary Contact Name is required'
       ],
-      establishedYearRules: [
-        v => {
-          if (this.user.userType === 'Agency') {
-            return !!v || 'Established Year is required'
-          }
-          return true
-        },
-        v => {
-          if (this.user.userType === 'Agency' && v) {
-            return v >= 1900 && v <= new Date().getFullYear() || 'Established Year must be between 1900 and current year'
-          }
-          return true
-        }
-      ],
-      // Removed numberOfPropertiesRules and ratingRules: not collected for Agency
-      agencyDescriptionRules: [
-        v => {
-          if (this.user.userType === 'Agency') {
-            return !!v || 'Agency Description is required'
-          }
-          return true
-        },
-        v => {
-          if (this.user.userType === 'Agency' && v) {
-            return v.length >= 20 || 'Agency Description must be at least 20 characters'
-          }
-          return true
-        }
+      phoneRules: [
+        v => (this.user.userType !== 'Agency') || !!v || 'Contact Number is required',
+        v => (this.user.userType !== 'Agency') || (/^(0[1-9]\d{8}|\+27[1-9]\d{8})$/).test((v||'').replace(/\s|-/g,'')) || 'Enter a valid SA number (0XXXXXXXXX or +27XXXXXXXXX)'
       ]
     }
   },
   mounted() {
     console.log('AddUserPage mounted');
     document.title = 'Add New User - Depsure';
+    // Prefill from query params (e.g., after creating an Agency)
+    const qp = this.$route?.query || {}
+    if (qp.userType) this.user.userType = String(qp.userType)
+    if (qp.agencyName) this.user.agencyName = String(qp.agencyName)
   },
      methods: {
      async saveUser() {
@@ -359,20 +323,21 @@ export default {
            const newUser = userCredential.user;
            
            // Prepare user data for Firestore
-           const userData = {
-             email: this.user.email,
-             userType: this.user.userType,
-             status: this.user.status,
-             createdAt: new Date(),
-             createdBy: this.appStore.userId,
-             profileImageUrl: this.user.profileImage || null,
-             // Agency-specific fields
-             agencyName: this.user.userType === 'Agency' ? this.user.agencyName : null,
-             agencyTagline: this.user.userType === 'Agency' ? this.user.agencyTagline : null,
-             location: this.user.userType === 'Agency' ? this.user.location : null,
-             establishedYear: this.user.userType === 'Agency' ? this.user.establishedYear : null,
-             agencyDescription: this.user.userType === 'Agency' ? this.user.agencyDescription : null
-           };
+            const userData = {
+              email: this.user.email,
+              userType: this.user.userType,
+              status: this.user.status,
+              createdAt: new Date(),
+              createdBy: this.appStore.userId,
+              profileImageUrl: this.user.profileImage || null,
+              // Agency-specific fields
+              agencyName: this.user.userType === 'Agency' ? this.user.agencyName : null,
+              regNo: this.user.userType === 'Agency' ? (this.user.regNo || '') : null,
+              address: this.user.userType === 'Agency' ? this.user.address : null,
+              primaryContactName: this.user.userType === 'Agency' ? this.user.primaryContactName : null,
+              contactNumber: this.user.userType === 'Agency' ? this.user.contactNumber : null,
+              notes: this.user.userType === 'Agency' ? (this.user.notes || '') : null
+            };
            
            // Save user data to Firestore
            await setDoc(doc(db, 'users', newUser.uid), userData);

@@ -2,8 +2,8 @@
   <div class="agency-page">
     <v-container fluid>
       <!-- Search and Add Agency Section -->
-      <v-row class="mb-6">
-        <v-col cols="12" md="6" lg="4">
+      <v-row class="mb-6 align-center">
+        <v-col cols="12" md="4" lg="3">
           <v-text-field
             v-model="searchQuery"
             label="Search agencies..."
@@ -18,7 +18,7 @@
             @input="filterAgencies"
           />
         </v-col>
-        <!-- <v-col cols="12" md="3" lg="2" class="d-flex align-center">
+        <v-col cols="12" md="3" lg="2" class="d-flex justify-end">
           <v-btn
             color="primary"
             variant="elevated"
@@ -28,7 +28,7 @@
           >
             Add Agency
           </v-btn>
-        </v-col> -->
+        </v-col>
       </v-row>
 
       <v-row>
@@ -54,9 +54,9 @@
               v-for="(agency, index) in filteredAgencies"
               :key="agency.id"
               cols="12"
-              sm="6"
+              sm="4"
               md="4"
-              lg="3"
+              lg="4"
             >
               <div class="business-card">
                 <!-- Image section with overlay title -->
@@ -78,23 +78,33 @@
                 <div class="content-section">
                   <!-- Description -->
                   <p class="card-description">
-                    {{ agency.agencyDescription || agency.agencyTagline || 'No description available' }}
+                    {{ agency.notes || 'No description available' }}
                   </p>
 
                   <!-- Action Button -->
-                  <div class="button-container">
-                    <v-btn
-                      color="white"
-                      variant="outlined"
-                      class="action-btn"
-                      @click="viewAgencyDetails(agency)"
-                    >
-                      View Agency
-                    </v-btn>
-                  </div>
+                <div class="button-container">
+                  <v-btn
+                    color="white"
+                    variant="outlined"
+                    class="action-btn btn-view"
+
+                    @click="viewAgencyDetails(agency)"
+                  >
+                    View
+                  </v-btn>
+                  <v-btn
+                    color="white"
+
+                    class="action-btn btn-select"
+
+                    @click="selectAgency(agency)"
+                  >
+                    Select 
+                  </v-btn>
                 </div>
               </div>
-            </v-col>
+            </div>
+          </v-col>
           </v-row>
         </v-col>
       </v-row>
@@ -114,21 +124,71 @@ export default {
       agencies: [],
       searchQuery: '',
       filteredAgencies: [],
-      loading: false
+      loading: false,
+      monthFilter: ''
     }
   },
   methods: {
+    openMonthPicker() {
+      const el = this.$refs.monthInput?.$el?.querySelector('input')
+      if (el) {
+        if (typeof el.showPicker === 'function') el.showPicker()
+        else el.focus()
+      }
+    },
     viewAgencyDetails(agency) {
       // Navigate to the view agency page with agency ID
       this.$router.push(`/view-agency-${agency.id}`);
     },
+    selectAgency(agency) {
+      try {
+        const appStore = useAppStore();
+        // Persist current working portfolio globally
+        appStore.setCurrentAgency({
+          id: agency.id,
+          agencyName: agency.agencyName,
+          profileImageUrl: agency.profileImageUrl || agency.profileImage || null,
+          location: agency.location || null,
+          establishedYear: agency.establishedYear || null,
+          agencyDescription: agency.agencyDescription || agency.agencyTagline || null,
+        });
+        // Route to Active Units scoped to this agency
+        this.$router.push('/active-units');
+      } catch (e) {
+        console.error('Failed to select agency', e);
+      }
+    },
     filterAgencies() {
-      this.filteredAgencies = this.agencies.filter(agency =>
-        agency.agencyName?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.agencyTagline?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.agencyDescription?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        agency.location?.toLowerCase().includes(this.searchQuery.toLowerCase())
-      );
+      const queryText = this.searchQuery.toLowerCase()
+      this.filteredAgencies = this.agencies.filter(agency => {
+        const textMatch = (
+          agency.agencyName?.toLowerCase().includes(queryText) ||
+          agency.agencyTagline?.toLowerCase().includes(queryText) ||
+          agency.agencyDescription?.toLowerCase().includes(queryText) ||
+          agency.location?.toLowerCase().includes(queryText)
+        )
+
+        if (!this.monthFilter) return textMatch
+
+        // Try to filter by createdAt month if available (Firestore Timestamp or Date/string)
+        let createdAt = agency.createdAt || agency.creationDate || agency.created_on || null
+        if (!createdAt) return textMatch
+
+        let createdDate
+        try {
+          if (createdAt && typeof createdAt.toDate === 'function') {
+            createdDate = createdAt.toDate()
+          } else {
+            createdDate = new Date(createdAt)
+          }
+          const filterDate = new Date(this.monthFilter + '-01')
+          const agencyMonth = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`
+          const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, '0')}`
+          return textMatch && agencyMonth === filterMonth
+        } catch (_) {
+          return textMatch
+        }
+      })
     },
     addNewAgency() {
       // Navigate to the add agency page
@@ -354,28 +414,46 @@ export default {
 /* Button container */
 .button-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
   margin-top: 12px;
 }
 
 .action-btn {
-  border: 2px solid black;
-  color: white;
+  flex: 1;
+  min-width: 0;
   font-weight: 600;
   text-transform: none;
-  padding: 10px 24px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  background: black;
-  min-width: 140px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.action-btn:hover {
-  background: #333;
-  border-color: #333;
-  color: white;
+/* View button: subtle outline on dark card */
+.btn-view {
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.btn-view:hover {
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Select button: primary, slightly elevated */
+.btn-select {
+  color: black !important;
+  background-color: white;
+  border: none !important;
+}
+
+.btn-select:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 
 /* Responsive adjustments */
@@ -399,6 +477,14 @@ export default {
 
   .content-section {
     padding: 12px;
+  }
+
+  .button-container {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
   }
 }
 </style>
