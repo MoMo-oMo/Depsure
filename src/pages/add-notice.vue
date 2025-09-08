@@ -160,7 +160,7 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
+import { collection, addDoc, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
@@ -284,6 +284,35 @@ export default {
           
           // Add notice to Firestore
           const docRef = await addDoc(collection(db, 'notices'), noticeData);
+
+          // Automatic transition: remove from Active Units and add to Vacancies
+          try {
+            // Attempt to find the unit by propertyName to remove from active units
+            const unitsCol = collection(db, 'units');
+            const q = query(unitsCol, where('propertyName', '==', this.notice.unitName));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              // Remove first matched unit from active units
+              const unitDoc = snap.docs[0];
+              await deleteDoc(doc(db, 'units', unitDoc.id));
+            }
+            // Add vacancy entry
+            const vacancy = {
+              agencyId: this.notice.agencyId,
+              unitName: this.notice.unitName,
+              dateVacated: this.notice.vacateDate,
+              newTenantFound: 'No',
+              moveInDate: null,
+              propertyManager: '',
+              contactNumber: '',
+              notes: '',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            await addDoc(collection(db, 'vacancies'), vacancy);
+          } catch (transitionErr) {
+            console.error('Error transitioning unit to vacancies:', transitionErr);
+          }
           
           // Log the audit event
           await this.logAuditEvent(

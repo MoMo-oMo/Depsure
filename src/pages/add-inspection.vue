@@ -58,16 +58,14 @@
                     />
                   </v-col>
 
-                  <!-- Inspection Required (Yes/No) -->
+                  <!-- Inspection Required (always Yes) -->
                   <v-col cols="12" md="6">
-                    <v-select
-                      v-model="entry.inspectionRequired"
-                      label="Inspection Required (Yes/No)"
+                    <v-text-field
+                      :model-value="'Yes'"
+                      label="Inspection Required"
                       variant="outlined"
                       class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="inspectionRequiredRules"
-                      required
+                      readonly
                     />
                   </v-col>
 
@@ -116,8 +114,23 @@
                       type="date"
                       variant="outlined"
                       class="custom-input"
-                      :rules="inspectionDateRules"
-                      required
+                      :rules="appointmentMadeIsYes ? requiredRule : []"
+                      :disabled="!appointmentMadeIsYes"
+                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
+                    />
+                  </v-col>
+
+                  <!-- Inspection Time (new) -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="entry.inspectionTime"
+                      label="Inspection Time"
+                      type="time"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="appointmentMadeIsYes ? requiredRule : []"
+                      :disabled="!appointmentMadeIsYes"
+                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
                     />
                   </v-col>
 
@@ -134,17 +147,28 @@
                     />
                   </v-col>
 
-                  <!-- Inspection Status -->
+                  <!-- Inspection Status (Admin editable) -->
                   <v-col cols="12" md="6">
-                    <v-select
-                      v-model="entry.status"
-                      label="Inspection Status"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Pending', 'Scheduled', 'In Progress', 'Completed', 'Cancelled']"
-                      :rules="statusRules"
-                      required
-                    />
+                    <template v-if="userType === 'Admin'">
+                      <v-select
+                        v-model="entry.status"
+                        label="Inspection Status"
+                        variant="outlined"
+                        class="custom-input"
+                        :items="['Active', 'Pending', 'Completed']"
+                        :rules="statusRules"
+                        required
+                      />
+                    </template>
+                    <template v-else>
+                      <v-text-field
+                        :model-value="entry.status"
+                        label="Inspection Status"
+                        variant="outlined"
+                        class="custom-input"
+                        readonly
+                      />
+                    </template>
                   </v-col>
 
                   <!-- Priority Level -->
@@ -160,17 +184,7 @@
                     />
                   </v-col>
 
-                  <!-- Notes -->
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="entry.notes"
-                      label="Additional Notes"
-                      variant="outlined"
-                      class="custom-input"
-                      rows="3"
-                      auto-grow
-                    />
-                  </v-col>
+                  
                 </v-row>
               </v-card-text>
 
@@ -232,23 +246,24 @@ export default {
       entry: {
         agencyId: "",
         unitName: "",
-        inspectionRequired: "No",
+        inspectionRequired: "Yes",
         contactPerson: "",
         contactNumber: "",
         appointmentMade: "No",
         inspectionDate: "",
+        inspectionTime: "",
         quotesNeeded: "No",
         status: "Pending",
-        priority: "Medium",
-        notes: ""
+        priority: "Medium"
       },
       agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
-      inspectionRequiredRules: [v => !!v || "Inspection Required is required"],
+      inspectionRequiredRules: [],
       contactPersonRules: [v => !!v || "Contact Person is required"],
       contactNumberRules: [v => !!v || "Contact Number is required"],
       appointmentMadeRules: [v => !!v || "Appointment Made is required"],
-      inspectionDateRules: [v => !!v || "Inspection Date is required"],
+      inspectionDateRules: [],
+      requiredRule: [v => !!v || "This field is required"],
       quotesNeededRules: [v => !!v || "Quotes Needed is required"],
       statusRules: [v => !!v || "Status is required"],
       priorityRules: [v => !!v || "Priority is required"]
@@ -259,6 +274,10 @@ export default {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === 'Agency';
     },
+    userType() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType;
+    },
     selectedUnitPropertyType() {
       if (!this.entry.unitName) return null;
       const selectedUnit = this.units.find(unit => unit.propertyName === this.entry.unitName);
@@ -266,6 +285,9 @@ export default {
     },
     propertyTypeLabel() {
       return this.selectedUnitPropertyType ? this.getLabel(this.selectedUnitPropertyType) : '';
+    },
+    appointmentMadeIsYes() {
+      return String(this.entry.appointmentMade).toLowerCase() === 'yes';
     }
   },
   methods: {
@@ -286,15 +308,15 @@ export default {
             agencyId: this.entry.agencyId,
             agencyName: selectedAgency ? selectedAgency.agencyName : '',
             unitName: this.entry.unitName,
-            inspectionRequired: this.entry.inspectionRequired,
+            inspectionRequired: 'Yes',
             contactPerson: this.entry.contactPerson,
             contactNumber: this.entry.contactNumber,
             appointmentMade: this.entry.appointmentMade,
             inspectionDate: this.entry.inspectionDate,
+            inspectionTime: this.entry.inspectionTime || '',
             quotesNeeded: this.entry.quotesNeeded,
             status: this.entry.status,
             priority: this.entry.priority,
-            notes: this.entry.notes || "",
             createdAt: new Date(),
             updatedAt: new Date()
           }
@@ -309,9 +331,10 @@ export default {
               unitName: this.entry.unitName,
               agencyId: this.entry.agencyId,
               agencyName: selectedAgency ? selectedAgency.agencyName : '',
-              inspectionRequired: this.entry.inspectionRequired,
+              inspectionRequired: 'Yes',
               appointmentMade: this.entry.appointmentMade,
               inspectionDate: this.entry.inspectionDate,
+              inspectionTime: this.entry.inspectionTime || '',
               status: this.entry.status,
               priority: this.entry.priority
             },

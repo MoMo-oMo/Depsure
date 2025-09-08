@@ -40,7 +40,13 @@
           <!-- Form -->
           <div v-else class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
-              <v-card-text>
+              <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
+                <v-tab value="details">Details</v-tab>
+                <v-tab value="notes">Notes</v-tab>
+              </v-tabs>
+              <v-window v-model="activeTab">
+                <v-window-item value="details">
+                  <v-card-text>
                 <v-row>
                   <!-- Agency Selection -->
                   <v-col cols="12" md="6">
@@ -165,9 +171,53 @@
                     />
                   </v-col>
 
-                  <!-- Notes (chat-like) -->
-                  <v-col cols="12">
-                    <v-divider class="my-4" />
+                </v-row>
+                  </v-card-text>
+                  <!-- Action Buttons -->
+                  <v-card-actions class="pa-4">
+                    <v-spacer />
+                    <v-btn
+                      v-if="entry.quoteFileName && entry.quoteFileURL"
+                      color="black"
+                      variant="elevated"
+                      class="view-quote-btn"
+                      @click="showQuoteDialog = true"
+                    >
+                      View Quote Instructions
+                    </v-btn>
+                    <v-btn
+                      v-if="entry.quoteFileName && entry.quoteFileURL"
+                      color="error"
+                      variant="outlined"
+                      class="delete-quote-btn"
+                      @click="deleteQuoteFile"
+                      :disabled="saving"
+                    >
+                      Delete Quote
+                    </v-btn>
+                    <v-btn
+                      color="grey"
+                      variant="outlined"
+                      class="cancel-btn"
+                      @click="$router.push('/maintenance')"
+                      :disabled="saving"
+                    >
+                      Cancel
+                    </v-btn>
+                    <v-btn
+                      color="black"
+                      variant="elevated"
+                      class="submit-btn"
+                      :disabled="!valid || saving"
+                      :loading="saving"
+                      @click="saveEntry"
+                    >
+                      {{ saving ? 'Saving...' : 'Save Changes' }}
+                    </v-btn>
+                  </v-card-actions>
+                </v-window-item>
+                <v-window-item value="notes">
+                  <v-card-text>
                     <div class="notes-section">
                       <h3 class="mb-2">Notes</h3>
                       <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
@@ -207,52 +257,9 @@
                         </div>
                       </div>
                     </div>
-                  </v-col>
-                </v-row>
-              </v-card-text>
-
-              <!-- Action Buttons -->
-              <v-card-actions class="pa-4">
-                <v-spacer />
-                <v-btn
-                  v-if="entry.quoteFileName && entry.quoteFileURL"
-                  color="black"
-                  variant="elevated"
-                  class="view-quote-btn"
-                  @click="showQuoteDialog = true"
-                >
-                  View Quote Instructions
-                </v-btn>
-                <v-btn
-                  v-if="entry.quoteFileName && entry.quoteFileURL"
-                  color="error"
-                  variant="outlined"
-                  class="delete-quote-btn"
-                  @click="deleteQuoteFile"
-                  :disabled="saving"
-                >
-                  Delete Quote
-                </v-btn>
-                <v-btn
-                  color="grey"
-                  variant="outlined"
-                  class="cancel-btn"
-                  @click="$router.push('/maintenance')"
-                  :disabled="saving"
-                >
-                  Cancel
-                </v-btn>
-                <v-btn
-                  color="black"
-                  variant="elevated"
-                  class="submit-btn"
-                  :disabled="!valid || saving"
-                  :loading="saving"
-                  @click="saveEntry"
-                >
-                  {{ saving ? 'Saving...' : 'Save Changes' }}
-                </v-btn>
-              </v-card-actions>
+                  </v-card-text>
+                </v-window-item>
+              </v-window>
             </v-form>
           </div>
         </v-col>
@@ -321,6 +328,7 @@ import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/fi
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: "EditMaintenancePage",
@@ -331,6 +339,7 @@ export default {
   },
   data() {
     return {
+      activeTab: 'details',
       entry: {
         id: null,
         agencyId: "",
@@ -376,9 +385,9 @@ export default {
   },
   computed: {
     currentUserId() {
-      // reuse app store getter
-      const appStore = useAppStore?.()
-      return appStore?.userId || ''
+      const appStore = useAppStore()
+      const possibleId = appStore.userId || appStore.currentUser?.userId || appStore.currentUser?.id || appStore.currentUser?.uid || ''
+      return String(possibleId || '').trim()
     },
     sortedNotes() {
       const notes = this.entry?.notesLog || []
@@ -440,6 +449,7 @@ export default {
             priority: data.priority || "Medium",
             estimatedCost: data.estimatedCost || 0,
             notes: data.notes || "",
+            notesLog: data.notesLog || [],
             quoteFile: null,
             quoteFileName: data.quoteFileName || "",
             quoteFileURL: data.quoteFileURL || ""
@@ -554,19 +564,21 @@ export default {
       if (!this.newNote || !this.entry?.id) return
       try {
         this.savingNote = true
+        const appStore = useAppStore()
+        const safeAuthorId = String(appStore.userId || appStore.currentUser?.userId || appStore.currentUser?.id || appStore.currentUser?.uid || '').trim()
+        const safeAuthorName = String(appStore.userName || appStore.currentUser?.userName || `${appStore.currentUser?.firstName || ''} ${appStore.currentUser?.lastName || ''}` || '').trim()
+        const safeAuthorType = String(appStore.userType || appStore.currentUser?.userType || '').trim()
         const note = {
-          text: this.newNote,
-          authorId: (this.$pinia?.state?.app?.currentUser?.uid) || '',
-          authorName: (this.$pinia?.state?.app?.currentUser?.firstName || '') + ' ' + (this.$pinia?.state?.app?.currentUser?.lastName || ''),
-          authorType: (this.$pinia?.state?.app?.currentUser?.userType) || '',
+          text: String(this.newNote),
+          authorId: safeAuthorId,
+          authorName: safeAuthorName,
+          authorType: safeAuthorType,
+          // Match view page behavior: use client time in array, server time for updatedAt
           timestamp: new Date()
         }
-        await updateDoc(doc(db, 'maintenance', this.entry.id), {
-          notesLog: arrayUnion(note),
-          updatedAt: serverTimestamp()
-        })
+        await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
         if (!this.entry.notesLog) this.entry.notesLog = []
-        this.entry.notesLog.push(note)
+        this.entry.notesLog.push({ ...note })
         this.newNote = ''
         this.scrollNotesToBottom()
       } catch (e) {

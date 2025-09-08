@@ -144,13 +144,16 @@ export default {
             };
             this.appStore.setUser(userInfo);
             
+            // Decide landing route based on role
+            const landingRoute = (userData.userType === 'Agency') ? '/active-units' : '/agencies';
+            
             // Log audit event
             await this.logAuditEvent(
               this.auditActions.LOGIN,
               { 
                 loginMethod: 'email',
                 userType: userData.userType,
-                redirectPath: '/agencies'
+                redirectPath: landingRoute
               },
               'USER',
               user.uid
@@ -159,8 +162,8 @@ export default {
             console.log('User logged in:', userInfo);
             this.showSuccess('Login successful!');
             
-            // Always land on Agencies after login
-            this.$router.push('/agencies');
+            // Redirect based on role
+            this.$router.push(landingRoute);
           } else {
             // User exists in Auth but not in Firestore
             this.showError('User profile not found. Please contact administrator.');

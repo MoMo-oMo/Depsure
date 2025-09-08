@@ -113,8 +113,8 @@
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black">
-                    {{ selectedAgencyDetails.notes || 'No notes available' }}
+                  <p class="agency-description-black" v-if="selectedAgencyDetails.notes">
+                    {{ selectedAgencyDetails.notes }}
                   </p>
                 </v-card-text>
               </v-col>

@@ -136,18 +136,7 @@
                     />
                   </v-col>
 
-                  <!-- Notes -->
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="vacancy.notes"
-                      label="Notes"
-                      variant="outlined"
-                      class="custom-input"
-                      rows="4"
-                      auto-grow
-                      :rules="notesRules"
-                    />
-                  </v-col>
+                  
                 </v-row>
               </v-card-text>
 
@@ -213,8 +202,7 @@ export default {
         newTenantFound: '',
         moveInDate: '',
         propertyManager: '',
-        contactNumber: '',
-        notes: ''
+        contactNumber: ''
       },
       agencies: [],
       agenciesLoading: false,

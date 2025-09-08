@@ -19,22 +19,7 @@
           />
         </v-col>
 
-        <v-col v-if="!isAgencyUser && !hasCurrentAgency" cols="12" md="3" class="pa-4">
-          <v-select
-            v-model="selectedAgency"
-            :items="agencies"
-            item-title="agencyName"
-            item-value="id"
-            label="Select Agency"
-            prepend-inner-icon="mdi-domain"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-            class="custom-input top-filter"
-            :loading="agenciesLoading"
-            @update:model-value="onAgencyChange"
-          />
-        </v-col>
+        <!-- Agency selector removed for consistent header (selection may still be set globally) -->
 
         <v-col cols="12" md="3" class="pa-4">
           <v-text-field
@@ -122,8 +107,8 @@
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black">
-                    {{ selectedAgencyDetails.notes || 'No notes available' }}
+                  <p class="agency-description-black" v-if="selectedAgencyDetails.notes">
+                    {{ selectedAgencyDetails.notes }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -243,12 +228,11 @@ export default {
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
         { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
-        { title: "Agency", key: "agencyName", sortable: true },
         { title: "Inspection Required", key: "inspectionRequired", sortable: true, align: "center" },
-        { title: "Appointment Made", key: "appointmentMade", sortable: true, align: "center" },
+        // { title: "Appointment Made", key: "appointmentMade", sortable: true, align: "center" },
         { title: "Inspection Date", key: "inspectionDate", sortable: true, align: "center" },
         { title: "Status", key: "status", sortable: true, align: "center" },
-        { title: "Priority", key: "priority", sortable: true, align: "center" },
+        // { title: "Priority", key: "priority", sortable: true, align: "center" },
         { title: "Actions", key: "actions", sortable: false, align: "center" }
       ]
     };
@@ -535,7 +519,7 @@ export default {
             quotesNeeded: 'No',
             status: 'Pending',
             priority: 'High',
-            notes: 'Urgent inspection required for new tenant',
+            notes: '',
             createdAt: new Date(),
             updatedAt: new Date()
           },
@@ -551,7 +535,7 @@ export default {
             quotesNeeded: 'Yes',
             status: 'Completed',
             priority: 'Medium',
-            notes: 'Routine maintenance inspection',
+            notes: '',
             createdAt: new Date(),
             updatedAt: new Date()
           },
@@ -567,7 +551,7 @@ export default {
             quotesNeeded: 'Yes',
             status: 'In Progress',
             priority: 'Urgent',
-            notes: 'Structural inspection needed',
+            notes: '',
             createdAt: new Date(),
             updatedAt: new Date()
           },
@@ -583,7 +567,7 @@ export default {
             quotesNeeded: 'No',
             status: 'Pending',
             priority: 'Low',
-            notes: 'Annual property inspection',
+            notes: '',
             createdAt: new Date(),
             updatedAt: new Date()
           }

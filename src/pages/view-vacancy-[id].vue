@@ -25,125 +25,138 @@
           </div>
           
           <div class="content-card" elevation="0">
-            <v-card-text>
-              <!-- Loading State -->
-              <div v-if="loading" class="loading-container">
-                <v-progress-circular indeterminate color="black" size="64"></v-progress-circular>
-                <p class="loading-text">Loading vacancy details...</p>
-              </div>
+            <!-- Loading State -->
+            <div v-if="loading" class="loading-container">
+              <v-progress-circular indeterminate color="black" size="64"></v-progress-circular>
+              <p class="loading-text">Loading vacancy details...</p>
+            </div>
 
-              <!-- Error State -->
-              <div v-else-if="error" class="error-container">
-                <v-icon color="error" size="64">mdi-alert-circle</v-icon>
-                <h3 class="error-title">Error Loading Vacancy</h3>
-                <p class="error-message">{{ error }}</p>
-                <v-btn @click="loadVacancy" color="black" variant="elevated">
-                  Try Again
-                </v-btn>
-              </div>
+            <!-- Error State -->
+            <div v-else-if="error" class="error-container">
+              <v-icon color="error" size="64">mdi-alert-circle</v-icon>
+              <h3 class="error-title">Error Loading Vacancy</h3>
+              <p class="error-message">{{ error }}</p>
+              <v-btn @click="loadVacancy" color="black" variant="elevated">
+                Try Again
+              </v-btn>
+            </div>
 
-              <!-- Vacancy Details -->
-              <div v-else-if="vacancy" class="vacancy-details">
-                <v-row>
-                  <!-- Unit Name -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Unit Name/Address</label>
-                      <div class="detail-value">{{ vacancy.unitName }}</div>
-                    </div>
-                  </v-col>
+            <!-- Vacancy Details -->
+            <template v-else-if="vacancy">
+              <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
+                <v-tab value="details">Details</v-tab>
+                <v-tab value="notes">Notes</v-tab>
+              </v-tabs>
+              <v-card-text>
+                <div class="vacancy-details">
+                  <v-window v-model="activeTab">
+                  <v-window-item value="details">
+                    <v-row>
+                      <!-- Unit Name/Address -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.unitName"
+                          label="Unit Name/Address"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Date Vacated -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Date Vacated</label>
-                      <div class="detail-value">{{ formatDate(vacancy.dateVacated) }}</div>
-                    </div>
-                  </v-col>
+                      <!-- Date Vacated -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="formatDate(vacancy.dateVacated)"
+                          label="Date Vacated"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- New Tenant Found -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">New Tenant Found</label>
-                      <div class="detail-value">
-                        <v-chip 
-                          :color="vacancy.newTenantFound === 'Yes' ? 'success' : 'error'"
-                          size="small"
-                        >
-                          {{ vacancy.newTenantFound }}
-                        </v-chip>
-                      </div>
-                    </div>
-                  </v-col>
+                      <!-- New Tenant Found -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.newTenantFound"
+                          label="New Tenant Found"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Move In Date -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Move In Date</label>
-                      <div class="detail-value">
-                        {{ vacancy.moveInDate ? formatDate(vacancy.moveInDate) : 'Not specified' }}
-                      </div>
-                    </div>
-                  </v-col>
+                      <!-- Move In Date -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.moveInDate ? formatDate(vacancy.moveInDate) : 'Not specified'"
+                          label="Move In Date"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Property Manager -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Property Manager</label>
-                      <div class="detail-value">{{ vacancy.propertyManager }}</div>
-                    </div>
-                  </v-col>
+                      <!-- Property Manager -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.propertyManager"
+                          label="Property Manager"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Contact Number -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Contact Number</label>
-                      <div class="detail-value">
-                        <a :href="`tel:${vacancy.contactNumber}`" class="contact-link">
-                          {{ vacancy.contactNumber }}
-                        </a>
-                      </div>
-                    </div>
-                  </v-col>
+                      <!-- Contact Number -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.contactNumber"
+                          label="Contact Number"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Agency Name -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Agency</label>
-                      <div class="detail-value">{{ vacancy.agencyName || 'Not specified' }}</div>
-                    </div>
-                  </v-col>
+                      <!-- Agency Name -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.agencyName || 'Not specified'"
+                          label="Agency"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Created At -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Created At</label>
-                      <div class="detail-value">{{ vacancy.createdAt ? formatDate(vacancy.createdAt) : 'Not specified' }}</div>
-                    </div>
-                  </v-col>
+                      <!-- Created At -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.createdAt ? formatDate(vacancy.createdAt) : 'Not specified'"
+                          label="Created At"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Updated At -->
-                  <v-col cols="12" md="6">
-                    <div class="detail-item">
-                      <label class="detail-label">Updated At</label>
-                      <div class="detail-value">{{ vacancy.updatedAt ? formatDate(vacancy.updatedAt) : 'Not specified' }}</div>
-                    </div>
-                  </v-col>
+                      <!-- Updated At -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          :model-value="vacancy.updatedAt ? formatDate(vacancy.updatedAt) : 'Not specified'"
+                          label="Updated At"
+                          variant="outlined"
+                          readonly
+                          class="custom-input"
+                        />
+                      </v-col>
 
-                  <!-- Notes -->
-                  <v-col cols="12">
-                    <div class="detail-item">
-                      <label class="detail-label">Notes</label>
-                      <div class="detail-value notes-text">
-                        {{ vacancy.notes || 'No notes available' }}
-                      </div>
-                    </div>
-                  </v-col>
-                </v-row>
+                      <!-- Notes removed (use Notes tab) -->
+                    </v-row>
 
-                <!-- Action Buttons -->
-                <v-row class="mt-6">
-                  <v-col cols="12" class="d-flex justify-center gap-4">
+                    <!-- Action Buttons -->
+                    <v-row class="mt-6">
+                      <v-col cols="12" class="d-flex justify-center gap-4">
                     <v-btn
                       v-if="isAgencyUser || userType === 'Admin'"
                       color="black"
@@ -164,10 +177,40 @@
                       <v-icon left>mdi-delete</v-icon>
                       Delete Vacancy
                     </v-btn>
-                  </v-col>
-                </v-row>
-              </div>
-            </v-card-text>
+                    </v-col>
+                    </v-row>
+                  </v-window-item>
+                  <v-window-item value="notes">
+                    <div class="notes-section">
+                      <h3 class="mb-2">Notes</h3>
+                      <div v-if="(vacancy.notesLog && vacancy.notesLog.length)" class="chat-log" ref="chatLog">
+                        <div v-for="(n, idx) in sortedNotes" :key="idx" class="chat-message" :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }">
+                          <div class="chat-avatar">{{ noteInitials(n.authorName) }}</div>
+                          <div class="chat-bubble">
+                            <div class="chat-header">
+                              <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
+                              <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
+                            </div>
+                            <div class="chat-text">{{ n.text }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="text-medium-emphasis">No notes yet.</div>
+                      <div class="chat-input mt-4">
+                        <v-textarea v-model="newNote" placeholder="Write a note..." variant="outlined" class="custom-input" :counter="500" maxlength="500" rows="2" auto-grow />
+                        <div class="d-flex justify-end mt-2">
+                          <v-btn color="black" variant="elevated" :disabled="!newNote || savingNote" :loading="savingNote" @click="appendNote">
+                            <v-icon start>mdi-send</v-icon>
+                            Send
+                          </v-btn>
+                        </div>
+                      </div>
+                    </div>
+                  </v-window-item>
+                </v-window>
+                </div>
+              </v-card-text>
+            </template>
           </div>
         </v-col>
       </v-row>
@@ -177,7 +220,7 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, deleteDoc } from 'firebase/firestore'
+import { doc, getDoc, deleteDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 
@@ -195,13 +238,28 @@ export default {
     userType() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType;
+    },
+    currentUserId() {
+      const appStore = useAppStore();
+      return appStore.userId;
+    },
+    sortedNotes() {
+      const notes = this.vacancy?.notesLog || []
+      return [...notes].sort((a,b) => {
+        const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
+        const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
+        return ad - bd
+      })
     }
   },
   data() {
     return {
       vacancy: null,
       loading: true,
-      error: null
+      error: null,
+      activeTab: 'details',
+      newNote: '',
+      savingNote: false
     }
   },
   mounted() {
@@ -210,6 +268,26 @@ export default {
     this.loadVacancy();
   },
   methods: {
+    noteInitials(name) {
+      if (!name) return '?'
+      const parts = String(name).trim().split(/\s+/)
+      const a = parts[0]?.[0] || ''
+      const b = parts[1]?.[0] || ''
+      return (a + b).toUpperCase() || a.toUpperCase() || '?'
+    },
+    formatNoteDate(ts) {
+      try {
+        if (!ts) return 'Just now'
+        const d = ts.toDate ? ts.toDate() : new Date(ts)
+        return d.toLocaleString()
+      } catch (_) { return String(ts) }
+    },
+    scrollNotesToBottom() {
+      this.$nextTick(() => {
+        const el = this.$refs.chatLog
+        if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight
+      })
+    },
     async loadVacancy() {
       this.loading = true;
       this.error = null;
@@ -227,6 +305,7 @@ export default {
             updatedAt: docSnap.data().updatedAt?.toDate()
           };
           console.log('Vacancy loaded:', this.vacancy);
+          this.scrollNotesToBottom()
           
           // If agencyId exists but no agencyName, try to fetch agency name
           if (this.vacancy.agencyId && !this.vacancy.agencyName) {
@@ -242,6 +321,29 @@ export default {
         this.error = 'Failed to load vacancy details. Please try again.';
         this.loading = false;
         console.error('Error loading vacancy:', err);
+      }
+    },
+    async appendNote() {
+      if (!this.newNote || !this.vacancy?.id) return
+      try {
+        this.savingNote = true
+        const appStore = useAppStore()
+        const note = {
+          text: this.newNote,
+          authorId: appStore.userId,
+          authorName: appStore.userName,
+          authorType: appStore.userType,
+          timestamp: new Date()
+        }
+        await updateDoc(doc(db, 'vacancies', this.vacancy.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        if (!this.vacancy.notesLog) this.vacancy.notesLog = []
+        this.vacancy.notesLog.push(note)
+        this.newNote = ''
+        this.scrollNotesToBottom()
+      } catch (e) {
+        console.error('Error adding note:', e)
+      } finally {
+        this.savingNote = false
       }
     },
     
@@ -297,6 +399,18 @@ export default {
 </script>
 
 <style scoped>
+.notes-section{margin-top:8px}
+.chat-log{display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto;padding:8px 0}
+.chat-message{display:flex;align-items:flex-end;gap:8px}
+.chat-message.mine{flex-direction:row-reverse}
+.chat-avatar{width:28px;height:28px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.chat-bubble{max-width:75%;background:#3a3f44;color:#fff;border-radius:10px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.chat-message.mine .chat-bubble{background:#000}
+.chat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.chat-author{font-weight:700;font-size:.8rem;opacity:.95}
+.chat-time{font-size:.7rem;opacity:.7;margin-left:8px}
+.chat-text{white-space:pre-wrap;word-wrap:break-word;line-height:1.35}
+.chat-input :deep(.v-field__input){min-height:44px}
 .view-vacancy-page {
   padding: 20px;
   min-height: 100vh;

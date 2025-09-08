@@ -43,7 +43,13 @@
 
             <!-- Edit Form -->
             <v-form v-else-if="vacancy" ref="form" v-model="valid" lazy-validation>
-              <v-card-text>
+              <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
+                <v-tab value="details">Details</v-tab>
+                <v-tab value="notes">Notes</v-tab>
+              </v-tabs>
+              <v-window v-model="activeTab">
+                <v-window-item value="details">
+                  <v-card-text>
                 <v-row>
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
@@ -127,42 +133,62 @@
                     />
                   </v-col>
 
-                  <!-- Notes -->
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="vacancy.notes"
-                      label="Notes"
-                      variant="outlined"
-                      class="custom-input"
-                      rows="4"
-                      auto-grow
-                    />
-                  </v-col>
                 </v-row>
-              </v-card-text>
+                  </v-card-text>
 
-              <!-- Action Buttons -->
-              <v-card-actions class="pa-4">
-                <v-spacer />
-                <v-btn
-                  color="grey"
-                  variant="outlined"
-                  @click="$router.push('/vacancies')"
-                  class="cancel-btn"
-                >
-                  Cancel
-                </v-btn>
-                <v-btn
-                  color="black"
-                  variant="elevated"
-                  @click="saveVacancy"
-                  :disabled="!valid || saving"
-                  :loading="saving"
-                  class="save-btn"
-                >
-                  {{ saving ? 'Saving...' : 'Update Vacancy' }}
-                </v-btn>
-              </v-card-actions>
+                  <!-- Action Buttons -->
+                  <v-card-actions class="pa-4">
+                    <v-spacer />
+                    <v-btn
+                      color="grey"
+                      variant="outlined"
+                      @click="$router.push('/vacancies')"
+                      class="cancel-btn"
+                    >
+                      Cancel
+                    </v-btn>
+                    <v-btn
+                      color="black"
+                      variant="elevated"
+                      @click="saveVacancy"
+                      :disabled="!valid || saving"
+                      :loading="saving"
+                      class="save-btn"
+                    >
+                      {{ saving ? 'Saving...' : 'Update Vacancy' }}
+                    </v-btn>
+                  </v-card-actions>
+                </v-window-item>
+                <v-window-item value="notes">
+                  <v-card-text>
+                    <div class="notes-section">
+                      <h3 class="mb-2">Notes</h3>
+                      <div v-if="(vacancy.notesLog && vacancy.notesLog.length)" class="chat-log" ref="chatLog">
+                        <div v-for="(n, idx) in sortedNotes" :key="idx" class="chat-message" :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }">
+                          <div class="chat-avatar">{{ noteInitials(n.authorName) }}</div>
+                          <div class="chat-bubble">
+                            <div class="chat-header">
+                              <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
+                              <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
+                            </div>
+                            <div class="chat-text">{{ n.text }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="text-medium-emphasis">No notes yet.</div>
+                      <div class="chat-input mt-4">
+                        <v-textarea v-model="newNote" placeholder="Write a note..." variant="outlined" class="custom-input" :counter="500" maxlength="500" rows="2" auto-grow />
+                        <div class="d-flex justify-end mt-2">
+                          <v-btn color="black" variant="elevated" :disabled="!newNote || savingNote" :loading="savingNote" @click="appendNote">
+                            <v-icon start>mdi-send</v-icon>
+                            Send
+                          </v-btn>
+                        </div>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-window-item>
+              </v-window>
             </v-form>
           </div>
         </v-col>
@@ -174,8 +200,9 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, addDoc, deleteDoc } from 'firebase/firestore'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'EditVacancyPage',
@@ -184,13 +211,30 @@ export default {
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
     return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
   },
+  computed: {
+    currentUserId() {
+      const appStore = useAppStore()
+      return appStore.userId
+    },
+    sortedNotes() {
+      const notes = this.vacancy?.notesLog || []
+      return [...notes].sort((a,b) => {
+        const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
+        const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
+        return ad - bd
+      })
+    }
+  },
   data() {
     return {
+      activeTab: 'details',
       vacancy: null,
       loading: true,
       saving: false,
       error: null,
       valid: false,
+      newNote: '',
+      savingNote: false,
       // Validation rules
       unitNameRules: [
         v => !!v || 'Unit Name is required',
@@ -223,7 +267,7 @@ export default {
   mounted() {
     console.log('EditVacancyPage mounted with ID:', this.$route.params.id);
     document.title = 'Edit Vacancy - Depsure';
-    this.loadVacancy();
+    this.loadVacancy().then(() => { this.scrollNotesToBottom() })
   },
   watch: {
     vacancy: {
@@ -249,6 +293,9 @@ export default {
     }
   },
   methods: {
+    noteInitials(name) { if (!name) return '?'; const parts = String(name).trim().split(/\s+/); const a = parts[0]?.[0] || ''; const b = parts[1]?.[0] || ''; return (a + b).toUpperCase() || a.toUpperCase() || '?'; },
+    formatNoteDate(ts) { try { if (!ts) return 'Just now'; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleString() } catch(_) { return String(ts) } },
+    scrollNotesToBottom() { this.$nextTick(()=>{ const el=this.$refs.chatLog; if(el&&el.scrollHeight!=null) el.scrollTop=el.scrollHeight; }) },
     async loadVacancy() {
       this.loading = true;
       this.error = null;
@@ -340,7 +387,34 @@ export default {
           // Update the document
           const docRef = doc(db, 'vacancies', this.vacancy.id);
           await updateDoc(docRef, updateData);
-          
+
+          // Automatic transition: if new tenant found and move-in date provided
+          const shouldReactivate = this.vacancy.newTenantFound === 'Yes' && !!this.vacancy.moveInDate;
+          if (shouldReactivate) {
+            try {
+              // Create a new unit (running tenant reference) in Active Units
+              const unitsCollection = collection(db, 'units');
+              const newUnit = {
+                agencyId: this.vacancy.agencyId || '',
+                propertyName: this.vacancy.unitName || '',
+                tenantRef: `${Date.now()}`,
+                leaseStartDate: this.vacancy.moveInDate,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              };
+              await addDoc(unitsCollection, newUnit);
+
+              // Remove this vacancy entry since unit is reactivated
+              await deleteDoc(doc(db, 'vacancies', this.vacancy.id));
+
+              // Redirect to Active Units
+              this.showSuccessDialog('Vacancy closed and unit reactivated.', 'Success!', 'Continue', '/active-units');
+              return;
+            } catch (transitionErr) {
+              console.error('Error transitioning vacancy back to active units:', transitionErr);
+            }
+          }
+
           console.log('Vacancy updated successfully');
           this.showSuccessDialog('Vacancy updated successfully!', 'Success!', 'Continue', `/view-vacancy-${this.vacancy.id}`);
         } catch (err) {
@@ -349,6 +423,30 @@ export default {
         } finally {
           this.saving = false;
         }
+      }
+    },
+    async appendNote() {
+      if (!this.newNote || !this.vacancy?.id) return
+      try {
+        this.savingNote = true
+        const appStore = useAppStore()
+        const note = {
+          text: this.newNote,
+          authorId: appStore.userId,
+          authorName: appStore.userName,
+          authorType: appStore.userType,
+          timestamp: new Date()
+        }
+        await updateDoc(doc(db, 'vacancies', this.vacancy.id), { notesLog: arrayUnion(note), updatedAt: serverTimestamp() })
+        if (!this.vacancy.notesLog) this.vacancy.notesLog = []
+        this.vacancy.notesLog.push(note)
+        this.newNote = ''
+        this.scrollNotesToBottom()
+      } catch (e) {
+        console.error('Error adding note:', e)
+        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
+      } finally {
+        this.savingNote = false
       }
     }
   }
@@ -406,6 +504,20 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
+
+/* Chat-like notes styling to match view page */
+.notes-section{margin-top:8px}
+.chat-log{display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto;padding:8px 0}
+.chat-message{display:flex;align-items:flex-end;gap:8px}
+.chat-message.mine{flex-direction:row-reverse}
+.chat-avatar{width:28px;height:28px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.chat-bubble{max-width:75%;background:#3a3f44;color:#fff;border-radius:10px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.chat-message.mine .chat-bubble{background:#000}
+.chat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.chat-author{font-weight:700;font-size:.8rem;opacity:.95}
+.chat-time{font-size:.7rem;opacity:.7;margin-left:8px}
+.chat-text{white-space:pre-wrap;word-wrap:break-word;line-height:1.35}
+.chat-input :deep(.v-field__input){min-height:44px}
 
 /* Loading and error states */
 .loading-container,

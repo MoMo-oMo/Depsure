@@ -150,11 +150,33 @@
                     </v-col>
                     <v-col cols="12" md="6">
                       <v-text-field
-                        v-model="agencyInfo.phone"
-                        label="Agency Phone"
+                        v-model="agencyInfo.contactNumber"
+                        label="Primary Contact Number"
                         variant="outlined"
                         density="comfortable"
                         prepend-inner-icon="mdi-phone"
+                        :disabled="!isEditMode"
+                        class="custom-input"
+                      />
+                    </v-col>
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="agencyInfo.primaryContactName"
+                        label="Primary Contact Name"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-account"
+                        :disabled="!isEditMode"
+                        class="custom-input"
+                      />
+                    </v-col>
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model="agencyInfo.regNo"
+                        label="Registration Number"
+                        variant="outlined"
+                        density="comfortable"
+                        prepend-inner-icon="mdi-card-account-details"
                         :disabled="!isEditMode"
                         class="custom-input"
                       />
@@ -422,7 +444,9 @@ export default {
 
     const agencyInfo = reactive({
       agencyName: '',
-      phone: '',
+      contactNumber: '',
+      primaryContactName: '',
+      regNo: '',
       address: '',
       description: ''
     })
@@ -476,8 +500,10 @@ export default {
       // Reset agency info if user is agency
       if (userType.value === 'Agency') {
         agencyInfo.agencyName = appStore.currentUser?.agencyName || ''
-        agencyInfo.phone = appStore.currentUser?.agencyPhone || ''
-        agencyInfo.address = appStore.currentUser?.agencyAddress || ''
+        agencyInfo.contactNumber = appStore.currentUser?.contactNumber || appStore.currentUser?.agencyPhone || ''
+        agencyInfo.primaryContactName = appStore.currentUser?.primaryContactName || ''
+        agencyInfo.regNo = appStore.currentUser?.regNo || ''
+        agencyInfo.address = appStore.currentUser?.address || appStore.currentUser?.agencyAddress || ''
         agencyInfo.description = appStore.currentUser?.agencyDescription || ''
       }
     }
@@ -535,8 +561,14 @@ export default {
         const userRef = doc(db, 'users', userId.value)
         await updateDoc(userRef, {
           agencyName: agencyInfo.agencyName,
-          agencyPhone: agencyInfo.phone,
+          // Keep legacy fields for backward compatibility
+          agencyPhone: agencyInfo.contactNumber,
           agencyAddress: agencyInfo.address,
+          // Fields used across info cards
+          contactNumber: agencyInfo.contactNumber,
+          primaryContactName: agencyInfo.primaryContactName,
+          regNo: agencyInfo.regNo,
+          address: agencyInfo.address,
           agencyDescription: agencyInfo.description,
           updatedAt: new Date()
         })
@@ -545,8 +577,12 @@ export default {
         appStore.setUser({
           ...appStore.currentUser,
           agencyName: agencyInfo.agencyName,
-          agencyPhone: agencyInfo.phone,
+          agencyPhone: agencyInfo.contactNumber,
           agencyAddress: agencyInfo.address,
+          contactNumber: agencyInfo.contactNumber,
+          primaryContactName: agencyInfo.primaryContactName,
+          regNo: agencyInfo.regNo,
+          address: agencyInfo.address,
           agencyDescription: agencyInfo.description
         })
 

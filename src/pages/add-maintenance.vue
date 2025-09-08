@@ -164,17 +164,7 @@
                     />
                   </v-col>
 
-                  <!-- Notes -->
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="entry.notes"
-                      label="Additional Notes"
-                      variant="outlined"
-                      class="custom-input"
-                      rows="3"
-                      auto-grow
-                    />
-                  </v-col>
+                  
                 </v-row>
               </v-card-text>
 
@@ -245,8 +235,7 @@ export default {
         quoteFile: null,
         status: "Pending",
         priority: "Medium",
-        estimatedCost: 0,
-        notes: ""
+        estimatedCost: 0
       },
       agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
@@ -302,7 +291,6 @@ export default {
             status: this.entry.status,
             priority: this.entry.priority,
             estimatedCost: this.entry.estimatedCost || 0,
-            notes: this.entry.notes || "",
             createdAt: new Date(),
             updatedAt: new Date()
           }

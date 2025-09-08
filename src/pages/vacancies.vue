@@ -4,7 +4,7 @@
       <!-- Filters and Add Vacancy Button -->
       <v-row class="mb-4">
         <!-- Search -->
-        <v-col cols="12" md="3" lg="2">
+        <v-col cols="12" md="3" lg="3">
           <v-text-field
             v-model="searchQuery"
             label="Search vacancy entries..."
@@ -20,23 +20,7 @@
           />
         </v-col>
 
-        <!-- Agency Filter -->
-        <v-col v-if="!isAgencyUser && !hasCurrentAgency" cols="12" md="2" lg="2" class="pa-4">
-          <v-select
-            v-model="selectedAgency"
-            :items="agencies"
-            item-title="agencyName"
-            item-value="id"
-            label="Select Agency"
-            prepend-inner-icon="mdi-domain"
-            density="comfortable"
-            variant="outlined"
-            hide-details
-            class="custom-input top-filter"
-            :loading="agenciesLoading"
-            @update:model-value="onAgencyChange"
-          />
-        </v-col>
+        <!-- Agency selector removed for consistency across pages -->
 
         <!-- Property Type Filter -->
         <v-col cols="12" md="2" lg="2" class="pa-4">
@@ -74,11 +58,11 @@
         </v-col>
 
         <!-- Add Vacancy Button - Only visible to Agency users -->
-        <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
+        <!-- <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addVacancy" class="back-btn">
             Add Vacancy
           </v-btn>
-        </v-col>
+        </v-col> -->
       </v-row>
 
       <!-- Agency Info Card -->
@@ -127,8 +111,8 @@
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black">
-                    {{ selectedAgencyDetails.notes || 'No notes available' }}
+                  <p class="agency-description-black" v-if="selectedAgencyDetails.notes">
+                    {{ selectedAgencyDetails.notes }}
                   </p>
                 </v-card-text>
               </v-col>
@@ -200,7 +184,7 @@
                   @click="editVacancy(item)"
                   class="action-btn"
                 />
-                <v-btn
+                <!-- <v-btn
                   v-if="!isSuperAdmin"
                   icon="mdi-delete"
                   size="small"
@@ -208,7 +192,7 @@
                   color="error"
                   @click="deleteVacancy(item)"
                   class="action-btn"
-                />
+                /> -->
               </div>
             </template>
           </v-data-table>
@@ -256,9 +240,7 @@ export default {
         { title: "New Tenant Found", key: "newTenantFound", sortable: true, align: "center" },
         { title: "Move In Date", key: "moveInDate", sortable: true, align: "center" },
         { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
-        { title: "Property Manager", key: "propertyManager", sortable: true },
-        { title: "Contact Number", key: "contactNumber", sortable: true },
-        { title: "Notes", key: "notes", sortable: false },
+
         { title: "Actions", key: "actions", sortable: false, align: "center" },
       ]
     };
@@ -528,7 +510,7 @@ export default {
             propertyType: 'residential',
             propertyManager: 'John Smith',
             contactNumber: '+27 82 123 4567',
-            notes: 'Property in excellent condition, new tenant approved',
+            notes: '',
             createdAt: new Date(),
             updatedAt: new Date()
           },
@@ -541,7 +523,7 @@ export default {
             propertyType: 'residential',
             propertyManager: 'Sarah Johnson',
             contactNumber: '+27 83 234 5678',
-            notes: 'Property needs minor repairs before new tenant',
+            notes: '',
             createdAt: new Date(),
             updatedAt: new Date()
           },
@@ -554,7 +536,7 @@ export default {
             propertyType: 'commercial',
             propertyManager: 'Mike Wilson',
             contactNumber: '+27 84 345 6789',
-            notes: 'High-end property, tenant screening in progress',
+            notes: '',
             createdAt: new Date(),
             updatedAt: new Date()
           }
