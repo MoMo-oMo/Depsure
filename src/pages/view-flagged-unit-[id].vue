@@ -162,7 +162,10 @@
                         class="chat-message"
                         :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
                       >
-                        <div class="chat-avatar">{{ noteInitials(n.authorName) }}</div>
+                        <div class="chat-avatar">
+                          <img v-if="n.authorAvatarUrl" :src="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" />
+                          <template v-else>{{ noteInitials(n.authorName) }}</template>
+                        </div>
                         <div class="chat-bubble">
                           <div class="chat-header">
                             <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
@@ -295,11 +298,18 @@ export default {
       }
     },
     noteInitials(name) {
-      if (!name) return '?'
-      const parts = String(name).trim().split(/\s+/)
-      const a = parts[0]?.[0] || ''
-      const b = parts[1]?.[0] || ''
-      return (a + b).toUpperCase() || a.toUpperCase() || '?'
+      const raw = String(name || '').trim()
+      if (!raw) return '?'
+      const words = raw.split(/\s+/).filter(Boolean)
+      if (words.length === 1) {
+        const cleaned = words[0].replace(/[^A-Za-z0-9]/g, '')
+        if (!cleaned) return '?'
+        return cleaned.slice(0, 2).toUpperCase()
+      }
+      const first = (words[0] && words[0][0]) ? words[0][0] : ''
+      const second = (words[1] && words[1][0]) ? words[1][0] : ''
+      const res = (first + second).trim()
+      return res ? res.toUpperCase() : '?'
     },
     formatNoteDate(ts) {
       try {
@@ -313,10 +323,13 @@ export default {
       try {
         this.savingNote = true
         const appStore = useAppStore()
+        const isAgency = appStore.currentUser?.userType === 'Agency'
+        const fallbackName = this.unit?.unitName || this.unit?.address || 'Property'
         const note = {
           text: this.newNote,
           authorId: appStore.userId,
-          authorName: appStore.userName,
+          authorName: isAgency ? fallbackName : (appStore.userName || fallbackName),
+          authorAvatarUrl: isAgency ? (this.unit?.agencyProfileImageUrl || this.unit?.profileImageUrl || appStore.currentUser?.profileImageUrl || appStore.currentUser?.profileImage || '') : (appStore.currentUser?.profileImageUrl || appStore.currentUser?.profileImage || ''),
           authorType: appStore.userType,
           timestamp: new Date()
         }
@@ -417,7 +430,8 @@ export default {
 .chat-log{display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto;padding:8px 0}
 .chat-message{display:flex;align-items:flex-end;gap:8px}
 .chat-message.mine{flex-direction:row-reverse}
-.chat-avatar{width:28px;height:28px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.chat-avatar{width:28px;height:28px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;overflow:hidden}
+.chat-avatar-img{width:100%;height:100%;object-fit:cover;display:block}
 .chat-bubble{max-width:75%;background:#3a3f44;color:#fff;border-radius:10px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .chat-message.mine .chat-bubble{background:#000}
 .chat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}

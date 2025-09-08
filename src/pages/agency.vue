@@ -409,6 +409,14 @@ export default {
   margin: 0;
   text-align: left;
   flex: 1;
+  /* Clamp to a few lines with ellipsis to avoid stretching layout */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Button container */
