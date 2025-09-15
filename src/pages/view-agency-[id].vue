@@ -78,20 +78,13 @@
       <v-row v-else class="mb-6">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
+            <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
             <!-- Remove all grid gutters and stretch columns so the image fills its whole section -->
             <v-row align="stretch" class="no-gutters">
-              <v-col cols="12" md="3" class="pa-0 ma-0">
-                <v-img
-                  :src="agency.profileImageUrl || agency.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
-                  :alt="agency.agencyName"
-                  height="100%"
-                  cover
-                  class="agency-logo-black"
-                />
-              </v-col>
               <v-col cols="12" md="9">
-                <v-card-title class="text-white text-h4 mb-2">{{ agency.agencyName }}</v-card-title>
-               <v-card-text class="text-white">
+                <div class="agency-content-right">
+                  <v-card-title class="text-white text-h4 mb-2">{{ agency.agencyName }}</v-card-title>
+                 <v-card-text class="text-white">
                  <div class="agency-details-black">
                     <div class="detail-item-black">
                       <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
@@ -117,6 +110,7 @@
                   <v-divider class="my-4 bg-white" />
                   <p class="agency-description-black">{{ agency.notes || 'No notes available' }}</p>
                 </v-card-text>
+                </div>
               </v-col>
             </v-row>
           </v-card>
@@ -147,6 +141,17 @@ export default {
     return {
       agency: {},
       loading: false
+    }
+  },
+  computed: {
+    agencyCardBgStyle() {
+      const url = this.agency?.profileImageUrl || this.agency?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+      return {
+        backgroundImage: `url(${url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }
     }
   },
   methods: {
@@ -310,6 +315,11 @@ export default {
 </script>
 
 <style scoped>
+.agency-card-bg { position:absolute; inset:0; z-index:0; }
+.agency-info-card-black { position: relative; }
+.agency-info-card-black::after { content:''; position:absolute; inset:0; background:linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); pointer-events:none; }
+.agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
+.agency-content-right { margin-left:auto; width:min(720px,55%); padding:16px 16px 24px; text-align:left; }
 .view-agency-page {
   padding: 20px;
   min-height: 100vh;

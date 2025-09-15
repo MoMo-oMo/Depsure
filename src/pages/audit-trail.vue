@@ -94,11 +94,11 @@
                        <div class="d-flex justify-space-between align-center mb-4">
               <span class="text-h6 font-weight-bold">Audit Log Entries</span>
               <button
-                @click="exportAuditTrail"
+                @click="exportAuditTrailXLSX"
                 :disabled="exportLoading"
                 class="custom-btn"
               >
-                {{ exportLoading ? 'Exporting...' : 'Export to CSV' }}
+                {{ exportLoading ? 'Exporting...' : 'Export to Excel' }}
               </button>
             </div>
            
@@ -250,6 +250,7 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { Workbook } from 'exceljs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { useAppStore } from '@/stores/app'
 import { useNotification } from '@/composables/useNotification'
@@ -424,30 +425,142 @@ export default {
       }
     }
 
+    const exportAuditTrailXLSX = async () => {
+      exportLoading.value = true
+      try {
+        await logAuditEvent(
+          auditActions.EXPORT,
+          {
+            exportType: 'XLSX',
+            recordCount: filteredAuditEntries.value.length,
+            filters: filters
+          },
+          resourceTypes.DOCUMENT,
+          null
+        )
+
+        // Prepare data without IP and Resource ID
+        const headers = ['Timestamp', 'User', 'User Email', 'User Type', 'Action', 'Resource Type']
+        const rows = filteredAuditEntries.value.map(e => ([
+          formatCsvDate(e.timestamp),
+          e.userName || '',
+          e.userEmail || '',
+          e.userType || '',
+          e.action || '',
+          e.resourceType || ''
+        ]))
+
+        // Create workbook / worksheet
+        const wb = new Workbook()
+        const ws = wb.addWorksheet('Audit Trail')
+
+        // Define columns with initial widths (will auto-size below)
+        ws.columns = headers.map(h => ({ header: h, key: h, width: 20 }))
+
+        // Add data rows
+        rows.forEach(r => ws.addRow(r))
+
+        // Style header row
+        const headerRow = ws.getRow(1)
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }
+        headerRow.height = 20
+        headerRow.eachCell(cell => {
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+          }
+        })
+
+        // Freeze header and add autofilter
+        ws.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
+        ws.autoFilter = { from: 'A1', to: String.fromCharCode(64 + headers.length) + '1' }
+
+        // Auto-fit column widths based on content (with padding and limits)
+        headers.forEach((h, i) => {
+          const maxLen = Math.max(
+            String(h).length,
+            ...rows.map(r => String(r[i] ?? '').length)
+          )
+          ws.getColumn(i + 1).width = Math.min(Math.max(maxLen + 2, 12), 60)
+        })
+
+        // Generate and download
+        const filename = `audit-trail-${new Date().toISOString().split('T')[0]}.xlsx`
+        const buffer = await wb.xlsx.writeBuffer()
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      } catch (error) {
+        showError('Failed to export audit trail')
+        console.error('XLSX Export error:', error)
+      } finally {
+        exportLoading.value = false
+      }
+    }
+
     const generateCSV = (data) => {
-      const headers = ['Timestamp', 'User', 'User Email', 'User Type', 'Action', 'Resource Type', 'Resource ID', 'IP Address', 'Details']
-      const csvRows = [headers.join(',')]
-      
+      const headers = [
+        'Timestamp',
+        'User',
+        'User Email',
+        'User Type',
+        'Action',
+        'Resource Type',
+        'Resource ID',
+        'IP Address'
+      ]
+
+      const csvRows = []
+      csvRows.push(headers.map(csvEscape).join(','))
+
       data.forEach(entry => {
         const row = [
-          formatDateTime(entry.timestamp),
-          `"${entry.userName}"`,
+          formatCsvDate(entry.timestamp),
+          entry.userName,
           entry.userEmail,
           entry.userType,
           entry.action,
           entry.resourceType || '',
           entry.resourceId || '',
-          entry.ipAddress,
-          `"${JSON.stringify(entry.details)}"`
+          entry.ipAddress || ''
         ]
-        csvRows.push(row.join(','))
+        csvRows.push(row.map(csvEscape).join(','))
       })
-      
+
       return csvRows.join('\n')
     }
 
+    // Ensures values are CSV-safe: wraps in quotes, escapes quotes, normalizes newlines
+    const csvEscape = (value) => {
+      if (value === null || value === undefined) return '""'
+      const str = String(value)
+        .replace(/"/g, '""')
+        .replace(/\r?\n|\r/g, ' ')
+      return `"${str}"`
+    }
+
+    // Format timestamp without commas so CSV stays tidy
+    const formatCsvDate = (timestamp) => {
+      const d = new Date(timestamp)
+      if (isNaN(d)) return ''
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    }
+
+    
+
     const downloadCSV = (content, filename) => {
-      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+      // Prepend BOM so Excel opens UTF-8 correctly
+      const BOM = '\uFEFF'
+      const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       const url = URL.createObjectURL(blob)
       link.setAttribute('href', url)
@@ -491,6 +604,7 @@ export default {
       getUserTypeColor,
       getActionColor,
       exportAuditTrail,
+      exportAuditTrailXLSX,
       logAuditEvent
     }
   }

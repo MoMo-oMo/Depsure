@@ -125,10 +125,16 @@ export default {
       searchQuery: '',
       filteredAgencies: [],
       loading: false,
-      monthFilter: ''
+      monthFilter: this.getCurrentMonth()
     }
   },
   methods: {
+    getCurrentMonth() {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      return `${year}-${month}`
+    },
     openMonthPicker() {
       const el = this.$refs.monthInput?.$el?.querySelector('input')
       if (el) {

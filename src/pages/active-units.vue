@@ -24,22 +24,42 @@
 
       <!-- Month filter -->
       <v-col cols="12" md="2" lg="3" class="pa-4">
-        <v-text-field
-          v-model="monthFilter"
-          label="Filter by month"
-          
-          flat="true"
-          density="comfortable"
-          variant="outlined"
-          type="month"
-          hide-details
-          dense
-          class="custom-input top-filter month-input"
-          ref="monthInput"
-          @input="filterProperties"
-          @click:prepend-inner="openMonthPicker"
-          clearable
-        />
+        <v-menu
+          v-model="monthMenu"
+          :close-on-content-click="false"
+          transition="fade-transition"
+          location="bottom"
+          @update:model-value="onMonthMenuToggle"
+        >
+          <template #activator="{ props }">
+            <v-text-field
+              v-bind="props"
+              :model-value="monthFilterLabel"
+              label="Filter by month"
+              append-inner-icon="mdi-calendar-month"
+              flat="true"
+              density="comfortable"
+              variant="outlined"
+              hide-details
+              dense
+              class="custom-input top-filter month-input flex-grow-1"
+              readonly
+            />
+          </template>
+          <div class="month-menu">
+            <div class="month-menu__title">Pick month</div>
+            <input
+              type="month"
+              :value="tempMonth"
+              @input="(e) => { tempMonth = e.target.value }"
+              class="month-menu__input"
+            />
+            <div class="month-menu__actions">
+              <v-btn color="black" variant="elevated" size="small" @click="applyMonth">Apply</v-btn>
+              <v-btn color="grey" variant="text" size="small" @click="clearMonth">All</v-btn>
+            </div>
+          </div>
+        </v-menu>
       </v-col>
 
       <!-- Property Type filter -->
@@ -95,17 +115,10 @@
       <v-row class="mb-6" v-if="selectedAgencyDetails">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
+            <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
             <v-row align="stretch" class="no-gutters">
-              <v-col cols="12" md="3" class="pa-0 ma-0">
-                <v-img
-                  :src="selectedAgencyDetails.profileImageUrl || selectedAgencyDetails.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
-                  :alt="selectedAgencyDetails.agencyName"
-                  height="100%"
-                  cover
-                  class="agency-logo-black"
-                />
-              </v-col>
-              <v-col cols="12" md="9">
+              <v-col cols="12">
+                <div class="agency-content-right">
                 <v-card-title class="text-white text-h4 mb-2">
                   {{ selectedAgencyDetails.agencyName }}
                 </v-card-title>
@@ -136,11 +149,10 @@
                       <span>{{ activeUnitsCount }} Properties</span>
                     </div>
                   </div>
-                  <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black" v-if="selectedAgencyDetails.notes">
-                    {{ selectedAgencyDetails.notes }}
-                  </p>
+                  <!-- Description hidden to reduce visual noise over image -->
+                  <!-- <v-divider class="my-4 bg-white" /> -->
                 </v-card-text>
+                </div>
               </v-col>
             </v-row>
           </v-card>
@@ -177,6 +189,21 @@
                   {{ isUnitFlagged(item) ? 'mdi-flag' : 'mdi-flag-outline' }}
                 </v-icon>
               </v-btn>
+            </template>
+            <!-- Missed Rent (Yes + months) column -->
+            <template v-slot:item.monthsMissed="{ item }">
+              <v-chip
+                :color="(item.monthsMissed || 0) > 0 ? 'error' : 'success'"
+                size="small"
+                variant="tonal"
+                :title="(item.monthsMissed || 0) > 0 
+                  ? `${item.monthsMissed} ${(item.monthsMissed === 1 ? 'month' : 'months')} missed` 
+                  : 'No missed rent'"
+              >
+                {{ (item.monthsMissed || 0) > 0 
+                  ? `Yes - ${item.monthsMissed} ${(item.monthsMissed === 1 ? 'month' : 'months')}` 
+                  : 'No' }}
+              </v-chip>
             </template>
             <template v-slot:item.propertyType="{ item }">
               <v-chip 
@@ -230,6 +257,15 @@
                 class="action-btn"
               />
               <v-btn
+                :title="'Move to Vacancies'"
+                icon="mdi-arrow-right-bold-box"
+                size="small"
+                variant="text"
+                color="black"
+                @click="moveToVacancies(item)"
+                class="action-btn"
+              />
+              <v-btn
                 icon="mdi-delete"
                 size="small"
                 variant="text"
@@ -267,6 +303,8 @@ export default {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
+      monthMenu: false,
+      tempMonth: this.getCurrentMonth(),
       propertyTypeFilter: null,
       flaggedFilter: 'all',
       filteredProperties: [],
@@ -282,6 +320,7 @@ export default {
         { title: "TENANT REF", key: "tenantRef", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
         { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
+        { title: "MISSED RENT", key: "monthsMissed", sortable: true, align: "center" },
         // {
         //   title: "LEASE STARTING DATE",
         //   key: "leaseStartDate",
@@ -300,6 +339,22 @@ export default {
     };
   },
   computed: {
+    monthFilterLabel() {
+      if (!this.monthFilter) return 'All Months'
+      try {
+        const [yy, mm] = String(this.monthFilter).split('-')
+        const d = new Date(Number(yy), Number(mm) - 1, 1)
+        return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+      } catch {
+        return this.monthFilter
+      }
+    },
+    agencyCardBgStyle() {
+      const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+      return {
+        background: `url(${url}) center/cover no-repeat`
+      }
+    },
     hasCurrentAgency() {
       const appStore = useAppStore();
       return !!appStore.currentAgency;
@@ -349,6 +404,22 @@ export default {
     }
   },
   methods: {
+    onMonthMenuToggle(open) {
+      if (open) {
+        this.tempMonth = this.monthFilter || ''
+      }
+    },
+    applyMonth() {
+      this.monthFilter = this.tempMonth || ''
+      this.filterProperties()
+      this.monthMenu = false
+    },
+    clearMonth() {
+      this.tempMonth = ''
+      this.monthFilter = ''
+      this.filterProperties()
+      this.monthMenu = false
+    },
     openMonthPicker() {
       const el = this.$refs.monthInput?.$el?.querySelector('input');
       if (el) {
@@ -462,41 +533,17 @@ export default {
           color: '#dc3545'
         })
         
-        // If user confirms, proceed with archiving
+        // If user confirms, proceed: remove from active units only
         const unitRef = doc(db, 'units', item.id)
         
-        // Create exact duplicate in archivedUnits collection
-        const archivedUnitData = {
-          ...item,
-          originalId: item.id, // Keep reference to original ID
-          archivedAt: new Date(),
-          archivedBy: this.appStore.currentUser?.uid || 'unknown',
-          archivedByUserType: this.appStore.currentUser?.userType || 'unknown'
-        }
-        
-        // Remove the id field since addDoc will generate a new one
-        delete archivedUnitData.id
-        
-        // Add to archivedUnits collection
-        const archivedUnitsRef = collection(db, 'archivedUnits')
-        await addDoc(archivedUnitsRef, archivedUnitData)
-        
-        // Log the archive action
+        // Log delete action
         await this.logAuditEvent(
           this.auditActions.DELETE,
           {
             unitId: item.id,
             unitName: item.propertyName || item.unitName,
             tenantRef: item.tenantRef,
-            agencyId: item.agencyId,
-            archivedData: {
-              propertyName: item.propertyName,
-              tenantRef: item.tenantRef,
-              leaseStartDate: item.leaseStartDate,
-              maintenanceAmount: item.maintenanceAmount,
-              paidOut: item.paidOut,
-              archivedAt: archivedUnitData.archivedAt
-            }
+            agencyId: item.agencyId
           },
           this.resourceTypes.UNIT,
           item.id
@@ -517,6 +564,59 @@ export default {
       } catch (error) {
         if (error.message !== 'User cancelled') {
           console.error('Error archiving unit:', error)
+        }
+      }
+    },
+    async moveToVacancies(item) {
+      try {
+        await this.showConfirmDialog({
+          title: 'Move to Vacancies?',
+          message: `Move ${item.propertyName || item.unitName || 'this unit'} to Vacancies and remove it from Active Units?`,
+          confirmText: 'Move',
+          cancelText: 'Cancel',
+          color: '#000000'
+        })
+
+        // Create vacancy entry
+        const vacancyData = {
+          agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
+          unitId: item.id,
+          unitName: item.propertyName || item.unitName || '',
+          dateVacated: new Date().toISOString().slice(0, 10),
+          newTenantFound: 'No',
+          moveInDate: null,
+          propertyManager: item.propertyManager || '',
+          contactNumber: item.contactNumber || '',
+          notes: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+        await addDoc(collection(db, 'vacancies'), vacancyData)
+
+        // Log audit event
+        await this.logAuditEvent(
+          this.auditActions.UPDATE,
+          {
+            unitId: item.id,
+            unitName: item.propertyName || item.unitName,
+            agencyId: item.agencyId,
+            transitionedToVacancy: true,
+            vacancy: {
+              dateVacated: vacancyData.dateVacated,
+              newTenantFound: 'No'
+            }
+          },
+          this.resourceTypes.UNIT,
+          item.id
+        )
+
+        // Remove from active units
+        await deleteDoc(doc(db, 'units', item.id))
+        this.properties = this.properties.filter(prop => prop.id !== item.id)
+        this.filteredProperties = this.filteredProperties.filter(prop => prop.id !== item.id)
+      } catch (error) {
+        if (error.message !== 'User cancelled') {
+          console.error('Error moving unit to vacancies:', error)
         }
       }
     },
@@ -590,10 +690,14 @@ export default {
         }
         
         const querySnapshot = await getDocs(unitsQuery);
-        this.properties = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        this.properties = querySnapshot.docs.map(doc => {
+          const data = doc.data()
+          return {
+            ...data,
+            id: doc.id,
+            monthsMissed: (typeof data.monthsMissed === 'number' ? data.monthsMissed : 0)
+          }
+        });
         
         // If Super Admin, also refresh flagged units map for the same scope
         if (this.isSuperAdmin) {
@@ -758,6 +862,14 @@ export default {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   color: white;
   padding: 0;
+  position: relative;
+}
+
+/* Background image layer */
+.agency-card-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 /* Remove row/column gutters so the image sits flush with the top/edges */
@@ -780,6 +892,28 @@ export default {
   margin-bottom: 16px;
 }
 
+/* Dark right-to-left gradient overlay behind info */
+.agency-info-card-black::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.0) 100%);
+  pointer-events: none;
+}
+.agency-info-card-black .no-gutters,
+.agency-info-card-black .v-row {
+  position: relative;
+  z-index: 1;
+}
+
+/* Content aligned to the right dark area */
+.agency-content-right {
+  margin-left: auto;
+  width: min(720px, 55%);
+  padding: 16px 16px 24px;
+  text-align: left;
+}
+
 .detail-item-black {
   display: flex;
   align-items: center;
@@ -794,6 +928,23 @@ export default {
   color: #e0e0e0;
   margin: 0;
 }
+
+/* Hero card styles */
+.agency-hero-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 220px;
+}
+.agency-hero-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.agency-hero-gradient { position:absolute; inset:0; background: linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); }
+.agency-hero-content {
+  position: relative;
+  z-index: 1;
+  padding: 16px;
+}
+.agency-hero-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; }
+.agency-hero-details .detail-item-black { color: #ffffff; }
 
 /* Search field styling to match agency page */
 .custom-input .v-field {
@@ -817,6 +968,36 @@ export default {
 /* Avoid month input truncation */
 .month-input :deep(input) {
   min-width: 160px;
+}
+
+/* Custom month menu styling */
+.month-menu {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 12px;
+  min-width: 260px;
+}
+.month-menu__title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.month-menu__input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+}
+.month-menu__input:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+.month-menu__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 /* Action Button Styling */
@@ -870,6 +1051,10 @@ export default {
   
   .agency-info-card-black {
     text-align: center;
+  }
+
+  .agency-content-right {
+    width: 100%;
   }
 
   /* Full-bleed image on mobile as well */
