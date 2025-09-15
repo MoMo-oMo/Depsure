@@ -30,7 +30,7 @@
                 </v-col>
 
                 <v-col cols="12" md="6">
-                  <v-select
+                  <v-autocomplete
                     v-model="unit.unitName"
                     label="Select Unit"
                     variant="outlined"
@@ -40,6 +40,9 @@
                     item-value="propertyName"
                     :rules="unitNameRules"
                     :loading="unitsLoading"
+                    clearable
+                    hide-no-data
+                    auto-select-first
                     required
                   />
                 </v-col>

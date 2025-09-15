@@ -24,22 +24,37 @@
 
         <!-- Month filter -->
         <v-col cols="12" md="2" lg="3" class="pa-4">
-          <v-text-field
-            v-model="monthFilter"
-            label="Filter by month"
-
-            flat
-            density="comfortable"
-            variant="outlined"
-            type="month"
-            hide-details
-            dense
-            class="custom-input top-filter month-input"
-            ref="monthInput"
-            @input="filterProperties"
-            @click:prepend-inner="openMonthPicker"
-            clearable
-          />
+          <v-menu
+            v-model="monthMenu"
+            :close-on-content-click="false"
+            transition="fade-transition"
+            location="bottom"
+            @update:model-value="onMonthMenuToggle"
+          >
+            <template #activator="{ props }">
+              <v-text-field
+                v-bind="props"
+                :model-value="monthFilterLabel"
+                label="Filter by month"
+                append-inner-icon="mdi-calendar-month"
+                flat
+                density="comfortable"
+                variant="outlined"
+                hide-details
+                dense
+                class="custom-input top-filter month-input flex-grow-1"
+                readonly
+              />
+            </template>
+            <div class="month-menu">
+              <div class="month-menu__title">Pick month</div>
+              <input type="month" :value="tempMonth" @input="(e)=>{ tempMonth = e.target.value }" class="month-menu__input" />
+              <div class="month-menu__actions">
+                <v-btn color="black" variant="elevated" size="small" @click="applyMonth">Apply</v-btn>
+                <v-btn color="grey" variant="text" size="small" @click="clearMonth">All</v-btn>
+              </div>
+            </div>
+          </v-menu>
         </v-col>
 
         <!-- Property Type filter -->
@@ -71,17 +86,10 @@
       <v-row class="mb-6" v-if="selectedAgencyDetails">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
+            <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
             <v-row align="stretch" class="no-gutters">
-              <v-col cols="12" md="3" class="pa-0 ma-0">
-                <v-img
-                  :src="selectedAgencyDetails.profileImageUrl || selectedAgencyDetails.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
-                  :alt="selectedAgencyDetails.agencyName"
-                  height="100%"
-                  cover
-                  class="agency-logo-black"
-                />
-              </v-col>
-              <v-col cols="12" md="9">
+              <v-col cols="12">
+                <div class="agency-content-right">
                 <v-card-title class="text-white text-h4 mb-2">
                   {{ selectedAgencyDetails.agencyName }}
                 </v-card-title>
@@ -112,11 +120,10 @@
                       <span>{{ activeUnitsCount }} Properties</span>
                     </div>
                   </div>
-                  <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black" v-if="selectedAgencyDetails.notes">
-                    {{ selectedAgencyDetails.notes }}
-                  </p>
+                  <!-- Description hidden to reduce visual noise over image -->
+                  <!-- <v-divider class="my-4 bg-white" /> -->
                 </v-card-text>
+                </div>
               </v-col>
             </v-row>
           </v-card>
@@ -208,6 +215,8 @@ export default {
     return {
       searchQuery: "",
       monthFilter: this.getCurrentMonth(),
+      monthMenu: false,
+      tempMonth: this.getCurrentMonth(),
       propertyTypeFilter: null,
       filteredProperties: [],
       selectedAgency: null,
@@ -232,6 +241,23 @@ export default {
     };
   },
   computed: {
+    agencyCardBgStyle() {
+      const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+      return {
+        backgroundImage: `url(${url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }
+    },
+    monthFilterLabel() {
+      if (!this.monthFilter) return 'All Months'
+      try {
+        const [yy, mm] = String(this.monthFilter).split('-')
+        const d = new Date(Number(yy), Number(mm) - 1, 1)
+        return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+      } catch { return this.monthFilter }
+    },
     hasCurrentAgency() {
       const appStore = useAppStore();
       return !!appStore.currentAgency;
@@ -261,6 +287,20 @@ export default {
     }
   },
   methods: {
+    onMonthMenuToggle(open) {
+      if (open) this.tempMonth = this.monthFilter || ''
+    },
+    applyMonth() {
+      this.monthFilter = this.tempMonth || ''
+      this.filterProperties()
+      this.monthMenu = false
+    },
+    clearMonth() {
+      this.tempMonth = ''
+      this.monthFilter = ''
+      this.filterProperties()
+      this.monthMenu = false
+    },
     openMonthPicker() {
       const el = this.$refs.monthInput?.$el?.querySelector('input');
       if (el) {
@@ -306,22 +346,19 @@ export default {
           propertyTypeMatch = property.propertyType === this.propertyTypeFilter;
         }
         
-        // Month filter - now filtering by createdAt date
+        // Month filter - use noticeGivenDate first, then vacateDate, then createdAt
         let monthMatch = true;
         if (this.monthFilter) {
-          // Handle Firestore Timestamp objects
-          let propertyDate;
-          if (property.createdAt && property.createdAt.toDate) {
-            // Firestore Timestamp object
-            propertyDate = property.createdAt.toDate();
-          } else if (property.createdAt) {
-            // Regular Date object or date string
-            propertyDate = new Date(property.createdAt);
-          } else {
-            // No createdAt date, skip this property
-            return textMatch && propertyTypeMatch;
+          let propertyDate = null;
+          const candidate = property.noticeGivenDate || property.vacateDate || property.createdAt;
+          if (candidate && candidate.toDate) {
+            propertyDate = candidate.toDate();
+          } else if (candidate) {
+            propertyDate = new Date(candidate);
           }
-          
+          if (!propertyDate || isNaN(propertyDate.getTime())) {
+            return textMatch && propertyTypeMatch; // no comparable date, ignore month filter for this row
+          }
           const filterDate = new Date(this.monthFilter + "-01");
           const propertyMonth = `${propertyDate.getFullYear()}-${String(propertyDate.getMonth() + 1).padStart(2, "0")}`;
           const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, "0")}`;
@@ -549,7 +586,19 @@ export default {
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   color: white;
   padding: 0;
+  min-height: 220px;
+  position: relative;
 }
+.agency-card-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.agency-info-card-black { position: relative; }
+.agency-info-card-black::after { content:''; position:absolute; inset:0; background:linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); pointer-events:none; }
+.agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
+/* Content aligned to the right dark area */
+.agency-content-right { margin-left:auto; width:min(720px,55%); padding:16px 16px 24px; text-align:left; }
 
 .no-gutters { --v-gutter-x:0; --v-gutter-y:0; margin:0 !important; }
 .agency-logo-black { display:block; width:100%; height:100%; object-fit:cover; }
@@ -571,11 +620,19 @@ export default {
 .month-input { min-width: 220px; }
 :deep(.month-input .v-field-label) { white-space: nowrap; }
 
+/* Custom month menu styling */
+.month-menu { background:#fff; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.15); padding:12px; min-width:260px; }
+.month-menu__title { font-weight:600; margin-bottom:8px; }
+.month-menu__input { width:100%; padding:8px 10px; border:1px solid #d0d0d0; border-radius:8px; }
+.month-menu__input:focus { outline:none; border-color:#000; box-shadow:0 0 0 2px rgba(0,0,0,0.08); }
+.month-menu__actions { display:flex; justify-content:space-between; gap:8px; margin-top:10px; }
+
 @media (max-width:768px){
   .view-agency-page { padding:10px; }
   .back-btn { width:140px; height:40px; }
   .action-btn { font-size:0.7rem; padding:6px 8px; }
   .agency-info-card-black { text-align:center; }
   .agency-logo-black { margin:0; width:100%; height:220px; object-fit:cover; }
+  .agency-content-right { width:100%; }
 }
 </style>
