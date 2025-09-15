@@ -151,7 +151,7 @@
                     />
                   </v-col>
 
-                  <!-- Project Budget -->
+                  <!-- Project Budget
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="entry.estimatedCost"
@@ -162,7 +162,7 @@
                       :rules="estimatedCostRules"
                       prefix="R"
                     />
-                  </v-col>
+                  </v-col> -->
 
                   
                 </v-row>

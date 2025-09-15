@@ -238,7 +238,7 @@ export default {
         { title: "Missed Payment Flag", key: "missedPaymentFlag", sortable: true, align: "center" },
         { title: "Notice To Vacate Given", key: "noticeToVacateGiven", sortable: true, align: "center" },
         { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
-        { title: "Notes", key: "notes", sortable: true },
+        { title: "Action Taken", key: "actionTaken", sortable: true },
         { title: "Actions", key: "actions", sortable: false, align: "center" },
       ]
     };
@@ -309,6 +309,7 @@ export default {
         const textMatch = unit.unitName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           unit.tenantRef.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           unit.flagReason.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          unit.actionTaken.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           unit.notes.toLowerCase().includes(this.searchQuery.toLowerCase());
 
         let agencyMatch = true;
