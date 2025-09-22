@@ -158,9 +158,6 @@
                     >
                       {{ item.resourceType }}
                     </v-chip>
-                    <div v-if="item.resourceId" class="text-caption text-medium-emphasis mt-1">
-                      ID: {{ item.resourceId }}
-                    </div>
                   </div>
                   <span v-else class="text-medium-emphasis">-</span>
                 </template>
@@ -177,12 +174,6 @@
                    <span v-else class="text-medium-emphasis">-</span>
                  </template>
 
-                <!-- IP Address Column -->
-                <template #item.ipAddress="{ item }">
-                  <span class="text-caption font-family-mono">
-                    {{ item.ipAddress }}
-                  </span>
-                </template>
                              </v-data-table>
          </v-col>
        </v-row>
@@ -220,20 +211,16 @@
                 <div class="detail-value">{{ formatDateTime(selectedEntry?.timestamp) }}</div>
               </div>
               
-              <div class="detail-item">
-                <label class="detail-label">IP Address</label>
-                <div class="detail-value">{{ selectedEntry?.ipAddress }}</div>
-              </div>
               
               <div v-if="selectedEntry?.resourceType" class="detail-item">
                 <label class="detail-label">Resource</label>
-                <div class="detail-value">{{ selectedEntry?.resourceType }} - {{ selectedEntry?.resourceId }}</div>
+                <div class="detail-value">{{ selectedEntry?.resourceType }}</div>
               </div>
               
-              <div v-if="Object.keys(selectedEntry?.details || {}).length > 0" class="detail-item">
+              <div v-if="selectedEntry && selectedEntry.details && Object.keys(selectedEntry.details || {}).length > 0" class="detail-item">
                 <label class="detail-label">Details</label>
                 <div class="detail-value">
-                  <pre class="details-json">{{ JSON.stringify(selectedEntry?.details, null, 2) }}</pre>
+                  <pre class="details-json">{{ JSON.stringify((selectedEntry && selectedEntry.details) ? selectedEntry.details : {}, null, 2) }}</pre>
                 </div>
               </div>
             </div>
@@ -293,7 +280,6 @@ export default {
       { title: 'User', key: 'userName', sortable: true },
       { title: 'User Type', key: 'userType', sortable: true },
       { title: 'Action', key: 'action', sortable: true },
-   
       { title: 'Details', key: 'details', sortable: false },
     ]
 
@@ -439,26 +425,44 @@ export default {
           null
         )
 
-        // Prepare data without IP and Resource ID
-        const headers = ['Timestamp', 'User', 'User Email', 'User Type', 'Action', 'Resource Type']
-        const rows = filteredAuditEntries.value.map(e => ([
-          formatCsvDate(e.timestamp),
-          e.userName || '',
-          e.userEmail || '',
-          e.userType || '',
-          e.action || '',
-          e.resourceType || ''
-        ]))
+        // Prepare tabular data with readable details
+        const columns = [
+          { header: 'Timestamp', key: 'timestamp' },
+          { header: 'User', key: 'userName' },
+          { header: 'User Email', key: 'userEmail' },
+          { header: 'User Type', key: 'userType' },
+          { header: 'Action', key: 'action' },
+          { header: 'Resource Type', key: 'resourceType' },
+          { header: 'Details', key: 'details' }
+        ]
+
+        const rows = filteredAuditEntries.value.map(entry => ({
+          timestamp: formatCsvDate(entry.timestamp),
+          userName: entry.userName || '',
+          userEmail: entry.userEmail || '',
+          userType: entry.userType || '',
+          action: entry.action || '',
+          resourceType: entry.resourceType || '',
+          details: JSON.stringify(entry.details || {}, null, 2)
+            .replace(/[{}\"\[\]]/g, "")
+            .replace(/\\n\\s*/g, "\\n")
+            .replace(/:\\s*\\n/g, ": ")
+            .split("\\n").map(s => s.trim()).filter(s => s && !/:\\s*$/.test(s)).join("\\n")
+        }))
 
         // Create workbook / worksheet
         const wb = new Workbook()
         const ws = wb.addWorksheet('Audit Trail')
 
-        // Define columns with initial widths (will auto-size below)
-        ws.columns = headers.map(h => ({ header: h, key: h, width: 20 }))
+        // Define columns with starter widths
+        ws.columns = columns.map(column => ({
+          header: column.header,
+          key: column.key,
+          width: column.key === 'details' ? 45 : 20
+        }))
 
         // Add data rows
-        rows.forEach(r => ws.addRow(r))
+        rows.forEach(row => ws.addRow(row))
 
         // Style header row
         const headerRow = ws.getRow(1)
@@ -475,15 +479,35 @@ export default {
 
         // Freeze header and add autofilter
         ws.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
-        ws.autoFilter = { from: 'A1', to: String.fromCharCode(64 + headers.length) + '1' }
+        const lastColumnLetter = String.fromCharCode(64 + columns.length)
+        ws.autoFilter = { from: 'A1', to: lastColumnLetter + '1' }
+
+        // Wrap and align longer detail entries for readability
+        ws.getColumn('details').alignment = { wrapText: true, vertical: 'top' }
+        ws.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return
+          row.alignment = { vertical: 'top' }
+          const detailCell = row.getCell('details')
+          if (detailCell) {
+            detailCell.alignment = { vertical: 'top', wrapText: true }
+          }
+        })
 
         // Auto-fit column widths based on content (with padding and limits)
-        headers.forEach((h, i) => {
-          const maxLen = Math.max(
-            String(h).length,
-            ...rows.map(r => String(r[i] ?? '').length)
-          )
-          ws.getColumn(i + 1).width = Math.min(Math.max(maxLen + 2, 12), 60)
+        columns.forEach((column, index) => {
+          const lengths = rows.map(row => {
+            const value = row[column.key]
+            if (value === null || value === undefined) return 0
+            if (typeof value === 'string') {
+              return value.split('\n').reduce((max, segment) => Math.max(max, segment.length), 0)
+            }
+            return String(value).length
+          })
+          const headerLength = column.header.length
+          const maxLength = Math.max(headerLength, ...lengths)
+          const minWidth = column.key === 'details' ? 30 : 12
+          const maxWidth = column.key === 'details' ? 70 : 40
+          ws.getColumn(index + 1).width = Math.min(Math.max(maxLength + 2, minWidth), maxWidth)
         })
 
         // Generate and download
@@ -514,8 +538,7 @@ export default {
         'User Type',
         'Action',
         'Resource Type',
-        'Resource ID',
-        'IP Address'
+        'Details'
       ]
 
       const csvRows = []
@@ -529,8 +552,11 @@ export default {
           entry.userType,
           entry.action,
           entry.resourceType || '',
-          entry.resourceId || '',
-          entry.ipAddress || ''
+          JSON.stringify(entry.details || {}, null, 2)
+            .replace(/[{}\"\[\]]/g, "")
+            .replace(/\\n\\s*/g, "\\n")
+            .replace(/:\\s*\\n/g, ": ")
+            .split("\\n").map(s => s.trim()).filter(s => s && !/:\\s*$/.test(s)).join("\\n")
         ]
         csvRows.push(row.map(csvEscape).join(','))
       })

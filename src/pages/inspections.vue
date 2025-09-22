@@ -78,8 +78,19 @@
         </v-col>
       </v-row>
 
+      <!-- Clean Agency Header (image, centered title, no overlay) -->
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <v-card class="agency-hero-card" elevation="1">
+            <div class="agency-hero-bg" :style="agencyHeroBgStyle"></div>
+            <div class="agency-hero-center">
+              {{ heroTitle }}
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
       <!-- Agency Info Card -->
-      <v-row class="mb-6" v-if="selectedAgencyDetails">
+      <v-row class="mb-6" v-if="false && selectedAgencyDetails">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
             <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
@@ -228,6 +239,7 @@ import { collection, getDocs, deleteDoc, doc, query, where, addDoc, getDoc } fro
 import { useAppStore } from '@/stores/app'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { usePropertyType } from '@/composables/usePropertyType'
+import heroBg from '@/assets/title.png'
 
 export default {
   name: "InspectionPage",
@@ -266,6 +278,12 @@ export default {
     };
   },
   computed: {
+    agencyHeroBgStyle() {
+      return { background: `url(${heroBg}) center/cover no-repeat` }
+    },
+    heroTitle() {
+      return this.selectedAgencyDetails?.agencyName || 'Inspections'
+    },
     agencyCardBgStyle() {
       const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
       return {
@@ -289,7 +307,8 @@ export default {
     },
     isAgencyUser() {
       const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Agency';
+      const user = appStore.currentUser;
+      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
     },
     isSuperAdmin() {
       const appStore = useAppStore();
@@ -367,13 +386,27 @@ export default {
         console.log('Fetching inspections for agencyId:', agencyId);
         let inspectionsQuery;
         
-        if (userType === 'Agency') {
-          // Agency users can only see their own inspections
-          inspectionsQuery = query(
-            collection(db, 'inspections'),
-            where('agencyId', '==', currentUser.uid)
-          );
-          console.log('Querying inspections for agency user:', currentUser.uid);
+        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+          // Agency users and Agency Admin users can only see their own inspections
+          let targetAgencyId = currentUser.uid; // Default for Agency users
+          
+          if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+            // For Agency Admin users, use their managed agency ID
+            targetAgencyId = currentUser.managedAgencyId;
+          }
+          
+          if (targetAgencyId) {
+            inspectionsQuery = query(
+              collection(db, 'inspections'),
+              where('agencyId', '==', targetAgencyId)
+            );
+            console.log('Querying inspections for agency user:', targetAgencyId);
+          } else {
+            // No agency ID available, return empty results
+            this.entries = [];
+            this.filteredEntries = [];
+            return;
+          }
         } else if (agencyId) {
           // Query inspection entries for specific agency
           inspectionsQuery = query(
@@ -456,17 +489,36 @@ export default {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         
-        if (userType === 'Agency') {
-          // Agency users can only see their own agency
-          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (agencyDoc.exists()) {
-            const agencyData = agencyDoc.data();
-            this.agencies = [{
-              id: agencyDoc.id,
-              ...agencyData
-            }];
-            // Pre-select the agency for agency users
-            this.selectedAgency = agencyDoc.id;
+        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+          // Agency users and Agency Admin users can only see their own agency
+          let agencyData = null;
+          
+          if (userType === 'Agency') {
+            // For Agency users, use their own document
+            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (agencyDoc.exists()) {
+              agencyData = {
+                id: agencyDoc.id,
+                ...agencyDoc.data()
+              };
+            }
+          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+            // For Agency Admin users, fetch their managed agency
+            if (currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data()
+                };
+              }
+            }
+          }
+          
+          if (agencyData) {
+            this.agencies = [agencyData];
+            // Pre-select the agency for agency users and agency admins
+            this.selectedAgency = agencyData.id;
             await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
@@ -804,6 +856,11 @@ export default {
 .document-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
 
 :deep(.custom-header .v-data-table-header) { background:#000; color:white; }
+
+/* Clean agency name-only hero with image (no overlay) */
+.agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
+.agency-hero-bg { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
+.agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 
 @media(max-width:768px){
   .back-btn { width:140px; height:40px; }

@@ -108,7 +108,7 @@
                     </div>
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <p class="agency-description-black">{{ agency.notes || 'No notes available' }}</p>
+                  <p v-if="agency.notes" class="agency-description-black">{{ agency.notes }}</p>
                 </v-card-text>
                 </div>
               </v-col>
@@ -150,7 +150,8 @@ export default {
         backgroundImage: `url(${url})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#000'
       }
     }
   },
@@ -317,7 +318,7 @@ export default {
 <style scoped>
 .agency-card-bg { position:absolute; inset:0; z-index:0; }
 .agency-info-card-black { position: relative; }
-.agency-info-card-black::after { content:''; position:absolute; inset:0; background:linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); pointer-events:none; }
+.agency-info-card-black::after { content:''; position:absolute; inset:0; background:linear-gradient(to left, rgba(0,0,0,0.92) 60%, rgba(0,0,0,0)); pointer-events:none; }
 .agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
 .agency-content-right { margin-left:auto; width:min(720px,55%); padding:16px 16px 24px; text-align:left; }
 .view-agency-page {

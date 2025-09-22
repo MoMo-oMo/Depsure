@@ -42,8 +42,8 @@
           <!-- Unit Info -->
           <div v-else class="form-card" elevation="0">
             <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
-              <v-tab value="details">Details</v-tab>
-              <v-tab value="notes">Notes</v-tab>
+              <v-tab value="details" class="tab-label tab--details">Details</v-tab>
+              <v-tab value="notes" class="tab-label tab--notes">Notes</v-tab>
             </v-tabs>
             <v-window v-model="activeTab">
               <v-window-item value="details">
@@ -158,7 +158,7 @@
                     <div v-if="(unit.notesLog && unit.notesLog.length)" class="chat-log" ref="chatLog">
                       <div
                         v-for="(n, idx) in sortedNotes"
-                        :key="idx"
+                        :key="noteKey(n)"
                         class="chat-message"
                         :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
                       >
@@ -169,9 +169,41 @@
                         <div class="chat-bubble">
                           <div class="chat-header">
                             <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
-                            <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
+                            <div class="chat-header-right">
+                              <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
+                              <span v-if="n.isEdited && !n.isDeleted" class="chat-edited">(edited)</span>
+                              <v-menu v-if="n.authorId === currentUserId && !n.isDeleted" location="bottom end">
+                                <template #activator="{ props }">
+                                  <v-btn v-bind="props" icon="mdi-dots-vertical" size="x-small" variant="text" color="white" />
+                                </template>
+                                <v-list density="compact">
+                                  <v-list-item @click="startEdit(n)">
+                                    <v-list-item-title>
+                                      <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
+                                      Edit
+                                    </v-list-item-title>
+                                  </v-list-item>
+                                  <v-list-item @click="softDeleteNote(n)">
+                                    <v-list-item-title class="text-error">
+                                      <v-icon size="small" class="mr-1" color="error">mdi-delete</v-icon>
+                                      Delete
+                                    </v-list-item-title>
+                                  </v-list-item>
+                                </v-list>
+                              </v-menu>
+                            </div>
                           </div>
-                          <div class="chat-text">{{ n.text }}</div>
+                          <div v-if="n.isDeleted" class="chat-text deleted">This message was deleted</div>
+                          <div v-else>
+                            <div v-if="editingKey && editingKey === noteKey(n)" class="edit-area">
+                              <v-textarea v-model="editingText" rows="2" auto-grow variant="outlined" class="custom-input" :counter="500" maxlength="500" />
+                              <div class="d-flex justify-end mt-2 gap-2">
+                                <v-btn size="small" variant="text" @click="cancelEdit">Cancel</v-btn>
+                                <v-btn size="small" color="black" variant="elevated" :loading="savingEdit" :disabled="!editingText.trim()" @click="saveEdit(n)">Save</v-btn>
+                              </div>
+                            </div>
+                            <div v-else class="chat-text">{{ n.text }}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -214,8 +246,8 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 export default {
   name: "ViewFlaggedUnitPage",
   setup() {
-    const { showErrorDialog } = useCustomDialogs()
-    return { showErrorDialog }
+    const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
+    return { showErrorDialog, showConfirmDialog }
   },
   data() {
     return {
@@ -226,6 +258,9 @@ export default {
       error: null,
       newNote: '',
       savingNote: false,
+      editingKey: null,
+      editingText: '',
+      savingEdit: false,
     };
   },
   computed: {
@@ -270,6 +305,64 @@ export default {
         const el = this.$refs.chatLog
         if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight
       })
+    },
+    startEdit(note) { this.editingKey = this.noteKey(note); this.editingText = String(note.text || '') },
+    cancelEdit() { this.editingKey = null; this.editingText = '' },
+    noteKey(n) {
+      try {
+        if (n?.id) return `id:${n.id}`
+        const t = n?.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n?.timestamp || 0).getTime()
+        const aid = n?.authorId || ''
+        const txt = String(n?.text || '')
+        return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0,8)}`
+      } catch (_) { return `legacy:${Math.random().toString(36).slice(2,8)}` }
+    },
+    findNoteIndexByIdOrMatch(list, target) {
+      if (!Array.isArray(list)) return -1
+      if (target.id) { const i = list.findIndex(n => n && n.id === target.id); if (i !== -1) return i }
+      const tA = target.timestamp?.toDate ? target.timestamp.toDate().getTime() : new Date(target.timestamp || 0).getTime()
+      const txt = String(target.text || '')
+      const aid = target.authorId || ''
+      for (let i = list.length - 1; i >= 0; i--) {
+        const n = list[i] || {}
+        const nT = n.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n.timestamp || 0).getTime()
+        if ((n.id && !target.id) ? false : (String(n.text || '') === txt && (n.authorId || '') === aid && nT === tA)) return i
+      }
+      return -1
+    },
+    async saveEdit(target) {
+      if (!this.unit?.id) return
+      const newText = this.editingText.trim(); if (!newText) return
+      try {
+        this.savingEdit = true
+        const list = Array.isArray(this.unit.notesLog) ? [...this.unit.notesLog] : []
+        const idx = this.findNoteIndexByIdOrMatch(list, target)
+        if (idx === -1) throw new Error('Note not found')
+        const old = list[idx] || {}
+        list[idx] = { ...old, text: newText, isEdited: true, editedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
+        await updateDoc(doc(db, 'flaggedUnits', this.unit.id), { notesLog: list, updatedAt: serverTimestamp() })
+        this.unit.notesLog = list
+        this.cancelEdit()
+      } catch (e) {
+        console.error('Error editing note:', e)
+        this.showErrorDialog('Failed to edit note. Please try again.', 'Error', 'OK')
+      } finally { this.savingEdit = false }
+    },
+    async softDeleteNote(target) {
+      if (!this.unit?.id) return
+      try { await this.showConfirmDialog({ title: 'Delete message?', message: 'This message will be shown as deleted.', confirmText: 'Delete', cancelText: 'Cancel', color: '#dc3545' }) } catch(_) { return }
+      try {
+        const list = Array.isArray(this.unit.notesLog) ? [...this.unit.notesLog] : []
+        const idx = this.findNoteIndexByIdOrMatch(list, target)
+        if (idx === -1) throw new Error('Note not found')
+        const old = list[idx] || {}
+        list[idx] = { ...old, isDeleted: true, deletedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
+        await updateDoc(doc(db, 'flaggedUnits', this.unit.id), { notesLog: list, updatedAt: serverTimestamp() })
+        this.unit.notesLog = list
+      } catch (e) {
+        console.error('Error deleting note:', e)
+        this.showErrorDialog('Failed to delete note. Please try again.', 'Error', 'OK')
+      }
     },
     async loadUnit(unitId) {
       try {
@@ -349,6 +442,7 @@ export default {
         }
         
         const note = {
+          id: Date.now() + '_' + Math.random().toString(36).slice(2,8),
           text: this.newNote,
           authorId: appStore.userId || currentUser?.uid || '',
           authorName: authorName,
@@ -356,7 +450,9 @@ export default {
           authorAvatarUrl: isAgency 
             ? (this.unit?.agencyProfileImageUrl || this.unit?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
             : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
-          timestamp: new Date()
+          timestamp: new Date(),
+          isEdited: false,
+          isDeleted: false
         }
         
         await updateDoc(doc(db, 'flaggedUnits', this.unit.id), { 
@@ -432,7 +528,7 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 /* Form card */
@@ -463,12 +559,19 @@ export default {
 .chat-message.mine{flex-direction:row-reverse}
 .chat-avatar{width:28px;height:28px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;overflow:hidden}
 .chat-avatar-img{width:100%;height:100%;object-fit:cover;display:block}
-.chat-bubble{max-width:75%;background:#3a3f44;color:#fff;border-radius:10px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
-.chat-message.mine .chat-bubble{background:#000}
-.chat-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.chat-bubble{max-width:55%;min-width:0;overflow-wrap:anywhere;word-break:break-word;background:#f2f4f7;color:#111;border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.chat-message.mine .chat-bubble{background:#000;color:#fff}
+.chat-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.chat-header-right{display:flex;align-items:center;gap:8px}
 .chat-author{font-weight:700;font-size:.8rem;opacity:.95}
 .chat-time{font-size:.7rem;opacity:.7;margin-left:8px}
-.chat-text{white-space:pre-wrap;word-wrap:break-word;line-height:1.35}
+.chat-edited{font-size:.7rem;opacity:.7}
+.chat-text{white-space:pre-wrap;word-wrap:break-word;line-height:1.35;text-align:center}
+.chat-text.deleted{font-style:italic;opacity:.75}
+.edit-area{background:#000;border-radius:10px;padding:6px}
+.edit-area :deep(.v-field){background:#000 !important}
+.edit-area :deep(.v-field__input){background:#000 !important;color:#fff !important}
+.edit-area :deep(.v-field__outline){border-color:#444 !important}
 .chat-input :deep(.v-field__input){min-height:44px}
 
 /* Responsive */
@@ -483,5 +586,56 @@ export default {
     width: 140px;
     height: 40px;
   }
+}
+/* Tabs styling */
+.property-tabs {
+  background-color: #f8f9fa;
+}
+
+.property-tabs :deep(.tab-label) {
+  font-weight: 500;
+  text-transform: none;
+  transition: color 0.2s ease;
+}
+
+.property-tabs :deep(.tab-label.v-tab--selected) {
+  font-weight: 600;
+  background-color: white;
+}
+
+.property-tabs :deep(.v-tabs-slider) {
+  background-color: #000000 !important;
+}
+
+.property-tabs :deep(.tab--details) {
+  color: #1e88e5;
+}
+
+.property-tabs :deep(.tab--details.v-tab--selected) {
+  color: #0d47a1;
+}
+
+.property-tabs :deep(.tab--documents) {
+  color: #fb8c00;
+}
+
+.property-tabs :deep(.tab--documents.v-tab--selected) {
+  color: #ef6c00;
+}
+
+.property-tabs :deep(.tab--notes) {
+  color: #43a047;
+}
+
+.property-tabs :deep(.tab--notes.v-tab--selected) {
+  color: #1b5e20;
+}
+
+.property-tabs :deep(.tab--archive) {
+  color: #8e24aa;
+}
+
+.property-tabs :deep(.tab--archive.v-tab--selected) {
+  color: #5e35b1;
 }
 </style>

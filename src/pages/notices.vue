@@ -82,8 +82,19 @@
         </v-col>
       </v-row>
 
+      <!-- Clean Agency Header (static image, centered title) -->
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <v-card class="agency-hero-card" elevation="1">
+            <div class="agency-hero-bg" :style="agencyHeroBgStyle"></div>
+            <div class="agency-hero-center">
+              {{ heroTitle }}
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
       <!-- Agency Info Card (only when selected) -->
-      <v-row class="mb-6" v-if="selectedAgencyDetails">
+      <v-row class="mb-6" v-if="false && selectedAgencyDetails">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
             <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
@@ -203,6 +214,7 @@ import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
+import heroBg from '@/assets/title.png'
 
 export default {
   name: "NoticePage",
@@ -241,6 +253,12 @@ export default {
     };
   },
   computed: {
+    agencyHeroBgStyle() {
+      return { background: `url(${heroBg}) center/cover no-repeat` }
+    },
+    heroTitle() {
+      return this.selectedAgencyDetails?.agencyName || 'Notices'
+    },
     agencyCardBgStyle() {
       const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
       return {
@@ -267,7 +285,8 @@ export default {
     },
     isAgencyUser() {
       const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Agency';
+      const user = appStore.currentUser;
+      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
     },
     isSuperAdmin() {
       const appStore = useAppStore();
@@ -374,17 +393,36 @@ export default {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         
-        if (userType === 'Agency') {
-          // Agency users can only see their own agency
-          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (agencyDoc.exists()) {
-            const agencyData = agencyDoc.data();
-            this.agencies = [{
-              id: agencyDoc.id,
-              ...agencyData
-            }];
-            // Pre-select the agency for agency users
-            this.selectedAgency = agencyDoc.id;
+        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+          // Agency users and Agency Admin users can only see their own agency
+          let agencyData = null;
+          
+          if (userType === 'Agency') {
+            // For Agency users, use their own document
+            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (agencyDoc.exists()) {
+              agencyData = {
+                id: agencyDoc.id,
+                ...agencyDoc.data()
+              };
+            }
+          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+            // For Agency Admin users, fetch their managed agency
+            if (currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data()
+                };
+              }
+            }
+          }
+          
+          if (agencyData) {
+            this.agencies = [agencyData];
+            // Pre-select the agency for agency users and agency admins
+            this.selectedAgency = agencyData.id;
             await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
@@ -611,6 +649,15 @@ export default {
 .action-btn-container { display:flex; justify-content:center; align-items:center; gap:4px; height:100%; }
 .action-btn { margin:0; font-size:0.75rem; font-weight:500; text-transform:none; border-radius:6px; transition:all 0.3s ease; }
 .action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+
+/* Clean agency name-only header */
+.agency-name-card { border-radius: 10px; border: 1px solid #e9e9e9; background: #fff; }
+.agency-name-text { text-align: center; font-weight: 700; font-size: 1.25rem; padding: 12px 16px; color: #111; }
+
+/* Static hero with image, centered title (no overlay) */
+.agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
+.agency-hero-bg { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
+.agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 
 :deep(.custom-header .v-data-table-header) { background-color:#000 !important; }
 :deep(.custom-header .v-data-table-header th) { background-color:#000 !important; color:white !important; }

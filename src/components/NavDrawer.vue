@@ -47,7 +47,7 @@
            @click="navigateTo('audit-trail')"
          />
         <v-list-item
-          v-if="!isAgencyUser"
+          v-if="canAccessAgencyPage"
           prepend-icon="mdi-domain"
           title="AGENCY"
           value="agency"
@@ -149,7 +149,9 @@ export default {
     
     // Role-based access control
     const canAccessUserManagement = computed(() => {
-      return userType.value === 'Super Admin' || userType.value === 'Admin'
+      // Only Super Admin and Depsure Admin can access user management
+      return userType.value === 'Super Admin' || 
+             (userType.value === 'Admin' && appStore.currentUser?.adminScope === 'depsure')
     })
 
     const canAccessAuditTrail = computed(() => {
@@ -158,6 +160,16 @@ export default {
 
     const isAgencyUser = computed(() => {
       return userType.value === 'Agency'
+    })
+
+    const isAgencyAdmin = computed(() => {
+      return userType.value === 'Admin' && appStore.currentUser?.adminScope === 'agency'
+    })
+
+    const canAccessAgencyPage = computed(() => {
+      // Only Super Admin and Depsure Admin can access the agencies page
+      return userType.value === 'Super Admin' || 
+             (userType.value === 'Admin' && appStore.currentUser?.adminScope === 'depsure')
     })
 
     const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
@@ -219,7 +231,9 @@ export default {
        navigateToProfile,
        canAccessUserManagement,
        canAccessAuditTrail,
-       isAgencyUser
+       isAgencyUser,
+       isAgencyAdmin,
+       canAccessAgencyPage
      }
   }
 }

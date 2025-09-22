@@ -110,15 +110,49 @@
                     />
                   </v-col>
 
-                                     <!-- Status -->
-                   <v-col cols="12" md="6">
-                     <v-select
-                       v-model="user.status"
-                       label="Status"
-                       variant="outlined"
-                       class="custom-input"
-                       :items="['Active', 'Inactive']"
-                       :rules="statusRules"
+                  <!-- Admin Scope (only for Admin users) -->
+                  <template v-if="user.userType === 'Admin'">
+                    <v-col cols="12" md="6">
+                      <v-select
+                        v-model="user.adminScope"
+                        :items="[
+                          { title: 'Depsure Admin', value: 'depsure' },
+                          { title: 'Agency Admin', value: 'agency' }
+                        ]"
+                        item-title="title"
+                        item-value="value"
+                        label="Admin Type"
+                        variant="outlined"
+                        class="custom-input"
+                        :rules="[v => !!v || 'Admin type is required']"
+                        required
+                      />
+                    </v-col>
+                    <v-col cols="12" md="6" v-if="user.adminScope === 'agency'">
+                      <v-select
+                        v-model="user.managedAgencyId"
+                        :items="agencies"
+                        item-title="agencyName"
+                        item-value="id"
+                        :loading="agenciesLoading"
+                        label="Select Agency"
+                        variant="outlined"
+                        class="custom-input"
+                        :rules="[v => !!v || 'Please select an agency']"
+                        required
+                      />
+                    </v-col>
+                  </template>
+
+                  <!-- Status -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="user.status"
+                      label="Status"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Active', 'Inactive']"
+                      :rules="statusRules"
                        required
                      />
                    </v-col>
@@ -238,7 +272,7 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { auth, db } from '@/firebaseConfig'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc, collection, getDocs, query, where } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 
 export default {
@@ -251,20 +285,26 @@ export default {
   },
   data() {
     return {
-             user: {
-         email: '',
-         password: '',
-         userType: '',
-         status: 'Active',
-         profileImage: null,
-         // Agency fields (mirror View Agency)
-         agencyName: '',
-         regNo: '',
-         address: '',
-         primaryContactName: '',
-         contactNumber: '',
-         notes: ''
-       },
+      user: {
+        email: '',
+        password: '',
+        userType: '',
+        status: 'Active',
+        profileImage: null,
+        // Admin scope fields
+        adminScope: 'depsure', // 'depsure' | 'agency'
+        managedAgencyId: '',
+        managedAgencyName: '',
+        // Agency fields (mirror View Agency)
+        agencyName: '',
+        regNo: '',
+        address: '',
+        primaryContactName: '',
+        contactNumber: '',
+        notes: ''
+      },
+      agencies: [],
+      agenciesLoading: false,
       valid: true,
       loading: false,
       // Validation rules
@@ -305,14 +345,29 @@ export default {
     const qp = this.$route?.query || {}
     if (qp.userType) this.user.userType = String(qp.userType)
     if (qp.agencyName) this.user.agencyName = String(qp.agencyName)
+    // Preload agencies for Admin scope selection
+    this.fetchAgencies()
   },
      methods: {
-     async saveUser() {
-       if (this.$refs.form.validate()) {
-         this.loading = true;
-         console.log('Adding new user:', this.user);
-         
-         try {
+      async fetchAgencies() {
+        try {
+          this.agenciesLoading = true
+          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+          const snap = await getDocs(q)
+          this.agencies = snap.docs.map(d => ({ id: d.id, ...(d.data() || {} ) }))
+        } catch (e) {
+          console.error('Failed to fetch agencies for admin assignment:', e)
+          this.agencies = []
+        } finally {
+          this.agenciesLoading = false
+        }
+      },
+      async saveUser() {
+        if (this.$refs.form.validate()) {
+          this.loading = true;
+          console.log('Adding new user:', this.user);
+          
+          try {
            // Create user in Firebase Auth
            const userCredential = await createUserWithEmailAndPassword(
              auth,
@@ -323,13 +378,17 @@ export default {
            const newUser = userCredential.user;
            
            // Prepare user data for Firestore
-            const userData = {
+           const userData = {
               email: this.user.email,
               userType: this.user.userType,
               status: this.user.status,
               createdAt: new Date(),
               createdBy: this.appStore.userId,
               profileImageUrl: this.user.profileImage || null,
+              // Admin scope
+              adminScope: this.user.userType === 'Admin' ? (this.user.adminScope || 'depsure') : null,
+              managedAgencyId: this.user.userType === 'Admin' && this.user.adminScope === 'agency' ? (this.user.managedAgencyId || null) : null,
+              managedAgencyName: this.user.userType === 'Admin' && this.user.adminScope === 'agency' ? (this.agencies.find(a => a.id === this.user.managedAgencyId)?.agencyName || null) : null,
               // Agency-specific fields
               agencyName: this.user.userType === 'Agency' ? this.user.agencyName : null,
               regNo: this.user.userType === 'Agency' ? (this.user.regNo || '') : null,
@@ -343,18 +402,20 @@ export default {
            await setDoc(doc(db, 'users', newUser.uid), userData);
            
            // Log the audit event
-           await this.logAuditEvent(
-             this.auditActions.CREATE,
-             {
-               userEmail: this.user.email,
-               userType: this.user.userType,
-               status: this.user.status,
-               hasProfileImage: !!this.user.profileImage,
-               agencyName: this.user.agencyName || null
-             },
-             this.resourceTypes.USER,
-             newUser.uid
-           );
+            await this.logAuditEvent(
+              this.auditActions.CREATE,
+              {
+                userEmail: this.user.email,
+                userType: this.user.userType,
+                status: this.user.status,
+                hasProfileImage: !!this.user.profileImage,
+                agencyName: this.user.agencyName || null,
+                adminScope: this.user.userType === 'Admin' ? (this.user.adminScope || 'depsure') : null,
+                managedAgencyId: this.user.userType === 'Admin' && this.user.adminScope === 'agency' ? (this.user.managedAgencyId || null) : null
+              },
+              this.resourceTypes.USER,
+              newUser.uid
+            );
            
            this.showSuccessDialog('User added successfully!', 'Success!', 'Continue', '/user-management');
          } catch (error) {

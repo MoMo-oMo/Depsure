@@ -37,6 +37,31 @@
           <v-card v-else class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
+                <!-- Profile Image Preview -->
+                <v-row class="mb-4" justify="center">
+                  <v-col cols="12" class="d-flex justify-center">
+                    <v-avatar size="112" class="user-avatar">
+                      <v-img v-if="entryProfileImageSource" :src="entryProfileImageSource" alt="Profile image" cover />
+                      <span v-else class="avatar-initials">{{ entryInitials }}</span>
+                    </v-avatar>
+                  </v-col>
+                </v-row>
+                <!-- Image actions -->
+                <v-row class="mb-2" justify="center">
+                  <v-col cols="12" class="d-flex justify-center">
+                    <input ref="fileInput" type="file" accept="image/*" @change="handleFileSelect" style="display:none" />
+                    <v-btn
+                      color="black"
+                      variant="elevated"
+                      class="upload-btn mr-3"
+                      :loading="imageUploadLoading"
+                      :disabled="imageUploadLoading || !entry.id"
+                      @click="selectFile"
+                    >
+                      {{ imageUploadLoading ? 'Uploading...' : 'Change Image' }}
+                    </v-btn>
+                  </v-col>
+                </v-row>
                 <v-row>
                   <!-- First Name -->
                   <v-col cols="12" md="6">
@@ -100,6 +125,58 @@
                     />
                   </v-col>
 
+                  <!-- Registration Number (optional) -->
+                  <v-col cols="12" md="6" v-if="entry.userType === 'Agency'">
+                    <v-text-field
+                      v-model="entry.regNo"
+                      label="Registration Number (optional)"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
+
+                  <!-- Address -->
+                  <v-col cols="12" md="6" v-if="entry.userType === 'Agency'">
+                    <v-text-field
+                      v-model="entry.address"
+                      label="Address"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
+
+                  <!-- Primary Contact Name -->
+                  <v-col cols="12" md="6" v-if="entry.userType === 'Agency'">
+                    <v-text-field
+                      v-model="entry.primaryContactName"
+                      label="Primary Contact Name"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
+
+                  <!-- Contact Number -->
+                  <v-col cols="12" md="6" v-if="entry.userType === 'Agency'">
+                    <v-text-field
+                      v-model="entry.contactNumber"
+                      label="Contact Number"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
+
+                  <!-- Notes / Description (optional) -->
+                  <v-col cols="12" v-if="entry.userType === 'Agency'">
+                    <v-textarea
+                      v-model="entry.notes"
+                      label="Notes (optional)"
+                      variant="outlined"
+                      class="custom-input"
+                      rows="3"
+                      auto-grow
+                    />
+                  </v-col>
+
                   <!-- Status -->
                   <v-col cols="12" md="6">
                     <v-select
@@ -148,8 +225,9 @@
 
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db } from '@/firebaseConfig'
+import { db, storage } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
@@ -168,17 +246,34 @@ export default {
         email: "",
         userType: "",
         agencyName: "",
+        regNo: "",
+        address: "",
+        primaryContactName: "",
+        contactNumber: "",
+        notes: "",
         status: "Active"
       },
       loading: true,
       saving: false,
       error: null,
       valid: true,
+      imageUploadLoading: false,
+      imageError: "",
       emailRules: [
         v => !!v || "Email is required",
         v => /.+@.+\..+/.test(v) || "Enter a valid email"
       ]
     };
+  },
+  computed: {
+    entryProfileImageSource() {
+      return this.entry?.profileImageUrl || this.entry?.profileImage || ''
+    },
+    entryInitials() {
+      const a = (String(this.entry?.firstName || '').trim()[0] || '').toUpperCase()
+      const b = (String(this.entry?.lastName || '').trim()[0] || '').toUpperCase()
+      return (a + b) || a || b || '?'
+    }
   },
   async mounted() {
     document.title = "Edit User Information - Depsure"
@@ -191,6 +286,44 @@ export default {
     }
   },
   methods: {
+    selectFile() {
+      this.imageError = ''
+      if (this.$refs.fileInput) this.$refs.fileInput.click()
+    },
+    async handleFileSelect(event) {
+      const file = event.target.files && event.target.files[0]
+      this.imageError = ''
+      if (!file || !this.entry?.id) return
+      // Validate
+      if (!file.type || !file.type.startsWith('image/')) {
+        this.showErrorDialog('Please select a valid image file', 'Invalid File', 'OK')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        this.showErrorDialog('Image size must be less than 5MB', 'Too Large', 'OK')
+        return
+      }
+      this.imageUploadLoading = true
+      try {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+        const path = `profile-images/${this.entry.id}-${Date.now()}.${ext}`
+        const ref = storageRef(storage, path)
+        const snap = await uploadBytes(ref, file)
+        const url = await getDownloadURL(snap.ref)
+        // Update Firestore doc
+        const userRef = doc(db, 'users', this.entry.id)
+        await updateDoc(userRef, { profileImageUrl: url, updatedAt: new Date() })
+        // Update local state
+        this.entry.profileImageUrl = url
+        this.showSuccessDialog('Profile picture updated successfully', 'Success', 'OK')
+      } catch (e) {
+        console.error('Error uploading image:', e)
+        this.showErrorDialog('Failed to upload image. Please try again.', 'Error', 'OK')
+      } finally {
+        this.imageUploadLoading = false
+        if (this.$refs.fileInput) this.$refs.fileInput.value = ''
+      }
+    },
     async loadEntryData(id) {
       try {
         const docRef = doc(db, 'users', id)
@@ -201,6 +334,12 @@ export default {
             id: docSnap.id,
             ...docSnap.data()
           }
+          // Ensure optional fields exist for reactivity and backward compatibility
+          this.entry.regNo = this.entry.regNo || ''
+          this.entry.address = this.entry.address || this.entry.agencyAddress || ''
+          this.entry.primaryContactName = this.entry.primaryContactName || ''
+          this.entry.contactNumber = this.entry.contactNumber || this.entry.agencyPhone || ''
+          this.entry.notes = this.entry.notes || this.entry.agencyDescription || ''
         } else {
           this.error = "User not found"
         }
@@ -224,6 +363,15 @@ export default {
             email: this.entry.email,
             userType: this.entry.userType,
             agencyName: this.entry.userType === 'Agency' ? this.entry.agencyName : '',
+            // Extended agency fields + legacy mappings
+            regNo: this.entry.userType === 'Agency' ? (this.entry.regNo || '') : '',
+            address: this.entry.userType === 'Agency' ? (this.entry.address || '') : '',
+            primaryContactName: this.entry.userType === 'Agency' ? (this.entry.primaryContactName || '') : '',
+            contactNumber: this.entry.userType === 'Agency' ? (this.entry.contactNumber || '') : '',
+            notes: this.entry.userType === 'Agency' ? (this.entry.notes || '') : '',
+            agencyPhone: this.entry.userType === 'Agency' ? (this.entry.contactNumber || '') : '',
+            agencyAddress: this.entry.userType === 'Agency' ? (this.entry.address || '') : '',
+            agencyDescription: this.entry.userType === 'Agency' ? (this.entry.notes || '') : '',
             status: this.entry.status,
             updatedAt: new Date()
           }
@@ -306,7 +454,7 @@ export default {
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 /* Form card */
@@ -364,4 +512,7 @@ export default {
     height: 40px;
   }
 }
+
+.user-avatar { background: #e9ecef; }
+.avatar-initials { color:#111; font-weight:700; font-size: 1.25rem; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
 </style>

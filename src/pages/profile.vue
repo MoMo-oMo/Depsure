@@ -813,7 +813,7 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .profile-card {
@@ -869,7 +869,7 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .form-card {
@@ -1224,3 +1224,4 @@ export default {
   }
 }
 </style>
+

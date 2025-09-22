@@ -77,8 +77,8 @@
                 <!-- Content section -->
                 <div class="content-section">
                   <!-- Description -->
-                  <p class="card-description">
-                    {{ agency.notes || 'No description available' }}
+                  <p v-if="agency.notes" class="card-description">
+                    {{ agency.notes }}
                   </p>
 
                   <!-- Action Button -->
@@ -213,50 +213,45 @@ export default {
         
         let agenciesQuery;
         
-        if (userType === 'Agency') {
-          // Agency users can only see their own agency
-          // Try multiple approaches to find the agency data
+        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+          // Agency users and Agency Admin users can only see their own agency
           let agencyData = null;
           
-          // First try: Use the current user's document ID
-          try {
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (agencyDoc.exists()) {
-              agencyData = {
-                id: agencyDoc.id,
-                ...agencyDoc.data()
-              };
-            }
-          } catch (error) {
-            console.log('Could not fetch agency by UID:', error);
-          }
-          
-          // Second try: If first approach failed, try to find by email
-          if (!agencyData && currentUser.email) {
+          if (userType === 'Agency') {
+            // For Agency users, use their own document
             try {
-              const emailQuery = query(
-                collection(db, 'users'),
-                where('email', '==', currentUser.email),
-                where('userType', '==', 'Agency')
-              );
-              const emailSnapshot = await getDocs(emailQuery);
-              if (!emailSnapshot.empty) {
-                const doc = emailSnapshot.docs[0];
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+              if (agencyDoc.exists()) {
                 agencyData = {
-                  id: doc.id,
-                  ...doc.data()
+                  id: agencyDoc.id,
+                  ...agencyDoc.data()
                 };
               }
             } catch (error) {
-              console.log('Could not fetch agency by email:', error);
+              console.log('Could not fetch agency by UID:', error);
+            }
+          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+            // For Agency Admin users, fetch their managed agency
+            if (currentUser.managedAgencyId) {
+              try {
+                const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+                if (agencyDoc.exists()) {
+                  agencyData = {
+                    id: agencyDoc.id,
+                    ...agencyDoc.data()
+                  };
+                }
+              } catch (error) {
+                console.log('Could not fetch managed agency:', error);
+              }
             }
           }
           
-          // Third try: If still no data, use the current user data directly
+          // Fallback: If still no data, use the current user data directly
           if (!agencyData && currentUser) {
             agencyData = {
               id: currentUser.uid || 'unknown',
-              agencyName: currentUser.agencyName || currentUser.firstName || 'My Agency',
+              agencyName: currentUser.agencyName || currentUser.managedAgencyName || currentUser.firstName || 'My Agency',
               agencyDescription: currentUser.agencyDescription || currentUser.agencyTagline || 'Agency Description',
               location: currentUser.location || 'Location not specified',
               profileImageUrl: currentUser.profileImageUrl || currentUser.profileImage,
@@ -273,7 +268,7 @@ export default {
             this.filteredAgencies = [];
             console.log('No agency data found for current user');
           }
-          return; // Exit early for agency users
+          return; // Exit early for agency users and agency admins
         } else {
           // Super Admin and Admin users can see all agencies
           agenciesQuery = query(
@@ -384,7 +379,20 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  /* Smoother, richer gradient for legibility without banding */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.96) 0%,
+    rgba(0, 0, 0, 0.82) 22%,
+    rgba(0, 0, 0, 0.64) 48%,
+    rgba(0, 0, 0, 0.36) 74%,
+    rgba(0, 0, 0, 0.0) 100%
+  );
+  /* Reduced height while keeping smooth fade */
+  height: 36%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   padding: 20px 16px 16px;
 }
 
@@ -431,7 +439,8 @@ export default {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-top: 12px;
+  /* Push buttons to the bottom when description is missing */
+  margin-top: auto;
 }
 
 .action-btn {
@@ -500,5 +509,11 @@ export default {
   .action-btn {
     width: 100%;
   }
+}
+.card-image :deep(.v-img__img) {
+  /* Use cover, but keep focus centered to reduce awkward crops */
+  object-fit: cover !important;
+  object-position: center center !important;
+  background-color: #000 !important;
 }
 </style>

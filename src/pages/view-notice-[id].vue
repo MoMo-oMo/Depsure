@@ -155,7 +155,8 @@ export default {
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Agency';
+      const user = appStore.currentUser;
+      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
     },
     userType() {
       const appStore = useAppStore();
@@ -266,7 +267,7 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 /* Form card */

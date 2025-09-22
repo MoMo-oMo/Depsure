@@ -88,8 +88,19 @@
         </v-col>
       </v-row>
 
+      <!-- Clean Agency Header (image, centered title, no overlay) -->
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <v-card class="agency-hero-card" elevation="1">
+            <div class="agency-hero-bg" :style="agencyHeroBgStyle"></div>
+            <div class="agency-hero-center">
+              {{ heroTitle }}
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
       <!-- Agency Info Card (only when selected) -->
-      <v-row class="mb-6" v-if="selectedAgencyDetails">
+      <v-row class="mb-6" v-if="false && selectedAgencyDetails">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
             <!-- Background image layer -->
@@ -210,7 +221,8 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
+import heroBg from '@/assets/title.png'
+import { collection, getDocs, query, where, deleteDoc, doc, getDoc, onSnapshot } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
@@ -247,6 +259,7 @@ export default {
       agenciesLoading: false,
       units: [],
       unitsLoading: false,
+      flaggedUnsubscribe: null,
       activeUnitsCount: 0,
       headers: [
         { title: "Unit Name", key: "unitName", sortable: true },
@@ -258,7 +271,13 @@ export default {
       ]
     };
   },
-  computed: {
+computed: {
+    agencyHeroBgStyle() {
+      return { background: `url(${heroBg}) center/cover no-repeat` }
+    },
+    heroTitle() {
+      return this.selectedAgencyDetails?.agencyName || 'Flagged Units'
+    },
     monthFilterLabel() {
       if (!this.monthFilter) return 'All Months'
       try {
@@ -284,7 +303,8 @@ export default {
     },
     isAgencyUser() {
       const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Agency';
+      const user = appStore.currentUser;
+      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
     },
     isSuperAdmin() {
       const appStore = useAppStore();
@@ -455,17 +475,36 @@ export default {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         
-        if (userType === 'Agency') {
-          // Agency users can only see their own agency
-          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (agencyDoc.exists()) {
-            const agencyData = agencyDoc.data();
-            this.agencies = [{
-              id: agencyDoc.id,
-              ...agencyData
-            }];
-            // Pre-select the agency for agency users
-            this.selectedAgency = agencyDoc.id;
+        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+          // Agency users and Agency Admin users can only see their own agency
+          let agencyData = null;
+          
+          if (userType === 'Agency') {
+            // For Agency users, use their own document
+            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (agencyDoc.exists()) {
+              agencyData = {
+                id: agencyDoc.id,
+                ...agencyDoc.data()
+              };
+            }
+          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+            // For Agency Admin users, fetch their managed agency
+            if (currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data()
+                };
+              }
+            }
+          }
+          
+          if (agencyData) {
+            this.agencies = [agencyData];
+            // Pre-select the agency for agency users and agency admins
+            this.selectedAgency = agencyData.id;
             await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
@@ -493,6 +532,11 @@ export default {
     },
     
     async fetchFlaggedUnits(agencyId = null) {
+      // Clean up previous listener
+      if (this.flaggedUnsubscribe) {
+        try { this.flaggedUnsubscribe(); } catch(_) {}
+        this.flaggedUnsubscribe = null;
+      }
       this.unitsLoading = true;
       try {
         const appStore = useAppStore();
@@ -518,52 +562,45 @@ export default {
           unitsQuery = collection(db, 'flaggedUnits');
         }
         
-        const querySnapshot = await getDocs(unitsQuery);
-        const unitsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        
-        // Resolve property types for each flagged unit
-        this.units = await Promise.all(
-          unitsData.map(async (unit) => {
-            try {
-              // Try to resolve property type from unitId first
-              if (unit.unitId) {
-                const propertyType = await this.resolvePropertyTypeFromUnit(unit.unitId);
-                return { ...unit, propertyType };
-              }
-              // If no unitId, try to resolve from unitName (fallback)
-              else if (unit.unitName) {
-                // Query units collection to find the unit by name
-                const unitsQuery = query(
-                  collection(db, 'units'),
-                  where('unitName', '==', unit.unitName)
-                );
-                const unitSnapshot = await getDocs(unitsQuery);
-                if (!unitSnapshot.empty) {
-                  const unitDoc = unitSnapshot.docs[0];
-                  const propertyType = await this.resolvePropertyTypeFromUnit(unitDoc.id);
-                  return { ...unit, propertyType };
+        // Live subscribe to flagged units
+        this.flaggedUnsubscribe = onSnapshot(unitsQuery, async (querySnapshot) => {
+          try {
+            const unitsData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Resolve property types for each flagged unit (async)
+            const enriched = await Promise.all(
+              unitsData.map(async (unit) => {
+                try {
+                  if (unit.unitId) {
+                    const propertyType = await this.resolvePropertyTypeFromUnit(unit.unitId);
+                    return { ...unit, propertyType };
+                  } else if (unit.unitName) {
+                    const uq = query(collection(db, 'units'), where('unitName', '==', unit.unitName));
+                    const uSnap = await getDocs(uq);
+                    if (!uSnap.empty) {
+                      const unitDoc = uSnap.docs[0];
+                      const propertyType = await this.resolvePropertyTypeFromUnit(unitDoc.id);
+                      return { ...unit, propertyType };
+                    }
+                  }
+                  return { ...unit, propertyType: 'residential' };
+                } catch (e) {
+                  console.error(`Error resolving property type for unit ${unit.id}:`, e);
+                  return { ...unit, propertyType: 'residential' };
                 }
-              }
-              // Default to residential if no unit found
-              return { ...unit, propertyType: 'residential' };
-            } catch (error) {
-              console.error(`Error resolving property type for unit ${unit.id}:`, error);
-              return { ...unit, propertyType: 'residential' };
-            }
-          })
-        );
-        
-        // Apply initial filtering
-        this.filterUnits();
-        console.log('Flagged units fetched:', this.units);
-        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+              })
+            );
+            this.units = enriched;
+            this.filterUnits();
+          } finally {
+            this.unitsLoading = false;
+          }
+        });
+        console.log('Subscribed to flagged units');
       } catch (error) {
         console.error('Error fetching flagged units:', error);
-      } finally {
         this.unitsLoading = false;
+      } finally {
+        // Listener controls loading state on first snapshot
       }
     },
     
@@ -608,6 +645,13 @@ export default {
         await this.fetchFlaggedUnits();
         if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
       }
+    }
+  }
+  ,
+  unmounted() {
+    if (this.flaggedUnsubscribe) {
+      try { this.flaggedUnsubscribe(); } catch(_) {}
+      this.flaggedUnsubscribe = null;
     }
   }
 };
@@ -755,6 +799,11 @@ export default {
 .month-input { min-width: 220px; }
 :deep(.month-input .v-field-label) { white-space: nowrap; }
 
+/* Clean agency name-only hero with image (no overlay) */
+.agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
+.agency-hero-bg { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
+.agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+
 /* Custom month menu styling */
 .month-menu {
   background: #ffffff;
@@ -816,3 +865,4 @@ export default {
   }
 }
 </style>
+

@@ -42,8 +42,8 @@
           <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
             <v-tabs v-model="activeTab" class="property-tabs" color="primary">
-              <v-tab value="details">Property Details</v-tab>
-              <v-tab value="documents">Documents</v-tab>
+              <v-tab value="details" class="tab-label tab--details">Property Details</v-tab>
+              <v-tab value="documents" class="tab-label tab--documents">Documents</v-tab>
             </v-tabs>
 
             <v-form ref="form" v-model="valid" lazy-validation>
@@ -1208,7 +1208,7 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 /* Form card styling */
@@ -1234,49 +1234,57 @@ export default {
   border-color: #e9ecef !important;
 }
 
-/* Color cue for tabs (active vs inactive) */
-:deep(.property-tabs .v-tab) {
-  color: #6b7280; /* neutral inactive */
-}
-:deep(.property-tabs .v-tab.v-tab--selected) {
-  color: #000000 !important; /* brand primary */
-  font-weight: 600;
-}
-:deep(.property-tabs .v-tabs-slider) {
-  background-color: #000000 !important; /* brand primary */
-}
-
-/* Shared docs toolbar */
-.doc-filters {
-  display: flex;
-  gap: 12px;
-  margin: 8px 0 16px 0;
-  align-items: center;
-  justify-content: center;
-}
-.doc-search,
-.doc-month-input {
-  width: 220px;
-  max-width: 220px;
-}
-.doc-month-input :deep(input) { min-width: 120px; }
-
 /* Tabs styling */
 .property-tabs {
   background-color: #f8f9fa;
 }
 
-.property-tabs :deep(.v-tab) {
+.property-tabs :deep(.tab-label) {
   font-weight: 500;
   text-transform: none;
-  color: #666;
+  transition: color 0.2s ease;
 }
 
-.property-tabs :deep(.v-tab--selected) {
-  color: #000;
+.property-tabs :deep(.tab-label.v-tab--selected) {
+  font-weight: 600;
   background-color: white;
 }
 
+.property-tabs :deep(.v-tabs-slider) {
+  background-color: #000000 !important;
+}
+
+.property-tabs :deep(.tab--details) {
+  color: #1e88e5;
+}
+
+.property-tabs :deep(.tab--details.v-tab--selected) {
+  color: #0d47a1;
+}
+
+.property-tabs :deep(.tab--documents) {
+  color: #fb8c00;
+}
+
+.property-tabs :deep(.tab--documents.v-tab--selected) {
+  color: #ef6c00;
+}
+
+.property-tabs :deep(.tab--notes) {
+  color: #43a047;
+}
+
+.property-tabs :deep(.tab--notes.v-tab--selected) {
+  color: #1b5e20;
+}
+
+.property-tabs :deep(.tab--archive) {
+  color: #8e24aa;
+}
+
+.property-tabs :deep(.tab--archive.v-tab--selected) {
+  color: #5e35b1;
+}
 /* Documents section */
 .documents-section {
   padding: 20px 0;

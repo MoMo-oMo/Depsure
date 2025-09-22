@@ -307,7 +307,8 @@ export default {
       return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
     isAgencyUser() {
-      return this.appStore.userType === 'Agency'
+      const user = this.appStore.currentUser;
+      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
     },
     isSuperAdmin() {
       return this.appStore.userType === 'Super Admin'

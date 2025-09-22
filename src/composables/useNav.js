@@ -13,6 +13,8 @@ const items = [
 	{ key: 'inspections', title: 'INSPECTIONS', background: 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)' },
 	{ key: 'vacancies', title: 'VACANCIES', background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)' },
 	{ key: 'dashboard', title: 'DASHBOARD', background: 'linear-gradient(90deg, #1f1c2c 0%, #928DAB 100%)' },
+    { key: 'archived-units', title: 'ARCHIVED UNITS', background: 'linear-gradient(90deg, #434343 0%, #000000 100%)' },
+    { key: 'profile', title: 'PROFILE', background: 'linear-gradient(90deg, #1e3c72 0%, #2a5298 100%)' },
 ]
 
 const selectedKey = ref('agency')
@@ -24,6 +26,7 @@ function mapPathToKey (path) {
 		{ prefix: '/dashboard', key: 'dashboard' },
 		{ prefix: '/dashbaaord', key: 'dashboard' },
 		{ prefix: '/user-management', key: 'user-management' },
+		{ prefix: '/view-user', key: 'user-management' },
 		{ prefix: '/view-user-', key: 'user-management' },
 		{ prefix: '/edit-user-', key: 'user-management' },
 		{ prefix: '/add-user', key: 'user-management' },
@@ -31,15 +34,20 @@ function mapPathToKey (path) {
 		{ prefix: '/audit-trail', key: 'audit-trail' },
 
 		{ prefix: '/agency', key: 'agency' },
+		{ prefix: '/agencies', key: 'agency' },
 		{ prefix: '/view-agency', key: 'agency' },
 		{ prefix: '/view-agency-', key: 'agency' },
 		{ prefix: '/edit-agency-', key: 'agency' },
+		{ prefix: '/add-agency', key: 'agency' },
 
 		{ prefix: '/active-units', key: 'active-units' },
 		{ prefix: '/add-unit', key: 'active-units' },
 		{ prefix: '/view-property-', key: 'active-units' },
 		{ prefix: '/edit-property-', key: 'active-units' },
 		{ prefix: '/view-property', key: 'active-units' },
+
+		{ prefix: '/archived-units', key: 'archived-units' },
+		{ prefix: '/view-archived-unit-', key: 'archived-units' },
 
 		{ prefix: '/notices', key: 'notices' },
 		{ prefix: '/add-notice', key: 'notices' },
@@ -69,6 +77,9 @@ function mapPathToKey (path) {
 		{ prefix: '/add-vacancy', key: 'vacancies' },
 		{ prefix: '/view-vacancy-', key: 'vacancies' },
 		{ prefix: '/edit-vacancy-', key: 'vacancies' },
+
+		{ prefix: '/documents', key: 'documents' },
+		{ prefix: '/profile', key: 'profile' },
 	]
 
 	const found = mappings.find(m => path.startsWith(m.prefix))
@@ -89,9 +100,9 @@ export function useNav () {
 	// Sync with current route
 	const route = useRoute()
 	selectedKey.value = mapPathToKey(route.path)
-	watch(() => route.path, (newPath) => {
-		selectedKey.value = mapPathToKey(newPath)
-	}, { immediate: false })
+  watch(() => route.path, (newPath) => {
+    selectedKey.value = mapPathToKey(newPath)
+  }, { immediate: true })
 
 	return { items, selectedKey, current, setSelected }
 }

@@ -22,6 +22,8 @@ export function useAuditTrail() {
         userEmail: currentUser.email,
         userName: appStore.userName,
         userType: currentUser.userType,
+        adminScope: currentUser.adminScope || null, // Include admin scope for Admin users
+        managedAgencyId: currentUser.managedAgencyId || null, // Include managed agency for Agency Admin users
         action: action,
         details: details,
         resourceType: resourceType,

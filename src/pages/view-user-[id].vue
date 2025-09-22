@@ -43,6 +43,15 @@
           <!-- User Info -->
           <div v-else class="form-card" elevation="0">
             <v-card-text>
+              <!-- Profile Image Preview -->
+              <v-row class="mb-4" justify="center">
+                <v-col cols="12" class="d-flex justify-center">
+                  <v-avatar size="112" class="user-avatar">
+                    <v-img v-if="profileImageSource" :src="profileImageSource" alt="Profile image" cover />
+                    <span v-else class="avatar-initials">{{ userInitials }}</span>
+                  </v-avatar>
+                </v-col>
+              </v-row>
               <v-row>
                 <!-- First Name -->
                 <v-col cols="12" md="6">
@@ -99,6 +108,63 @@
                   />
                 </v-col>
 
+                <!-- Registration Number (if Agency) -->
+                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                  <v-text-field
+                    :model-value="user.regNo || 'Not specified'"
+                    label="Registration Number"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Address (if Agency) -->
+                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                  <v-text-field
+                    :model-value="user.address || user.agencyAddress || 'Not specified'"
+                    label="Address"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Primary Contact Name (if Agency) -->
+                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                  <v-text-field
+                    :model-value="user.primaryContactName || 'Not specified'"
+                    label="Primary Contact Name"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Contact Number (if Agency) -->
+                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                  <v-text-field
+                    :model-value="user.contactNumber || user.agencyPhone || 'Not specified'"
+                    label="Contact Number"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Description / Notes (if Agency) -->
+                <v-col cols="12" v-if="user.userType === 'Agency'">
+                  <v-textarea
+                    :model-value="user.agencyDescription || user.notes || 'Not specified'"
+                    label="Description / Notes"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                    auto-grow
+                    rows="3"
+                  />
+                </v-col>
+
                 <!-- Status -->
                 <v-col cols="12" md="6">
                   <v-text-field
@@ -111,6 +177,20 @@
                 </v-col>
               </v-row>
             </v-card-text>
+
+            <!-- Action Buttons -->
+            <v-card-actions class="pa-4">
+              <v-spacer />
+              <v-btn
+                color="black"
+                variant="elevated"
+                class="submit-btn"
+                @click="editUser"
+              >
+                <v-icon left>mdi-pencil</v-icon>
+                Edit User
+              </v-btn>
+            </v-card-actions>
           </div>
         </v-col>
       </v-row>
@@ -139,6 +219,14 @@ export default {
       error: null
     }
   },
+  computed: {
+    profileImageSource() {
+      return this.user?.profileImageUrl || this.user?.profileImage || ''
+    },
+    userInitials() {
+      return this._initials(this.user?.firstName, this.user?.lastName)
+    }
+  },
   async mounted() {
     document.title = "User Details - Depsure"
     const userId = this.$route.params.id
@@ -150,6 +238,12 @@ export default {
     }
   },
   methods: {
+    // Derive initials if no image
+    _initials(first, last) {
+      const a = (String(first || '').trim()[0] || '').toUpperCase();
+      const b = (String(last || '').trim()[0] || '').toUpperCase();
+      return (a + b) || a || b || '?'
+    },
     async loadUser(userId) {
       try {
         const docRef = doc(db, 'users', userId)
@@ -167,6 +261,11 @@ export default {
         this.error = "Failed to load user details"
       } finally {
         this.loading = false
+      }
+    },
+    editUser() {
+      if (this.user?.id) {
+        this.$router.push(`/edit-user-${this.user.id}`)
       }
     }
   }
@@ -210,7 +309,7 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .form-card {
@@ -230,5 +329,21 @@ export default {
 }
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
+}
+
+.user-avatar { background: #e9ecef; }
+.avatar-initials { color:#111; font-weight:700; font-size: 1.25rem; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+
+.submit-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  width: 160px;
+  height: 44px;
+  background-color: black !important;
+  color: white !important;
+}
+.submit-btn:hover:not(:disabled) {
+  background-color: #333 !important;
 }
 </style>

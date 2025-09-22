@@ -144,8 +144,17 @@ export default {
             };
             this.appStore.setUser(userInfo);
             
-            // Decide landing route based on role
-            const landingRoute = (userData.userType === 'Agency') ? '/active-units' : '/agencies';
+            // Decide landing route based on role and admin scope
+            let landingRoute;
+            if (userData.userType === 'Agency') {
+              landingRoute = '/active-units';
+            } else if (userData.userType === 'Admin' && userData.adminScope === 'agency') {
+              // Agency Admin should see their agency's data, not all agencies
+              landingRoute = '/active-units';
+            } else {
+              // Super Admin and Depsure Admin go to agencies page
+              landingRoute = '/agencies';
+            }
             
             // Log audit event
             await this.logAuditEvent(

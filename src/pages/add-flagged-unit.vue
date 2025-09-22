@@ -271,7 +271,8 @@ export default {
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Agency';
+      const user = appStore.currentUser;
+      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
     },
     selectedUnitPropertyType() {
       if (!this.unit.unitName) return null;
@@ -295,17 +296,36 @@ export default {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         
-        if (userType === 'Agency') {
-          // Agency users can only add flagged units to their own agency
-          const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (agencyDoc.exists()) {
-            const agencyData = agencyDoc.data();
-            this.agencies = [{
-              id: agencyDoc.id,
-              ...agencyData
-            }];
-            // Pre-select the agency for agency users
-            this.unit.agencyId = agencyDoc.id;
+        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+          // Agency users and Agency Admin users can only add flagged units to their own agency
+          let agencyData = null;
+          
+          if (userType === 'Agency') {
+            // For Agency users, use their own document
+            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (agencyDoc.exists()) {
+              agencyData = {
+                id: agencyDoc.id,
+                ...agencyDoc.data()
+              };
+            }
+          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+            // For Agency Admin users, fetch their managed agency
+            if (currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data()
+                };
+              }
+            }
+          }
+          
+          if (agencyData) {
+            this.agencies = [agencyData];
+            // Pre-select the agency for agency users and agency admins
+            this.unit.agencyId = agencyData.id;
           } else {
             this.agencies = [];
           }
@@ -383,12 +403,25 @@ export default {
         
         let unitsQuery;
         
-        if (userType === 'Agency') {
-          // Agency users can only see units from their own agency
-          unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', currentUser.uid)
-          );
+        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+          // Agency users and Agency Admin users can only see units from their own agency
+          let targetAgencyId = currentUser.uid; // Default for Agency users
+          
+          if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+            // For Agency Admin users, use their managed agency ID
+            targetAgencyId = currentUser.managedAgencyId;
+          }
+          
+          if (targetAgencyId) {
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', targetAgencyId)
+            );
+          } else {
+            // No agency ID available, return empty results
+            this.units = [];
+            return;
+          }
         } else if (agencyId) {
           // Super Admin/Admin users query units for specific agency
           unitsQuery = query(
@@ -426,8 +459,19 @@ export default {
     // Fetch agencies first
     await this.fetchAgencies();
     
-    // For agency users, fetch their units automatically
+    // For agency users and agency admins, fetch their units automatically
     if (this.isAgencyUser) {
+      // Ensure agencyId defaults to the correct value
+      try {
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        
+        if (currentUser?.userType === 'Agency') {
+          this.unit.agencyId = currentUser.uid || '';
+        } else if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
+          this.unit.agencyId = currentUser.managedAgencyId || '';
+        }
+      } catch (_) {}
       await this.fetchUnits();
     }
   },
