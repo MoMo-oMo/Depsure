@@ -6,7 +6,7 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
-            @click="$router.push('/maintenance')"
+            @click="goBack"
             class="back-btn"
           >
             Back
@@ -199,7 +199,7 @@
                       color="grey"
                       variant="outlined"
                       class="cancel-btn"
-                      @click="$router.push('/maintenance')"
+                      @click="goBack"
                       :disabled="saving"
                     >
                       Cancel
@@ -465,6 +465,22 @@ export default {
     }
   },
   methods: {
+    goBack() {
+      try {
+        const appStore = useAppStore();
+        const user = appStore.currentUser;
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+        if (isAgency) { this.$router.push('/onboard-units'); return }
+      } catch(_) {}
+      const from = this.$route?.query?.from
+      if (from === 'onboard') this.$router.push('/onboard-units')
+      else this.$router.push('/maintenance')
+    },
+    goBack() {
+      const from = this.$route?.query?.from
+      if (from === 'onboard') this.$router.push('/onboard-units')
+      else this.$router.push('/maintenance')
+    },
     scrollNotesToBottom() {
       this.$nextTick(() => {
         const el = this.$refs.chatLog

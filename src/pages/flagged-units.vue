@@ -86,6 +86,13 @@
             Add Flagged Unit
           </v-btn>
         </v-col>
+
+        <!-- Quick Add Flagged Unit Button -->
+        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+          <v-btn @click="quickAddFlaggedUnit" class="back-btn" color="success">
+            Quick Add
+          </v-btn>
+        </v-col>
       </v-row>
 
       <!-- Clean Agency Header (image, centered title, no overlay) -->
@@ -468,6 +475,50 @@ computed: {
     },
     addFlaggedUnit() {
       this.$router.push('/add-flagged-unit');
+    },
+    async quickAddFlaggedUnit() {
+      try {
+        // Get the current user's agency ID
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        let agencyId = currentUser.uid; // Default for Agency users
+        
+        if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
+          agencyId = currentUser.managedAgencyId;
+        }
+
+        if (!agencyId) {
+          this.showErrorDialog('Unable to determine agency. Please try again.', 'Error', 'OK');
+          return;
+        }
+
+        // Create a new flagged unit entry with default values
+        const flaggedUnitData = {
+          agencyId: agencyId,
+          unitName: 'New Flagged Unit',
+          tenantRef: '',
+          leaseStartDate: '',
+          flagReason: 'Flagged from Quick Add',
+          dateFlagged: new Date().toISOString().slice(0,10),
+          missedPaymentFlag: 'No',
+          noticeToVacateGiven: '',
+          actionTaken: '',
+          notes: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        // Add to flaggedUnits collection
+        const { addDoc, collection } = await import('firebase/firestore');
+        const { db } = await import('@/firebaseConfig');
+        const docRef = await addDoc(collection(db, 'flaggedUnits'), flaggedUnitData);
+        
+        // Navigate to edit page
+        this.$router.push({ path: `/edit-flagged-unit-${docRef.id}`, query: { from: 'flagged-units' } });
+      } catch (error) {
+        console.error('Error creating quick flagged unit:', error);
+        this.showErrorDialog('Failed to create flagged unit. Please try again.', 'Error', 'OK');
+      }
     },
     async fetchAgencies() {
       this.agenciesLoading = true;

@@ -8,7 +8,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/maintenance')"
+            @click="goBack"
             class="back-btn"
           >
             Back
@@ -418,6 +418,17 @@ export default {
     this.loadEntry(entryId);
   },
   methods: {
+    goBack() {
+      try {
+        const appStore = useAppStore();
+        const user = appStore.currentUser;
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+        if (isAgency) { this.$router.push('/onboard-units'); return }
+      } catch(_) {}
+      const from = this.$route?.query?.from
+      if (from === 'onboard') this.$router.push('/onboard-units')
+      else this.$router.push('/maintenance')
+    },
     scrollNotesToBottom() {
       this.$nextTick(() => {
         const el = this.$refs.chatLog

@@ -75,11 +75,18 @@
         </v-col>
 
         <!-- Add Vacancy Button - Only visible to Agency users -->
-        <!-- <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
+        <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addVacancy" class="back-btn">
             Add Vacancy
           </v-btn>
-        </v-col> -->
+        </v-col>
+
+        <!-- Quick Add Vacancy Button -->
+        <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
+          <v-btn @click="quickAddVacancy" class="back-btn" color="success">
+            Quick Add
+          </v-btn>
+        </v-col>
       </v-row>
 
       <!-- Clean Agency Header (image, centered title, no overlay) -->
@@ -462,6 +469,48 @@ export default {
     
     addVacancy() { 
       this.$router.push('/add-vacancy'); 
+    },
+    async quickAddVacancy() {
+      try {
+        // Get the current user's agency ID
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        let agencyId = currentUser.uid; // Default for Agency users
+        
+        if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
+          agencyId = currentUser.managedAgencyId;
+        }
+
+        if (!agencyId) {
+          this.showErrorDialog('Unable to determine agency. Please try again.', 'Error', 'OK');
+          return;
+        }
+
+        // Create a new vacancy entry with default values
+        const vacancyData = {
+          agencyId: agencyId,
+          unitName: 'New Vacancy Entry',
+          dateVacated: '',
+          newTenantFound: 'No',
+          moveInDate: null,
+          propertyManager: '',
+          contactNumber: '',
+          notes: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        // Add to vacancies collection
+        const { addDoc, collection } = await import('firebase/firestore');
+        const { db } = await import('@/firebaseConfig');
+        const docRef = await addDoc(collection(db, 'vacancies'), vacancyData);
+        
+        // Navigate to edit page
+        this.$router.push({ path: `/edit-vacancy-${docRef.id}`, query: { from: 'vacancies' } });
+      } catch (error) {
+        console.error('Error creating quick vacancy:', error);
+        this.showErrorDialog('Failed to create vacancy. Please try again.', 'Error', 'OK');
+      }
     },
 
     async fetchAgencies() {

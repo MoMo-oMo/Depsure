@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/active-units')"
+            @click="goBack"
             class="back-btn"
           >
             Back
@@ -42,15 +42,20 @@
           <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
             <v-tabs v-model="activeTab" class="property-tabs" color="primary">
-              <v-tab value="details" class="tab-label tab--details">Property Details</v-tab>
-              <v-tab value="documents" class="tab-label tab--documents">Documents</v-tab>
+              <v-tab v-if="showDetailsTab" value="details" class="tab-label tab--details">Property Details</v-tab>
+              <v-tab v-if="showDocumentsTab" value="documents" class="tab-label tab--documents">Documents</v-tab>
             </v-tabs>
 
             <v-form ref="form" v-model="valid" lazy-validation>
               <!-- Property Details Tab -->
               <v-window v-model="activeTab">
-                <v-window-item value="details">
+                <v-window-item v-if="showDetailsTab" value="details">
                   <v-card-text>
+                    <div v-if="isLockedDetails" class="d-flex justify-end mb-2">
+                      <v-btn size="small" color="black" variant="outlined" @click="gotoDocumentsLock">
+                        Add Documents
+                      </v-btn>
+                    </div>
                     <v-row>
                       <!-- Tenant Reference -->
                       <v-col cols="12" md="6">
@@ -225,7 +230,7 @@
                 </v-window-item>
 
                 <!-- Documents Tab -->
-                <v-window-item value="documents">
+                <v-window-item v-if="showDocumentsTab" value="documents">
                   <v-card-text>
                     <h3 class="documents-title">Upload Property Documents</h3>
                     <!-- Shared filters: search and month placed under header -->
@@ -495,6 +500,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
+import { useAppStore } from '@/stores/app'
 
 const COLLECTION = 'units' // <-- fix: use the same collection everywhere
 
@@ -609,6 +615,18 @@ export default {
     }
   },
   computed: {
+    showDetailsTab() {
+      const lock = this.$route?.query?.lock
+      return !lock || lock === 'details'
+    },
+    showDocumentsTab() {
+      const lock = this.$route?.query?.lock
+      return !lock || lock === 'documents'
+    },
+    isLockedDetails() {
+      const lock = this.$route?.query?.lock
+      return lock === 'details'
+    },
     propertyTypeOptions() {
       return this.getOptions();
     },
@@ -630,6 +648,10 @@ export default {
   async mounted() {
     console.log('EditPropertyPage mounted');
     document.title = 'Edit Property - Depsure';
+    try {
+      const tab = this.$route?.query?.tab
+      if (tab === 'documents' || tab === 'details') this.activeTab = tab
+    } catch(_) {}
     const propertyId = this.$route.params.id;
     console.log('Property ID from route:', propertyId);
     if (propertyId) {
@@ -646,6 +668,23 @@ export default {
     }
   },
   methods: {
+    goBack() {
+      try {
+        const appStore = useAppStore();
+        const user = appStore.currentUser;
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+        if (isAgency) { this.$router.push('/onboard-units'); return }
+      } catch(_) {}
+      this.$router.push('/active-units')
+    },
+    gotoDocumentsLock() {
+      try {
+        const q = Object.assign({}, this.$route?.query || {}, { tab: 'documents', lock: 'documents' })
+        this.$router.replace({ path: this.$route.path, query: q })
+      } catch(_) {
+        this.activeTab = 'documents'
+      }
+    },
     // Reuse the same helpers used on view page
     resolveDocDate(entry) {
       if (!entry) return null;

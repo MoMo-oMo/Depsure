@@ -54,6 +54,14 @@
           @click="navigateTo('agency')"
         />
         <v-list-item
+          v-if="isAgencyUser || isAgencyAdmin"
+          prepend-icon="mdi-home-account"
+          title="ONBOARD UNITS"
+          value="onboard-units"
+          @click="navigateTo('onboard-units')"
+        />
+        <v-list-item
+          v-if="!(isAgencyUser || isAgencyAdmin)"
           prepend-icon="mdi-home"
           title="ACTIVE UNITS"
           value="active-units"
@@ -61,30 +69,35 @@
         />
   
         <v-list-item
+          v-if="!(isAgencyUser || isAgencyAdmin)"
           prepend-icon="mdi-bell"
           title="NOTICES"
           value="notices"
           @click="navigateTo('notices')"
         />
         <v-list-item
+          v-if="!(isAgencyUser || isAgencyAdmin)"
           prepend-icon="mdi-flag"
           title="FLAGGED UNITS"
           value="flagged-units"
           @click="navigateTo('flagged-units')"
         />
         <v-list-item
+          v-if="!(isAgencyUser || isAgencyAdmin)"
           prepend-icon="mdi-wrench"
           title="MAINTENANCE"
           value="maintenance"
           @click="navigateTo('maintenance')"
         />
         <v-list-item
+          v-if="!(isAgencyUser || isAgencyAdmin)"
           prepend-icon="mdi-clipboard-check"
           title="INSPECTIONS"
           value="inspections"
           @click="navigateTo('inspections')"
         />
         <v-list-item
+          v-if="!(isAgencyUser || isAgencyAdmin)"
           prepend-icon="mdi-home-outline"
           title="VACANCIES"
           value="vacancies"

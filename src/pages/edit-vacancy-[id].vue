@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/vacancies')"
+            @click="goBack"
             class="back-btn"
           >
             Back
@@ -142,7 +142,7 @@
                     <v-btn
                       color="grey"
                       variant="outlined"
-                      @click="$router.push('/vacancies')"
+                      @click="goBack"
                       class="cancel-btn"
                     >
                       Cancel
@@ -331,6 +331,19 @@ export default {
     }
   },
   methods: {
+    goBack() {
+      try {
+        const appStore = useAppStore();
+        const user = appStore.currentUser;
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+        if (isAgency) { this.$router.push('/onboard-units'); return }
+      } catch(_) {}
+      const from = this.$route?.query?.from
+      if (from === 'onboard') this.$router.push('/onboard-units')
+      else this.$router.push('/vacancies')
+    },
+    
+
     noteInitials(name) { if (!name) return '?'; const parts = String(name).trim().split(/\s+/); const a = parts[0]?.[0] || ''; const b = parts[1]?.[0] || ''; return (a + b).toUpperCase() || a.toUpperCase() || '?'; },
     formatNoteDate(ts) { try { if (!ts) return 'Just now'; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleString() } catch(_) { return String(ts) } },
     scrollNotesToBottom() { this.$nextTick(()=>{ const el=this.$refs.chatLog; if(el&&el.scrollHeight!=null) el.scrollTop=el.scrollHeight; }) },

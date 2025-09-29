@@ -19,7 +19,23 @@
           />
         </v-col>
 
-        <!-- Agency Select removed for consistent header -->
+        <!-- Agency selector (visible for Super Admin/Admin) -->
+        <v-col cols="12" md="3" class="pa-4" v-if="!isAgencyUser">
+          <v-select
+            v-model="selectedAgency"
+            :items="agencies"
+            item-title="agencyName"
+            item-value="id"
+            label="Agency"
+            prepend-inner-icon="mdi-domain"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            class="custom-input top-filter"
+            clearable
+            @update:model-value="onAgencyChange"
+          />
+        </v-col>
 
         <v-col cols="12" md="3" class="pa-4">
           <v-menu
@@ -33,7 +49,7 @@
               <v-text-field
                 v-bind="props"
                 :model-value="monthFilterLabel"
-                label="Filter by month"
+                label="Filter by month (creation/vacate date)"
                 append-inner-icon="mdi-calendar-month"
                 flat
                 density="comfortable"
@@ -75,6 +91,13 @@
         <v-col cols="12" md="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addMaintenance" class="back-btn">
             Add Maintenance
+          </v-btn>
+        </v-col>
+
+        <!-- Quick Add Maintenance Button -->
+        <v-col cols="12" md="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+          <v-btn @click="quickAddMaintenance" class="back-btn" color="success">
+            Quick Add
           </v-btn>
         </v-col>
       </v-row>
@@ -348,11 +371,12 @@ export default {
     },
     filterEntries() {
       this.filteredEntries = this.entries.filter(entry => {
-        const textMatch = entry.unitName.toLowerCase().includes(this.searchQuery.toLowerCase());
+        const textMatch = (entry.unitName || '').toLowerCase().includes((this.searchQuery || '').toLowerCase());
         let agencyMatch = true;
         let monthMatch = true;
         let propertyTypeMatch = true;
         
+        // Apply agency filter if a specific agency is selected (any role)
         if (this.selectedAgency) {
           agencyMatch = entry.agencyId === this.selectedAgency;
         }
@@ -362,9 +386,17 @@ export default {
         }
         
         if (this.monthFilter) {
-          const entryDate = new Date(entry.vacateDate);
-          const filterDate = new Date(this.monthFilter+"-01");
-          monthMatch = entryDate.getMonth() === filterDate.getMonth() && entryDate.getFullYear() === filterDate.getFullYear();
+          // Handle empty vacateDate (from onboard units) by using createdAt instead
+          const rawDate = entry.vacateDate && entry.vacateDate !== '' ? entry.vacateDate : entry.createdAt;
+          const dateToFilter = rawDate && typeof rawDate.toDate === 'function' ? rawDate.toDate() : rawDate;
+          if (dateToFilter) {
+            const entryDate = new Date(dateToFilter);
+            const filterDate = new Date(this.monthFilter+"-01");
+            monthMatch = entryDate.getMonth() === filterDate.getMonth() && entryDate.getFullYear() === filterDate.getFullYear();
+          } else {
+            // If no date available, include in results
+            monthMatch = true;
+          }
         }
         return textMatch && agencyMatch && monthMatch && propertyTypeMatch;
       });
@@ -398,6 +430,48 @@ export default {
     },
     addMaintenance() { 
       this.$router.push('/add-maintenance'); 
+    },
+    async quickAddMaintenance() {
+      try {
+        // Get the current user's agency ID
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        let agencyId = currentUser.uid; // Default for Agency users
+        
+        if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
+          agencyId = currentUser.managedAgencyId;
+        }
+
+        if (!agencyId) {
+          this.showErrorDialog('Unable to determine agency. Please try again.', 'Error', 'OK');
+          return;
+        }
+
+        // Create a new maintenance entry with default values
+        const maintenanceData = {
+          agencyId: agencyId,
+          unitName: 'New Maintenance Entry',
+          noticeGiven: 'No',
+          vacateDate: '',
+          contactNumber: '',
+          address: '',
+          status: 'Pending',
+          priority: 'Medium',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+
+        // Add to maintenance collection
+        const { addDoc, collection } = await import('firebase/firestore');
+        const { db } = await import('@/firebaseConfig');
+        const docRef = await addDoc(collection(db, 'maintenance'), maintenanceData);
+        
+        // Navigate to edit page
+        this.$router.push({ path: `/edit-maintenance-${docRef.id}`, query: { from: 'maintenance' } });
+      } catch (error) {
+        console.error('Error creating quick maintenance entry:', error);
+        this.showErrorDialog('Failed to create maintenance entry. Please try again.', 'Error', 'OK');
+      }
     },
     async fetchMaintenanceEntries(agencyId = null) {
       this.loading = true
@@ -442,12 +516,19 @@ export default {
         const querySnapshot = await getDocs(maintenanceQuery)
         
         // First, get all maintenance entries
-        const entries = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate(),
-          updatedAt: doc.data().updatedAt?.toDate()
-        }))
+        const entries = querySnapshot.docs.map(d => {
+          const data = d.data() || {}
+          const createdRaw = data.createdAt
+          const updatedRaw = data.updatedAt
+          const createdAt = createdRaw && typeof createdRaw.toDate === 'function' ? createdRaw.toDate() : (createdRaw ? new Date(createdRaw) : null)
+          const updatedAt = updatedRaw && typeof updatedRaw.toDate === 'function' ? updatedRaw.toDate() : (updatedRaw ? new Date(updatedRaw) : null)
+          return {
+            id: d.id,
+            ...data,
+            createdAt,
+            updatedAt,
+          }
+        })
         
         // Resolve property types for each entry
         const entriesWithPropertyTypes = await Promise.all(
@@ -582,16 +663,18 @@ export default {
       await this.fetchMaintenanceEntries();
       await this.refreshActiveUnitsCount();
     } else {
+      // Super Admin/Admin users: pre-select global agency if present; otherwise show all
       const appStore = useAppStore();
       const globalId = appStore.currentAgency?.id || null;
+      this.monthFilter = '';
+      this.tempMonth = '';
       if (globalId) {
         this.selectedAgency = globalId;
         await this.fetchMaintenanceEntries(globalId);
         await this.refreshActiveUnitsCount(globalId);
       } else {
-        // Super Admin/Admin users get all maintenance entries initially
         await this.fetchMaintenanceEntries();
-        if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
+        await this.refreshActiveUnitsCount();
       }
     }
   }

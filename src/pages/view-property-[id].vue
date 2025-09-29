@@ -9,7 +9,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/active-units')"
+            @click="goBack"
             class="back-btn"
           >
             Back
@@ -380,6 +380,7 @@
 import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
 import { usePropertyType } from '@/composables/usePropertyType'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'ViewPropertyPage',
@@ -438,6 +439,14 @@ export default {
     // Set the page title for the app bar
     document.title = 'Property Details - Depsure';
     
+    // Optional: open a specific tab via query param
+    try {
+      const initialTab = this.$route?.query?.tab
+      if (initialTab === 'documents' || initialTab === 'details') {
+        this.activeTab = initialTab
+      }
+    } catch {}
+
     // Get property ID from route params
     const propertyId = this.$route.params.id;
     console.log('Property ID from route:', propertyId);
@@ -451,6 +460,19 @@ export default {
     }
   },
   methods: {
+    goBack() {
+      // Agency and Agency Admin go back to Onboard Units; others to original list
+      try {
+        const appStore = useAppStore();
+        const user = appStore.currentUser;
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+        if (isAgency) {
+          this.$router.push('/onboard-units')
+          return
+        }
+      } catch (_) {}
+      this.$router.push('/active-units')
+    },
     // Return a Date from a document entry
     resolveDocDate(entry) {
       if (!entry) return null;
