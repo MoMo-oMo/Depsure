@@ -269,12 +269,12 @@ export default {
       flaggedUnsubscribe: null,
       activeUnitsCount: 0,
       headers: [
-        { title: "Unit Name", key: "unitName", sortable: true },
-        { title: "Missed Payment Flag", key: "missedPaymentFlag", sortable: true, align: "center" },
-        { title: "Notice To Vacate Given", key: "noticeToVacateGiven", sortable: true, align: "center" },
-        { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
-        { title: "Action Taken", key: "actionTaken", sortable: true },
-        { title: "Actions", key: "actions", sortable: false, align: "center" },
+        { title: "UNIT NAME", key: "unitName", sortable: true },
+        { title: "MISSED PAYMENT FLAG", key: "missedPaymentFlag", sortable: true, align: "center" },
+        { title: "NOTICE TO VACATE GIVEN", key: "noticeToVacateGiven", sortable: true, align: "center" },
+        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
+        { title: "ACTION TAKEN", key: "actionTaken", sortable: true },
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ]
     };
   },
@@ -841,10 +841,12 @@ computed: {
 :deep(.custom-header .v-data-table-header th) {
   background-color: #000000 !important;
   color: white !important;
+
 }
 
 :deep(.custom-header .v-data-table-header .v-data-table-header__content) {
   color: white !important;
+
 }
 
 /* Month input UX tweaks */

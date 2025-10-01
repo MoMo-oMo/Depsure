@@ -19,7 +19,7 @@
           />
         </v-col>
         <v-col cols="12" md="3" lg="2" class="d-flex justify-end">
-          <v-btn
+          <!-- <v-btn
             color="primary"
             variant="elevated"
             size="small"
@@ -27,7 +27,7 @@
             @click="addNewAgency"
           >
             Add Agency
-          </v-btn>
+          </v-btn> -->
         </v-col>
       </v-row>
 

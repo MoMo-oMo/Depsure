@@ -80,6 +80,18 @@
                     />
                   </v-col>
 
+                  <!-- Unit Number -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="property.unitNumber"
+                      label="Unit Number"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="unitNumberRules"
+                      required
+                    />
+                  </v-col>
+
                   <!-- Property Type -->
                   <v-col cols="12" md="6">
                     <v-select
@@ -177,6 +189,7 @@ export default {
         agencyId: '',
         tenantRef: '',
         propertyName: '',
+        unitNumber: '',     // <-- Added Unit Number
         propertyType: '',
         newOccupation: '',
         leaseStartDate: '',
@@ -203,6 +216,10 @@ export default {
       propertyNameRules: [
         v => !!v || 'Property Name is required',
         v => v.length >= 5 || 'Property Name must be at least 5 characters'
+      ],
+      unitNumberRules: [
+        v => !!v || 'Unit Number is required',
+        v => v.length >= 1 || 'Unit Number must be at least 1 character'
       ],
       newOccupationRules: [
         v => !!v || 'New Occupation is required'
@@ -257,18 +274,12 @@ export default {
   },
   async mounted() {
     console.log('AddUnitPage mounted');
-    // Set the page title for the app bar
     document.title = 'Add New Unit - Depsure';
-    
-    // Fetch agencies for dropdown
     await this.fetchAgencies();
-    
-    // Scope to selected agency when available (either Agency user or globally selected agency)
     const appStore = useAppStore();
     if (appStore.currentAgency?.id) {
       this.property.agencyId = appStore.currentAgency.id;
     } else {
-      // Fallback: check if agencyId is provided in URL params
       const urlParams = new URLSearchParams(window.location.search);
       const agencyId = urlParams.get('agencyId');
       if (agencyId) {
@@ -286,11 +297,8 @@ export default {
         const userType = currentUser?.userType;
         
         if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
-          // Agency users and Agency Admin users can only add units to their own agency
           let agencyData = null;
-          
           if (userType === 'Agency') {
-            // For Agency users, use their own document
             const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
@@ -299,7 +307,6 @@ export default {
               };
             }
           } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
-            // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
               const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
               if (agencyDoc.exists()) {
@@ -310,28 +317,22 @@ export default {
               }
             }
           }
-          
           if (agencyData) {
             this.agencies = [agencyData];
-            // Pre-select the agency for agency users and agency admins
             this.property.agencyId = agencyData.id;
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
         } else {
-          // Super Admin and Admin users can see all agencies
           const agenciesQuery = query(
             collection(db, 'users'),
             where('userType', '==', 'Agency')
           );
-          
           const querySnapshot = await getDocs(agenciesQuery);
           this.agencies = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
-          console.log('All agencies fetched:', this.agencies);
         }
       } catch (error) {
         console.error('Error fetching agencies:', error);
@@ -345,24 +346,18 @@ export default {
       if (this.$refs.form.validate()) {
         this.loading = true;
         try {
-          console.log('Adding new unit:', this.property);
-          
-          // Prepare unit data for Firestore
           const unitData = {
             ...this.property,
             createdAt: new Date(),
             updatedAt: new Date()
           };
-          
-          // Add unit to Firestore
           const docRef = await addDoc(collection(db, 'units'), unitData);
-          
-          // Log the audit event
           await this.logAuditEvent(
             this.auditActions.CREATE,
             {
               propertyName: this.property.propertyName,
               tenantRef: this.property.tenantRef,
+              unitNumber: this.property.unitNumber,
               agencyId: this.property.agencyId,
               leaseStartDate: this.property.leaseStartDate,
               leaseEndDate: this.property.leaseEndDate,
@@ -371,10 +366,7 @@ export default {
             this.resourceTypes.UNIT,
             docRef.id
           )
-          
-          console.log('Unit added with ID:', docRef.id);
           this.showSuccessDialog('Unit added successfully!', 'Success!', 'Continue', '/active-units');
-          
         } catch (error) {
           console.error('Error adding unit:', error);
           this.showErrorDialog('Failed to add unit. Please try again.', 'Error', 'OK');
@@ -427,7 +419,8 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card styling */

@@ -138,7 +138,7 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore'
+import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 
@@ -158,12 +158,12 @@ export default {
       users: [],
       loading: false,
       headers: [
-        { title: "Name", key: "displayName", sortable: true },
-        { title: "Email", key: "email", sortable: true },
-        { title: "User Type", key: "userType", sortable: true, align: "center" },
-        { title: "Status", key: "status", sortable: true, align: "center" },
-        { title: "Date Added", key: "createdAt", sortable: true, align: "center" },
-        { title: "Actions", key: "actions", sortable: false, align: "center" },
+        { title: "NAME", key: "displayName", sortable: true },
+        { title: "EMAIL", key: "email", sortable: true },
+        { title: "USER TYPE", key: "userType", sortable: true, align: "center" },
+        { title: "STATUS", key: "status", sortable: true, align: "center" },
+        { title: "DATE ADDED", key: "createdAt", sortable: true, align: "center" },
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ]
     };
   },
@@ -220,7 +220,7 @@ export default {
       try {
         await this.showConfirmDialog({
           title: 'Delete user?',
-          message: `Are you sure you want to delete ${user.email}?`,
+          message: `Are you sure you want to delete ${user.email}?${user.userType === 'Agency' ? ' This will also delete all associated units, flagged units, notices, maintenance, inspections, and vacancies.' : ''}`,
           confirmText: 'Delete',
           cancelText: 'Cancel',
           color: '#dc3545'
@@ -229,6 +229,48 @@ export default {
         return
       }
       try {
+        // If deleting an Agency, cascade delete all associated records
+        if (user.userType === 'Agency') {
+          const agencyId = user.id;
+          
+          // Delete all units for this agency
+          const unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
+          const unitsSnapshot = await getDocs(unitsQuery);
+          const unitDeletePromises = unitsSnapshot.docs.map(unitDoc => deleteDoc(unitDoc.ref));
+          await Promise.all(unitDeletePromises);
+          
+          // Delete all flagged units for this agency
+          const flaggedQuery = query(collection(db, 'flaggedUnits'), where('agencyId', '==', agencyId));
+          const flaggedSnapshot = await getDocs(flaggedQuery);
+          const flaggedDeletePromises = flaggedSnapshot.docs.map(flaggedDoc => deleteDoc(flaggedDoc.ref));
+          await Promise.all(flaggedDeletePromises);
+          
+          // Delete all notices for this agency
+          const noticesQuery = query(collection(db, 'notices'), where('agencyId', '==', agencyId));
+          const noticesSnapshot = await getDocs(noticesQuery);
+          const noticesDeletePromises = noticesSnapshot.docs.map(noticeDoc => deleteDoc(noticeDoc.ref));
+          await Promise.all(noticesDeletePromises);
+          
+          // Delete all maintenance for this agency
+          const maintenanceQuery = query(collection(db, 'maintenance'), where('agencyId', '==', agencyId));
+          const maintenanceSnapshot = await getDocs(maintenanceQuery);
+          const maintenanceDeletePromises = maintenanceSnapshot.docs.map(mainDoc => deleteDoc(mainDoc.ref));
+          await Promise.all(maintenanceDeletePromises);
+          
+          // Delete all inspections for this agency
+          const inspectionsQuery = query(collection(db, 'inspections'), where('agencyId', '==', agencyId));
+          const inspectionsSnapshot = await getDocs(inspectionsQuery);
+          const inspectionsDeletePromises = inspectionsSnapshot.docs.map(inspDoc => deleteDoc(inspDoc.ref));
+          await Promise.all(inspectionsDeletePromises);
+          
+          // Delete all vacancies for this agency
+          const vacanciesQuery = query(collection(db, 'vacancies'), where('agencyId', '==', agencyId));
+          const vacanciesSnapshot = await getDocs(vacanciesQuery);
+          const vacanciesDeletePromises = vacanciesSnapshot.docs.map(vacDoc => deleteDoc(vacDoc.ref));
+          await Promise.all(vacanciesDeletePromises);
+        }
+        
+        // Delete the user/agency document
         await deleteDoc(doc(db, 'users', user.id));
         const index = this.users.findIndex(u => u.id === user.id);
         if (index > -1) this.users.splice(index, 1);
@@ -240,7 +282,8 @@ export default {
           {
             email: user.email,
             userType: user.userType,
-            displayName: user.displayName
+            displayName: user.displayName,
+            cascadingDelete: user.userType === 'Agency'
           },
           this.resourceTypes.USER,
           user.id

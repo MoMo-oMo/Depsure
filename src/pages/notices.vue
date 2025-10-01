@@ -180,6 +180,7 @@
                   color="black"
                   @click="viewProperty(item)"
                   class="action-btn"
+                  title="View"
                 />
                 <v-btn
                   v-if="isAgencyUser || userType === 'Admin'"
@@ -189,15 +190,28 @@
                   color="black"
                   @click="editProperty(item)"
                   class="action-btn"
+                  title="Edit"
                 />
+                <!-- Admin: Move to Vacancies -->
                 <v-btn
-                
+                  v-if="!isAgencyUser"
+                  icon="mdi-arrow-right-bold-box"
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  @click="moveToVacancies(item)"
+                  class="action-btn"
+                  title="Move to Vacancies"
+                />
+                <!-- Delete Notice -->
+                <v-btn
                   icon="mdi-delete"
                   size="small"
                   variant="text"
                   color="error"
                   @click="deleteProperty(item)"
                   class="action-btn"
+                  title="Delete Notice"
                 />
               </div>
             </template>
@@ -211,9 +225,10 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where, deleteDoc, doc, getDoc, addDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 import heroBg from '@/assets/title.png'
 
 export default {
@@ -221,7 +236,8 @@ export default {
   setup() {
     const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
     const { getOptions, getLabel, getColor, resolvePropertyTypeFromUnit } = usePropertyType()
-    return { showSuccessDialog, showErrorDialog, showConfirmDialog, getOptions, getLabel, getColor, resolvePropertyTypeFromUnit }
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showSuccessDialog, showErrorDialog, showConfirmDialog, getOptions, getLabel, getColor, resolvePropertyTypeFromUnit, logAuditEvent, auditActions, resourceTypes }
   },
   data() {
     return {
@@ -540,6 +556,104 @@ export default {
     
     viewProperty(property) { this.$router.push(`/view-notice-${property.id}`); },
     editProperty(property) { this.$router.push(`/edit-notice-${property.id}`); },
+    
+    async moveToVacancies(notice) {
+      try {
+        await this.showConfirmDialog({
+          title: 'Process Notice?',
+          message: `Move unit "${notice.unitName}" to Vacancies and delete this notice?`,
+          confirmText: 'Process',
+          cancelText: 'Cancel',
+          color: '#000000'
+        })
+      } catch (_) {
+        return
+      }
+      
+      try {
+        // Find the unit in active units
+        const unitsQuery = query(
+          collection(db, 'units'),
+          where('propertyName', '==', notice.unitName)
+        );
+        const unitsSnapshot = await getDocs(unitsQuery);
+        
+        if (unitsSnapshot.empty) {
+          // Try by unitName field as well
+          const unitsQuery2 = query(
+            collection(db, 'units'),
+            where('unitName', '==', notice.unitName)
+          );
+          const unitsSnapshot2 = await getDocs(unitsQuery2);
+          
+          if (unitsSnapshot2.empty) {
+            this.showErrorDialog('Unit not found in Active Units. It may have already been moved.', 'Error', 'OK');
+            return;
+          }
+        }
+        
+        const unitDoc = unitsSnapshot.empty ? (await getDocs(query(collection(db, 'units'), where('unitName', '==', notice.unitName)))).docs[0] : unitsSnapshot.docs[0];
+        const unitData = unitDoc.data();
+        
+        // Create vacancy entry
+        const vacancyData = {
+          agencyId: notice.agencyId || unitData.agencyId || '',
+          unitId: unitDoc.id,
+          unitName: notice.unitName,
+          dateVacated: notice.vacateDate || new Date().toISOString().slice(0, 10),
+          moveInDate: null,
+          propertyManager: unitData.propertyManager || '',
+          contactNumber: unitData.contactNumber || '',
+          notes: `Processed from notice. Lease start: ${notice.leaseStartDate || 'N/A'}`,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        await addDoc(collection(db, 'vacancies'), vacancyData);
+        
+        // Archive the unit (not hard delete)
+        const appStore = useAppStore();
+        const archivedUnitData = {
+          ...unitData,
+          originalId: unitDoc.id,
+          archivedAt: new Date(),
+          archivedBy: appStore.currentUser?.uid || 'unknown',
+          archivedByUserType: appStore.currentUser?.userType || 'unknown',
+          archivedReason: 'Notice processed - moved to vacancies'
+        };
+        await addDoc(collection(db, 'archivedUnits'), archivedUnitData);
+        
+        // Log audit event
+        await this.logAuditEvent(
+          this.auditActions.UPDATE,
+          {
+            noticeId: notice.id,
+            unitId: unitDoc.id,
+            unitName: notice.unitName,
+            movedToVacancies: true,
+            vacateDate: notice.vacateDate
+          },
+          this.resourceTypes.UNIT,
+          unitDoc.id
+        );
+        
+        // Delete from active units
+        await deleteDoc(doc(db, 'units', unitDoc.id));
+        
+        // Delete the notice
+        await deleteDoc(doc(db, 'notices', notice.id));
+        const index = this.properties.findIndex(p => p.id === notice.id);
+        if (index > -1) {
+          this.properties.splice(index, 1);
+          this.filterProperties();
+        }
+        
+        this.showSuccessDialog(`Unit moved to Vacancies and notice deleted!`, 'Success!', 'Continue');
+      } catch (error) {
+        console.error('Error processing notice:', error);
+        this.showErrorDialog(`Failed to process notice: ${error.message}`, 'Error', 'OK');
+      }
+    },
+    
     async deleteProperty(property) {
       try {
         await this.showConfirmDialog({

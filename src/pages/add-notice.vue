@@ -310,13 +310,30 @@ export default {
 
           // Automatic transition: remove from Active Units and add to Vacancies
           try {
-            // Attempt to find the unit by propertyName to remove from active units
+            // Attempt to find the unit by propertyName to archive from active units
             const unitsCol = collection(db, 'units');
             const q = query(unitsCol, where('propertyName', '==', this.notice.unitName));
             const snap = await getDocs(q);
             if (!snap.empty) {
-              // Remove first matched unit from active units
+              // Archive the first matched unit
               const unitDoc = snap.docs[0];
+              const unitData = unitDoc.data();
+              
+              // Create archived unit data
+              const archivedUnitData = {
+                ...unitData,
+                originalId: unitDoc.id,
+                archivedAt: new Date(),
+                archivedBy: this.appStore.currentUser?.uid || 'unknown',
+                archivedByUserType: this.appStore.currentUser?.userType || 'unknown',
+                archivedReason: 'Notice created - moved to vacancies'
+              };
+              
+              // Add to archivedUnits collection
+              const archivedRef = collection(db, 'archivedUnits');
+              await addDoc(archivedRef, archivedUnitData);
+              
+              // Then remove from active units
               await deleteDoc(doc(db, 'units', unitDoc.id));
             }
             // Add vacancy entry
@@ -324,7 +341,6 @@ export default {
               agencyId: this.notice.agencyId,
               unitName: this.notice.unitName,
               dateVacated: this.notice.vacateDate,
-              newTenantFound: 'No',
               moveInDate: null,
               propertyManager: '',
               contactNumber: '',
@@ -466,7 +482,8 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card styling */

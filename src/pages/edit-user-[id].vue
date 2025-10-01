@@ -64,7 +64,7 @@
                 </v-row>
                 <v-row>
                   <!-- First Name -->
-                  <v-col cols="12" md="6">
+                  <v-col cols="12" md="6" v-if="entry.userType !== 'Agency'">
                     <v-text-field
                       v-model="entry.firstName"
                       label="First Name"
@@ -76,7 +76,7 @@
                   </v-col>
 
                   <!-- Last Name -->
-                  <v-col cols="12" md="6">
+                  <v-col cols="12" md="6" v-if="entry.userType !== 'Agency'">
                     <v-text-field
                       v-model="entry.lastName"
                       label="Last Name"
@@ -455,6 +455,7 @@ export default {
   font-weight: 600;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card */

@@ -13,6 +13,7 @@ const items = [
 	{ key: 'maintenance', title: 'MAINTENANCE', background: 'linear-gradient(90deg, #f093fb 0%, #f5576c 100%)' },
 	{ key: 'inspections', title: 'INSPECTIONS', background: 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)' },
 	{ key: 'vacancies', title: 'VACANCIES', background: 'linear-gradient(90deg, #43e97b 0%, #38f9d7 100%)' },
+	{ key: 'chat', title: 'CHAT', background: 'linear-gradient(90deg, #000000 0%, #434343 100%)' },
 	{ key: 'dashboard', title: 'DASHBOARD', background: 'linear-gradient(90deg, #1f1c2c 0%, #928DAB 100%)' },
     { key: 'archived-units', title: 'ARCHIVED UNITS', background: 'linear-gradient(90deg, #434343 0%, #000000 100%)' },
     { key: 'profile', title: 'PROFILE', background: 'linear-gradient(90deg, #1e3c72 0%, #2a5298 100%)' },
@@ -82,6 +83,7 @@ function mapPathToKey (path) {
 		{ prefix: '/edit-vacancy-', key: 'vacancies' },
 
 		{ prefix: '/documents', key: 'documents' },
+		{ prefix: '/chat', key: 'chat' },
 		{ prefix: '/profile', key: 'profile' },
 	]
 

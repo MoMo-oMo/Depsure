@@ -500,15 +500,33 @@ export default {
     },
     filterDocs(docs) {
       if (!Array.isArray(docs) || docs.length === 0) return [];
-      const month = this.docFilterMonth || this.latestMonthFrom(docs);
-      const term = (this.docFilterSearch || '').toLowerCase();
-      return docs.filter(e => {
-        const d = this.monthKey(this.resolveDocDate(e));
-        const monthMatch = month ? d === month : true;
-        const name = (e.fileName || e.name || '').toLowerCase();
-        const searchMatch = term ? name.includes(term) : true;
-        return monthMatch && searchMatch;
+      
+      // If there's an active search or month filter, show all matching results
+      const hasActiveFilter = this.docFilterMonth || this.docFilterSearch;
+      
+      if (hasActiveFilter) {
+        const month = this.docFilterMonth || '';
+        const term = (this.docFilterSearch || '').toLowerCase();
+        return docs.filter(e => {
+          const d = this.monthKey(this.resolveDocDate(e));
+          const monthMatch = month ? d === month : true;
+          const name = (e.fileName || e.name || '').toLowerCase();
+          const searchMatch = term ? name.includes(term) : true;
+          return monthMatch && searchMatch;
+        });
+      }
+      
+      // No active filter: limit to last 3 documents by upload date
+      const sorted = [...docs].sort((a, b) => {
+        const dateA = this.resolveDocDate(a);
+        const dateB = this.resolveDocDate(b);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.getTime() - dateA.getTime(); // Newest first
       });
+      
+      return sorted.slice(0, 3);
     },
     async loadPropertyData(propertyId) {
       this.loading = true;
@@ -607,6 +625,7 @@ export default {
   color: white;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card styling */
@@ -962,8 +981,9 @@ export default {
 /* Shared docs toolbar */
 .doc-filters {
   display: flex;
-  gap: 12px;
-  margin: 8px 0 16px 0;
+  gap: 16px;
+  margin: 16px 0 24px 0;
+  padding: 12px 0;
   align-items: center;
   justify-content: center;
 }

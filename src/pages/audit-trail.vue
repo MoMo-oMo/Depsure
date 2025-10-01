@@ -281,7 +281,11 @@ export default {
       { title: 'User Type', key: 'userType', sortable: true },
       { title: 'Action', key: 'action', sortable: true },
       { title: 'Details', key: 'details', sortable: false },
-    ]
+      
+    ].map(header => ({
+      ...header,
+      title: header.title.toUpperCase()
+    }))
 
     // Options for filters
     const actionOptions = Object.values(auditActions)
@@ -427,13 +431,13 @@ export default {
 
         // Prepare tabular data with readable details
         const columns = [
-          { header: 'Timestamp', key: 'timestamp' },
-          { header: 'User', key: 'userName' },
-          { header: 'User Email', key: 'userEmail' },
-          { header: 'User Type', key: 'userType' },
-          { header: 'Action', key: 'action' },
-          { header: 'Resource Type', key: 'resourceType' },
-          { header: 'Details', key: 'details' }
+          { header: 'TIMESTAMP', key: 'timestamp' },
+          { header: 'USER', key: 'userName' },
+          { header: 'USER EMAIL', key: 'userEmail' },
+          { header: 'USER TYPE', key: 'userType' },
+          { header: 'ACTION', key: 'action' },
+          { header: 'RESOURCE TYPE', key: 'resourceType' },
+          { header: 'DETAILS', key: 'details' }
         ]
 
         const rows = filteredAuditEntries.value.map(entry => ({
@@ -532,13 +536,13 @@ export default {
 
     const generateCSV = (data) => {
       const headers = [
-        'Timestamp',
-        'User',
-        'User Email',
-        'User Type',
-        'Action',
-        'Resource Type',
-        'Details'
+        'TIMESTAMP',
+        'USER',
+        'USER EMAIL',
+        'USER TYPE',
+        'ACTION',
+        'RESOURCE TYPE',
+        'DETAILS'
       ]
 
       const csvRows = []

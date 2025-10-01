@@ -551,7 +551,8 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .form-card {

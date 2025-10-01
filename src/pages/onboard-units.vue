@@ -163,12 +163,21 @@
                   />
                   <!-- Documents -->
                   <v-btn
-                    icon="mdi-file-document-box"
+                    icon="mdi-file-document"
                     color="black"
                     variant="text"
                     size="small"
                     title="Unit Documents"
                     @click="viewDocuments(item)"
+                  />
+                  <!-- Inspections -->
+                  <v-btn
+                    icon="mdi-clipboard-check"
+                    color="black"
+                    variant="text"
+                    size="small"
+                    title="Inspections"
+                    @click="viewInspections(item)"
                   />
                 </div>
               </template>
@@ -374,6 +383,46 @@ export default {
       // Open Documents only (hide Details tab) so agencies can upload PDFs easily
       this.$router.push({ path: `/edit-property-${item.id}`, query: { tab: 'documents', lock: 'documents', from: 'onboard' } })
     },
+    async viewInspections(item) {
+      try {
+        // Try to find an existing inspection for this unit
+        let foundId = await this.findExistingInspection(item)
+        
+        if (!foundId) {
+          // If no inspection exists, create one first
+          const user = this.appStore.currentUser || {}
+          const fallbackAgencyId = user?.userType === 'Agency' ? (user.uid || '')
+                                  : (user?.userType === 'Admin' && user?.adminScope === 'agency') ? (user.managedAgencyId || '')
+                                  : ''
+          const agencyId = item.agencyId || this.appStore.currentAgency?.id || fallbackAgencyId || ''
+          
+          const inspectionData = {
+            agencyId,
+            unitId: item.id,
+            unitName: item.propertyName || item.unitName || '',
+            inspectionRequired: 'No',
+            contactPerson: item.contactPerson || '',
+            contactNumber: item.contactNumber || '',
+            appointmentMade: 'No',
+            inspectionDate: '',
+            quotesNeeded: 'No',
+            status: 'Pending',
+            priority: 'Medium',
+            notes: '',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+          
+          const ref = await addDoc(collection(db, 'inspections'), inspectionData)
+          foundId = ref.id
+        }
+        
+        // Navigate to view inspection page with the inspection ID
+        this.$router.push({ path: `/view-inspection-${foundId}`, query: { from: 'onboard' } })
+      } catch (e) {
+        console.error('Open inspection failed:', e)
+      }
+    },
     async openMaintenance(item) {
       try {
         let foundId = await this.findExistingMaintenance(item)
@@ -413,7 +462,6 @@ export default {
             unitId: item.id,
             unitName: item.propertyName || item.unitName || '',
             dateVacated: '',
-            newTenantFound: 'No',
             moveInDate: null,
             propertyManager: item.propertyManager || '',
             contactNumber: item.contactNumber || '',
@@ -467,6 +515,19 @@ export default {
         if (f2) return f2.id
         return null
       } catch (e) { console.warn('findExistingFlagged error', e); return null }
+    },
+    async findExistingInspection(item) {
+      try {
+        const name = item.propertyName || item.unitName || ''
+        let q1 = query(collection(db, 'inspections'), where('unitId', '==', item.id))
+        let s1 = await getDocs(q1)
+        if (!s1.empty) return s1.docs[0].id
+        let q2 = query(collection(db, 'inspections'), where('unitName', '==', name))
+        let s2 = await getDocs(q2)
+        const i2 = s2.docs.find(d => (d.data()?.agencyId || '') === (item.agencyId || ''))
+        if (i2) return i2.id
+        return null
+      } catch (e) { console.warn('findExistingInspection error', e); return null }
     }
   },
   async mounted() {

@@ -145,7 +145,17 @@ export default {
             this.appStore.setUser(userInfo);
             
             // Decide landing route based on role
-            const landingRoute = (userData.userType === 'Agency') ? '/active-units' : '/agencies';
+            let landingRoute;
+            if (userData.userType === 'Agency') {
+              // Agency users go to Onboard Units
+              landingRoute = '/onboard-units';
+            } else if (userData.userType === 'Admin' && userData.adminScope === 'agency') {
+              // Agency Admin users go to Onboard Units
+              landingRoute = '/onboard-units';
+            } else {
+              // Super Admin and regular Admin go to Agencies
+              landingRoute = '/agencies';
+            }
             
             // Log audit event
             await this.logAuditEvent(

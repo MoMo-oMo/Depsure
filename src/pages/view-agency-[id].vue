@@ -107,7 +107,7 @@
                       <span>{{ agency.email || 'N/A' }}</span>
                     </div>
                   </div>
-                  <v-divider class="my-4 bg-white" />
+                  <v-divider v-if="agency.notes" class="my-4 bg-white" />
                   <p v-if="agency.notes" class="agency-description-black">{{ agency.notes }}</p>
                 </v-card-text>
                 </div>

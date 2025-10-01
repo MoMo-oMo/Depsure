@@ -248,7 +248,7 @@
                       <v-text-field
                         v-model="docFilterMonth"
                         type="month"
-                        label="Month"
+                        label="Search by Month"
                         density="comfortable"
                         variant="outlined"
                         hide-details
@@ -264,20 +264,33 @@
                           <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                           Quotes
                         </h4>
-                        <v-file-input
-                          v-model="newQuotes"
-                          label="Upload Quote Documents (PDF only)"
-                          variant="outlined"
-                          class="custom-input"
-                          accept=".pdf"
-                          multiple
-                          show-size
-                          prepend-icon="mdi-file-pdf-box"
-                          :loading="uploadingQuotes"
-                          :rules="quoteFileRules"
-                          hint="Only PDF files are allowed. Maximum size: 50MB per file"
-                          persistent-hint
-                        />
+                        <div class="upload-row">
+                          <v-file-input
+                            :key="`quotes-${fileInputKey}`"
+                            v-model="newQuotes"
+                            label="Upload Quote Documents (PDF only)"
+                            variant="outlined"
+                            class="custom-input file-input-flex"
+                            accept=".pdf"
+                            multiple
+                            show-size
+                            prepend-icon="mdi-file-pdf-box"
+                            :loading="uploadingQuotes"
+                            :rules="quoteFileRules"
+                            hint="Only PDF files are allowed. Maximum size: 50MB per file"
+                            persistent-hint
+                          />
+                          <v-btn
+                            color="primary"
+                            variant="elevated"
+                            class="upload-doc-btn"
+                            :disabled="!newQuotes || newQuotes.length === 0 || uploadingQuotes"
+                            :loading="uploadingQuotes"
+                            @click="uploadQuotesOnly"
+                          >
+                            Upload
+                          </v-btn>
+                        </div>
                         <div v-if="editFilteredQuotes.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Quotes:</h5>
                           <div class="document-list">
@@ -313,20 +326,33 @@
                           <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
                           Inspections
                         </h4>
-                        <v-file-input
-                          v-model="newInspections"
-                          label="Upload Inspection Documents (PDF only)"
-                          variant="outlined"
-                          class="custom-input"
-                          accept=".pdf"
-                          multiple
-                          show-size
-                          prepend-icon="mdi-clipboard-check"
-                          :loading="uploadingInspections"
-                          :rules="inspectionFileRules"
-                          hint="Only PDF files are allowed. Maximum size: 50MB per file"
-                          persistent-hint
-                        />
+                        <div class="upload-row">
+                          <v-file-input
+                            :key="`inspections-${fileInputKey}`"
+                            v-model="newInspections"
+                            label="Upload Inspection Documents (PDF only)"
+                            variant="outlined"
+                            class="custom-input file-input-flex"
+                            accept=".pdf"
+                            multiple
+                            show-size
+                            prepend-icon="mdi-clipboard-check"
+                            :loading="uploadingInspections"
+                            :rules="inspectionFileRules"
+                            hint="Only PDF files are allowed. Maximum size: 50MB per file"
+                            persistent-hint
+                          />
+                          <v-btn
+                            color="warning"
+                            variant="elevated"
+                            class="upload-doc-btn"
+                            :disabled="!newInspections || newInspections.length === 0 || uploadingInspections"
+                            :loading="uploadingInspections"
+                            @click="uploadInspectionsOnly"
+                          >
+                            Upload
+                          </v-btn>
+                        </div>
                         <div v-if="editFilteredInspections.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Inspections:</h5>
                           <div class="document-list">
@@ -362,20 +388,33 @@
                           <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
                           Invoices
                         </h4>
-                        <v-file-input
-                          v-model="newInvoices"
-                          label="Upload Invoice Documents (PDF only)"
-                          variant="outlined"
-                          class="custom-input"
-                          accept=".pdf"
-                          multiple
-                          show-size
-                          prepend-icon="mdi-receipt"
-                          :loading="uploadingInvoices"
-                          :rules="invoiceFileRules"
-                          hint="Only PDF files are allowed. Maximum size: 50MB per file"
-                          persistent-hint
-                        />
+                        <div class="upload-row">
+                          <v-file-input
+                            :key="`invoices-${fileInputKey}`"
+                            v-model="newInvoices"
+                            label="Upload Invoice Documents (PDF only)"
+                            variant="outlined"
+                            class="custom-input file-input-flex"
+                            accept=".pdf"
+                            multiple
+                            show-size
+                            prepend-icon="mdi-receipt"
+                            :loading="uploadingInvoices"
+                            :rules="invoiceFileRules"
+                            hint="Only PDF files are allowed. Maximum size: 50MB per file"
+                            persistent-hint
+                          />
+                          <v-btn
+                            color="success"
+                            variant="elevated"
+                            class="upload-doc-btn"
+                            :disabled="!newInvoices || newInvoices.length === 0 || uploadingInvoices"
+                            :loading="uploadingInvoices"
+                            @click="uploadInvoicesOnly"
+                          >
+                            Upload
+                          </v-btn>
+                        </div>
                         <div v-if="editFilteredInvoices.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Invoices:</h5>
                           <div class="document-list">
@@ -548,6 +587,7 @@ export default {
       uploadingQuotes: false,
       uploadingInspections: false,
       uploadingInvoices: false,
+      fileInputKey: 0, // Key to force re-render of file inputs
       // Shared docs filters in edit
       docFilterMonth: '',
       docFilterSearch: '',
@@ -712,15 +752,33 @@ export default {
     },
     filterDocs(docs) {
       if (!Array.isArray(docs) || docs.length === 0) return [];
-      const month = this.docFilterMonth || this.latestMonthFrom(docs);
-      const term = (this.docFilterSearch || '').toLowerCase();
-      return docs.filter(e => {
-        const d = this.monthKey(this.resolveDocDate(e));
-        const monthMatch = month ? d === month : true;
-        const name = (e.fileName || e.name || '').toLowerCase();
-        const searchMatch = term ? name.includes(term) : true;
-        return monthMatch && searchMatch;
+      
+      // If there's an active search or month filter, show all matching results
+      const hasActiveFilter = this.docFilterMonth || this.docFilterSearch;
+      
+      if (hasActiveFilter) {
+        const month = this.docFilterMonth || '';
+        const term = (this.docFilterSearch || '').toLowerCase();
+        return docs.filter(e => {
+          const d = this.monthKey(this.resolveDocDate(e));
+          const monthMatch = month ? d === month : true;
+          const name = (e.fileName || e.name || '').toLowerCase();
+          const searchMatch = term ? name.includes(term) : true;
+          return monthMatch && searchMatch;
+        });
+      }
+      
+      // No active filter: limit to last 3 documents by upload date
+      const sorted = [...docs].sort((a, b) => {
+        const dateA = this.resolveDocDate(a);
+        const dateB = this.resolveDocDate(b);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.getTime() - dateA.getTime(); // Newest first
       });
+      
+      return sorted.slice(0, 3);
     },
     async loadPropertyData(propertyId) {
       this.loading = true;
@@ -819,35 +877,15 @@ export default {
           console.log('Saving property:', this.property);
           if (!this.property.id) throw new Error('Property ID is missing');
 
-          // Gather uploads per type
-          const uploaded = await this.uploadDocuments();
-          if (uploaded === false) return;
+          // Documents are uploaded individually now, so skip the uploadDocuments call
+          // Just save the property details and existing document arrays as-is
 
           // Build payload without id
           const { id, ...propertyDataBase } = this.property;
           const updatedAt = new Date();
 
-          // Merge arrays: existing + newly uploaded, preserving older entries
-          const merged = {
-            quotes: [
-              ...(this.property.quotes || []),
-              ...(uploaded.quotes || [])
-            ],
-            inspections: [
-              ...(this.property.inspections || []),
-              ...(uploaded.inspections || [])
-            ],
-            invoices: [
-              ...(this.property.invoices || []),
-              ...(uploaded.invoices || [])
-            ]
-          };
-
           const propertyData = {
             ...propertyDataBase,
-            quotes: merged.quotes,
-            inspections: merged.inspections,
-            invoices: merged.invoices,
             updatedAt
           };
 
@@ -918,12 +956,144 @@ export default {
       if (await uploadBatch(this.newInspections, 'inspections', 'uploadingInspections') === false) return false;
       if (await uploadBatch(this.newInvoices, 'invoices', 'uploadingInvoices') === false) return false;
 
-      // clear the pickers after success
-      this.newQuotes = [];
-      this.newInspections = [];
-      this.newInvoices = [];
+      // clear the pickers after success and force re-render with key change
+      this.$nextTick(() => {
+        this.newQuotes = [];
+        this.newInspections = [];
+        this.newInvoices = [];
+        this.fileInputKey++; // Increment key to force complete re-render of file inputs
+      });
 
       return result;
+    },
+
+    async uploadQuotesOnly() {
+      if (!this.newQuotes || this.newQuotes.length === 0) return;
+      
+      this.uploadingQuotes = true;
+      try {
+        const uploaded = [];
+        for (const file of this.newQuotes) {
+          const ts = Date.now();
+          const fileRef = ref(storage, `property-documents/${this.property.id}/quotes/${ts}_${file.name}`);
+          const snapshot = await uploadBytes(fileRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          const storagePath = snapshot.ref.fullPath;
+          uploaded.push({
+            fileName: file.name,
+            fileURL: downloadURL,
+            storagePath,
+            uploadedAt: new Date().toISOString()
+          });
+        }
+        
+        // Merge with existing quotes
+        const updatedQuotes = [...(this.property.quotes || []), ...uploaded];
+        this.property.quotes = updatedQuotes;
+        
+        // Update Firestore immediately
+        await updateDoc(doc(db, COLLECTION, this.property.id), {
+          quotes: updatedQuotes,
+          updatedAt: new Date()
+        });
+        
+        // Reset file input immediately
+        this.newQuotes = [];
+        this.fileInputKey++;
+        
+        this.showSuccessDialog(`${uploaded.length} quote(s) uploaded successfully!`, 'Success', 'OK');
+      } catch (error) {
+        console.error('Error uploading quotes:', error);
+        this.showErrorDialog('Failed to upload quotes. Please try again.', 'Error', 'OK');
+      } finally {
+        this.uploadingQuotes = false;
+      }
+    },
+
+    async uploadInspectionsOnly() {
+      if (!this.newInspections || this.newInspections.length === 0) return;
+      
+      this.uploadingInspections = true;
+      try {
+        const uploaded = [];
+        for (const file of this.newInspections) {
+          const ts = Date.now();
+          const fileRef = ref(storage, `property-documents/${this.property.id}/inspections/${ts}_${file.name}`);
+          const snapshot = await uploadBytes(fileRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          const storagePath = snapshot.ref.fullPath;
+          uploaded.push({
+            fileName: file.name,
+            fileURL: downloadURL,
+            storagePath,
+            uploadedAt: new Date().toISOString()
+          });
+        }
+        
+        // Merge with existing inspections
+        const updatedInspections = [...(this.property.inspections || []), ...uploaded];
+        this.property.inspections = updatedInspections;
+        
+        // Update Firestore immediately
+        await updateDoc(doc(db, COLLECTION, this.property.id), {
+          inspections: updatedInspections,
+          updatedAt: new Date()
+        });
+        
+        // Reset file input immediately
+        this.newInspections = [];
+        this.fileInputKey++;
+        
+        this.showSuccessDialog(`${uploaded.length} inspection(s) uploaded successfully!`, 'Success', 'OK');
+      } catch (error) {
+        console.error('Error uploading inspections:', error);
+        this.showErrorDialog('Failed to upload inspections. Please try again.', 'Error', 'OK');
+      } finally {
+        this.uploadingInspections = false;
+      }
+    },
+
+    async uploadInvoicesOnly() {
+      if (!this.newInvoices || this.newInvoices.length === 0) return;
+      
+      this.uploadingInvoices = true;
+      try {
+        const uploaded = [];
+        for (const file of this.newInvoices) {
+          const ts = Date.now();
+          const fileRef = ref(storage, `property-documents/${this.property.id}/invoices/${ts}_${file.name}`);
+          const snapshot = await uploadBytes(fileRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          const storagePath = snapshot.ref.fullPath;
+          uploaded.push({
+            fileName: file.name,
+            fileURL: downloadURL,
+            storagePath,
+            uploadedAt: new Date().toISOString()
+          });
+        }
+        
+        // Merge with existing invoices
+        const updatedInvoices = [...(this.property.invoices || []), ...uploaded];
+        this.property.invoices = updatedInvoices;
+        
+        // Update Firestore immediately
+        await updateDoc(doc(db, COLLECTION, this.property.id), {
+          invoices: updatedInvoices,
+          updatedAt: new Date()
+        });
+        
+        // Reset file input immediately
+        this.newInvoices = [];
+        this.fileInputKey++;
+        
+        this.showSuccessDialog(`${uploaded.length} invoice(s) uploaded successfully!`, 'Success', 'OK');
+      } catch (error) {
+        console.error('Error uploading invoices:', error);
+        this.showErrorDialog('Failed to upload invoices. Please try again.', 'Error', 'OK');
+      } finally {
+        this.uploadingInvoices = false;
+      }
     },
     
     viewDocument(fileURL, fileName) {
@@ -1248,6 +1418,7 @@ export default {
   color: white;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card styling */
@@ -1351,6 +1522,26 @@ export default {
 
 .document-category:nth-child(4) {
   border-left-color: #28a745;
+}
+
+.upload-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.file-input-flex {
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-doc-btn {
+  margin-top: 4px;
+  min-width: 120px;
+  height: 56px;
+  text-transform: none;
+  font-weight: 600;
 }
 
 .category-title {
@@ -1506,6 +1697,66 @@ export default {
   opacity: 0.2;
   animation: pulse 2s ease-in-out infinite;
   background-color: #000000;
+}
+/* Document Filters Section - Improved Layout */
+.doc-filters {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.doc-search {
+  flex: 2;
+  min-width: 250px;
+}
+
+.doc-month-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Make the inputs look cleaner */
+.doc-filters .custom-input .v-field {
+  background-color: white !important;
+  border-radius: 8px;
+}
+
+.doc-filters .custom-input :deep(.v-field__input) {
+  background-color: white !important;
+}
+
+.doc-filters .custom-input :deep(.v-field__outline) {
+  border-color: #dee2e6 !important;
+}
+
+/* Hover effect for better UX */
+.doc-filters .custom-input:hover :deep(.v-field__outline) {
+  border-color: #000 !important;
+}
+
+/* Focus state */
+.doc-filters .custom-input :deep(.v-field--focused .v-field__outline) {
+  border-color: #000 !important;
+  border-width: 2px !important;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .doc-filters {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .doc-search,
+  .doc-month-input {
+    width: 100%;
+    min-width: unset;
+  }
 }
 
 @keyframes fadeInCircle {

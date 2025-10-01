@@ -89,29 +89,17 @@
                     />
                   </v-col>
 
-                  <!-- New Tenant Found -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="vacancy.newTenantFound"
-                      label="New Tenant Found"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="newTenantFoundRules"
-                      required
-                    />
-                  </v-col>
-
                   <!-- Move In Date -->
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="vacancy.moveInDate"
-                      label="Move In Date"
+                      label="Move In Date (Optional)"
                       variant="outlined"
                       type="date"
                       class="custom-input"
-                      :rules="moveInDateRules"
-                      :disabled="vacancy.newTenantFound === 'No'"
+                      :rules="[]"
+                      hint="Set when new tenant is secured"
+                      persistent-hint
                     />
                   </v-col>
 
@@ -202,7 +190,6 @@ export default {
         agencyId: '',
         unitName: '',
         dateVacated: '',
-        newTenantFound: '',
         moveInDate: '',
         propertyManager: '',
         contactNumber: ''
@@ -222,17 +209,6 @@ export default {
       ],
       dateVacatedRules: [
         v => !!v || 'Date vacated is required'
-      ],
-      newTenantFoundRules: [
-        v => !!v || 'Please specify if new tenant is found'
-      ],
-      moveInDateRules: [
-        v => {
-          if (this.vacancy.newTenantFound === 'Yes') {
-            return !!v || 'Move in date is required when new tenant is found'
-          }
-          return true
-        }
       ],
       propertyManagerRules: [
         v => !!v || 'Property manager is required'
@@ -275,8 +251,7 @@ export default {
             agencyId: this.vacancy.agencyId,
             unitName: this.vacancy.unitName,
             dateVacated: this.vacancy.dateVacated,
-            newTenantFound: this.vacancy.newTenantFound,
-            moveInDate: this.vacancy.newTenantFound === 'Yes' ? this.vacancy.moveInDate : null,
+            moveInDate: this.vacancy.moveInDate || null,
             propertyManager: this.vacancy.propertyManager,
             contactNumber: this.vacancy.contactNumber,
             notes: this.vacancy.notes || '',
@@ -294,7 +269,6 @@ export default {
               unitName: this.vacancy.unitName,
               agencyId: this.vacancy.agencyId,
               dateVacated: this.vacancy.dateVacated,
-              newTenantFound: this.vacancy.newTenantFound,
               moveInDate: this.vacancy.moveInDate,
               propertyManager: this.vacancy.propertyManager
             },
@@ -484,7 +458,8 @@ export default {
   font-weight: 600;
   color: white;
   margin: 0;
-  text-align: left;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card styling */

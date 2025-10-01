@@ -1,7 +1,7 @@
 <template>
   <div class="view-vacancy-page">
     <v-container fluid>
-      <!-- Filters and Add Vacancy Button -->
+      <!-- Filters and Action Buttons -->
       <v-row class="mb-4">
         <!-- Search -->
         <v-col cols="12" md="3" lg="3">
@@ -19,8 +19,6 @@
             @input="filterVacancies"
           />
         </v-col>
-
-        <!-- Agency selector removed for consistency across pages -->
 
         <!-- Property Type Filter -->
         <v-col cols="12" md="2" lg="2" class="pa-4">
@@ -74,22 +72,22 @@
           </v-menu>
         </v-col>
 
+        <!-- Export to Excel Button -->
+        <v-col cols="12" md="2" lg="2" class="d-flex align-center">
+          <v-btn @click="exportToExcel" class="export-btn">
+            Export to Excel
+          </v-btn>
+        </v-col>
+
         <!-- Add Vacancy Button - Only visible to Agency users -->
-        <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
+        <v-col cols="12" md="2" lg="2" class="d-flex align-center" v-if="isAgencyUser">
           <v-btn @click="addVacancy" class="back-btn">
             Add Vacancy
           </v-btn>
         </v-col>
-
-        <!-- Quick Add Vacancy Button -->
-        <v-col cols="12" md="3" lg="3" class="d-flex align-center" v-if="isAgencyUser">
-          <v-btn @click="quickAddVacancy" class="back-btn" color="success">
-            Quick Add
-          </v-btn>
-        </v-col>
       </v-row>
 
-      <!-- Clean Agency Header (image, centered title, no overlay) -->
+      <!-- Clean Agency Header -->
       <v-row class="mb-4">
         <v-col cols="12">
           <v-card class="agency-hero-card" elevation="1">
@@ -97,53 +95,6 @@
             <div class="agency-hero-center">
               {{ heroTitle }}
             </div>
-          </v-card>
-        </v-col>
-      </v-row>
-      <!-- Agency Info Card -->
-      <v-row class="mb-6" v-if="false && selectedAgencyDetails">
-        <v-col cols="12">
-          <v-card class="agency-info-card-black">
-            <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
-            <v-row class="no-gutters" align="stretch">
-              <v-col cols="12">
-                <div class="agency-content-right">
-                <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.agencyName }}
-                </v-card-title>
-                <v-card-text class="text-white">
-                  <div class="agency-details-black">
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.address || 'Address not provided' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
-                      <span>Reg No: {{ selectedAgencyDetails.regNo || '—' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-account" class="mr-2 text-white" />
-                      <span>Primary Contact: {{ selectedAgencyDetails.primaryContactName || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.contactNumber || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-email" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.email || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ activeUnitsCount }} Properties</span>
-                    </div>
-                  </div>
-                  <!-- Description hidden to reduce visual noise over image -->
-                  <!-- <v-divider class="my-4 bg-white" /> -->
-                </v-card-text>
-                </div>
-              </v-col>
-            </v-row>
           </v-card>
         </v-col>
       </v-row>
@@ -160,16 +111,6 @@
             hover
             no-data-text="No data available"
           >
-            <!-- New Tenant Found -->
-            <template v-slot:item.newTenantFound="{ item }">
-              <v-chip 
-                :color="item.newTenantFound === 'Yes' ? 'success' : 'error'"
-                size="small"
-              >
-                {{ item.newTenantFound }}
-              </v-chip>
-            </template>
-
             <!-- Date Vacated -->
             <template v-slot:item.dateVacated="{ item }">
               {{ formatDate(item.dateVacated) }}
@@ -198,28 +139,21 @@
                   icon="mdi-eye"
                   size="small"
                   variant="text"
-                  color="black"
+                  color="#757575"
                   @click="viewVacancy(item)"
                   class="action-btn"
                 />
+                <!-- Move Back to Onboarded Units - Admin Only -->
                 <v-btn
-                  v-if="!isSuperAdmin"
-                  icon="mdi-pencil"
+                  v-if="canMoveToActive"
+                  icon="mdi-home-import-outline"
                   size="small"
                   variant="text"
-                  color="black"
-                  @click="editVacancy(item)"
+                  color="#757575"
+                  @click="moveToOnboardedUnits(item)"
                   class="action-btn"
+                  title="Move back to Onboarded Units"
                 />
-                <!-- <v-btn
-                  v-if="!isSuperAdmin"
-                  icon="mdi-delete"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  @click="deleteVacancy(item)"
-                  class="action-btn"
-                /> -->
               </div>
             </template>
           </v-data-table>
@@ -232,19 +166,21 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, deleteDoc, doc, addDoc, getDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where, deleteDoc, doc, addDoc, getDoc, updateDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
 import heroBg from '@/assets/title.png'
+import * as XLSX from 'xlsx'
 
 export default {
   name: "ViewVacancies",
   setup() {
-    const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
+    const { showErrorDialog, showConfirmDialog, showSuccessDialog } = useCustomDialogs()
     const { getLabel, getColor, getOptions, resolvePropertyTypeFromUnit } = usePropertyType()
     return { 
       showErrorDialog, 
       showConfirmDialog,
+      showSuccessDialog,
       getPropertyTypeLabel: getLabel,
       getPropertyTypeColor: getColor,
       resolvePropertyTypeFromUnit
@@ -265,13 +201,11 @@ export default {
       vacanciesLoading: false,
       activeUnitsCount: 0,
       headers: [
-        { title: "Unit Name", key: "unitName", sortable: true },
-        { title: "Date Vacated", key: "dateVacated", sortable: true, align: "center" },
-        { title: "New Tenant Found", key: "newTenantFound", sortable: true, align: "center" },
-        { title: "Move In Date", key: "moveInDate", sortable: true, align: "center" },
-        { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
-
-        { title: "Actions", key: "actions", sortable: false, align: "center" },
+        { title: "UNIT NAME", key: "unitName", sortable: true },
+        { title: "DATE VACATED", key: "dateVacated", sortable: true, align: "center" },
+        { title: "MOVE IN DATE", key: "moveInDate", sortable: true, align: "center" },
+        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ]
     };
   },
@@ -282,12 +216,6 @@ export default {
     heroTitle() {
       return this.selectedAgencyDetails?.agencyName || 'Vacancies'
     },
-    agencyCardBgStyle() {
-      const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
-      return {
-        background: `url(${url}) center/cover no-repeat`
-      }
-    },
     monthFilterLabel() {
       if (!this.monthFilter) return 'All Months'
       try {
@@ -295,10 +223,6 @@ export default {
         const d = new Date(Number(yy), Number(mm) - 1, 1)
         return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
       } catch { return this.monthFilter }
-    },
-    hasCurrentAgency() {
-      const appStore = useAppStore();
-      return !!appStore.currentAgency;
     },
     selectedAgencyDetails() {
       return this.agencies.find(a => a.id === this.selectedAgency) || null;
@@ -308,11 +232,11 @@ export default {
       const user = appStore.currentUser;
       return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
     },
-    isSuperAdmin() {
+    canMoveToActive() {
       const appStore = useAppStore();
-      const userType = appStore.currentUser?.userType;
-      console.log('Vacancies - User Type:', userType, 'Is Super Admin:', userType === 'Super Admin');
-      return userType === 'Super Admin';
+      const user = appStore.currentUser;
+      // Only Super Admin and regular Admin can move units back to active
+      return user?.userType === 'Super Admin' || (user?.userType === 'Admin' && user?.adminScope !== 'agency');
     },
     propertyTypeFilterOptions() {
       const { getOptions } = usePropertyType()
@@ -337,37 +261,9 @@ export default {
       this.filterVacancies()
       this.monthMenu = false
     },
-    openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector('input');
-      if (el) {
-        if (typeof el.showPicker === 'function') el.showPicker();
-        else el.focus();
-      }
-    },
     getCurrentMonth() {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-    },
-    async refreshActiveUnitsCount(agencyId = null) {
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
-        let unitsQuery;
-        if (userType === 'Agency') {
-          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid));
-        } else if (agencyId) {
-          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
-        } else {
-          this.activeUnitsCount = 0;
-          return;
-        }
-        const snap = await getDocs(unitsQuery);
-        this.activeUnitsCount = snap.size;
-      } catch (error) {
-        console.error('Error counting active units:', error);
-        this.activeUnitsCount = 0;
-      }
     },
     
     formatDate(dateString) {
@@ -383,8 +279,8 @@ export default {
     filterVacancies() {
       this.filteredVacancies = this.vacancies.filter(vacancy => {
         const textMatch = vacancy.unitName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                         vacancy.propertyManager.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                         vacancy.contactNumber.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                         (vacancy.propertyManager && vacancy.propertyManager.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+                         (vacancy.contactNumber && vacancy.contactNumber.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
                          (vacancy.notes && vacancy.notes.toLowerCase().includes(this.searchQuery.toLowerCase()));
         
         let agencyMatch = true;
@@ -409,30 +305,131 @@ export default {
       });
     },
 
-    onAgencyChange(agencyId) {
-      console.log('Agency changed to:', agencyId);
-      console.log('Available agencies:', this.agencies);
-      console.log('Selected agency details:', this.selectedAgencyDetails);
-      
-      if (this.isAgencyUser) {
-        // Agency users can't change agency selection
-        return;
+    async exportToExcel() {
+      try {
+        // Prepare data for export
+        const exportData = this.filteredVacancies.map(vacancy => ({
+          'Unit Name': vacancy.unitName,
+          'Date Vacated': this.formatDate(vacancy.dateVacated),
+          'Move In Date': vacancy.moveInDate ? this.formatDate(vacancy.moveInDate) : 'Not specified',
+          'Property Type': this.getPropertyTypeLabel(vacancy.propertyType),
+          'Property Manager': vacancy.propertyManager || 'N/A',
+          'Contact Number': vacancy.contactNumber || 'N/A',
+          'Notes': vacancy.notes || ''
+        }));
+
+        // Create workbook and worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Vacancies');
+
+        // Set column widths
+        const wscols = [
+          { wch: 25 }, // Unit Name
+          { wch: 15 }, // Date Vacated
+          { wch: 15 }, // Move In Date
+          { wch: 15 }, // Property Type
+          { wch: 20 }, // Property Manager
+          { wch: 15 }, // Contact Number
+          { wch: 30 }  // Notes
+        ];
+        ws['!cols'] = wscols;
+
+        // Generate filename with current date
+        const today = new Date();
+        const filename = `Vacancies_Report_${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}.xlsx`;
+
+        // Save file
+        XLSX.writeFile(wb, filename);
+
+        this.showSuccessDialog('Excel file exported successfully!', 'Success', 'OK');
+      } catch (error) {
+        console.error('Error exporting to Excel:', error);
+        this.showErrorDialog('Failed to export data to Excel. Please try again.', 'Error', 'OK');
       }
-      
-      // Clear current entries before fetching new ones
-      this.vacancies = [];
-      this.filteredVacancies = [];
-      
-      if (agencyId) {
-        // Fetch vacancy entries for selected agency
-        console.log('Fetching vacancies for agency:', agencyId);
-        this.fetchVacancies(agencyId);
-        this.refreshActiveUnitsCount(agencyId);
-      } else {
-        // Fetch all vacancy entries when no agency is selected
-        console.log('Fetching all vacancies');
-        this.fetchVacancies();
-        this.refreshActiveUnitsCount();
+    },
+
+    async moveToOnboardedUnits(vacancy) {
+      try {
+        await this.showConfirmDialog({
+          title: 'Move to Onboarded Units?',
+          message: `Are you sure you want to move "${vacancy.unitName}" back to Onboarded Units? This indicates a new tenant has been secured.`,
+          confirmText: 'Move to Onboarded',
+          cancelText: 'Cancel',
+          color: 'black'
+        })
+      } catch (_) {
+        return
+      }
+
+      try {
+        // Always try to find the unit by unitId first, then by name
+        let unitId = vacancy.unitId;
+        let unitRef;
+        let unitExists = false;
+        
+        // First, check if we have a unitId and if that document exists
+        if (unitId) {
+          unitRef = doc(db, 'units', unitId);
+          const unitDoc = await getDoc(unitRef);
+          if (unitDoc.exists()) {
+            unitExists = true;
+          }
+        }
+        
+        // If not found by ID, try to find by name
+        if (!unitExists && vacancy.unitName) {
+          const unitsQuery = query(
+            collection(db, 'units'),
+            where('propertyName', '==', vacancy.unitName)
+          );
+          let unitSnapshot = await getDocs(unitsQuery);
+          
+          // If not found by propertyName, try unitName field
+          if (unitSnapshot.empty) {
+            const unitsQuery2 = query(
+              collection(db, 'units'),
+              where('unitName', '==', vacancy.unitName)
+            );
+            unitSnapshot = await getDocs(unitsQuery2);
+          }
+          
+          if (!unitSnapshot.empty) {
+            unitId = unitSnapshot.docs[0].id;
+            unitRef = doc(db, 'units', unitId);
+            unitExists = true;
+          }
+        }
+        
+        if (!unitExists) {
+          this.showErrorDialog(
+            `Unit "${vacancy.unitName}" not found. The unit may have been deleted. Please check the Onboarded Units page.`,
+            'Error',
+            'OK'
+          );
+          return;
+        }
+
+        // Update unit status to active/onboarded
+        await updateDoc(unitRef, {
+          status: 'active',
+          isVacant: false,
+          vacancyEndDate: new Date(),
+          updatedAt: new Date()
+        });
+
+        // Delete the vacancy record
+        await deleteDoc(doc(db, 'vacancies', vacancy.id));
+
+        // Remove from local array
+        const index = this.vacancies.findIndex(v => v.id === vacancy.id);
+        if (index > -1) this.vacancies.splice(index, 1);
+        this.filterVacancies();
+
+        this.showSuccessDialog(`${vacancy.unitName} has been moved back to Onboarded Units successfully!`, 'Success', 'OK');
+      } catch (error) {
+        console.error('Error moving unit to onboarded:', error);
+        this.showErrorDialog(`Failed to move unit: ${error.message}`, 'Error', 'OK');
       }
     },
 
@@ -440,77 +437,8 @@ export default {
       this.$router.push(`/view-vacancy-${vacancy.id}`); 
     },
     
-    editVacancy(vacancy) { 
-      this.$router.push(`/edit-vacancy-${vacancy.id}`); 
-    },
-    
-    async deleteVacancy(vacancy) {
-      try {
-        await this.showConfirmDialog({
-          title: 'Delete vacancy?',
-          message: `Are you sure you want to delete ${vacancy.unitName}?`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
-      } catch (_) {
-        return
-      }
-      try {
-        await deleteDoc(doc(db, 'vacancies', vacancy.id));
-        const index = this.vacancies.findIndex(v => v.id === vacancy.id);
-        if (index > -1) this.vacancies.splice(index, 1);
-        this.filterVacancies();
-      } catch (error) {
-        console.error('Error deleting vacancy:', error);
-        this.showErrorDialog('Failed to delete vacancy. Please try again.', 'Error', 'OK');
-      }
-    },
-    
     addVacancy() { 
       this.$router.push('/add-vacancy'); 
-    },
-    async quickAddVacancy() {
-      try {
-        // Get the current user's agency ID
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        let agencyId = currentUser.uid; // Default for Agency users
-        
-        if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
-          agencyId = currentUser.managedAgencyId;
-        }
-
-        if (!agencyId) {
-          this.showErrorDialog('Unable to determine agency. Please try again.', 'Error', 'OK');
-          return;
-        }
-
-        // Create a new vacancy entry with default values
-        const vacancyData = {
-          agencyId: agencyId,
-          unitName: 'New Vacancy Entry',
-          dateVacated: '',
-          newTenantFound: 'No',
-          moveInDate: null,
-          propertyManager: '',
-          contactNumber: '',
-          notes: '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-
-        // Add to vacancies collection
-        const { addDoc, collection } = await import('firebase/firestore');
-        const { db } = await import('@/firebaseConfig');
-        const docRef = await addDoc(collection(db, 'vacancies'), vacancyData);
-        
-        // Navigate to edit page
-        this.$router.push({ path: `/edit-vacancy-${docRef.id}`, query: { from: 'vacancies' } });
-      } catch (error) {
-        console.error('Error creating quick vacancy:', error);
-        this.showErrorDialog('Failed to create vacancy. Please try again.', 'Error', 'OK');
-      }
     },
 
     async fetchAgencies() {
@@ -521,11 +449,9 @@ export default {
         const userType = currentUser?.userType;
         
         if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
-          // Agency users and Agency Admin users can only see their own agency
           let agencyData = null;
           
           if (userType === 'Agency') {
-            // For Agency users, use their own document
             const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
@@ -534,7 +460,6 @@ export default {
               };
             }
           } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
-            // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
               const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
               if (agencyDoc.exists()) {
@@ -548,133 +473,23 @@ export default {
           
           if (agencyData) {
             this.agencies = [agencyData];
-            // Pre-select the agency for agency users and agency admins
             this.selectedAgency = agencyData.id;
-            await this.refreshActiveUnitsCount(this.selectedAgency);
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
         } else {
-          // Super Admin and Admin users can see all agencies
-          console.log('Fetching agencies...');
           const q = query(collection(db, 'users'), where('userType', '==', 'Agency'));
           const querySnapshot = await getDocs(q);
           this.agencies = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           }));
-          console.log('Agencies loaded:', this.agencies.length);
-          
-          if (this.agencies.length === 0) {
-            console.log('No agencies found, creating test agencies...');
-            await this.createTestAgencies();
-          }
         }
       } catch (error) {
         console.error('Error fetching agencies:', error);
         this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK');
       } finally {
         this.agenciesLoading = false;
-      }
-    },
-
-    async createTestAgencies() {
-      try {
-        console.log('Creating test agencies for vacancies...');
-        const testAgencies = [
-          {
-            agencyName: 'Pam Golding Properties',
-            userType: 'Agency',
-            location: 'Cape Town, South Africa',
-            establishedYear: 1976,
-            numberOfProperties: 1250,
-            rating: '5 Stars',
-            agencyDescription: 'Premium real estate agency specializing in property management.',
-            agencyTagline: 'Excellence in Real Estate'
-          },
-          {
-            agencyName: 'RE/MAX Properties',
-            userType: 'Agency',
-            location: 'Johannesburg, South Africa',
-            establishedYear: 1973,
-            numberOfProperties: 890,
-            rating: '4 Stars',
-            agencyDescription: 'Global real estate network with local expertise.',
-            agencyTagline: 'Above the Crowd'
-          }
-        ];
-
-        const createdAgencies = [];
-        for (const agencyData of testAgencies) {
-          const docRef = await addDoc(collection(db, 'users'), agencyData);
-          createdAgencies.push({ id: docRef.id, ...agencyData });
-        }
-
-        console.log('Test agencies created successfully');
-        
-        // Create some test vacancies for these agencies
-        await this.createTestVacancies(createdAgencies);
-        
-        // Fetch agencies again
-        await this.fetchAgencies();
-      } catch (error) {
-        console.error('Error creating test agencies:', error);
-      }
-    },
-
-    async createTestVacancies(agencies) {
-      try {
-        console.log('Creating test vacancies...');
-        const testVacancies = [
-          {
-            agencyId: agencies[0].id,
-            unitName: 'Unit 101 - Sea Point',
-            dateVacated: '2024-12-01',
-            newTenantFound: 'Yes',
-            moveInDate: '2025-01-15',
-            propertyType: 'residential',
-            propertyManager: 'John Smith',
-            contactNumber: '+27 82 123 4567',
-            notes: '',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
-          {
-            agencyId: agencies[0].id,
-            unitName: 'Unit 205 - Green Point',
-            dateVacated: '2024-11-15',
-            newTenantFound: 'No',
-            moveInDate: null,
-            propertyType: 'residential',
-            propertyManager: 'Sarah Johnson',
-            contactNumber: '+27 83 234 5678',
-            notes: '',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
-          {
-            agencyId: agencies[1].id,
-            unitName: 'Unit 301 - Sandton',
-            dateVacated: '2024-12-10',
-            newTenantFound: 'Yes',
-            moveInDate: '2025-02-01',
-            propertyType: 'commercial',
-            propertyManager: 'Mike Wilson',
-            contactNumber: '+27 84 345 6789',
-            notes: '',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        ];
-
-        for (const vacancyData of testVacancies) {
-          await addDoc(collection(db, 'vacancies'), vacancyData);
-        }
-
-        console.log('Test vacancies created successfully');
-      } catch (error) {
-        console.error('Error creating test vacancies:', error);
       }
     },
 
@@ -685,33 +500,26 @@ export default {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         
-        console.log('Fetching vacancies for agencyId:', agencyId);
         let q;
         
         if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
-          // Agency users and Agency Admin users can only see their own vacancies
-          let targetAgencyId = currentUser.uid; // Default for Agency users
+          let targetAgencyId = currentUser.uid;
           
           if (userType === 'Admin' && currentUser.adminScope === 'agency') {
-            // For Agency Admin users, use their managed agency ID
             targetAgencyId = currentUser.managedAgencyId;
           }
           
           if (targetAgencyId) {
             q = query(collection(db, 'vacancies'), where('agencyId', '==', targetAgencyId));
-            console.log('Querying vacancies for agency user:', targetAgencyId);
           } else {
-            // No agency ID available, return empty results
             this.vacancies = [];
             this.filteredVacancies = [];
             return;
           }
         } else if (agencyId) {
           q = query(collection(db, 'vacancies'), where('agencyId', '==', agencyId));
-          console.log('Querying vacancies for specific agency:', agencyId);
         } else {
           q = collection(db, 'vacancies');
-          console.log('Querying all vacancies');
         }
         
         const querySnapshot = await getDocs(q);
@@ -722,18 +530,13 @@ export default {
           updatedAt: doc.data().updatedAt?.toDate()
         }));
         
-        // Resolve property types for each vacancy
         this.vacancies = await Promise.all(
           vacanciesData.map(async (vacancy) => {
             try {
-              // Try to resolve property type from unitId first
               if (vacancy.unitId) {
                 const propertyType = await this.resolvePropertyTypeFromUnit(vacancy.unitId);
                 return { ...vacancy, propertyType };
-              }
-              // If no unitId, try to resolve from unitName (fallback)
-              else if (vacancy.unitName) {
-                // Query units collection to find the unit by name
+              } else if (vacancy.unitName) {
                 const unitsQuery = query(
                   collection(db, 'units'),
                   where('unitName', '==', vacancy.unitName)
@@ -742,10 +545,9 @@ export default {
                 if (!unitSnapshot.empty) {
                   const unitDoc = unitSnapshot.docs[0];
                   const propertyType = await this.resolvePropertyTypeFromUnit(unitDoc.id);
-                  return { ...vacancy, propertyType };
+                  return { ...vacancy, unitId: unitDoc.id, propertyType };
                 }
               }
-              // Default to residential if no unit found
               return { ...vacancy, propertyType: 'residential' };
             } catch (error) {
               console.error(`Error resolving property type for vacancy ${vacancy.id}:`, error);
@@ -753,15 +555,6 @@ export default {
             }
           })
         );
-        
-        console.log('Vacancies loaded:', this.vacancies.length);
-        console.log('User type:', userType, 'Agency ID filter:', agencyId);
-        
-        // Log the first vacancy structure if available
-        if (this.vacancies.length > 0) {
-          console.log('First vacancy structure:', this.vacancies[0]);
-          console.log('First vacancy agencyId:', this.vacancies[0].agencyId);
-        }
         
         this.filterVacancies();
       } catch (error) {
@@ -773,25 +566,18 @@ export default {
     }
   },
   async mounted() {
-    // Fetch agencies first
     await this.fetchAgencies();
     
-    // Fetch vacancies based on user role and selected agency
     if (this.isAgencyUser) {
-      // Agency users will automatically get their own vacancies
       await this.fetchVacancies();
-      await this.refreshActiveUnitsCount();
     } else {
       const appStore = useAppStore();
       const globalId = appStore.currentAgency?.id || null;
       if (globalId) {
         this.selectedAgency = globalId;
         await this.fetchVacancies(globalId);
-        await this.refreshActiveUnitsCount(globalId);
       } else {
-        // Super Admin/Admin users get all vacancies initially
         await this.fetchVacancies();
-        if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
       }
     }
   }
@@ -807,12 +593,12 @@ export default {
 }
 .back-btn:hover { background-color:#333 !important; border-color:#333 !important; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.5); }
 
-.agency-info-card-black { background:linear-gradient(135deg,#000,#1a1a1a); border-radius:12px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.3); color:white; padding:0; position: relative; }
-.agency-card-bg { position:absolute; inset:0; z-index:0; }
-.agency-logo-black { width:100%; height:100%; object-fit:cover; }
-.agency-details-black { margin-bottom:16px; }
-.detail-item-black { display:flex; align-items:center; margin-bottom:12px; color:#fff; }
-.agency-description-black { color:#e0e0e0; line-height:1.6; margin:0; }
+.export-btn {
+  font-weight: 500; text-transform:none; border-radius:8px; transition: all 0.3s ease;
+  background-color:black !important; color:white !important; border:2px solid black !important;
+  width:180px; height:44px;
+}
+.export-btn:hover { background-color:#333 !important; border-color:#333 !important; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.5); }
 
 .custom-input .v-field { border-radius:8px; }
 .action-btn-container { display:flex; justify-content:center; align-items:center; gap:4px; }
@@ -820,21 +606,19 @@ export default {
 .action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
     
 :deep(.custom-header .v-data-table-header) { background:#000; color:white; }
-.agency-info-card-black::after { content:''; position:absolute; inset:0; background:linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); pointer-events:none; }
-.agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
-.agency-content-right { margin-left:auto; width:min(720px,55%); padding:16px 16px 24px; text-align:left; }
-@media(max-width:768px){ .back-btn { width:140px; height:40px; } .action-btn { font-size:0.7rem; } .agency-info-card-black { text-align:center; } .agency-logo-black { height:220px; } }
-@media(max-width:768px){ .agency-content-right { width:100%; } }
 
-/* Custom month menu styling */
 .month-menu { background:#fff; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.15); padding:12px; min-width:260px; }
 .month-menu__title { font-weight:600; margin-bottom:8px; }
 .month-menu__input { width:100%; padding:8px 10px; border:1px solid #d0d0d0; border-radius:8px; }
 .month-menu__input:focus { outline:none; border-color:#000; box-shadow:0 0 0 2px rgba(0,0,0,0.08); }
 .month-menu__actions { display:flex; justify-content:space-between; gap:8px; margin-top:10px; }
 
-/* Clean agency name-only hero with image (no overlay) */
 .agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
 .agency-hero-bg { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
 .agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+
+@media(max-width:768px){ 
+  .back-btn, .export-btn { width:140px; height:40px; font-size: 0.85rem; } 
+  .action-btn { font-size:0.7rem; }
+}
 </style>

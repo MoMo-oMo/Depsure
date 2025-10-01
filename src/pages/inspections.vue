@@ -71,8 +71,8 @@
           />
         </v-col>
 
-        <v-col cols="12" md="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
-          <v-btn @click="addInspection" class="back-btn">
+        <v-col cols="12" md="3" lg="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+          <v-btn @click="addInspection" class="request-btn">
             Request Inspection
           </v-btn>
         </v-col>
@@ -265,15 +265,15 @@ export default {
       snackbarMessage: "",
       activeUnitsCount: 0,
       headers: [
-        { title: "Unit Name", key: "unitName", sortable: true },
-        { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
-        { title: "Inspection Required", key: "inspectionRequired", sortable: true, align: "center" },
+        { title: "UNIT NAME", key: "unitName", sortable: true },
+        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
+        { title: "INSPECTION REQUIRED", key: "inspectionRequired", sortable: true, align: "center" },
         // { title: "Appointment Made", key: "appointmentMade", sortable: true, align: "center" },
-        { title: "Inspection Date", key: "inspectionDate", sortable: true, align: "center" },
-        { title: "Document", key: "document", sortable: false, align: "center" },
-        { title: "Status", key: "status", sortable: true, align: "center" },
+        { title: "INSEPCTION DATE", key: "inspectionDate", sortable: true, align: "center" },
+        { title: "DOCUMENT", key: "document", sortable: false, align: "center" },
+        { title: "STATUS", key: "status", sortable: true, align: "center" },
         // { title: "Priority", key: "priority", sortable: true, align: "center" },
-        { title: "Actions", key: "actions", sortable: false, align: "center" }
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center" }
       ]
     };
   },
@@ -835,6 +835,29 @@ export default {
 .back-btn { font-weight:500; text-transform:none; border-radius:8px; transition:all 0.3s; background:black; color:white; border:2px solid black; width:180px; height:44px; }
 .back-btn:hover { background:#333; border-color:#333; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.5); }
 
+.request-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background-color: black !important;
+  color: white !important;
+  border: 2px solid black !important;
+  width: auto;
+  min-width: 175px;
+  height: 44px;
+  white-space: nowrap;
+  padding: 0 18px;
+  font-size: 0.9rem;
+}
+
+.request-btn:hover {
+  background-color: #333 !important;
+  border-color: #333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
 .agency-info-card-black { background:linear-gradient(135deg,#000,#1a1a1a); border-radius:12px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.3); color:white; padding:0; position: relative; }
 .agency-card-bg { position:absolute; inset:0; z-index:0; }
 .agency-info-card-black { position: relative; }
@@ -864,6 +887,7 @@ export default {
 
 @media(max-width:768px){
   .back-btn { width:140px; height:40px; }
+  .request-btn { width:100%; max-width:100%; height:40px; font-size:0.875rem; }
   .action-btn { font-size:0.7rem; padding:6px 8px; }
   .agency-info-card-black { text-align:center; }
   .agency-logo-black { height:220px; }

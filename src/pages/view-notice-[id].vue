@@ -268,6 +268,7 @@ export default {
   color: white;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card */

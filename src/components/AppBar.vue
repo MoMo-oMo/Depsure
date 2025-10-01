@@ -10,15 +10,93 @@
 		<v-toolbar-title class="title-black">
 			<span class="title-text" :key="current.title">{{ current.title }}</span>
 		</v-toolbar-title>
+		<v-spacer />
+		<!-- Chat Icon with Notification Badge -->
+		<v-btn
+			icon
+			color="black"
+			@click="openChat"
+			class="chat-btn"
+		>
+			<v-badge
+				:content="unreadCount"
+				:model-value="unreadCount > 0"
+				color="error"
+				overlap
+			>
+				<v-icon>mdi-message-text</v-icon>
+			</v-badge>
+		</v-btn>
 	</v-app-bar>
 </template>
 
 <script setup>
+	import { ref, onMounted, onUnmounted } from 'vue'
+	import { useRouter } from 'vue-router'
 	import { useDrawer } from '@/composables/useDrawer'
 	import { useNav } from '@/composables/useNav'
+	import { db } from '@/firebaseConfig'
+	import { collection, query, where, onSnapshot } from 'firebase/firestore'
+	import { useAppStore } from '@/stores/app'
 
 	const { toggle } = useDrawer()
 	const { current } = useNav()
+	const router = useRouter()
+	const appStore = useAppStore()
+	
+	const unreadCount = ref(0)
+	let unsubscribe = null
+
+	const openChat = () => {
+		router.push('/chat')
+	}
+
+	const subscribeToChats = () => {
+		try {
+			const user = appStore.currentUser
+			if (!user) return
+
+			let chatQuery
+			
+			if (user.userType === 'Agency' || (user.userType === 'Admin' && user.adminScope === 'agency')) {
+				// Agency users see their own chat
+				const agencyId = user.userType === 'Agency' ? user.uid : user.managedAgencyId
+				chatQuery = query(
+					collection(db, 'chats'),
+					where('agencyId', '==', agencyId)
+				)
+			} else {
+				// Admin/Super Admin see all chats
+				chatQuery = collection(db, 'chats')
+			}
+
+			unsubscribe = onSnapshot(chatQuery, (snapshot) => {
+				let count = 0
+				const userId = user.uid
+				snapshot.docs.forEach(doc => {
+					const data = doc.data()
+					const messages = data.messages || []
+					// Count unread messages (where current user is not the author and message is not read)
+					messages.forEach(msg => {
+						if (msg.authorId !== userId && !msg.readBy?.includes(userId)) {
+							count++
+						}
+					})
+				})
+				unreadCount.value = count
+			})
+		} catch (error) {
+			console.error('Error subscribing to chats:', error)
+		}
+	}
+
+	onMounted(() => {
+		subscribeToChats()
+	})
+
+	onUnmounted(() => {
+		if (unsubscribe) unsubscribe()
+	})
 </script>
 
 <style scoped>
@@ -51,5 +129,15 @@
 @keyframes underline-in {
 	from { transform: scaleX(0); }
 	to { transform: scaleX(1); }
+}
+
+.chat-btn {
+	margin-right: 8px;
+	transition: all 0.3s ease;
+}
+
+.chat-btn:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 </style>

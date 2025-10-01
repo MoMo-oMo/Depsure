@@ -8,7 +8,7 @@
             icon="mdi-arrow-left"
             variant="outlined"
             color="primary"
-            @click="$router.push('/inspections')"
+            @click="goBack"
             class="back-btn"
           >
             Back
@@ -184,7 +184,7 @@
               <!-- Action Buttons -->
               <v-card-actions class="pa-4">
                 <v-spacer />
-                <v-btn color="grey" variant="outlined" @click="$router.push('/inspections')" class="cancel-btn">
+                <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
                   Back
                 </v-btn>
                 <v-btn 
@@ -334,6 +334,19 @@ export default {
     this.loadEntry(entryId);
   },
   methods: {
+    goBack() {
+      const appStore = useAppStore();
+      const user = appStore.currentUser;
+      const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      
+      // Agency users always go back to onboard-units
+      if (isAgency) {
+        this.$router.push('/onboard-units');
+      } else {
+        // Admin/Super Admin go to inspections
+        this.$router.push('/inspections');
+      }
+    },
     scrollNotesToBottom() {
       this.$nextTick(() => {
         const el = this.$refs.chatLog
@@ -458,7 +471,13 @@ export default {
     },
     
     editEntry() {
-      this.$router.push(`/edit-inspection-${this.entry.id}`);
+      // Pass the 'from' parameter along to edit page
+      const from = this.$route?.query?.from;
+      if (from === 'onboard') {
+        this.$router.push({ path: `/edit-inspection-${this.entry.id}`, query: { from: 'onboard' } });
+      } else {
+        this.$router.push(`/edit-inspection-${this.entry.id}`);
+      }
     },
     async appendNote() {
       if (!this.newNote || !this.entry?.id) return
@@ -603,6 +622,7 @@ export default {
   color: white;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card */

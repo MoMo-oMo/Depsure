@@ -32,6 +32,7 @@ declare module 'vue-router/auto-routes' {
     '/agency': RouteRecordInfo<'/agency', '/agency', Record<never, never>, Record<never, never>>,
     '/archived-units': RouteRecordInfo<'/archived-units', '/archived-units', Record<never, never>, Record<never, never>>,
     '/audit-trail': RouteRecordInfo<'/audit-trail', '/audit-trail', Record<never, never>, Record<never, never>>,
+    '/chat': RouteRecordInfo<'/chat', '/chat', Record<never, never>, Record<never, never>>,
     '/dashbaaord': RouteRecordInfo<'/dashbaaord', '/dashbaaord', Record<never, never>, Record<never, never>>,
     '/documents': RouteRecordInfo<'/documents', '/documents', Record<never, never>, Record<never, never>>,
     '/edit-flagged-unit-[id]': RouteRecordInfo<'/edit-flagged-unit-[id]', '/edit-flagged-unit-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,

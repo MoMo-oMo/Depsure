@@ -173,18 +173,19 @@
 
       <!-- Properties Table -->
       <v-row>
-        <v-col cols="12" class="pa-4">
-          <!-- Properties Table -->
-          <v-data-table
-            :headers="tableHeaders"
-            :items="filteredProperties"
-            :search="searchQuery"
-            class="custom-header"
-            density="comfortable"
-            hover
-            :loading="propertiesLoading"
-            no-data-text="No data available"
-          >
+        <v-col cols="12" class="px-4 pb-6">
+          <div class="table-responsive">
+            <v-data-table
+              :headers="tableHeaders"
+              :items="filteredProperties"
+              :search="searchQuery"
+              class="custom-header elevation-1"
+              density="comfortable"
+              hover
+              :loading="propertiesLoading"
+              :items-per-page="15"
+              no-data-text="No data available"
+            >
             <!-- Super Admin: Flagged indicator column (click to view flagged entry) -->
             <template v-slot:item.flag="{ item }" v-if="isSuperAdmin">
               <v-btn
@@ -229,6 +230,10 @@
             <template v-slot:item.propertyName="{ item }">
               <span class="truncate-cell" :title="item.propertyName">{{ item.propertyName }}</span>
             </template>
+            <template v-slot:item.unitNumber="{ item }">
+              <span class="truncate-cell" :title="item.unitNumber">{{ item.unitNumber }}</span>
+            </template>
+
             <template v-slot:item.paidOut="{ item }">
               <v-chip :color="item.paidOut === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.paidOut }}
@@ -286,7 +291,8 @@
               />
               </div>
             </template>
-          </v-data-table>
+            </v-data-table>
+          </div>
         </v-col>
       </v-row>
     </v-container>
@@ -330,6 +336,7 @@ export default {
       flaggedUnitNamesMap: {}, // by unitName (lowercased) -> flaggedDocId
       headers: [
         { title: "TENANT REF", key: "tenantRef", sortable: true },
+        { title: "UNIT NUMBER", key: "unitNumber", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
         { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         { title: "MISSED RENT", key: "monthsMissed", sortable: true, align: "center" },
@@ -346,7 +353,7 @@ export default {
         //   align: "center",
         // },
 
-        { title: "Actions", key: "actions", sortable: false, align: "center" },
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ],
     };
   },
@@ -552,12 +559,25 @@ export default {
           color: '#dc3545'
         })
         
-        // If user confirms, proceed: remove from active units only
-        const unitRef = doc(db, 'units', item.id)
+        // Create archived unit data
+        const archivedUnitData = {
+          ...item,
+          originalId: item.id,
+          archivedAt: new Date(),
+          archivedBy: this.appStore.currentUser?.uid || 'unknown',
+          archivedByUserType: this.appStore.currentUser?.userType || 'unknown'
+        }
         
-        // Log delete action
+        // Remove the id field so Firestore generates a new one
+        delete archivedUnitData.id
+        
+        // Add to archivedUnits collection
+        const archivedRef = collection(db, 'archivedUnits')
+        await addDoc(archivedRef, archivedUnitData)
+        
+        // Log archive action
         await this.logAuditEvent(
-          this.auditActions.DELETE,
+          this.auditActions.ARCHIVE,
           {
             unitId: item.id,
             unitName: item.propertyName || item.unitName,
@@ -569,15 +589,16 @@ export default {
         )
         
         // Delete from original units collection
+        const unitRef = doc(db, 'units', item.id)
         await deleteDoc(unitRef)
         
         // Remove from local arrays
         this.properties = this.properties.filter(prop => prop.id !== item.id)
         this.filteredProperties = this.filteredProperties.filter(prop => prop.id !== item.id)
         
-        // Show success message
+        // Show success message (archived in background, but user sees "deleted")
         this.$nextTick(() => {
-          console.log('Unit archived successfully')
+          console.log('Unit deleted successfully')
         })
         
       } catch (error) {
@@ -602,7 +623,6 @@ export default {
           unitId: item.id,
           unitName: item.propertyName || item.unitName || '',
           dateVacated: new Date().toISOString().slice(0, 10),
-          newTenantFound: 'No',
           moveInDate: null,
           propertyManager: item.propertyManager || '',
           contactNumber: item.contactNumber || '',
@@ -747,6 +767,7 @@ export default {
           return {
             ...data,
             id: doc.id,
+            unitNumber: data.unitNumber || '',
             monthsMissed: (typeof data.monthsMissed === 'number' ? data.monthsMissed : 0)
           }
         });
@@ -879,6 +900,7 @@ export default {
 .view-agency-page {
   padding: 20px;
   min-height: 100vh;
+  background: #f5f5f5;
 }
 
 /* Back button styling to match system buttons */
@@ -905,6 +927,28 @@ export default {
 .table-card {
   border-radius: 6px !important;
 }
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
+  margin-top: 8px;
+}
+
+:deep(.v-data-table) {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.v-data-table__wrapper) {
+  border-radius: 12px;
+  min-height: 400px;
+}
+
 
 /* Kill all internal padding on the card shell; v-card-title / v-card-text have their own spacing */
 .agency-info-card-black {
@@ -1010,11 +1054,34 @@ export default {
 /* Truncate long table cell values without breaking layout */
 .truncate-cell {
   display: inline-block;
-  max-width: 280px;
+  max-width: 250px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Better chip styling in table */
+:deep(.v-chip) {
+  font-weight: 600 !important;
+  letter-spacing: 0.3px;
+  padding: 4px 12px !important;
+  height: 28px !important;
+}
+
+/* Loading state styling */
+:deep(.v-data-table-progress) {
+  background: linear-gradient(90deg, #000 0%, #333 50%, #000 100%);
+  height: 3px !important;
+}
+
+/* Pagination styling */
+:deep(.v-data-table-footer) {
+  padding: 16px !important;
+  background-color: #fafbfc !important;
+  border-top: 2px solid #e9ecef !important;
 }
 
 /* Avoid month input truncation */
@@ -1054,17 +1121,20 @@ export default {
 
 /* Action Button Styling */
 .action-btn {
-  margin: 0 4px;
+  margin: 0 2px;
   font-size: 0.75rem;
   font-weight: 500;
   text-transform: none;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 /* Clean agency name-only header */
@@ -1084,10 +1154,52 @@ export default {
 :deep(.custom-header .v-data-table-header th) {
   background-color: #000000 !important;
   color: white !important;
+  font-weight: 700 !important;
+  padding: 18px 16px !important;
+  font-size: 0.875rem !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 2px solid #333 !important;
 }
 
 :deep(.custom-header .v-data-table-header .v-data-table-header__content) {
   color: white !important;
+  font-weight: 700 !important;
+}
+
+:deep(.custom-header .v-data-table__td) {
+  padding: 16px !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  font-size: 0.9rem !important;
+}
+
+:deep(.custom-header tbody tr:hover) {
+  background-color: #f8f9fa !important;
+  cursor: pointer;
+}
+
+:deep(.custom-header tbody tr) {
+  transition: background-color 0.2s ease;
+}
+
+:deep(.custom-header tbody tr:nth-child(even)) {
+  background-color: #fafbfc;
+}
+
+:deep(.custom-header tbody tr:nth-child(odd)) {
+  background-color: #ffffff;
+}
+
+:deep(.v-data-table__wrapper) {
+  overflow-x: auto;
+}
+
+/* Action buttons alignment */
+.v-data-table_actions-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 /* Responsive adjustments */

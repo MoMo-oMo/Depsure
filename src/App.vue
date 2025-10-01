@@ -34,7 +34,7 @@ const protectedRoutes = [
   '/agency', '/active-units', '/notices', '/flagged-units', 
   '/maintenance', '/inspections', '/vacancies', '/user-management',
   '/audit-trail', '/dashboard', '/add-user', '/add-unit', '/add-notice', '/add-flagged-unit',
-  '/profile'
+  '/profile', '/chat', '/onboard-units'
 ]
 
 // Computed to check if current route is protected

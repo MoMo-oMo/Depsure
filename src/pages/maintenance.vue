@@ -258,16 +258,16 @@ export default {
       entries: [],
       activeUnitsCount: 0,
       headers: [
-        { title: "Unit Name", key: "unitName", sortable: true },
-        { title: "Property Type", key: "propertyType", sortable: true, align: "center" },
+        { title: "UNIT NAME", key: "unitName", sortable: true },
+        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         // { title: "Agency", key: "agencyName", sortable: true },
-        { title: "Notice Given", key: "noticeGiven", sortable: true, align: "center" },
-        { title: "Vacate Date", key: "vacateDate", sortable: true, align: "center" },
-        { title: "Contact Number", key: "contactNumber", sortable: true },
+        { title: "NOTICE GIVEN", key: "noticeGiven", sortable: true, align: "center" },
+        { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
+        { title: "CONTACT NUMBER", key: "contactNumber", sortable: true },
         // { title: "Address", key: "address", sortable: true },
-        { title: "Status", key: "status", sortable: true, align: "center" },
+        { title: "STATUS", key: "status", sortable: true, align: "center" },
         // { title: "Priority", key: "priority", sortable: true, align: "center" },
-        { title: "Actions", key: "actions", sortable: false, align: "center" }
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center" }
       ]
     };
   },

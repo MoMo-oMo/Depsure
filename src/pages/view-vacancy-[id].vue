@@ -74,17 +74,6 @@
                         />
                       </v-col>
 
-                      <!-- New Tenant Found -->
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          :model-value="vacancy.newTenantFound"
-                          label="New Tenant Found"
-                          variant="outlined"
-                          readonly
-                          class="custom-input"
-                        />
-                      </v-col>
-
                       <!-- Move In Date -->
                       <v-col cols="12" md="6">
                         <v-text-field
@@ -595,6 +584,7 @@ export default {
   color: white;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 /* Content card styling */

@@ -5,7 +5,7 @@
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
-          <v-btn @click="$router.push('/inspections')" class="back-btn">Back</v-btn>
+          <v-btn @click="goBack" class="back-btn">Back</v-btn>
         </v-col>
       </v-row>
 
@@ -187,7 +187,7 @@
                   <!-- Action Buttons -->
                   <v-card-actions class="pa-4">
                     <v-spacer />
-                    <v-btn color="grey" variant="outlined" @click="$router.push('/inspections')" class="cancel-btn">
+                    <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
                       Cancel
                     </v-btn>
                     <v-btn color="black" variant="elevated" @click="saveEntry" :disabled="!valid || saving" :loading="saving" class="save-btn">
@@ -352,6 +352,19 @@ export default {
     else { this.error = "Entry ID not found"; this.loading = false; }
   },
   methods: {
+    goBack() {
+      const appStore = useAppStore();
+      const user = appStore.currentUser;
+      const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      
+      // Agency users always go back to onboard-units
+      if (isAgency) {
+        this.$router.push('/onboard-units');
+      } else {
+        // Admin/Super Admin go to inspections
+        this.$router.push('/inspections');
+      }
+    },
     scrollNotesToBottom() {
       this.$nextTick(() => {
         const el = this.$refs?.chatLog
@@ -624,7 +637,7 @@ export default {
 
 /* Title section */
 .title-section { background: black; color: white; padding: 0.75rem; border-radius: 12px 12px 0 0; margin-bottom: 0; }
-.page-title { font-size: 1.25rem; font-weight: 600; color: white; margin: 0; text-align: center; }
+.page-title { font-size: 1.25rem; font-weight: 600; color: white; margin: 0; text-align: center; text-transform: uppercase; }
 
 /* Form card */
 .form-card { background: white; border-radius: 12px; padding: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }

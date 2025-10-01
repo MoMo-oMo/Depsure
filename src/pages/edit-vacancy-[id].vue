@@ -61,6 +61,7 @@
                       :rules="unitNameRules"
                       required
                       @input="validateForm"
+                      :disabled="isAgency"
                     />
                   </v-col>
 
@@ -75,20 +76,7 @@
                       :rules="dateVacatedRules"
                       required
                       @input="validateForm"
-                    />
-                  </v-col>
-
-                  <!-- New Tenant Found -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="vacancy.newTenantFound"
-                      label="New Tenant Found"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="newTenantFoundRules"
-                      required
-                      @update:model-value="validateForm"
+                      :disabled="false"
                     />
                   </v-col>
 
@@ -96,13 +84,15 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="vacancy.moveInDate"
-                      label="Move In Date"
+                      label="Move In Date (Optional)"
                       variant="outlined"
                       type="date"
                       class="custom-input"
-                      :rules="moveInDateRules"
-                      :disabled="vacancy.newTenantFound === 'No'"
+                      :rules="[]"
+                      :disabled="isAgency"
                       @input="validateForm"
+                      hint="Set when new tenant is secured"
+                      persistent-hint
                     />
                   </v-col>
 
@@ -116,6 +106,7 @@
                       :rules="propertyManagerRules"
                       required
                       @input="validateForm"
+                      :disabled="isAgency"
                     />
                   </v-col>
 
@@ -130,6 +121,7 @@
                       :rules="contactNumberRules"
                       required
                       @input="validateForm"
+                      :disabled="isAgency"
                     />
                   </v-col>
 
@@ -251,6 +243,12 @@ export default {
       const appStore = useAppStore()
       return appStore.userId
     },
+    isAgency() {
+    const appStore = useAppStore()
+    const user = appStore.currentUser
+    // Include both Agency users and Agency Admin users
+    return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+  },
     sortedNotes() {
       const notes = this.vacancy?.notesLog || []
       return [...notes].sort((a,b) => {
@@ -281,17 +279,6 @@ export default {
       dateVacatedRules: [
         v => !!v || 'Date Vacated is required'
       ],
-      newTenantFoundRules: [
-        v => !!v || 'New Tenant Found is required'
-      ],
-      moveInDateRules: [
-        v => {
-          if (this.vacancy && this.vacancy.newTenantFound === 'Yes') {
-            return !!v || 'Move In Date is required when new tenant is found'
-          }
-          return true
-        }
-      ],
       propertyManagerRules: [
         v => !!v || 'Property Manager is required',
         v => v.length >= 2 || 'Property Manager must be at least 2 characters'
@@ -321,14 +308,6 @@ export default {
       },
       immediate: true
     },
-    'vacancy.newTenantFound': {
-      handler() {
-        // Re-validate when newTenantFound changes (affects moveInDate validation)
-        this.$nextTick(() => {
-          this.validateForm();
-        });
-      }
-    }
   },
   methods: {
     goBack() {
@@ -472,8 +451,7 @@ export default {
           const updateData = {
             unitName: this.vacancy.unitName,
             dateVacated: this.vacancy.dateVacated,
-            newTenantFound: this.vacancy.newTenantFound,
-            moveInDate: this.vacancy.newTenantFound === 'Yes' ? this.vacancy.moveInDate : null,
+            moveInDate: this.vacancy.moveInDate || null,
             propertyManager: this.vacancy.propertyManager,
             contactNumber: this.vacancy.contactNumber,
             notes: this.vacancy.notes || "",
@@ -496,33 +474,6 @@ export default {
           // Update the document
           const docRef = doc(db, 'vacancies', this.vacancy.id);
           await updateDoc(docRef, updateData);
-
-          // Automatic transition: if new tenant found and move-in date provided
-          const shouldReactivate = this.vacancy.newTenantFound === 'Yes' && !!this.vacancy.moveInDate;
-          if (shouldReactivate) {
-            try {
-              // Create a new unit (running tenant reference) in Active Units
-              const unitsCollection = collection(db, 'units');
-              const newUnit = {
-                agencyId: this.vacancy.agencyId || '',
-                propertyName: this.vacancy.unitName || '',
-                tenantRef: `${Date.now()}`,
-                leaseStartDate: this.vacancy.moveInDate,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              };
-              await addDoc(unitsCollection, newUnit);
-
-              // Remove this vacancy entry since unit is reactivated
-              await deleteDoc(doc(db, 'vacancies', this.vacancy.id));
-
-              // Redirect to Active Units
-              this.showSuccessDialog('Vacancy closed and unit reactivated.', 'Success!', 'Continue', '/active-units');
-              return;
-            } catch (transitionErr) {
-              console.error('Error transitioning vacancy back to active units:', transitionErr);
-            }
-          }
 
           console.log('Vacancy updated successfully');
           this.showSuccessDialog('Vacancy updated successfully!', 'Success!', 'Continue', `/view-vacancy-${this.vacancy.id}`);
@@ -634,6 +585,7 @@ export default {
   color: white;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 /* Form card styling */

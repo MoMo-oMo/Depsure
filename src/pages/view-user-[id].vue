@@ -54,7 +54,7 @@
               </v-row>
               <v-row>
                 <!-- First Name -->
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="6" v-if="user.userType !== 'Agency'">
                   <v-text-field
                     :model-value="user.firstName"
                     label="First Name"
@@ -65,7 +65,7 @@
                 </v-col>
 
                 <!-- Last Name -->
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="6" v-if="user.userType !== 'Agency'">
                   <v-text-field
                     :model-value="user.lastName"
                     label="Last Name"
@@ -310,6 +310,7 @@ export default {
   color: white;
   margin: 0;
   text-align: center;
+  text-transform: uppercase;
 }
 
 .form-card {
