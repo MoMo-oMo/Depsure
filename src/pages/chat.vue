@@ -16,22 +16,27 @@
           </v-btn>
         </v-col>
         
-        <v-spacer v-if="!isAgencyUser" />
+        <v-spacer v-if="showAgencySelector" />
         
-        <!-- Agency Selection for Admins - Moved to Right -->
-        <v-col cols="12" md="4" v-if="!isAgencyUser" class="d-flex justify-end">
+        <!-- Agency Selection for Super Admins (always visible) -->
+        <v-col cols="12" md="4" v-if="showAgencySelector" class="d-flex justify-end">
           <v-select
             v-model="selectedAgencyId"
             :items="agencies"
             item-title="agencyName"
             item-value="id"
-            label="Select Agency"
+            :label="selectedAgencyId ? `Viewing: ${getSelectedAgencyName()}` : 'Select Agency'"
             prepend-inner-icon="mdi-domain"
             variant="outlined"
             class="custom-input"
             :loading="agenciesLoading"
             @update:model-value="loadChat"
             style="max-width: 350px; width: 100%;"
+            :color="selectedAgencyId ? 'success' : 'primary'"
+            :prepend-inner-icon="selectedAgencyId ? 'mdi-check-circle' : 'mdi-domain'"
+            :disabled="agencies.length === 0"
+            :hint="agencies.length === 0 ? 'No agencies available' : ''"
+            persistent-hint
           />
         </v-col>
       </v-row>
@@ -44,6 +49,15 @@
             <div class="chat-hero-center">
               <v-icon class="mr-3" size="32">mdi-message-text</v-icon>
               {{ chatTitle }}
+              <v-chip 
+                v-if="isSuperAdmin && selectedAgencyId" 
+                color="success" 
+                size="small" 
+                class="ml-3"
+                prepend-icon="mdi-check-circle"
+              >
+                {{ getSelectedAgencyName() }}
+              </v-chip>
             </div>
           </v-card>
         </v-col>
@@ -60,9 +74,10 @@
                 <p class="mt-4">Loading messages...</p>
               </div>
 
-              <div v-else-if="!selectedAgencyId && !isAgencyUser" class="empty-state">
+              <div v-else-if="!selectedAgencyId && this.isSuperAdmin" class="empty-state">
                 <v-icon size="64" color="grey">mdi-forum-outline</v-icon>
-                <p class="mt-4">Select an agency to view conversation</p>
+                <p class="mt-4">Select an agency to view their chat conversation</p>
+                <p v-if="agencies.length === 0" class="mt-2 text-red">No agencies found. Please check your permissions.</p>
               </div>
 
               <div v-else-if="messages.length === 0" class="empty-state">
@@ -160,15 +175,27 @@ export default {
       const user = appStore.currentUser
       return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
     },
+    isSuperAdmin() {
+      const appStore = useAppStore()
+      return appStore.currentUser?.userType === 'Super Admin'
+    },
+    showAgencySelector() {
+      // Show selector only for Super Admins when no agency is selected
+      return this.isSuperAdmin && !this.selectedAgencyId
+    },
     chatTitle() {
       if (this.isAgencyUser) {
         return 'Agency Chat'
       }
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
-      return agency ? `Chat with ${agency.agencyName}` : 'Agency Chat'
+      return agency ? `Chat with ${agency.agencyName}` : 'Select an Agency to View Chat'
+    },
+    getSelectedAgencyName() {
+      const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
+      return agency ? agency.agencyName : 'Unknown Agency'
     }
   },
-  async mounted() {
+    async mounted() {
     document.title = 'Chat - Depsure'
     await this.fetchAgencies()
     
@@ -178,11 +205,30 @@ export default {
       const user = appStore.currentUser
       this.selectedAgencyId = user.userType === 'Agency' ? user.uid : user.managedAgencyId
       await this.loadChat()
+    } else {
+      // For Super Admins, check global agency selection first
+      const appStore = useAppStore()
+      const globalAgencyId = appStore.currentAgency?.id || null
+      
+      if (globalAgencyId) {
+        this.selectedAgencyId = globalAgencyId
+        console.log('Loading chat from global agency selection:', globalAgencyId)
+        await this.loadChat()
+      } else if (this.$route.query.agencyId) {
+        this.selectedAgencyId = this.$route.query.agencyId
+        console.log('Loading chat from query param:', this.selectedAgencyId)
+        await this.loadChat()
+      }
+      // If no agency is selected, show dropdown
     }
+    
+    console.log('Chat page mounted - selectedAgencyId:', this.selectedAgencyId)
+    console.log('Available agencies:', this.agencies)
   },
   beforeUnmount() {
     if (this.unsubscribe) {
       this.unsubscribe()
+      this.unsubscribe = null
     }
   },
   methods: {
@@ -205,6 +251,8 @@ export default {
         const appStore = useAppStore()
         const user = appStore.currentUser
         
+        console.log('Fetching agencies for user:', user?.userType, user?.adminScope)
+        
         if (user.userType === 'Agency' || (user.userType === 'Admin' && user.adminScope === 'agency')) {
           // Agency users only see their own agency
           let agencyData = null
@@ -220,28 +268,46 @@ export default {
             }
           }
           this.agencies = agencyData ? [agencyData] : []
+          console.log('Agency user - agencies:', this.agencies)
         } else {
           // Admin/Super Admin see all agencies
           const agenciesQuery = query(collection(db, 'users'), where('userType', '==', 'Agency'))
           const snapshot = await getDocs(agenciesQuery)
           this.agencies = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+          console.log('Admin user - agencies:', this.agencies)
         }
       } catch (error) {
         console.error('Error fetching agencies:', error)
+        this.showErrorDialog(`Failed to fetch agencies: ${error.message}`, 'Error', 'OK')
       } finally {
         this.agenciesLoading = false
       }
     },
 
     async loadChat() {
-      if (!this.selectedAgencyId) return
+      if (!this.selectedAgencyId) {
+        console.log('No agency selected, cannot load chat')
+        return
+      }
+      
+      // Update global agency selection for Super Admins
+      if (this.isSuperAdmin) {
+        const appStore = useAppStore()
+        const selectedAgency = this.agencies.find(a => a.id === this.selectedAgencyId)
+        if (selectedAgency) {
+          appStore.setCurrentAgency(selectedAgency)
+        }
+      }
       
       this.loading = true
       try {
         // Unsubscribe from previous chat
         if (this.unsubscribe) {
           this.unsubscribe()
+          this.unsubscribe = null
         }
+        
+        console.log('Loading chat for agency:', this.selectedAgencyId)
 
         // Find or create chat document for this agency
         const chatQuery = query(
@@ -252,9 +318,10 @@ export default {
         
         if (snapshot.empty) {
           // Create new chat document
+          const selectedAgency = this.agencies.find(a => a.id === this.selectedAgencyId)
           const chatData = {
             agencyId: this.selectedAgencyId,
-            agencyName: this.agencies.find(a => a.id === this.selectedAgencyId)?.agencyName || '',
+            agencyName: selectedAgency?.agencyName || '',
             messages: [],
             createdAt: new Date(),
             updatedAt: new Date()
@@ -263,6 +330,7 @@ export default {
           await setDoc(chatRef, chatData)
           this.chatDocId = chatRef.id
           this.messages = []
+          console.log('Created new chat for agency:', selectedAgency?.agencyName)
         } else {
           this.chatDocId = snapshot.docs[0].id
           const data = snapshot.docs[0].data()
@@ -272,28 +340,37 @@ export default {
             return aTime - bTime
           })
           
+          console.log('Loaded existing chat for agency:', data.agencyName)
           // Mark messages as read
           await this.markAsRead()
         }
 
         // Subscribe to real-time updates
-        this.unsubscribe = onSnapshot(doc(db, 'chats', this.chatDocId), (doc) => {
-          if (doc.exists()) {
-            const data = doc.data()
+        this.unsubscribe = onSnapshot(doc(db, 'chats', this.chatDocId), (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data()
             this.messages = (data.messages || []).sort((a, b) => {
               const aTime = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp)
               const bTime = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp)
               return aTime - bTime
             })
             this.$nextTick(() => {
-              this.scrollToBottom()
-              this.markAsRead()
+              try {
+                this.scrollToBottom()
+                this.markAsRead()
+              } catch (error) {
+                console.log('Component update error (may be unmounting):', error)
+              }
             })
           }
+        }, (error) => {
+          console.error('Chat subscription error:', error)
+          this.showErrorDialog(`Chat subscription failed: ${error.message}`, 'Error', 'OK')
         })
       } catch (error) {
         console.error('Error loading chat:', error)
-        this.showErrorDialog('Failed to load chat. Please try again.', 'Error', 'OK')
+        console.error('Error details:', error.message)
+        this.showErrorDialog(`Failed to load chat: ${error.message}`, 'Error', 'OK')
       } finally {
         this.loading = false
       }
@@ -371,14 +448,19 @@ export default {
         }
       } catch (error) {
         console.error('Error marking messages as read:', error)
+        // Don't show error dialog for read status updates
       }
     },
 
     scrollToBottom() {
       this.$nextTick(() => {
-        const el = this.$refs.chatMessages
-        if (el) {
-          el.scrollTop = el.scrollHeight
+        try {
+          const el = this.$refs.chatMessages
+          if (el && el.scrollHeight) {
+            el.scrollTop = el.scrollHeight
+          }
+        } catch (error) {
+          console.log('Scroll error (component may be unmounting):', error)
         }
       })
     },
@@ -418,7 +500,8 @@ export default {
       } catch {
         return ''
       }
-    }
+    },
+
   }
 }
 </script>
@@ -663,5 +746,6 @@ export default {
     min-width: 100px;
   }
 }
+
 </style>
 

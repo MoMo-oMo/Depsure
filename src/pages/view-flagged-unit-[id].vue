@@ -41,12 +41,6 @@
 
           <!-- Unit Info -->
           <div v-else class="form-card" elevation="0">
-            <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
-              <v-tab value="details" class="tab-label tab--details">Details</v-tab>
-              <v-tab value="notes" class="tab-label tab--notes">Notes</v-tab>
-            </v-tabs>
-            <v-window v-model="activeTab">
-              <v-window-item value="details">
                 <v-card-text>
                   <v-row>
                 <!-- Agency -->
@@ -150,8 +144,8 @@
 
                   </v-row>
                 </v-card-text>
-              </v-window-item>
-              <v-window-item value="notes">
+              <!-- Notes removed - using live chat -->
+              <div style="display:none;">
                 <v-card-text>
                   <div class="notes-section">
                     <h3 class="mb-2">Notes</h3>
@@ -228,8 +222,7 @@
                     </div>
                   </div>
                 </v-card-text>
-              </v-window-item>
-            </v-window>
+              </div>
           </div>
         </v-col>
       </v-row>

@@ -617,6 +617,18 @@ export default {
           color: '#000000'
         })
 
+        // Check if vacancy already exists
+        const existingVacancyQuery = query(
+          collection(db, 'vacancies'),
+          where('unitName', '==', item.propertyName || item.unitName)
+        );
+        const existingVacancySnapshot = await getDocs(existingVacancyQuery);
+        
+        if (!existingVacancySnapshot.empty) {
+          this.showErrorDialog('A vacancy already exists for this unit.', 'Already Exists', 'OK');
+          return;
+        }
+        
         // Create vacancy entry
         const vacancyData = {
           agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
@@ -627,11 +639,27 @@ export default {
           propertyManager: item.propertyManager || '',
           contactNumber: item.contactNumber || '',
           notes: '',
+          propertyType: item.propertyType || 'residential',
           createdAt: new Date(),
           updatedAt: new Date()
         }
         await addDoc(collection(db, 'vacancies'), vacancyData)
 
+        // Archive the unit (don't hard delete)
+        const archivedUnitData = {
+          ...item,
+          originalId: item.id,
+          archivedAt: new Date(),
+          archivedBy: this.appStore.currentUser?.uid || 'unknown',
+          archivedByUserType: this.appStore.currentUser?.userType || 'unknown',
+          archivedReason: 'Moved to vacancies'
+        }
+        delete archivedUnitData.id
+        await addDoc(collection(db, 'archivedUnits'), archivedUnitData)
+        
+        // Remove from active units
+        await deleteDoc(doc(db, 'units', item.id))
+        
         // Log audit event
         await this.logAuditEvent(
           this.auditActions.UPDATE,
@@ -640,6 +668,7 @@ export default {
             unitName: item.propertyName || item.unitName,
             agencyId: item.agencyId,
             transitionedToVacancy: true,
+            archived: true,
             vacancy: {
               dateVacated: vacancyData.dateVacated,
               newTenantFound: 'No'
@@ -649,10 +678,10 @@ export default {
           item.id
         )
 
-        // Remove from active units
-        await deleteDoc(doc(db, 'units', item.id))
         this.properties = this.properties.filter(prop => prop.id !== item.id)
         this.filteredProperties = this.filteredProperties.filter(prop => prop.id !== item.id)
+        
+        this.showSuccessDialog(`${item.propertyName || item.unitName} has been moved to Vacancies!`, 'Success!', 'OK')
       } catch (error) {
         if (error.message !== 'User cancelled') {
           console.error('Error moving unit to vacancies:', error)

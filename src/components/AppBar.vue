@@ -5,6 +5,7 @@
 		theme="light"
 		flat
 		density="comfortable"
+		class="app-bar"
 	>
 		<v-app-bar-nav-icon color="black" @click="toggle" />
 		<v-toolbar-title class="title-black">
@@ -17,6 +18,7 @@
 			color="black"
 			@click="openChat"
 			class="chat-btn"
+			:title="unreadCount > 0 ? `${unreadCount} unread messages` : 'Chat'"
 		>
 			<v-badge
 				:content="unreadCount"
@@ -131,6 +133,12 @@
 	to { transform: scaleX(1); }
 }
 
+.app-bar {
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+}
+
 .chat-btn {
 	margin-right: 8px;
 	transition: all 0.3s ease;
@@ -139,5 +147,16 @@
 .chat-btn:hover {
 	transform: translateY(-2px);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.title-text {
+		font-size: 0.9rem;
+	}
+	
+	.chat-btn {
+		margin-right: 4px;
+	}
 }
 </style>

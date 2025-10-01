@@ -247,6 +247,22 @@ export default {
           console.log('Adding new vacancy:', this.vacancy)
           
           // Prepare vacancy data for Firestore
+          // Get property type from the unit
+          let propertyType = 'residential'; // default
+          try {
+            const unitsQuery = query(
+              collection(db, 'units'),
+              where('unitName', '==', this.vacancy.unitName)
+            );
+            const unitSnapshot = await getDocs(unitsQuery);
+            if (!unitSnapshot.empty) {
+              const unitData = unitSnapshot.docs[0].data();
+              propertyType = unitData.propertyType || 'residential';
+            }
+          } catch (error) {
+            console.log('Could not resolve property type, using default');
+          }
+          
           const vacancyData = {
             agencyId: this.vacancy.agencyId,
             unitName: this.vacancy.unitName,
@@ -255,6 +271,7 @@ export default {
             propertyManager: this.vacancy.propertyManager,
             contactNumber: this.vacancy.contactNumber,
             notes: this.vacancy.notes || '',
+            propertyType: propertyType,
             createdAt: new Date(),
             updatedAt: new Date()
           }

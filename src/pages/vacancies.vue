@@ -363,22 +363,33 @@ export default {
       }
 
       try {
-        // Always try to find the unit by unitId first, then by name
+        console.log('Moving vacancy to onboarded units:', vacancy);
+        
+        // Try to find the unit in active units or archived units
         let unitId = vacancy.unitId;
         let unitRef;
         let unitExists = false;
+        let unitData = null;
         
-        // First, check if we have a unitId and if that document exists
+        console.log('Step 1: Checking active units by ID:', unitId);
+        
+        // First, check if we have a unitId and if that document exists in active units
         if (unitId) {
           unitRef = doc(db, 'units', unitId);
           const unitDoc = await getDoc(unitRef);
           if (unitDoc.exists()) {
+            console.log('Found unit by ID in active units');
             unitExists = true;
+            unitData = unitDoc.data();
+          } else {
+            console.log('Unit not found by ID in active units');
           }
         }
         
-        // If not found by ID, try to find by name
+        // If not found by ID, try to find by name in active units
         if (!unitExists && vacancy.unitName) {
+          console.log('Step 2: Searching active units by name:', vacancy.unitName);
+          
           const unitsQuery = query(
             collection(db, 'units'),
             where('propertyName', '==', vacancy.unitName)
@@ -387,6 +398,7 @@ export default {
           
           // If not found by propertyName, try unitName field
           if (unitSnapshot.empty) {
+            console.log('Not found by propertyName, trying unitName field');
             const unitsQuery2 = query(
               collection(db, 'units'),
               where('unitName', '==', vacancy.unitName)
@@ -395,28 +407,136 @@ export default {
           }
           
           if (!unitSnapshot.empty) {
+            console.log('Found unit by name in active units');
             unitId = unitSnapshot.docs[0].id;
             unitRef = doc(db, 'units', unitId);
             unitExists = true;
+            unitData = unitSnapshot.docs[0].data();
+          } else {
+            console.log('Unit not found in active units by name');
+          }
+        }
+        
+        // If still not found in active units, check archived units
+        if (!unitExists && vacancy.unitName) {
+          console.log('Step 3: Searching archived units for:', vacancy.unitName);
+          console.log('Also checking with unitId:', vacancy.unitId);
+          
+          // Try by originalId first (this is the ID before archiving)
+          if (vacancy.unitId) {
+            console.log('Searching archived units by originalId:', vacancy.unitId);
+            const archivedByIdQuery = query(
+              collection(db, 'archivedUnits'),
+              where('originalId', '==', vacancy.unitId)
+            );
+            let archivedSnapshot = await getDocs(archivedByIdQuery);
+            console.log('Archived query by originalId returned:', archivedSnapshot.size, 'results');
+            
+            if (!archivedSnapshot.empty) {
+              console.log('Found unit in archived units by originalId! Restoring...');
+              // Restore unit from archive
+              const archivedDoc = archivedSnapshot.docs[0];
+              unitData = { ...archivedDoc.data() };
+              
+              // Remove archive-specific fields
+              delete unitData.originalId;
+              delete unitData.archivedAt;
+              delete unitData.archivedBy;
+              delete unitData.archivedByUserType;
+              delete unitData.archivedReason;
+              
+              // Add back to active units
+              unitData.status = 'active';
+              unitData.isVacant = false;
+              unitData.vacancyEndDate = new Date();
+              unitData.updatedAt = new Date();
+              
+              const newUnitRef = await addDoc(collection(db, 'units'), unitData);
+              unitId = newUnitRef.id;
+              unitExists = true;
+              
+              // Delete from archived units
+              await deleteDoc(archivedDoc.ref);
+              
+              console.log(`Unit "${vacancy.unitName}" restored from archive using originalId`);
+              
+              // Skip the updateDoc below since we already set the status
+              unitRef = null;
+            }
+          }
+          
+          // If still not found, try by name
+          if (!unitExists) {
+            const archivedQuery = query(
+              collection(db, 'archivedUnits'),
+              where('unitName', '==', vacancy.unitName)
+            );
+            let archivedSnapshot = await getDocs(archivedQuery);
+            console.log('Archived query by unitName returned:', archivedSnapshot.size, 'results');
+            
+            // Also try propertyName in archived
+            if (archivedSnapshot.empty) {
+              console.log('Trying propertyName in archived units');
+              const archivedQuery2 = query(
+                collection(db, 'archivedUnits'),
+                where('propertyName', '==', vacancy.unitName)
+              );
+              archivedSnapshot = await getDocs(archivedQuery2);
+              console.log('Archived query by propertyName returned:', archivedSnapshot.size, 'results');
+            }
+            
+            if (!archivedSnapshot.empty) {
+              console.log('Found unit in archived units by name! Restoring...');
+              // Restore unit from archive
+              const archivedDoc = archivedSnapshot.docs[0];
+              unitData = { ...archivedDoc.data() };
+              
+              // Remove archive-specific fields
+              delete unitData.originalId;
+              delete unitData.archivedAt;
+              delete unitData.archivedBy;
+              delete unitData.archivedByUserType;
+              delete unitData.archivedReason;
+              
+              // Add back to active units
+              unitData.status = 'active';
+              unitData.isVacant = false;
+              unitData.vacancyEndDate = new Date();
+              unitData.updatedAt = new Date();
+              
+              const newUnitRef = await addDoc(collection(db, 'units'), unitData);
+              unitId = newUnitRef.id;
+              unitExists = true;
+              
+              // Delete from archived units
+              await deleteDoc(archivedDoc.ref);
+              
+              console.log(`Unit "${vacancy.unitName}" restored from archive`);
+              
+              // Skip the updateDoc below since we already set the status
+              unitRef = null;
+            }
           }
         }
         
         if (!unitExists) {
           this.showErrorDialog(
-            `Unit "${vacancy.unitName}" not found. The unit may have been deleted. Please check the Onboarded Units page.`,
+            `Unit "${vacancy.unitName}" not found in active or archived units. Please create the unit first in Onboarded Units.`,
             'Error',
             'OK'
           );
           return;
         }
 
-        // Update unit status to active/onboarded
-        await updateDoc(unitRef, {
-          status: 'active',
-          isVacant: false,
-          vacancyEndDate: new Date(),
-          updatedAt: new Date()
-        });
+        // Update unit status if it exists and wasn't just restored from archive
+        if (unitRef) {
+          await updateDoc(unitRef, {
+            status: 'active',
+            isVacant: false,
+            vacancyEndDate: new Date(),
+            updatedAt: new Date()
+          });
+        }
 
         // Delete the vacancy record
         await deleteDoc(doc(db, 'vacancies', vacancy.id));
@@ -533,6 +653,12 @@ export default {
         this.vacancies = await Promise.all(
           vacanciesData.map(async (vacancy) => {
             try {
+              // If vacancy already has propertyType stored, use it
+              if (vacancy.propertyType) {
+                return vacancy;
+              }
+              
+              // Try to resolve from active units first
               if (vacancy.unitId) {
                 const propertyType = await this.resolvePropertyTypeFromUnit(vacancy.unitId);
                 return { ...vacancy, propertyType };
@@ -548,9 +674,11 @@ export default {
                   return { ...vacancy, unitId: unitDoc.id, propertyType };
                 }
               }
+              
+              // Default to residential if not found
               return { ...vacancy, propertyType: 'residential' };
             } catch (error) {
-              console.error(`Error resolving property type for vacancy ${vacancy.id}:`, error);
+              // Silently handle errors - unit may be archived
               return { ...vacancy, propertyType: 'residential' };
             }
           })

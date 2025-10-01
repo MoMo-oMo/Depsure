@@ -103,6 +103,12 @@
           value="vacancies"
           @click="navigateTo('vacancies')"
         />
+        <v-list-item
+          prepend-icon="mdi-message-text"
+          title="CHAT"
+          value="chat"
+          @click="navigateTo('chat')"
+        />
   
       </v-list>
 
@@ -334,6 +340,48 @@ export default {
   padding: 4px 8px 16px 8px;
   flex: 1 1 auto;
   overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Custom scrollbar for webkit browsers */
+.drawer-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.drawer-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.drawer-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.drawer-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Scrollable on smaller screens */
+@media (max-height: 600px) {
+  .drawer-list {
+    max-height: calc(100vh - 150px);
+  }
+}
+
+@media (max-width: 768px) {
+  .drawer-list {
+    max-height: calc(100vh - 120px);
+    padding: 2px 4px 8px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .drawer-list {
+    max-height: calc(100vh - 100px);
+    padding: 1px 2px 4px 2px;
+  }
 }
 
 .drawer-list :deep(.v-list-item) {
@@ -341,6 +389,21 @@ export default {
   border-radius: 12px;
   transition: background-color .2s ease, color .2s ease;
   min-height: 44px;
+}
+
+/* Responsive list items */
+@media (max-width: 768px) {
+  .drawer-list :deep(.v-list-item) {
+    margin: 2px 6px;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .drawer-list :deep(.v-list-item) {
+    margin: 1px 4px;
+    min-height: 36px;
+  }
 }
 
 /* White text + icons by default */

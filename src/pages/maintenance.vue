@@ -198,8 +198,9 @@
                   @click="viewEntry(item)"
                   class="action-btn"
                 />
+                <!-- Only Agency users (Managing Agents & their admins) can edit -->
                 <v-btn
-                  v-if="isAgencyUser || userType === 'Admin'"
+                  v-if="isAgencyUser"
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
@@ -207,8 +208,9 @@
                   @click="editEntry(item)"
                   class="action-btn"
                 />
+                <!-- Only Super Admins can delete (after completion) -->
                 <v-btn
-                  v-if="isAgencyUser || userType === 'Admin'"
+                  v-if="isSuperAdmin"
                   icon="mdi-delete"
                   size="small"
                   variant="text"

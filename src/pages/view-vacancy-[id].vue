@@ -43,14 +43,8 @@
 
             <!-- Vacancy Details -->
             <template v-else-if="vacancy">
-              <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
-                <v-tab value="details" class="tab-label tab--details">Details</v-tab>
-                <v-tab value="notes" class="tab-label tab--notes">Notes</v-tab>
-              </v-tabs>
               <v-card-text>
                 <div class="vacancy-details">
-                  <v-window v-model="activeTab">
-                  <v-window-item value="details">
                     <v-row>
                       <!-- Unit Name/Address -->
                       <v-col cols="12" md="6">
@@ -168,8 +162,8 @@
                     </v-btn>
                     </v-col>
                     </v-row>
-                  </v-window-item>
-                  <v-window-item value="notes">
+                  <!-- Notes removed - using live chat -->
+                  <div style="display:none;">
                     <div class="notes-section">
                       <h3 class="mb-2">Notes</h3>
                       <div v-if="(vacancy.notesLog && vacancy.notesLog.length)" class="chat-log" ref="chatLog">
@@ -230,8 +224,7 @@
                         </div>
                       </div>
                     </div>
-                  </v-window-item>
-                </v-window>
+                  </div>
                 </div>
               </v-card-text>
             </template>

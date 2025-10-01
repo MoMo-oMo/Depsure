@@ -466,6 +466,7 @@ export default {
             propertyManager: item.propertyManager || '',
             contactNumber: item.contactNumber || '',
             notes: '',
+            propertyType: item.propertyType || 'residential',
             createdAt: new Date(),
             updatedAt: new Date()
           }

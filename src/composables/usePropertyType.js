@@ -52,7 +52,11 @@ export function usePropertyType() {
       // Return the property type, defaulting to OTHER if not set
       return unitData.propertyType || DEFAULT_PROPERTY_TYPE
     } catch (err) {
-      console.error('Error resolving property type from unit:', err)
+      // Silently handle unit not found errors (e.g., when unit is archived)
+      // Only log if it's not a "Unit not found" error
+      if (err.message !== 'Unit not found') {
+        console.error('Error resolving property type from unit:', err)
+      }
       error.value = err.message
       return DEFAULT_PROPERTY_TYPE
     } finally {

@@ -41,12 +41,6 @@
 
           <!-- Maintenance Info -->
           <div v-else class="form-card" elevation="0">
-            <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
-              <v-tab value="details" class="tab-label tab--details">Details</v-tab>
-              <v-tab value="notes" class="tab-label tab--notes">Notes</v-tab>
-            </v-tabs>
-            <v-window v-model="activeTab">
-              <v-window-item value="details">
                 <v-card-text>
               <v-row>
                 <!-- Agency -->
@@ -191,18 +185,29 @@
               >
                 View Quote Instructions
               </v-btn>
+              <!-- Only Agency users (Managing Agents & their admins) can edit -->
               <v-btn
-                v-if="isAgencyUser || userType === 'Admin'"
+                v-if="isAgencyUser"
                 color="black"
                 variant="elevated"
                 class="edit-btn"
                 @click="editEntry"
               >
                 Edit Entry
-              </v-btn>
-            </v-card-actions>
-              </v-window-item>
-              <v-window-item value="notes">
+                  </v-btn>
+              <!-- Only Super Admins can delete (after completion) -->
+              <v-btn
+                v-if="isSuperAdmin"
+                color="error"
+                variant="elevated"
+                class="delete-btn"
+                @click="deleteEntry"
+              >
+                Delete Entry
+                  </v-btn>
+                </v-card-actions>
+              <!-- Notes removed - using live chat -->
+              <div style="display:none;">
                 <v-card-text>
             <!-- Notes (Chat-like) -->
             <v-divider class="my-4" />
@@ -290,8 +295,7 @@
             </div>
 
                 </v-card-text>
-              </v-window-item>
-            </v-window>
+              </div>
           </div>
         </v-col>
       </v-row>
@@ -363,20 +367,26 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, deleteDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
+import { useAuditTrail } from '@/composables/useAuditTrail'
 
 export default {
   name: "ViewMaintenancePage",
   setup() {
-    const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    return { showErrorDialog, showConfirmDialog }
+    const { showErrorDialog, showConfirmDialog, showSuccessDialog } = useCustomDialogs()
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+    return { showErrorDialog, showConfirmDialog, showSuccessDialog, logAuditEvent, auditActions, resourceTypes }
   },
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
       return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      return appStore.currentUser?.userType === 'Super Admin';
     },
     userType() {
       const appStore = useAppStore();
@@ -558,6 +568,45 @@ export default {
 
     editEntry() {
       this.$router.push(`/edit-maintenance-${this.entry.id}`);
+    },
+    
+    async deleteEntry() {
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete Maintenance Entry?',
+          message: 'Are you sure you want to delete this maintenance entry? This action cannot be undone. After deletion, upload any related quotes or invoices to the unit documents.',
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+
+      try {
+        await deleteDoc(doc(db, 'maintenance', this.entry.id))
+        
+        await this.logAuditEvent(
+          this.auditActions.DELETE,
+          {
+            maintenanceId: this.entry.id,
+            unitName: this.entry.unitName,
+            deletedBy: 'Super Admin'
+          },
+          this.resourceTypes.MAINTENANCE,
+          this.entry.id
+        )
+        
+        this.showSuccessDialog(
+          'Maintenance entry deleted successfully! Remember to upload related quotes or invoices to the unit documents.',
+          'Deleted',
+          'OK',
+          '/maintenance'
+        )
+      } catch (error) {
+        console.error('Error deleting maintenance entry:', error)
+        this.showErrorDialog('Failed to delete maintenance entry. Please try again.', 'Error', 'OK')
+      }
     },
     
     openInNewTab() {

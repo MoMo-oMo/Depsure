@@ -595,6 +595,18 @@ export default {
         const unitDoc = unitsSnapshot.empty ? (await getDocs(query(collection(db, 'units'), where('unitName', '==', notice.unitName)))).docs[0] : unitsSnapshot.docs[0];
         const unitData = unitDoc.data();
         
+        // Check if vacancy already exists for this unit
+        const existingVacancyQuery = query(
+          collection(db, 'vacancies'),
+          where('unitName', '==', notice.unitName)
+        );
+        const existingVacancySnapshot = await getDocs(existingVacancyQuery);
+        
+        if (!existingVacancySnapshot.empty) {
+          this.showErrorDialog('A vacancy already exists for this unit.', 'Already Exists', 'OK');
+          return;
+        }
+        
         // Create vacancy entry
         const vacancyData = {
           agencyId: notice.agencyId || unitData.agencyId || '',
@@ -605,6 +617,7 @@ export default {
           propertyManager: unitData.propertyManager || '',
           contactNumber: unitData.contactNumber || '',
           notes: `Processed from notice. Lease start: ${notice.leaseStartDate || 'N/A'}`,
+          propertyType: unitData.propertyType || 'residential',
           createdAt: new Date(),
           updatedAt: new Date()
         };

@@ -40,12 +40,6 @@
           <!-- Form -->
           <div v-else class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
-              <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
-                <v-tab value="details" class="tab-label tab--details">Details</v-tab>
-                <v-tab value="notes" class="tab-label tab--notes">Notes</v-tab>
-              </v-tabs>
-              <v-window v-model="activeTab">
-                <v-window-item value="details">
                   <v-card-text>
                 <v-row>
                   <!-- Agency Selection -->
@@ -154,21 +148,68 @@
 
                   <!-- Estimated Cost hidden (non-essential in UI) -->
 
-                  <!-- Quote Instructions Upload -->
-                  <v-col cols="12" md="6">
-                    <v-file-input
-                      v-model="entry.quoteFile"
-                      label="Upload Quote Instructions (PDF only)"
-                      variant="outlined"
-                      class="custom-input"
-                      accept=".pdf"
-                      show-size
-                      prepend-icon="mdi-file-pdf-box"
-                      :loading="uploading"
-                      :rules="quoteFileRules"
-                      hint="Only PDF files are allowed. Maximum size: 50MB"
-                      persistent-hint
-                    />
+                  <!-- Quote Instructions Upload Section -->
+                  <v-col cols="12">
+                    <h4 class="section-title mb-3">
+                      <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                      Quote Instructions
+                    </h4>
+                    <div class="upload-row">
+                      <v-file-input
+                        :key="`quotes-${quoteInputKey}`"
+                        v-model="newQuoteFiles"
+                        label="Upload Quote Instructions (PDF only)"
+                        variant="outlined"
+                        class="custom-input file-input-flex"
+                        accept=".pdf"
+                        multiple
+                        show-size
+                        prepend-icon="mdi-file-pdf-box"
+                        :loading="uploadingQuotes"
+                        :rules="quoteFileRules"
+                        hint="Only PDF files are allowed. Maximum size: 10MB per file"
+                        persistent-hint
+                      />
+                      <v-btn
+                        color="primary"
+                        variant="elevated"
+                        class="upload-doc-btn"
+                        :disabled="!newQuoteFiles || newQuoteFiles.length === 0 || uploadingQuotes"
+                        :loading="uploadingQuotes"
+                        @click="uploadQuotes"
+                      >
+                        Upload
+                      </v-btn>
+                    </div>
+
+                    <!-- Existing Quotes List -->
+                    <div v-if="entry.quotes && entry.quotes.length > 0" class="existing-quotes mt-4">
+                      <h5 class="existing-title">Uploaded Quotes:</h5>
+                      <div class="quote-list">
+                        <div v-for="(quote, index) in entry.quotes" :key="`quote-${index}`" class="quote-item">
+                          <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                          <span class="quote-name">{{ quote.fileName }}</span>
+                          <v-btn
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            @click="viewQuote(quote)"
+                            class="view-btn"
+                          >
+                            View
+                          </v-btn>
+                          <v-btn
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            @click="deleteQuote(index)"
+                            class="delete-btn"
+                          >
+                            Delete
+                          </v-btn>
+                        </div>
+                      </div>
+                    </div>
                   </v-col>
 
                 </v-row>
@@ -215,11 +256,10 @@
                       {{ saving ? 'Saving...' : 'Save Changes' }}
                     </v-btn>
                   </v-card-actions>
-                </v-window-item>
-                <v-window-item value="notes">
+                <!-- Notes tab removed - using live chat instead -->
+                <div style="display: none;">
                   <v-card-text>
-                    <v-divider class="my-4" />
-                    <div class="notes-section">
+                    <div class="notes-section" style="display: none;">
                       <h3 class="mb-2">Notes</h3>
                       <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
                         <div
@@ -302,8 +342,7 @@
                       </div>
                     </div>
                   </v-card-text>
-                </v-window-item>
-              </v-window>
+                </div>
             </v-form>
           </div>
         </v-col>
@@ -323,10 +362,10 @@
             <v-icon>mdi-file-pdf-box</v-icon>
           </div>
 
-          <h2 class="quote-title">Quote Instructions</h2>
-          <p class="quote-subtitle">{{ entry.quoteFileName }}</p>
+          <h2 class="quote-title">Quote Document</h2>
+          <p class="quote-subtitle">{{ currentQuoteName }}</p>
           
-          <div v-if="entry.quoteFileURL" class="pdf-container">
+          <div v-if="currentQuoteURL" class="pdf-container">
             <div class="pdf-controls">
               <button class="zoom-btn" @click="zoomOut">-</button>
               <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
@@ -334,7 +373,7 @@
             </div>
             <div class="pdf-wrapper" :style="{ transform: `scale(${zoomLevel})` }">
               <iframe
-                :src="entry.quoteFileURL"
+                :src="currentQuoteURL"
                 width="100%"
                 height="400"
                 frameborder="0"
@@ -352,7 +391,7 @@
               Close
             </button>
             <button 
-              v-if="entry.quoteFileURL"
+              v-if="currentQuoteURL"
               class="quote-button primary" 
               @click="openInNewTab"
             >
@@ -396,18 +435,20 @@ export default {
         priority: "Medium",
         estimatedCost: 0,
         notes: "",
-        quoteFile: null,
-        quoteFileName: "",
-        quoteFileURL: ""
+        quotes: []
       },
       agencies: [],
       agenciesLoading: false,
       loading: true,
       saving: false,
-      uploading: false,
+      uploadingQuotes: false,
       error: null,
       valid: true,
       showQuoteDialog: false,
+      currentQuoteURL: '',
+      currentQuoteName: '',
+      newQuoteFiles: [],
+      quoteInputKey: 0,
       zoomLevel: 1,
       newNote: '',
       savingNote: false,
@@ -425,8 +466,8 @@ export default {
       priorityRules: [v => !!v || "Priority is required"],
       estimatedCostRules: [v => v >= 0 || "Project budget cannot be negative"],
       quoteFileRules: [
-        v => !v || v.size <= 50 * 1024 * 1024 || "File size must be less than 50MB",
-        v => !v || v.type === 'application/pdf' || "Only PDF files are allowed"
+        v => !v || !v.length || v.every(file => file.size <= 50 * 1024 * 1024) || "Each file must be less than 50MB",
+        v => !v || !v.length || v.every(file => file.type === 'application/pdf') || "Only PDF files are allowed"
       ]
     };
   },
@@ -588,9 +629,7 @@ export default {
             estimatedCost: data.estimatedCost || 0,
             notes: data.notes || "",
             notesLog: data.notesLog || [],
-            quoteFile: null,
-            quoteFileName: data.quoteFileName || "",
-            quoteFileURL: data.quoteFileURL || ""
+            quotes: data.quotes || []
           };
           this.loading = false;
         } else {
@@ -644,30 +683,8 @@ export default {
             priority: this.entry.priority,
             estimatedCost: this.entry.estimatedCost || 0,
             notes: this.entry.notes || "",
+            quotes: this.entry.quotes || [],
             updatedAt: new Date()
-          }
-
-          // Upload file if provided
-          if (this.entry.quoteFile) {
-            this.uploading = true
-            try {
-              const fileRef = ref(storage, `maintenance-quotes/${Date.now()}_${this.entry.quoteFile.name}`)
-              const snapshot = await uploadBytes(fileRef, this.entry.quoteFile)
-              const downloadURL = await getDownloadURL(snapshot.ref)
-              maintenanceData.quoteFileURL = downloadURL
-              maintenanceData.quoteFileName = this.entry.quoteFile.name
-              console.log('File uploaded successfully:', downloadURL)
-            } catch (uploadError) {
-              console.error('Error uploading file:', uploadError)
-              this.showErrorDialog('Failed to upload file. Please try again.', 'Upload Error', 'OK')
-              return
-            } finally {
-              this.uploading = false
-            }
-          } else {
-            // Keep existing file data if no new file is uploaded
-            maintenanceData.quoteFileURL = this.entry.quoteFileURL
-            maintenanceData.quoteFileName = this.entry.quoteFileName
           }
           
           // Log the update action before saving
@@ -754,9 +771,160 @@ export default {
       }
     },
     
+    async uploadQuotes() {
+      if (!this.newQuoteFiles || this.newQuoteFiles.length === 0) return
+      
+      this.uploadingQuotes = true
+      try {
+        const uploaded = []
+        for (const file of this.newQuoteFiles) {
+          const ts = Date.now()
+          const fileRef = ref(storage, `maintenance-quotes/${this.entry.id}/${ts}_${file.name}`)
+          const snapshot = await uploadBytes(fileRef, file)
+          const downloadURL = await getDownloadURL(snapshot.ref)
+          const storagePath = snapshot.ref.fullPath
+          uploaded.push({
+            fileName: file.name,
+            fileURL: downloadURL,
+            storagePath,
+            uploadedAt: new Date().toISOString()
+          })
+        }
+        
+        // Merge with existing quotes in maintenance
+        const updatedQuotes = [...(this.entry.quotes || []), ...uploaded]
+        this.entry.quotes = updatedQuotes
+        
+        // Update maintenance document
+        await updateDoc(doc(db, 'maintenance', this.entry.id), {
+          quotes: updatedQuotes,
+          updatedAt: new Date()
+        })
+
+        // Also update the property's quotes if we can find it
+        try {
+          const unitsQuery = query(
+            collection(db, 'units'),
+            where('unitName', '==', this.entry.unitName)
+          )
+          const unitsSnapshot = await getDocs(unitsQuery)
+          
+          if (!unitsSnapshot.empty) {
+            const propertyDoc = unitsSnapshot.docs[0]
+            const propertyData = propertyDoc.data()
+            const existingPropertyQuotes = propertyData.quotes || []
+            
+            // Add new quotes to property
+            const updatedPropertyQuotes = [...existingPropertyQuotes, ...uploaded]
+            
+            await updateDoc(doc(db, 'units', propertyDoc.id), {
+              quotes: updatedPropertyQuotes,
+              updatedAt: new Date()
+            })
+            
+            console.log('Quotes also added to property documents')
+          }
+        } catch (propertyError) {
+          console.log('Could not add quotes to property:', propertyError)
+          // Continue even if property update fails
+        }
+        
+        // Reset file input
+        this.newQuoteFiles = []
+        this.quoteInputKey++
+        
+        this.showSuccessDialog(`${uploaded.length} quote(s) uploaded successfully and added to property documents!`, 'Success', 'OK')
+      } catch (error) {
+        console.error('Error uploading quotes:', error)
+        this.showErrorDialog('Failed to upload quotes. Please try again.', 'Error', 'OK')
+      } finally {
+        this.uploadingQuotes = false
+      }
+    },
+
+    viewQuote(quote) {
+      this.currentQuoteURL = quote.fileURL
+      this.currentQuoteName = quote.fileName
+      this.showQuoteDialog = true
+    },
+
+    async deleteQuote(index) {
+      const quote = this.entry.quotes[index]
+      if (!quote) return
+
+      try {
+        await this.showConfirmDialog({
+          title: 'Delete Quote?',
+          message: `Are you sure you want to delete "${quote.fileName}"?`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+      } catch (_) {
+        return
+      }
+
+      try {
+        // Delete from storage if storagePath exists
+        if (quote.storagePath) {
+          try {
+            const fileRef = ref(storage, quote.storagePath)
+            await deleteObject(fileRef)
+          } catch (deleteError) {
+            console.log('Storage delete failed, continuing:', deleteError)
+          }
+        }
+
+        // Remove from maintenance array
+        const updatedQuotes = this.entry.quotes.filter((_, i) => i !== index)
+        this.entry.quotes = updatedQuotes
+
+        // Update maintenance document
+        await updateDoc(doc(db, 'maintenance', this.entry.id), {
+          quotes: updatedQuotes,
+          updatedAt: new Date()
+        })
+
+        // Also remove from property's quotes if we can find it
+        try {
+          const unitsQuery = query(
+            collection(db, 'units'),
+            where('unitName', '==', this.entry.unitName)
+          )
+          const unitsSnapshot = await getDocs(unitsQuery)
+          
+          if (!unitsSnapshot.empty) {
+            const propertyDoc = unitsSnapshot.docs[0]
+            const propertyData = propertyDoc.data()
+            const existingPropertyQuotes = propertyData.quotes || []
+            
+            // Remove quote from property by matching fileURL
+            const updatedPropertyQuotes = existingPropertyQuotes.filter(
+              q => q.fileURL !== quote.fileURL
+            )
+            
+            await updateDoc(doc(db, 'units', propertyDoc.id), {
+              quotes: updatedPropertyQuotes,
+              updatedAt: new Date()
+            })
+            
+            console.log('Quote also removed from property documents')
+          }
+        } catch (propertyError) {
+          console.log('Could not remove quote from property:', propertyError)
+          // Continue even if property update fails
+        }
+
+        this.showSuccessDialog('Quote deleted successfully from maintenance and property!', 'Success', 'OK')
+      } catch (error) {
+        console.error('Error deleting quote:', error)
+        this.showErrorDialog('Failed to delete quote. Please try again.', 'Error', 'OK')
+      }
+    },
+
     openInNewTab() {
-      if (this.entry.quoteFileURL) {
-        window.open(this.entry.quoteFileURL, '_blank');
+      if (this.currentQuoteURL) {
+        window.open(this.currentQuoteURL, '_blank');
       }
     },
 
@@ -1011,14 +1179,7 @@ export default {
   color: #1b5e20;
 }
 
-.property-tabs :deep(.tab--archive) {
-  color: #8e24aa;
-}
-
-.property-tabs :deep(.tab--archive.v-tab--selected) {
-  color: #5e35b1;
-}
-</style>
+/* removed duplicate styles - now at end of file */
 
               <h2 style="
                 font-size: 2em;
@@ -1614,5 +1775,80 @@ export default {
 
 .property-tabs :deep(.tab--archive.v-tab--selected) {
   color: #5e35b1;
+}
+
+/* Quote Upload Section */
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.upload-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.file-input-flex {
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-doc-btn {
+  margin-top: 4px;
+  min-width: 120px;
+  height: 56px;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.existing-quotes {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid var(--v-theme-primary);
+}
+
+.existing-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.quote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quote-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.quote-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.quote-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+  margin-left: 8px;
+}
+
+.quote-item .view-btn,
+.quote-item .delete-btn {
+  margin-left: 8px;
 }
 </style>

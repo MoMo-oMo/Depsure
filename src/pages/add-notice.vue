@@ -339,12 +339,14 @@ export default {
             // Add vacancy entry
             const vacancy = {
               agencyId: this.notice.agencyId,
+              unitId: unitDoc?.id || null,
               unitName: this.notice.unitName,
               dateVacated: this.notice.vacateDate,
               moveInDate: null,
-              propertyManager: '',
-              contactNumber: '',
+              propertyManager: unitData?.propertyManager || '',
+              contactNumber: unitData?.contactNumber || '',
               notes: '',
+              propertyType: unitData?.propertyType || 'residential',
               createdAt: new Date(),
               updatedAt: new Date()
             };

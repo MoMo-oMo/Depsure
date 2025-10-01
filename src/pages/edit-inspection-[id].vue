@@ -35,12 +35,6 @@
           <!-- Form -->
           <div v-else class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
-              <v-tabs v-model="activeTab" class="property-tabs" density="comfortable">
-                <v-tab value="details" class="tab-label tab--details">Details</v-tab>
-                <v-tab value="notes" class="tab-label tab--notes">Notes</v-tab>
-              </v-tabs>
-              <v-window v-model="activeTab">
-                <v-window-item value="details">
                   <v-card-text>
                 <v-row>
                   <!-- Unit Name -->
@@ -194,8 +188,8 @@
                       {{ saving ? 'Saving...' : 'Save Changes' }}
                     </v-btn>
                   </v-card-actions>
-                </v-window-item>
-                <v-window-item value="notes">
+                <!-- Notes removed - using live chat -->
+                <div style="display:none;">
                   <v-card-text>
                     <div class="notes-section">
                       <h3 class="mb-2">Notes</h3>
@@ -258,8 +252,7 @@
                       </div>
                     </div>
                   </v-card-text>
-                </v-window-item>
-              </v-window>
+                </div>
             </v-form>
           </div>
         </v-col>
