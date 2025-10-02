@@ -137,8 +137,9 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
+import { db, storage } from '@/firebaseConfig'
 import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore'
+import { ref as storageRef, listAll, deleteObject } from 'firebase/storage'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 
@@ -220,7 +221,7 @@ export default {
       try {
         await this.showConfirmDialog({
           title: 'Delete user?',
-          message: `Are you sure you want to delete ${user.email}?${user.userType === 'Agency' ? ' This will also delete all associated units, flagged units, notices, maintenance, inspections, and vacancies.' : ''}`,
+          message: `Are you sure you want to delete ${user.email}?${user.userType === 'Agency' ? ' This will permanently delete ALL associated data including: units, flagged units, notices, maintenance, inspections, vacancies, chat messages, archived units, audit logs, and uploaded files. This action cannot be undone.' : ''}`,
           confirmText: 'Delete',
           cancelText: 'Cancel',
           color: '#dc3545'
@@ -268,6 +269,33 @@ export default {
           const vacanciesSnapshot = await getDocs(vacanciesQuery);
           const vacanciesDeletePromises = vacanciesSnapshot.docs.map(vacDoc => deleteDoc(vacDoc.ref));
           await Promise.all(vacanciesDeletePromises);
+          
+          // Delete all chats for this agency
+          const chatsQuery = query(collection(db, 'chats'), where('agencyId', '==', agencyId));
+          const chatsSnapshot = await getDocs(chatsQuery);
+          const chatsDeletePromises = chatsSnapshot.docs.map(chatDoc => deleteDoc(chatDoc.ref));
+          await Promise.all(chatsDeletePromises);
+          
+          // Delete all archived units for this agency
+          const archivedQuery = query(collection(db, 'archivedUnits'), where('agencyId', '==', agencyId));
+          const archivedSnapshot = await getDocs(archivedQuery);
+          const archivedDeletePromises = archivedSnapshot.docs.map(archivedDoc => deleteDoc(archivedDoc.ref));
+          await Promise.all(archivedDeletePromises);
+          
+          // Delete audit trail entries for this agency
+          const auditQuery = query(collection(db, 'auditTrail'), where('resourceId', '==', agencyId));
+          const auditSnapshot = await getDocs(auditQuery);
+          const auditDeletePromises = auditSnapshot.docs.map(auditDoc => deleteDoc(auditDoc.ref));
+          await Promise.all(auditDeletePromises);
+          
+          // Clean up Firebase Storage files associated with this agency
+          await this.cleanupAgencyStorageFiles(agencyId);
+        } else {
+          // For non-agency users (Admin, Super Admin), clean up their audit trail entries
+          const auditQuery = query(collection(db, 'auditTrail'), where('userId', '==', user.id));
+          const auditSnapshot = await getDocs(auditQuery);
+          const auditDeletePromises = auditSnapshot.docs.map(auditDoc => deleteDoc(auditDoc.ref));
+          await Promise.all(auditDeletePromises);
         }
         
         // Delete the user/agency document
@@ -291,6 +319,30 @@ export default {
       } catch (error) {
         console.error('Error deleting user:', error);
         this.showErrorDialog('Failed to delete user. Please try again.', 'Error', 'OK');
+      }
+    },
+    
+    async cleanupAgencyStorageFiles(agencyId) {
+      try {
+        // Clean up chat uploads
+        const chatUploadsRef = storageRef(storage, `chat_uploads/${agencyId}/`);
+        const chatUploadsList = await listAll(chatUploadsRef);
+        const chatDeletePromises = chatUploadsList.items.map(item => deleteObject(item));
+        await Promise.all(chatDeletePromises);
+        
+        // Clean up maintenance quote files
+        const maintenanceQuotesRef = storageRef(storage, 'maintenance-quotes/');
+        const maintenanceQuotesList = await listAll(maintenanceQuotesRef);
+        const maintenanceDeletePromises = maintenanceQuotesList.items
+          .filter(item => item.name.includes(agencyId))
+          .map(item => deleteObject(item));
+        await Promise.all(maintenanceDeletePromises);
+        
+        // Clean up any other agency-specific files
+        // Add more cleanup paths as needed based on your storage structure
+      } catch (error) {
+        console.error('Error cleaning up storage files:', error);
+        // Don't throw error - storage cleanup is not critical for deletion
       }
     },
     

@@ -13,22 +13,7 @@
 		</v-toolbar-title>
 		<v-spacer />
 		<!-- Chat Icon with Notification Badge -->
-		<v-btn
-			icon
-			color="black"
-			@click="openChat"
-			class="chat-btn"
-			:title="unreadCount > 0 ? `${unreadCount} unread messages` : 'Chat'"
-		>
-			<v-badge
-				:content="unreadCount"
-				:model-value="unreadCount > 0"
-				color="error"
-				overlap
-			>
-				<v-icon>mdi-message-text</v-icon>
-			</v-badge>
-		</v-btn>
+	
 	</v-app-bar>
 </template>
 

@@ -8,31 +8,31 @@
     theme="dark"
   >
     <div class="drawer-content">
-             <!-- Profile / Header -->
-       <div class="drawer-header clickable" :style="headerStyle" @click="navigateToProfile">
-         <div class="header-bg"></div>
-         <div class="header-fade"></div>
-         <div class="header-content">
+      <!-- Profile / Header -->
+      <div class="drawer-header clickable" :style="headerStyle" @click="navigateToProfile">
+        <div class="header-bg"></div>
+        <div class="header-fade"></div>
+        <div class="header-content">
            <v-avatar size="56">
-             <v-img :src="userAvatar" alt="User" />
-           </v-avatar>
+            <v-img :src="userAvatar" alt="User" />
+          </v-avatar>
            <div class="user-meta">
-             <div class="name">{{ userName }}</div>
-             <div class="user-type">{{ userType }}</div>
-           </div>
-         </div>
-       </div>
+            <div class="name">{{ userName }}</div>
+            <div class="user-type">{{ userType }}</div>
+          </div>
+        </div>
+      </div>
 
-             <!-- Menu -->
-       <v-list
-         v-model:selected="selected"
-         density="comfortable"
-         nav
-         color="transparent"
-         active-class="pill-active"
-         class="drawer-list"
-       >
-         <v-list-item
+      <!-- Menu -->
+        <v-list
+          v-model:selected="selected"
+          density="comfortable"
+          nav
+          color="transparent"
+          active-class="pill-active"
+          class="drawer-list"
+        >
+          <v-list-item
            v-if="canAccessUserManagement"
            prepend-icon="mdi-account-group"
            title="USER MANAGEMENT"
@@ -110,7 +110,7 @@
           @click="navigateTo('chat')"
         />
   
-      </v-list>
+        </v-list>
 
       <!-- Footer / Logout -->
       <div class="drawer-footer">
@@ -228,32 +228,32 @@ export default {
       }
     }
 
-         function navigateTo(route) {
-       router.push(`/${route}`)
-     }
+    function navigateTo(route) {
+      router.push(`/${route}`)
+    }
 
-     function navigateToProfile() {
-       router.push('/profile')
-     }
+    function navigateToProfile() {
+      router.push('/profile')
+    }
 
-     return {
-       isDesktop,
-       isOpen,
-       selected,
-       userName,
-       userType,
-       userAvatar,
-       headerStyle,
-       logoutLoading,
-       onLogout,
-       navigateTo,
-       navigateToProfile,
+    return {
+      isDesktop,
+      isOpen,
+      selected,
+      userName,
+      userType,
+      userAvatar,
+      headerStyle,
+      logoutLoading,
+      onLogout,
+      navigateTo,
+      navigateToProfile,
        canAccessUserManagement,
        canAccessAuditTrail,
        isAgencyUser,
        isAgencyAdmin,
        canAccessAgencyPage
-     }
+    }
   }
 }
 </script>
@@ -298,7 +298,7 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   overflow: hidden;
 }
 
@@ -421,11 +421,11 @@ export default {
 /* Active state */
 .drawer-list :deep(.v-list-item--active) {
   background-color: #ffffff !important;
-}
-
-.drawer-list :deep(.v-list-item--active .v-list-item-title),
-.drawer-list :deep(.v-list-item--active .v-list-item-subtitle),
-.drawer-list :deep(.v-list-item--active .v-icon) {
-  color: #000000 !important;
+  }
+  
+  .drawer-list :deep(.v-list-item--active .v-list-item-title),
+  .drawer-list :deep(.v-list-item--active .v-list-item-subtitle),
+  .drawer-list :deep(.v-list-item--active .v-icon) {
+    color: #000000 !important;
 }
 </style>
