@@ -148,15 +148,6 @@
             hover
             :loading="entriesLoading"
           >
-            <template v-slot:item.propertyType="{ item }">
-              <v-chip 
-                :color="getColor(item.propertyType)" 
-                size="small"
-                variant="elevated"
-              >
-                {{ getLabel(item.propertyType) }}
-              </v-chip>
-            </template>
             <template v-slot:item.inspectionRequired="{ item }">
               <v-chip :color="item.inspectionRequired === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.inspectionRequired }}
@@ -266,7 +257,6 @@ export default {
       activeUnitsCount: 0,
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
-        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         { title: "INSPECTION REQUIRED", key: "inspectionRequired", sortable: true, align: "center" },
         // { title: "Appointment Made", key: "appointmentMade", sortable: true, align: "center" },
         { title: "INSEPCTION DATE", key: "inspectionDate", sortable: true, align: "center" },

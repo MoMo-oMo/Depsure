@@ -139,7 +139,7 @@
                   icon="mdi-eye"
                   size="small"
                   variant="text"
-                  color="#757575"
+                  color="black"
                   @click="viewVacancy(item)"
                   class="action-btn"
                 />
@@ -149,7 +149,7 @@
                   icon="mdi-home-import-outline"
                   size="small"
                   variant="text"
-                  color="#757575"
+                  color="black"
                   @click="moveToOnboardedUnits(item)"
                   class="action-btn"
                   title="Move back to Onboarded Units"

@@ -46,14 +46,14 @@
         <span class="sel-count">{{ selectionCount }} selected</span>
       </div>
       <div class="right">
-        <v-btn
+          <v-btn
           size="small"
           variant="text"
           :disabled="!canBulkEdit"
           @click="beginEdit(singleSelected)"
         >
           <v-icon class="mr-1">mdi-pencil</v-icon> Edit
-        </v-btn>
+          </v-btn>
         
         <v-btn
           size="small"
@@ -85,7 +85,7 @@
           <!-- Selection checkbox -->
           <div v-if="selectionMode" class="select-box" @click.stop="toggleSelect(m)">
             <input type="checkbox" :checked="isSelected(m)" aria-label="Select message" />
-          </div>
+            </div>
 
           <!-- Deleted bubble -->
           <div v-if="m.deleted" class="bubble deleted-bubble" :class="m.direction">
@@ -94,7 +94,7 @@
             <div class="bubble-meta">
               <span class="time">{{ m.time }}</span>
             </div>
-          </div>
+              </div>
 
           <!-- Image bubble -->
           <div
@@ -110,15 +110,15 @@
               :style="{ color: getSenderColor(getSenderName(m)) }"
             >
               {{ getSenderName(m) }}
-            </div>
-            
+              </div>
+
             <img :src="m.imageUrl" alt="image" class="message-image" @click.stop="openImagePreview(m.imageUrl)" />
             <div class="bubble-meta">
               <span v-if="m.edited" class="edited-inline">Edited</span>
               <span class="time">{{ m.time }}</span>
             </div>
             <div v-if="m.reaction" class="reaction-under" :class="m.direction" @click="clearReaction(m)" title="Remove reaction">{{ m.reaction }}</div>
-          </div>
+              </div>
 
           <!-- Text bubble (default) -->
           <div
@@ -134,21 +134,21 @@
               :style="{ color: getSenderColor(getSenderName(m)) }"
             >
               {{ getSenderName(m) }}
-            </div>
+                  </div>
             
             <div v-if="m.replyTo" class="reply-quote" :class="m.direction">
               <div class="reply-bar"></div>
               <div class="reply-text">{{ quoteText(m.replyTo) }}</div>
-            </div>
+                    </div>
             <div class="msg-text">{{ m.text }}</div>
 
             <div class="bubble-meta">
               <span v-if="m.edited" class="edited-inline">Edited</span>
               <span class="time">{{ m.time }}</span>
-            </div>
+                  </div>
 
             <div v-if="m.reaction" class="reaction-under" :class="m.direction" @click="clearReaction(m)" title="Remove reaction">{{ m.reaction }}</div>
-          </div>
+                </div>
 
           <!-- Optional inline time (disabled; we keep time inside bubble) -->
           <div class="inline-time" v-if="false">{{ m.time }}</div>
@@ -162,8 +162,8 @@
           <span class="typing-dot"></span>
           <span class="typing-dot"></span>
         </div>
-      </div>
-    </div>
+              </div>
+            </div>
 
     <!-- Composer -->
     <div class="composer my-6" ref="composer">
@@ -294,7 +294,7 @@
             :loading="agenciesLoading"
             label="Agency"
             prepend-inner-icon="mdi-domain"
-            variant="outlined"
+                variant="outlined"
             hide-details="auto"
           />
         </v-card-text>
@@ -303,9 +303,9 @@
           <v-btn variant="text" @click="openAgencyPicker = false">Cancel</v-btn>
           <v-btn color="primary" variant="elevated" :disabled="!selectedAgencyId" @click="applyAgencySelection">
             Load chat
-          </v-btn>
+              </v-btn>
         </v-card-actions>
-      </v-card>
+          </v-card>
     </v-dialog>
   </div>
 </template>
@@ -522,7 +522,7 @@ export default {
       } catch { return true }
     },
   },
-  async mounted() {
+    async mounted() {
     // Load recent emojis (optional)
     try {
       const saved = JSON.parse(localStorage.getItem('recentEmojis') || '[]')
@@ -534,7 +534,7 @@ export default {
 
     document.title = 'Chat - Depsure'
     await this.fetchAgencies()
-
+    
     // Auto-select for agency users
     if (this.isAgencyUser) {
       const appStore = useAppStore()
@@ -640,7 +640,7 @@ export default {
       try {
         const appStore = useAppStore()
         const user = appStore.currentUser
-
+        
         if (user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')) {
           // Only own agency
           let agencyData = null
@@ -673,7 +673,7 @@ export default {
     },
     async loadChat() {
       if (!this.selectedAgencyId) return
-
+      
       // Update global agency selection for Super Admins
       if (this.isSuperAdmin) {
         const appStore = useAppStore()
@@ -682,7 +682,7 @@ export default {
           appStore.setCurrentAgency(selectedAgency)
         }
       }
-
+      
       this.loading = true
       try {
         // Unsubscribe previous
@@ -694,7 +694,7 @@ export default {
         // Find or create chat document for this agency
         const chatQuery = query(collection(db, 'chats'), where('agencyId', '==', this.selectedAgencyId))
         const snapshot = await getDocs(chatQuery)
-
+        
         if (snapshot.empty) {
           const selectedAgency = this.agencies.find(a => a.id === this.selectedAgencyId)
           const chatData = {
@@ -789,12 +789,12 @@ export default {
         const appStore = useAppStore()
         const user = appStore.currentUser
         const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
-
+        
         let authorName = 'Unknown User'
         if (isAgency) {
           authorName = user?.agencyName || 'Agency'
         } else {
-          authorName = user?.firstName && user?.lastName
+          authorName = user?.firstName && user?.lastName 
             ? `${user.firstName} ${user.lastName}`
             : user?.firstName || user?.lastName || user?.email || 'Admin'
         }

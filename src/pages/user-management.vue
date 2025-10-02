@@ -159,12 +159,12 @@ export default {
       users: [],
       loading: false,
       headers: [
-        { title: "NAME", key: "displayName", sortable: true },
-        { title: "EMAIL", key: "email", sortable: true },
-        { title: "USER TYPE", key: "userType", sortable: true, align: "center" },
-        { title: "STATUS", key: "status", sortable: true, align: "center" },
-        { title: "DATE ADDED", key: "createdAt", sortable: true, align: "center" },
-        { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
+        { title: "NAME", key: "displayName", sortable: true, width: "15%" },
+        { title: "EMAIL", key: "email", sortable: true, width: "25%" },
+        { title: "USER TYPE", key: "userType", sortable: true, align: "center", width: "12%" },
+        { title: "STATUS", key: "status", sortable: true, align: "center", width: "10%" },
+        { title: "DATE ADDED", key: "createdAt", sortable: true, align: "center", width: "15%" },
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center", width: "15%" },
       ]
     };
   },
@@ -447,6 +447,20 @@ export default {
 :deep(.custom-header .v-data-table-header) { 
   background: #000; 
   color: white; 
+}
+
+:deep(.custom-header .v-data-table__wrapper) {
+  table-layout: fixed;
+}
+
+:deep(.custom-header .v-data-table th) {
+  padding: 8px 12px !important;
+  font-size: 0.85rem !important;
+}
+
+:deep(.custom-header .v-data-table td) {
+  padding: 8px 12px !important;
+  font-size: 0.85rem !important;
 }
 
 @media(max-width: 768px) { 

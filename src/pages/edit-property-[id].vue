@@ -705,6 +705,11 @@ export default {
   watch: {
     leaseEndMode(newVal) {
       if (newVal === 'na') this.property.leaseEndDate = '';
+    },
+    '$route.query.tab'(newTab) {
+      if (newTab === 'documents' || newTab === 'details') {
+        this.activeTab = newTab;
+      }
     }
   },
   methods: {
@@ -718,12 +723,11 @@ export default {
       this.$router.push('/active-units')
     },
     gotoDocumentsLock() {
-      try {
-        const q = Object.assign({}, this.$route?.query || {}, { tab: 'documents', lock: 'documents' })
-        this.$router.replace({ path: this.$route.path, query: q })
-      } catch(_) {
-        this.activeTab = 'documents'
-      }
+      // Work exactly like the onboard units viewDocuments method
+      this.$router.push({ 
+        path: this.$route.path, 
+        query: { tab: 'documents', lock: 'documents', from: 'edit' } 
+      })
     },
     // Reuse the same helpers used on view page
     resolveDocDate(entry) {

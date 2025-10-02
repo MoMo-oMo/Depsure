@@ -4,7 +4,7 @@
 		color="#ffffff"
 		theme="light"
 		flat
-		density="comfortable"
+		density="compact"
 		class="app-bar"
 	>
 		<v-app-bar-nav-icon color="black" @click="toggle" />
@@ -122,6 +122,8 @@
 	position: sticky;
 	top: 0;
 	z-index: 1000;
+	min-height: 48px !important;
+	height: 48px !important;
 }
 
 .chat-btn {

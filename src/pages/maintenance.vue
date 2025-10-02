@@ -173,15 +173,6 @@
             :loading="loading"
             loading-text="Loading maintenance entries..."
           >
-            <template v-slot:item.propertyType="{ item }">
-              <v-chip 
-                :color="getColor(item.propertyType)" 
-                size="small"
-                variant="elevated"
-              >
-                {{ getLabel(item.propertyType) }}
-              </v-chip>
-            </template>
             <template v-slot:item.noticeGiven="{ item }">
               <v-chip :color="item.noticeGiven === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.noticeGiven }}
@@ -261,7 +252,6 @@ export default {
       activeUnitsCount: 0,
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
-        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         // { title: "Agency", key: "agencyName", sortable: true },
         { title: "NOTICE GIVEN", key: "noticeGiven", sortable: true, align: "center" },
         { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },

@@ -179,15 +179,6 @@
                 {{ item.noticeToVacateGiven ? `Yes - ${item.noticeToVacateGiven}` : 'No' }}
               </span>
             </template>
-            <template v-slot:item.propertyType="{ item }">
-              <v-chip
-                :color="getPropertyTypeColor(item.propertyType)"
-                size="small"
-                variant="outlined"
-              >
-                {{ getPropertyTypeLabel(item.propertyType) }}
-              </v-chip>
-            </template>
             <!-- Centered Action Buttons -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -272,7 +263,6 @@ export default {
         { title: "UNIT NAME", key: "unitName", sortable: true },
         { title: "MISSED PAYMENT FLAG", key: "missedPaymentFlag", sortable: true, align: "center" },
         { title: "NOTICE TO VACATE GIVEN", key: "noticeToVacateGiven", sortable: true, align: "center" },
-        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         { title: "ACTION TAKEN", key: "actionTaken", sortable: true },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ]
