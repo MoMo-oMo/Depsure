@@ -532,8 +532,6 @@ export default {
 
 .custom-input :deep(.v-field__input) {
   padding: 10px !important;
-  background-color: white !important;
-  color: #000 !important;
 }
 
 .button-container {

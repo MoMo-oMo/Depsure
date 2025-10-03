@@ -218,7 +218,12 @@ watch(() => route.path, (newPath) => {
 
 /* Form styling */
 :deep(.v-field--variant-solo) { border-radius: 6px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important; }
-:deep(.v-field--variant-solo .v-field__overlay) { background-color: #f8f9fa !important; }
+/* Global input background: make all Vuetify fields use a light neutral bg with dark text */
+:deep(.v-field__input) { background-color: #f8f9fa !important; color: #000000 !important; }
+:deep(.v-field__overlay) { background-color: #f8f9fa !important; }
+/* Stronger specificity to override page-level overrides */
+:deep(.v-application .v-field .v-field__input) { background-color: #f8f9fa !important; color: #000000 !important; }
+:deep(.v-application .v-field .v-field__overlay) { background-color: #f8f9fa !important; }
 
 /* Dialog styling */
 :deep(.v-dialog .v-card) { border-radius: 8px !important; box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }

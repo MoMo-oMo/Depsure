@@ -649,10 +649,7 @@ export default {
   border-radius: 8px;
 }
 
-.custom-input :deep(.v-field__input) {
-  background-color: #f8f9fa !important;
-  color: #000000 !important;
-}
+
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
@@ -660,7 +657,7 @@ export default {
 
 /* Tabs styling */
 .property-tabs {
-  background-color: #f8f9fa;
+
 }
 
 .property-tabs :deep(.tab-label) {
@@ -726,15 +723,13 @@ export default {
 .document-category {
   margin-bottom: 32px;
   padding: 20px;
-  background-color: #f8f9fa;
+
   border-radius: 8px;
   border-left: 4px solid #e5e7eb; /* neutral by default */
 }
 
 /* Explicit per-category colors (match icon palettes) */
-.document-category.category-quotes { border-left-color: var(--v-theme-primary); }
-.document-category.category-inspections { border-left-color: var(--v-theme-warning); }
-.document-category.category-invoices { border-left-color: var(--v-theme-success); }
+/* Keep neutral left border for all categories */
 
 .category-title {
   font-size: 1.2rem;

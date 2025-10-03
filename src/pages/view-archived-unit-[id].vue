@@ -739,10 +739,7 @@ export default {
   border-radius: 8px;
 }
 
-.custom-input :deep(.v-field__input) {
-  background-color: #f8f9fa !important;
-  color: #000000 !important;
-}
+
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;

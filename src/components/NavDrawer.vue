@@ -263,6 +263,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0; /* allow inner flex child to shrink for scrolling */
 }
 
 .drawer-header {
@@ -339,8 +340,11 @@ export default {
 .drawer-list {
   padding: 4px 8px 16px 8px;
   flex: 1 1 auto;
+  min-height: 0; /* critical for flex scroll containers */
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
@@ -363,25 +367,17 @@ export default {
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Scrollable on smaller screens */
-@media (max-height: 600px) {
-  .drawer-list {
-    max-height: calc(100vh - 150px);
-  }
-}
-
+/* On smaller screens, reduce internal padding to maximize visible items */
 @media (max-width: 768px) {
-  .drawer-list {
-    max-height: calc(100vh - 120px);
-    padding: 2px 4px 8px 4px;
-  }
+  .drawer-list { padding: 2px 4px 8px 4px; }
+  .drawer-list :deep(.v-list-item-title) { font-size: 0.85rem !important; }
+  .drawer-list :deep(.v-icon) { font-size: 18px !important; }
 }
 
 @media (max-width: 480px) {
-  .drawer-list {
-    max-height: calc(100vh - 100px);
-    padding: 1px 2px 4px 2px;
-  }
+  .drawer-list { padding: 1px 2px 4px 2px; }
+  .drawer-list :deep(.v-list-item-title) { font-size: 0.8rem !important; }
+  .drawer-list :deep(.v-icon) { font-size: 17px !important; }
 }
 
 .drawer-list :deep(.v-list-item) {
@@ -412,6 +408,11 @@ export default {
 .drawer-list :deep(.v-icon) {
   color: rgba(255,255,255,0.85) !important;
 }
+
+/* Reduce typography/icon sizes a bit for a tighter nav */
+.drawer-list :deep(.v-list-item-title) { font-size: 0.9rem !important; }
+.drawer-list :deep(.v-list-item-subtitle) { font-size: 0.75rem !important; }
+.drawer-list :deep(.v-icon) { font-size: 20px !important; }
 
 /* Hover effect */
 .drawer-list :deep(.v-list-item:hover) {

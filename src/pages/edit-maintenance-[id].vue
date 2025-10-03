@@ -150,10 +150,7 @@
 
                   <!-- Quote Instructions Upload Section -->
                   <v-col cols="12">
-                    <h4 class="section-title mb-3">
-                      <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
-                      Quote Instructions
-                    </h4>
+               
                     <div class="upload-row">
                       <v-file-input
                         :key="`quotes-${quoteInputKey}`"
@@ -171,7 +168,7 @@
                         persistent-hint
                       />
                       <v-btn
-                        color="primary"
+                        color="black"
                         variant="elevated"
                         class="upload-doc-btn"
                         :disabled="!newQuoteFiles || newQuoteFiles.length === 0 || uploadingQuotes"
@@ -1266,8 +1263,6 @@ export default {
 .chat-text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.35; text-align: center; }
 .chat-text.deleted { font-style: italic; opacity: 0.75; }
 .edit-area { background: #000; border-radius: 10px; padding: 6px; }
-.edit-area :deep(.v-field) { background: #000 !important; }
-.edit-area :deep(.v-field__input) { background: #000 !important; color: #fff !important; }
 .edit-area :deep(.v-field__outline) { border-color: #444 !important; }
 .chat-input :deep(.v-field__input) { min-height: 44px; }
 .edit-maintenance-page {
@@ -1325,10 +1320,7 @@ export default {
   border-radius: 8px;
 }
 
-.custom-input :deep(.v-field__input) {
-  background-color: white !important;
-  color: #000000 !important;
-}
+
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
@@ -1800,9 +1792,12 @@ export default {
 .upload-doc-btn {
   margin-top: 4px;
   min-width: 120px;
-  height: 56px;
+  height: 44px;
   text-transform: none;
-  font-weight: 600;
+  font-weight: 500;
+  background-color: black !important;
+  color: white !important;
+  border-radius: 8px;
 }
 
 .existing-quotes {

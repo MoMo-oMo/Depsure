@@ -458,7 +458,7 @@ export default {
 
 /* Input field styling */
 .custom-input .v-field { border-radius: 8px; }
-.custom-input :deep(.v-field__input) { background-color: white !important; color: #000000 !important; }
+
 .custom-input :deep(.v-field__outline) { border-color: #e9ecef !important; }
 
 /* Button styling */

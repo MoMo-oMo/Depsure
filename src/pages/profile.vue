@@ -766,7 +766,7 @@ export default {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+
 }
 
 .page-header {
@@ -903,10 +903,7 @@ export default {
   border-radius: 8px;
 }
 
-.custom-input :deep(.v-field__input) {
-  background-color: white !important;
-  color: #333 !important;
-}
+
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e0e0e0 !important;
@@ -1224,4 +1221,3 @@ export default {
   }
 }
 </style>
-

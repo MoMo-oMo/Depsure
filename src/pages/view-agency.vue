@@ -32,7 +32,7 @@
         <v-col cols="12">
           <v-card class="agency-info-card-black">
             <!-- Background image layer -->
-            <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
+            <div class="agency-card-bg"></div>
             <!-- Remove all grid gutters and stretch columns so the image fills its whole section -->
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12">
@@ -179,15 +179,6 @@ export default {
     }
   },
   computed: {
-    agencyCardBgStyle() {
-      const url = this.agency?.profileImageUrl || this.agency?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
-      return {
-        backgroundImage: `url(${url})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }
-    },
     filteredProperties() {
       return this.properties;
     },
@@ -371,6 +362,10 @@ export default {
   position: absolute;
   inset: 0;
   z-index: 0;
+  background-image: url('https://i.pinimg.com/736x/4a/e1/03/4ae1030bfab9ca4b172a312e87982f35.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Dark right-to-left gradient overlay behind info */

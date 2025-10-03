@@ -763,8 +763,6 @@ export default {
 
 .custom-input :deep(.v-field__input) {
   padding: 10px !important;
-  background-color: white !important;
-  color: #000 !important;
 }
 
 .custom-input :deep(.v-field__outline) {
@@ -788,8 +786,8 @@ export default {
 .chat-text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.35; text-align: center; }
 .chat-text.deleted { font-style: italic; opacity: 0.75; }
 .edit-area { background: #000; border-radius: 10px; padding: 6px; }
-.edit-area :deep(.v-field) { background: #000 !important; }
-.edit-area :deep(.v-field__input) { background: #000 !important; color: #fff !important; }
+.edit-area :deep(.v-field) {}
+.edit-area :deep(.v-field__input) {}
 .edit-area :deep(.v-field__outline) { border-color: #444 !important; }
 .chat-input :deep(.v-field__input) { min-height: 44px; }
 

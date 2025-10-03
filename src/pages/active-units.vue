@@ -336,9 +336,9 @@ export default {
       flaggedUnitNamesMap: {}, // by unitName (lowercased) -> flaggedDocId
       headers: [
         { title: "TENANT REF", key: "tenantRef", sortable: true },
-        { title: "UNIT NUMBER", key: "unitNumber", sortable: true },
+        { title: "UNIT NO.", key: "unitNumber", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
-        { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
+        { title: "TYPE", key: "propertyType", sortable: true, align: "center" },
         { title: "MISSED RENT", key: "monthsMissed", sortable: true, align: "center" },
         // {
         //   title: "LEASE STARTING DATE",
@@ -929,7 +929,7 @@ export default {
 .view-agency-page {
   padding: 20px;
   min-height: 100vh;
-  background: #f5f5f5;
+ 
 }
 
 /* Back button styling to match system buttons */

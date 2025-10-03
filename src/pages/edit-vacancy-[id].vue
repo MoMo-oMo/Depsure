@@ -83,7 +83,6 @@
                       type="date"
                       class="custom-input"
                       :rules="[]"
-                      :disabled="isAgency"
                       @input="validateForm"
                       hint="Set when new tenant is secured"
                       persistent-hint
@@ -100,7 +99,6 @@
                       :rules="propertyManagerRules"
                       required
                       @input="validateForm"
-                      :disabled="isAgency"
                     />
                   </v-col>
 
@@ -115,7 +113,6 @@
                       :rules="contactNumberRules"
                       required
                       @input="validateForm"
-                      :disabled="isAgency"
                     />
                   </v-col>
 
@@ -607,8 +604,8 @@ export default {
 .chat-text{white-space:pre-wrap;word-wrap:break-word;line-height:1.35;text-align:center}
 .chat-text.deleted{font-style:italic;opacity:.75}
 .edit-area{background:#000;border-radius:10px;padding:6px}
-.edit-area :deep(.v-field){background:#000 !important}
-.edit-area :deep(.v-field__input){background:#000 !important;color:#fff !important}
+.edit-area :deep(.v-field){}
+.edit-area :deep(.v-field__input){}
 .edit-area :deep(.v-field__outline){border-color:#444 !important}
 .chat-input :deep(.v-field__input){min-height:44px}
 
@@ -645,10 +642,7 @@ export default {
   border-radius: 8px;
 }
 
-.custom-input :deep(.v-field__input) {
-  background-color: white !important;
-  color: #000000 !important;
-}
+
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;

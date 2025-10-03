@@ -78,41 +78,43 @@
       <v-row v-else class="mb-6">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
-            <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
-            <!-- Remove all grid gutters and stretch columns so the image fills its whole section -->
-            <v-row align="stretch" class="no-gutters">
-              <v-col cols="12" md="9">
-                <div class="agency-content-right">
-                  <v-card-title class="text-white text-h4 mb-2">{{ agency.agencyName }}</v-card-title>
-                 <v-card-text class="text-white">
-                 <div class="agency-details-black">
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ agency.address || 'Address not provided' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
-                      <span>Reg No: {{ agency.regNo || '—' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-account" class="mr-2 text-white" />
-                      <span>Primary Contact: {{ agency.primaryContactName || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
-                      <span>{{ agency.contactNumber || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-email" class="mr-2 text-white" />
-                      <span>{{ agency.email || 'N/A' }}</span>
-                    </div>
+            <div class="agency-card-bg"></div>
+            <!-- Content overlay on the background image -->
+            <div class="agency-content-overlay">
+              <v-row>
+                <v-col cols="12" md="8">
+                  <div class="agency-content-right">
+                    <v-card-title class="text-white text-h3 mb-4">{{ agency.agencyName }}</v-card-title>
+                    <v-card-text class="text-white">
+                      <div class="agency-details-black">
+                        <div class="detail-item-black">
+                          <v-icon icon="mdi-map-marker" class="mr-3 text-white" size="20" />
+                          <span class="detail-text">{{ agency.address || 'Address not provided' }}</span>
+                        </div>
+                        <div class="detail-item-black">
+                          <v-icon icon="mdi-card-account-details" class="mr-3 text-white" size="20" />
+                          <span class="detail-text">Reg No: {{ agency.regNo || '—' }}</span>
+                        </div>
+                        <div class="detail-item-black">
+                          <v-icon icon="mdi-account" class="mr-3 text-white" size="20" />
+                          <span class="detail-text">Primary Contact: {{ agency.primaryContactName || 'N/A' }}</span>
+                        </div>
+                        <div class="detail-item-black">
+                          <v-icon icon="mdi-phone" class="mr-3 text-white" size="20" />
+                          <span class="detail-text">{{ agency.contactNumber || 'N/A' }}</span>
+                        </div>
+                        <div class="detail-item-black">
+                          <v-icon icon="mdi-email" class="mr-3 text-white" size="20" />
+                          <span class="detail-text">{{ agency.email || 'N/A' }}</span>
+                        </div>
+                      </div>
+                      <v-divider v-if="agency.notes" class="my-4 bg-white" />
+                      <p v-if="agency.notes" class="agency-description-black">{{ agency.notes }}</p>
+                    </v-card-text>
                   </div>
-                  <v-divider v-if="agency.notes" class="my-4 bg-white" />
-                  <p v-if="agency.notes" class="agency-description-black">{{ agency.notes }}</p>
-                </v-card-text>
-                </div>
-              </v-col>
-            </v-row>
+                </v-col>
+              </v-row>
+            </div>
           </v-card>
         </v-col>
       </v-row>
@@ -144,16 +146,6 @@ export default {
     }
   },
   computed: {
-    agencyCardBgStyle() {
-      const url = this.agency?.profileImageUrl || this.agency?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
-      return {
-        backgroundImage: `url(${url})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundColor: '#000'
-      }
-    }
   },
   methods: {
     openMonthPicker() {
@@ -316,11 +308,35 @@ export default {
 </script>
 
 <style scoped>
-.agency-card-bg { position:absolute; inset:0; z-index:0; }
+.agency-card-bg { 
+  position: absolute; 
+  inset: 0; 
+  z-index: 0; 
+  background-image: url('https://i.pinimg.com/736x/4a/e1/03/4ae1030bfab9ca4b172a312e87982f35.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .agency-info-card-black { position: relative; }
-.agency-info-card-black::after { content:''; position:absolute; inset:0; background:linear-gradient(to left, rgba(0,0,0,0.92) 60%, rgba(0,0,0,0)); pointer-events:none; }
+.agency-content-overlay { 
+  position: absolute; 
+  inset: 0; 
+  z-index: 1; 
+  display: flex; 
+  align-items: center; 
+  padding: 24px; 
+}
 .agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
-.agency-content-right { margin-left:auto; width:min(720px,55%); padding:16px 16px 24px; text-align:left; }
+.agency-content-right { 
+  margin-left: auto; 
+  width: min(720px, 55%); 
+  padding: 24px; 
+  text-align: left; 
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  margin: 16px;
+}
 .view-agency-page {
   padding: 20px;
   min-height: 100vh;
@@ -359,6 +375,7 @@ export default {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   color: white;
   padding: 0;
+  min-height: 400px;
 }
 
 /* Remove row/column gutters so the image sits flush with the top/edges */
@@ -384,9 +401,15 @@ export default {
 .detail-item-black {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
-  font-size: 1rem;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
   color: #ffffff;
+  min-height: 32px;
+}
+
+.detail-text {
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .agency-description-black {

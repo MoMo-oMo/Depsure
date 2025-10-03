@@ -25,7 +25,7 @@
                   {{ chatPartnerName }}
                 </template>
               </div>
-              <div class="status"><span class="dot"></span> {{ statusText }}</div>
+              <div class="status"><span class="dot" :class="isPartnerOnline ? 'online' : 'offline'"></span> {{ statusText }}</div>
             </div>
           </div>
 
@@ -75,15 +75,15 @@
 
         <div
           class="msg-row"
-          :class="[m.direction, { selecting: selectionMode, 'drag-over': dragOverId === m.id }]"
+          :class="[m.direction, { selecting: selectionMode && canEdit(m), 'drag-over': dragOverId === m.id }]"
           :style="rowStyle(m)"
           @click="onMessageClick(m, $event)"
           @dragover.prevent="onMessageDragOver(m)"
           @dragleave="onMessageDragLeave(m)"
           @drop="onDropOnMessage(m, $event)"
         >
-          <!-- Selection checkbox -->
-          <div v-if="selectionMode" class="select-box" @click.stop="toggleSelect(m)">
+          <!-- Selection checkbox - only show for messages that can be edited/deleted -->
+          <div v-if="selectionMode && canEdit(m)" class="select-box" @click.stop="toggleSelect(m)">
             <input type="checkbox" :checked="isSelected(m)" aria-label="Select message" />
             </div>
 
@@ -116,6 +116,24 @@
             <div class="bubble-meta">
               <span v-if="m.edited" class="edited-inline">Edited</span>
               <span class="time">{{ m.time }}</span>
+              <!-- Message status ticks for outgoing messages -->
+              <div v-if="m.direction === 'outgoing'" class="message-status">
+                <v-icon 
+                  v-if="getMessageStatus(m) === 'sent'" 
+                  size="12" 
+                  color="rgba(255,255,255,0.6)"
+                >
+                  mdi-check
+                </v-icon>
+                <div v-else-if="getMessageStatus(m) === 'delivered'" class="double-ticks delivered">
+                  <v-icon size="12" color="rgba(255,255,255,0.6)">mdi-check</v-icon>
+                  <v-icon size="12" color="rgba(255,255,255,0.6)">mdi-check</v-icon>
+                </div>
+                <div v-else-if="getMessageStatus(m) === 'read'" class="double-ticks read">
+                  <v-icon size="12" color="#4fc3f7">mdi-check</v-icon>
+                  <v-icon size="12" color="#4fc3f7">mdi-check</v-icon>
+                </div>
+              </div>
             </div>
             <div v-if="m.reaction" class="reaction-under" :class="m.direction" @click="clearReaction(m)" title="Remove reaction">{{ m.reaction }}</div>
               </div>
@@ -145,6 +163,24 @@
             <div class="bubble-meta">
               <span v-if="m.edited" class="edited-inline">Edited</span>
               <span class="time">{{ m.time }}</span>
+              <!-- Message status ticks for outgoing messages -->
+              <div v-if="m.direction === 'outgoing'" class="message-status">
+                <v-icon 
+                  v-if="getMessageStatus(m) === 'sent'" 
+                  size="12" 
+                  color="rgba(255,255,255,0.6)"
+                >
+                  mdi-check
+                </v-icon>
+                <div v-else-if="getMessageStatus(m) === 'delivered'" class="double-ticks delivered">
+                  <v-icon size="12" color="rgba(255,255,255,0.6)">mdi-check</v-icon>
+                  <v-icon size="12" color="rgba(255,255,255,0.6)">mdi-check</v-icon>
+                </div>
+                <div v-else-if="getMessageStatus(m) === 'read'" class="double-ticks read">
+                  <v-icon size="12" color="#4fc3f7">mdi-check</v-icon>
+                  <v-icon size="12" color="#4fc3f7">mdi-check</v-icon>
+                </div>
+              </div>
                   </div>
 
             <div v-if="m.reaction" class="reaction-under" :class="m.direction" @click="clearReaction(m)" title="Remove reaction">{{ m.reaction }}</div>
@@ -322,7 +358,8 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
-  onSnapshot
+  onSnapshot,
+  serverTimestamp
 } from 'firebase/firestore'
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useAppStore } from '@/stores/app'
@@ -392,6 +429,13 @@ export default {
       // Layout cache
       _lastSafeGapPx: 0,
       _lastComposerHeightPx: 0,
+
+      // Presence tracking
+      presenceRealtimeEnabled: false,
+      presence: {},
+      presenceUnsub: null,
+      presenceHeartbeat: null,
+      _onVisibility: null,
       
     }
   },
@@ -434,8 +478,44 @@ export default {
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
       return agency?.profileImageUrl || agency?.logoUrl || null
     },
+    // Identify likely partner id for presence
+    partnerId() {
+      try {
+        if (this.isSuperAdmin) return this.selectedAgencyId || null
+        const arr = Array.isArray(this.messages) ? this.messages : []
+        for (let i = arr.length - 1; i >= 0; i--) {
+          const m = arr[i]
+          if (m && String(m.authorId || '') !== String(this.currentUserId || '')) {
+            return String(m.authorId)
+          }
+        }
+        return null
+      } catch { return null }
+    },
     statusText() {
-      return this.otherTyping ? 'typing…' : 'online'
+      if (this.otherTyping) return 'typing…'
+      return this.isPartnerOnline ? 'online' : 'offline'
+    },
+    isPartnerOnline() {
+      try {
+        // Heuristic: partner considered online if their last incoming message is recent
+        const arr = Array.isArray(this.messages) ? this.messages : []
+        let lastIncoming = 0
+        for (let i = arr.length - 1; i >= 0; i--) {
+          const m = arr[i]
+          if (m && String(m.authorId || '') !== String(this.currentUserId || '')) {
+            lastIncoming = this.asDate(m.timestamp).getTime()
+            break
+          }
+        }
+        const thresholdMs = 120000 // 2 minutes
+        const heuristicOnline = !!lastIncoming && (Date.now() - lastIncoming) < thresholdMs
+        // Also use a one-shot presence doc if available (no realtime required)
+        const pid = this.partnerId
+        const p = pid ? this.presence[pid] : null
+        const presenceOnline = this.isPresenceOnline(p)
+        return presenceOnline || heuristicOnline
+      } catch { return false }
     },
     isUploading() {
       return (this.uploadingCount || 0) > 0
@@ -522,7 +602,7 @@ export default {
       } catch { return true }
     },
   },
-    async mounted() {
+  async mounted() {
     // Load recent emojis (optional)
     try {
       const saved = JSON.parse(localStorage.getItem('recentEmojis') || '[]')
@@ -558,12 +638,20 @@ export default {
     this.$nextTick(() => {
       this.scrollToBottom()
       this.updateSafeGaps()
+      // Mark messages as read when chat loads
+      this.markMessagesAsRead()
     })
 
     // Resize/orientation listeners to keep layout safe gaps correct
     this._onResize = () => this.updateSafeGaps()
     window.addEventListener('resize', this._onResize, { passive: true })
     window.addEventListener('orientationchange', this._onResize, { passive: true })
+
+    // Presence: guarded by flag to avoid ongoing costs
+    if (this.presenceRealtimeEnabled) {
+      this.startPresence()
+      this.subscribeToPartnerPresence()
+    }
   },
   watch: {
     // Auto-scroll when new messages arrive
@@ -577,6 +665,10 @@ export default {
       if (newVal && newVal !== oldVal) {
         this.loadChat()
       }
+    },
+    partnerId() {
+      this.fetchPartnerPresenceOnce()
+      if (this.presenceRealtimeEnabled) this.subscribeToPartnerPresence()
     },
     showEmojiPicker() {
       this.$nextTick(() => {
@@ -599,6 +691,9 @@ export default {
         window.removeEventListener('orientationchange', this._onResize)
       }
     } catch {}
+    // Presence cleanup
+    try { this.stopPresence() } catch {}
+    try { if (this.presenceUnsub) { this.presenceUnsub(); this.presenceUnsub = null } } catch {}
   },
   methods: {
     /* =========================
@@ -708,6 +803,8 @@ export default {
           await setDoc(chatRef, chatData)
           this.chatDocId = chatRef.id
           this.messages = []
+          // Presence (one-shot) on initial load
+          this.fetchPartnerPresenceOnce()
         } else {
           this.chatDocId = snapshot.docs[0].id
           const data = snapshot.docs[0].data()
@@ -719,6 +816,8 @@ export default {
           })
           // auto-scroll
           this.$nextTick(this.scrollToBottom)
+          // Presence (one-shot) after loading messages
+          this.fetchPartnerPresenceOnce()
         }
 
         // Subscribe to real-time updates
@@ -727,6 +826,9 @@ export default {
             const data = snap.data()
             this.messages = (data.messages || []).sort((a, b) => this.asDate(a.timestamp) - this.asDate(b.timestamp))
             this.$nextTick(() => this.scrollToBottom())
+            
+            // Mark messages as read when chat is viewed
+            this.markMessagesAsRead()
           }
         }, (error) => {
           console.error('Chat subscription error:', error)
@@ -761,6 +863,7 @@ export default {
               if (id === String(this.editing.messageId)) {
                 // Enforce: only author can edit and not if deleted
                 if (String(msg.authorId || '') !== userId || msg.deleted) {
+                  console.warn('Edit attempt blocked: User', userId, 'tried to edit message by', msg.authorId)
                   return msg
                 }
                 changed = true
@@ -824,6 +927,9 @@ export default {
         this.replyTo = null
         this.scrollToBottom()
         this.$nextTick(this.updateSafeGaps)
+
+        // One-shot presence refresh for partner (cost-efficient)
+        this.fetchPartnerPresenceOnce()
       } catch (error) {
         console.error('Error sending message:', error)
         this.showErrorDialog && this.showErrorDialog('Failed to send message. Please try again.', 'Error', 'OK')
@@ -852,6 +958,8 @@ export default {
             if (String(msg.authorId || '') === userId && !msg.deleted) {
               changed = true
               return { ...msg, deleted: true, deletedAt: new Date() }
+            } else if (String(msg.authorId || '') !== userId) {
+              console.warn('Delete attempt blocked: User', userId, 'tried to delete message by', msg.authorId)
             }
           }
           return msg
@@ -950,6 +1058,76 @@ export default {
       const index = Math.abs(hash) % colors.length
       return colors[index]
     },
+    getMessageStatus(message) {
+      // Only show status for outgoing messages
+      if (message.direction !== 'outgoing') return null
+      
+      // Find the original message data from the messages array
+      const originalMessage = this.messages.find(m => {
+        if (m.id === message.id) return true
+        if (m.timestamp && message.createdAtMs) {
+          const messageTime = this.asDate(m.timestamp).getTime()
+          return Math.abs(messageTime - message.createdAtMs) < 1000 // Within 1 second
+        }
+        return false
+      })
+      
+      if (!originalMessage || !originalMessage.readBy) return 'sent'
+      
+      // Get the other user ID (the recipient)
+      const otherUserId = this.getOtherUserId()
+      if (!otherUserId) return 'sent'
+      
+      // Check if the other user has read the message
+      const isRead = originalMessage.readBy.includes(otherUserId)
+      if (isRead) return 'read'
+      
+      // For now, assume delivered if not read (in a real app, you'd track delivery separately)
+      return 'delivered'
+    },
+    getOtherUserId() {
+      // Get the other user's ID in this chat
+      if (this.selectedAgencyId && this.selectedAgencyId !== this.currentUserId) {
+        return this.selectedAgencyId
+      }
+      
+      // For agency chats, find any user who is not the current user
+      const otherUser = this.messages.find(m => m.authorId !== this.currentUserId)
+      return otherUser ? otherUser.authorId : null
+    },
+    async markMessagesAsRead() {
+      if (!this.chatDocId || !this.currentUserId) return
+      
+      try {
+        const chatRef = doc(db, 'chats', this.chatDocId)
+        const chatSnap = await getDoc(chatRef)
+        
+        if (!chatSnap.exists()) return
+        
+        const messages = chatSnap.data().messages || []
+        let hasChanges = false
+        
+        // Mark all incoming messages as read by current user
+        const updatedMessages = messages.map(msg => {
+          if (msg.authorId !== this.currentUserId && msg.readBy && !msg.readBy.includes(this.currentUserId)) {
+            hasChanges = true
+            return {
+              ...msg,
+              readBy: [...msg.readBy, this.currentUserId]
+            }
+          }
+          return msg
+        })
+        
+        if (hasChanges) {
+          await updateDoc(chatRef, {
+            messages: updatedMessages
+          })
+        }
+      } catch (error) {
+        console.error('Error marking messages as read:', error)
+      }
+    },
 
     /* =========================
        UI & Input Helpers
@@ -976,7 +1154,7 @@ export default {
       }, 50)
     },
     onMessageClick(m, ev) {
-      if (this.selectionMode) {
+      if (this.selectionMode && this.canEdit(m)) {
         this.toggleSelect(m)
         return
       }
@@ -1228,6 +1406,84 @@ export default {
     scrollToBottom() {
       const el = this.$refs.chat
       if (el) el.scrollTop = el.scrollHeight
+      
+      // Mark messages as read when user scrolls to bottom
+      this.markMessagesAsRead()
+    },
+
+    /* =========================
+       Presence (online/offline)
+       ========================= */
+    startPresence() {
+      if (!this.presenceRealtimeEnabled) return
+      try {
+        const uid = String(this.currentUserId || '')
+        if (!uid) return
+        const appStore = useAppStore()
+        const user = appStore.currentUser || {}
+        const presenceRef = doc(db, 'presence', uid)
+        setDoc(presenceRef, {
+          state: 'online',
+          lastActive: serverTimestamp(),
+          userType: user.userType || null
+        }, { merge: true }).catch(()=>{})
+
+        // Optional heartbeat disabled to reduce costs
+
+        this._onVisibility = () => {
+          updateDoc(presenceRef, {
+            state: document.visibilityState === 'visible' ? 'online' : 'away',
+            lastActive: serverTimestamp()
+          }).catch(()=>{})
+        }
+        document.addEventListener('visibilitychange', this._onVisibility)
+      } catch {}
+    },
+    stopPresence() {
+      if (!this.presenceRealtimeEnabled) return
+      try {
+        const uid = String(this.currentUserId || '')
+        if (this._onVisibility) {
+          document.removeEventListener('visibilitychange', this._onVisibility)
+          this._onVisibility = null
+        }
+        // No heartbeat used
+        if (uid) {
+          const presenceRef = doc(db, 'presence', uid)
+          updateDoc(presenceRef, { state: 'offline', lastActive: serverTimestamp() }).catch(()=>{})
+        }
+      } catch {}
+    },
+    subscribeToPartnerPresence() {
+      if (!this.presenceRealtimeEnabled) return
+      try {
+        if (this.presenceUnsub) { this.presenceUnsub(); this.presenceUnsub = null }
+        const pid = this.partnerId
+        if (!pid) return
+        this.presenceUnsub = onSnapshot(doc(db, 'presence', pid), (snap) => {
+          const data = snap.data() || null
+          if (this.$set) this.$set(this.presence, pid, data)
+          else this.presence = { ...this.presence, [pid]: data }
+        })
+      } catch {}
+    },
+    async fetchPartnerPresenceOnce() {
+      try {
+        const pid = this.partnerId
+        if (!pid) return
+        const snap = await getDoc(doc(db, 'presence', pid))
+        const data = snap.exists() ? snap.data() : null
+        if (this.$set) this.$set(this.presence, pid, data)
+        else this.presence = { ...this.presence, [pid]: data }
+      } catch {}
+    },
+    isPresenceOnline(p) {
+      try {
+        if (!p) return false
+        if (p.state === 'online') return true
+        const d = this.asDate(p.lastActive)
+        return (Date.now() - d.getTime()) < 90000
+      } catch { return false }
     },
 
     /* =========================
@@ -1490,7 +1746,7 @@ export default {
   inset: 0;
   background-image: url('@/assets/chat.png');
   /* Fewer tiles with spacing between them */
-  background-size: 240px auto;
+  background-size: 200px auto;
   background-position: top left;
   background-repeat: repeat;
   opacity: 0.1;
@@ -1519,6 +1775,8 @@ export default {
 .name { font-weight: 700; font-size: 16px; }
 .status { font-size: 12px; opacity: 0.95; display: flex; align-items: center; gap: 6px; }
 .status .dot { width: 8px; height: 8px; background: #6FB02B; border-radius: 50%; display: inline-block; }
+.status .dot.offline { background: #b91c1c; }
+.status .dot.online { background: #6FB02B; }
 .header-actions { display: flex; margin-left: auto; }
 .header-curve {
 
@@ -1651,6 +1909,28 @@ export default {
 .text-bubble.incoming .bubble-meta .time { color: #64748b; }
 .text-bubble.incoming .edited-inline { color: #64748b; }
 .text-bubble.outgoing .bubble-meta .time { color: rgba(255,255,255,0.9); }
+
+/* Message status ticks */
+.message-status { 
+  display: inline-flex; 
+  align-items: center; 
+  margin-left: 4px; 
+}
+.double-ticks { 
+  display: inline-flex; 
+  align-items: center; 
+  gap: -2px; 
+  position: relative; 
+}
+.double-ticks .v-icon:last-child { 
+  margin-left: -6px; 
+}
+.double-ticks.delivered .v-icon { 
+  color: rgba(255,255,255,0.6) !important; 
+}
+.double-ticks.read .v-icon { 
+  color: #4fc3f7 !important; 
+}
 
 /* Reaction under bubble */
 .reaction-under { position: absolute; bottom: -22px; font-size: 12px; background: #ffffff; color: #0f172a; border: 1px solid #e5e7eb; border-radius: 999px; padding: 2px 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }

@@ -51,11 +51,6 @@
               <v-window v-model="activeTab">
                 <v-window-item v-if="showDetailsTab" value="details">
                   <v-card-text>
-                    <div v-if="isLockedDetails" class="d-flex justify-end mb-2">
-                      <v-btn size="small" color="black" variant="outlined" @click="gotoDocumentsLock">
-                        Add Documents
-                      </v-btn>
-                    </div>
                     <v-row>
                       <!-- Tenant Reference -->
                       <v-col cols="12" md="6">
@@ -232,7 +227,7 @@
                 <!-- Documents Tab -->
                 <v-window-item v-if="showDocumentsTab" value="documents">
                   <v-card-text>
-                    <h3 class="documents-title">Upload Property Documents</h3>
+                    <h3 class="documents-title my-10">Upload Property Documents</h3>
                     <!-- Shared filters: search and month placed under header -->
                     <div class="doc-filters">
                       <v-text-field
@@ -281,7 +276,7 @@
                             persistent-hint
                           />
                           <v-btn
-                            color="primary"
+                            color="black"
                             variant="elevated"
                             class="upload-doc-btn"
                             :disabled="!newQuotes || newQuotes.length === 0 || uploadingQuotes"
@@ -343,7 +338,7 @@
                             persistent-hint
                           />
                           <v-btn
-                            color="warning"
+                            color="black"
                             variant="elevated"
                             class="upload-doc-btn"
                             :disabled="!newInspections || newInspections.length === 0 || uploadingInspections"
@@ -405,7 +400,7 @@
                             persistent-hint
                           />
                           <v-btn
-                            color="success"
+                            color="black"
                             variant="elevated"
                             class="upload-doc-btn"
                             :disabled="!newInvoices || newInvoices.length === 0 || uploadingInvoices"
@@ -1439,19 +1434,13 @@ export default {
   border-radius: 8px;
 }
 
-.custom-input :deep(.v-field__input) {
-  background-color: #f8f9fa !important; /* match view page */
-  color: #000000 !important;
-}
+
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
 
 /* Tabs styling */
-.property-tabs {
-  background-color: #f8f9fa;
-}
 
 .property-tabs :deep(.tab-label) {
   font-weight: 500;
@@ -1515,17 +1504,9 @@ export default {
 .document-category {
   margin-bottom: 32px;
   padding: 20px;
-  background-color: #f8f9fa;
+
   border-radius: 8px;
-  border-left: 4px solid #007bff;
-}
-
-.document-category:nth-child(3) {
-  border-left-color: #ffc107;
-}
-
-.document-category:nth-child(4) {
-  border-left-color: #28a745;
+  border-left: 4px solid #e5e7eb;
 }
 
 .upload-row {
@@ -1543,9 +1524,12 @@ export default {
 .upload-doc-btn {
   margin-top: 4px;
   min-width: 120px;
-  height: 56px;
+  height: 44px;
   text-transform: none;
-  font-weight: 600;
+  font-weight: 500;
+  background-color: black !important;
+  color: white !important;
+  border-radius: 8px;
 }
 
 .category-title {
@@ -1570,12 +1554,10 @@ export default {
 
 /* Colored left tab per document category (match icons) */
 .document-category {
-  border-left: 4px solid #e5e7eb;
+
   padding-left: 12px;
 }
-.document-category.category-quotes { border-left-color: var(--v-theme-primary); }
-.document-category.category-inspections { border-left-color: var(--v-theme-warning); }
-.document-category.category-invoices { border-left-color: var(--v-theme-success); }
+/* keep neutral left border for all categories */
 
 .document-list {
   display: flex;
@@ -1706,33 +1688,25 @@ export default {
 .doc-filters {
   display: flex;
   gap: 16px;
+  margin: 16px 0 24px 0;
+  padding: 12px 0;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 16px;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  border: 1px solid #e9ecef;
+  justify-content: center;
 }
 
-.doc-search {
-  flex: 2;
-  min-width: 250px;
-}
-
+.doc-search,
 .doc-month-input {
-  flex: 1;
-  min-width: 200px;
+  width: 220px;
+  max-width: 220px;
 }
+.doc-month-input :deep(input) { min-width: 120px; }
 
 /* Make the inputs look cleaner */
 .doc-filters .custom-input .v-field {
-  background-color: white !important;
   border-radius: 8px;
 }
 
-.doc-filters .custom-input :deep(.v-field__input) {
-  background-color: white !important;
-}
+
 
 .doc-filters .custom-input :deep(.v-field__outline) {
   border-color: #dee2e6 !important;
@@ -1759,7 +1733,6 @@ export default {
   .doc-search,
   .doc-month-input {
     width: 100%;
-    min-width: unset;
   }
 }
 

@@ -238,7 +238,7 @@ export default {
 /* Left Panel - Form Side */
 .left-panel {
   flex: 1;
-  background: linear-gradient(135deg, #f6f7fa 0%, #ffffff 100%);
+
   display: flex;
   justify-content: center;
   align-items: center;
