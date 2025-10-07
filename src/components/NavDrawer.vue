@@ -56,7 +56,7 @@
         <v-list-item
           v-if="isAgencyUser || isAgencyAdmin"
           prepend-icon="mdi-home-account"
-          title="ONBOARD UNITS"
+          title="ONBOARDED UNITS"
           value="onboard-units"
           @click="navigateTo('onboard-units')"
         />
@@ -413,6 +413,11 @@ export default {
 .drawer-list :deep(.v-list-item-title) { font-size: 0.9rem !important; }
 .drawer-list :deep(.v-list-item-subtitle) { font-size: 0.75rem !important; }
 .drawer-list :deep(.v-icon) { font-size: 20px !important; }
+
+/* Move text closer to icons by reducing the gap */
+.drawer-list :deep(.v-list-item__prepend) {
+  margin-inline-end: -16px !important;
+}
 
 /* Hover effect */
 .drawer-list :deep(.v-list-item:hover) {

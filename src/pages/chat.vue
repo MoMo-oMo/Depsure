@@ -393,7 +393,10 @@ export default {
       unsubscribe: null,
 
       // Header / contact fallback (if no logo)
-      fallbackAvatar: '',
+      fallbackAvatar: 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg',
+      
+      // Super Admin profile for support chat
+      superAdminProfile: null,
 
       // Selection mode
       selectionMode: false,
@@ -462,7 +465,7 @@ export default {
       // Show the chat partner's avatar
       if (this.isAgencyUser) {
         // Agency users are chatting with Support (Super Admin side).
-        // Use the latest message from the other author as the avatar source.
+        // Try to get Super Admin avatar from messages first
         try {
           const arr = Array.isArray(this.messages) ? this.messages : []
           for (let i = arr.length - 1; i >= 0; i--) {
@@ -472,11 +475,18 @@ export default {
             }
           }
         } catch {}
-        return null
+        
+        // If no message avatar found, try to get Super Admin profile from stored data
+        if (this.superAdminProfile) {
+          return this.superAdminProfile.profileImageUrl || this.superAdminProfile.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+        }
+        
+        // Fallback to default support avatar
+        return 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
       }
       // Super Admin side: show the agency's profile/logo
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
-      return agency?.profileImageUrl || agency?.logoUrl || null
+      return agency?.profileImageUrl || agency?.profileImage || agency?.logoUrl || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
     },
     // Identify likely partner id for presence
     partnerId() {
@@ -614,6 +624,7 @@ export default {
 
     document.title = 'Chat - Depsure'
     await this.fetchAgencies()
+    await this.fetchSuperAdminProfile()
     
     // Auto-select for agency users
     if (this.isAgencyUser) {
@@ -760,6 +771,23 @@ export default {
         this.agenciesLoading = false
       }
     },
+    async fetchSuperAdminProfile() {
+      if (!this.isAgencyUser) return
+      
+      try {
+        // Query for Super Admin users
+        const superAdminQuery = query(collection(db, 'users'), where('userType', '==', 'Super Admin'))
+        const snapshot = await getDocs(superAdminQuery)
+        
+        if (!snapshot.empty) {
+          // Get the first Super Admin found
+          const superAdminDoc = snapshot.docs[0]
+          this.superAdminProfile = { id: superAdminDoc.id, ...superAdminDoc.data() }
+        }
+      } catch (error) {
+        console.error('Error fetching Super Admin profile:', error)
+      }
+    },
     applyAgencySelection() {
       if (this.selectedAgencyId) {
         this.openAgencyPicker = false
@@ -897,9 +925,16 @@ export default {
         if (isAgency) {
           authorName = user?.agencyName || 'Agency'
         } else {
-          authorName = user?.firstName && user?.lastName 
-            ? `${user.firstName} ${user.lastName}`
-            : user?.firstName || user?.lastName || user?.email || 'Admin'
+          // For Super Admin and Admin users, use their name or email
+          if (user?.userType === 'Super Admin') {
+            authorName = user?.firstName && user?.lastName 
+              ? `${user.firstName} ${user.lastName}`
+              : user?.firstName || user?.lastName || user?.email || 'Super Admin'
+          } else {
+            authorName = user?.firstName && user?.lastName 
+              ? `${user.firstName} ${user.lastName}`
+              : user?.firstName || user?.lastName || user?.email || 'Admin'
+          }
         }
 
         const message = {
