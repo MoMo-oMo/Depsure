@@ -74,47 +74,7 @@
                     />
                   </v-col>
 
-                  <!-- Move In Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="vacancy.moveInDate"
-                      label="Move In Date (Optional)"
-                      variant="outlined"
-                      type="date"
-                      class="custom-input"
-                      :rules="[]"
-                      @input="validateForm"
-                      hint="Set when new tenant is secured"
-                      persistent-hint
-                    />
-                  </v-col>
-
-                  <!-- Property Manager -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="vacancy.propertyManager"
-                      label="Property Manager"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="propertyManagerRules"
-                      required
-                      @input="validateForm"
-                    />
-                  </v-col>
-
-                  <!-- Contact Number -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="vacancy.contactNumber"
-                      label="Contact Number"
-                      variant="outlined"
-                      type="tel"
-                      class="custom-input"
-                      :rules="contactNumberRules"
-                      required
-                      @input="validateForm"
-                    />
-                  </v-col>
+                  
 
                 </v-row>
                   </v-card-text>
@@ -269,14 +229,7 @@ export default {
       dateVacatedRules: [
         v => !!v || 'Date Vacated is required'
       ],
-      propertyManagerRules: [
-        v => !!v || 'Property Manager is required',
-        v => v.length >= 2 || 'Property Manager must be at least 2 characters'
-      ],
-      contactNumberRules: [
-        v => !!v || 'Contact Number is required',
-        v => /^\d{7,15}$/.test(v) || 'Please enter a valid phone number'
-      ]
+      
     }
   },
   mounted() {
@@ -441,10 +394,7 @@ export default {
           const updateData = {
             unitName: this.vacancy.unitName,
             dateVacated: this.vacancy.dateVacated,
-            moveInDate: this.vacancy.moveInDate || null,
-            propertyManager: this.vacancy.propertyManager,
-            contactNumber: this.vacancy.contactNumber,
-            notes: this.vacancy.notes || "",
+                        notes: this.vacancy.notes || "",
             updatedAt: new Date()
           };
           
@@ -759,3 +709,4 @@ export default {
   color: #5e35b1;
 }
 </style>
+

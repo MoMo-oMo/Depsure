@@ -5,6 +5,7 @@
     <router-view />
     <GlobalNotification />
     <GlobalDialogs />
+    <PushPermissionPrompt v-model:visible="pushPromptVisible" @accepted="onPushAccepted" />
   </v-app>
 </template>
 
@@ -13,9 +14,11 @@ import NavDrawer from '@/components/NavDrawer.vue'
 import AppBar from '@/components/AppBar.vue'
 import GlobalNotification from '@/components/GlobalNotification.vue'
 import GlobalDialogs from '@/components/GlobalDialogs.vue'
-import { computed, onMounted, watch } from 'vue'
+import PushPermissionPrompt from '@/components/PushPermissionPrompt.vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { initMessaging } from '@/messaging'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,8 +28,40 @@ const appStore = useAppStore()
 const showDrawer = computed(() => route.path !== '/')
 
 // Initialize authentication state
-onMounted(() => {
+const _pushPromptVisible = ref(false)
+const pushPromptVisible = computed({
+  get() { return _pushPromptVisible.value },
+  set(v) { _pushPromptVisible.value = v }
+})
+
+function shouldShowPushPrompt() {
+  try {
+    if (typeof window === 'undefined') return false
+    if (!('Notification' in window)) return false
+    if (localStorage.getItem('fcmRegistered') === '1') return false
+    if (Notification.permission === 'granted') return false
+    if (sessionStorage.getItem('pushPromptDismissed') === '1') return false
+    return true
+  } catch { return false }
+}
+
+function onPushAccepted() {
+  // If accepted, init messaging to ensure token saved
+  try { initMessaging(appStore.userId) } catch {}
+}
+onMounted(async () => {
   appStore.initializeAuth()
+  try {
+    if (appStore.isLoggedIn && 'Notification' in window) {
+      if (Notification.permission === 'granted' || localStorage.getItem('fcmRegistered') === '1') {
+        await initMessaging(appStore.userId)
+      } else if (shouldShowPushPrompt()) {
+        _pushPromptVisible.value = true
+      }
+    }
+  } catch (e) {
+    console.warn('Messaging init skipped', e)
+  }
 })
 
 // Protected routes list
@@ -138,6 +173,19 @@ watch(() => route.path, (newPath) => {
     return
   }
 }, { immediate: true })
+
+// Ensure messaging is initialized when login state flips to true after mount
+watch(() => appStore.isLoggedIn, async (loggedIn) => {
+  if (loggedIn && typeof window !== 'undefined' && 'Notification' in window) {
+    try {
+      if (Notification.permission === 'granted' || localStorage.getItem('fcmRegistered') === '1') {
+        await initMessaging(appStore.userId)
+      } else if (shouldShowPushPrompt()) {
+        _pushPromptVisible.value = true
+      }
+    } catch (e) { console.warn('Messaging init error', e) }
+  }
+})
 </script>
 
 <style>

@@ -41,112 +41,40 @@
 
           <!-- Maintenance Info -->
           <div v-else class="form-card" elevation="0">
-                <v-card-text>
+            <v-card-text>
               <v-row>
-                <!-- Agency -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.agencyName || 'Not specified'"
-                    label="Agency"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Unit Name -->
+                <!-- Property Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
                     :model-value="entry.unitName"
-                    label="Unit Name"
+                    label="Property Name"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
                 </v-col>
 
-                <!-- Notice Given -->
+                <!-- Unit Number -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.noticeGiven"
-                    label="Notice Given"
+                    :model-value="entry.unitNumber || 'Not specified'"
+                    label="Unit Number"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
                 </v-col>
 
-                <!-- Vacate Date -->
+                <!-- Contact Person for Keys -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.vacateDate"
-                    label="Vacate Date"
+                    :model-value="entry.contactPerson || 'Not specified'"
+                    label="Contact Person for Keys"
                     variant="outlined"
                     readonly
                     class="custom-input"
                   />
                 </v-col>
-
-                <!-- Contact Number -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.contactNumber"
-                    label="Contact Number"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Address -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.address"
-                    label="Address"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Status -->
-                <v-col cols="12" md="6">
-                  <template v-if="userType === 'Admin'">
-                    <v-select
-                      v-model="entry.status"
-                      :items="statusOptions"
-                      label="Maintenance Status"
-                      variant="outlined"
-                      class="custom-input"
-                    />
-                  </template>
-                  <template v-else>
-                    <v-text-field
-                      :model-value="entry.status"
-                      label="Maintenance Status"
-                      variant="outlined"
-                      readonly
-                      class="custom-input"
-                    />
-                  </template>
-                </v-col>
-
-                <!-- Priority -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.priority"
-                    label="Priority Level"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Estimated Cost hidden as non-essential in UI -->
-
-                
-
-                <!-- Additional Notes removed (redundant; use Notes tab) -->
 
                 <!-- Created Date -->
                 <v-col cols="12" md="6">
@@ -158,6 +86,38 @@
                     class="custom-input"
                   />
                 </v-col>
+
+                <!-- Contact Person Number -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="entry.contactPersonNumber || entry.contactNumber || 'Not specified'"
+                    label="Contact Person Number"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Uploaded Requests -->
+                <v-col cols="12">
+                  <div v-if="entry.quotes && entry.quotes.length" class="existing-quotes mt-2">
+                    <h5 class="existing-title">Uploaded Requests</h5>
+                    <div class="quote-list">
+                      <div v-for="(doc, idx) in entry.quotes" :key="'rq-'+idx" class="quote-item">
+                        <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                        <span class="quote-name">{{ doc.fileName }}</span>
+                        <v-btn size="small" color="primary" variant="outlined" class="view-btn"
+                          @click="openRequest(doc)">View</v-btn>
+                        <a v-if="doc.fileURL" :href="doc.fileURL" target="_blank" class="view-btn">Download</a>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="text-medium-emphasis">No requests uploaded.</div>
+                </v-col>
+
+                <!-- Estimated Cost hidden as non-essential in UI -->
+
+                <!-- Additional Notes removed (redundant; use Notes tab) -->
 
                 <!-- Last Updated hidden as non-essential in UI -->
               </v-row>
@@ -268,7 +228,7 @@
               <div v-else class="text-medium-emphasis">No notes yet.</div>
 
               <!-- Append note input (Admin and Agency) -->
-                    <div v-if="userType === 'Admin' || userType === 'Super Admin' || isAgencyUser" class="chat-input mt-4">
+                <div v-if="userType === 'Admin' || userType === 'Super Admin' || isAgencyUser" class="chat-input mt-4">
                       <v-textarea
                         v-model="newNote"
                         placeholder="Write a note..."
@@ -301,7 +261,7 @@
       </v-row>
     </v-container>
 
-    <!-- Quote Instructions Dialog -->
+    <!-- Request Document Dialog -->
     <div v-if="showQuoteDialog" class="quote-overlay" @click.self="showQuoteDialog = false">
       <div class="quote-dialog">
         <!-- colored card behind -->
@@ -314,10 +274,10 @@
             <v-icon >mdi-file-pdf-box</v-icon>
           </div>
 
-          <h2 class="quote-title">Quote Instructions</h2>
-          <p class="quote-subtitle">{{ entry.quoteFileName }}</p>
+          <h2 class="quote-title">Request Document</h2>
+          <p class="quote-subtitle">{{ currentQuoteName || entry.quoteFileName }}</p>
           
-          <div v-if="entry.quoteFileURL" class="pdf-container">
+          <div v-if="currentQuoteURL || entry.quoteFileURL" class="pdf-container">
             <div class="pdf-controls">
               <button class="zoom-btn" @click="zoomOut">-</button>
               <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
@@ -325,7 +285,7 @@
             </div>
             <div class="pdf-wrapper" :style="{ transform: `scale(${zoomLevel})` }">
               <iframe
-                :src="entry.quoteFileURL"
+                :src="currentQuoteURL || entry.quoteFileURL"
                 width="100%"
                 height="400"
                 frameborder="0"
@@ -343,17 +303,17 @@
               Close
             </button>
             <button 
-              v-if="entry.quoteFileURL"
+              v-if="currentQuoteURL || entry.quoteFileURL"
               class="quote-button primary" 
               @click="openInNewTab"
             >
               Open in New Tab
             </button>
             <a
-              v-if="entry.quoteFileURL"
+              v-if="currentQuoteURL || entry.quoteFileURL"
               class="quote-button primary"
-              :href="entry.quoteFileURL"
-              :download="entry.quoteFileName || 'instructions.pdf'"
+              :href="currentQuoteURL || entry.quoteFileURL"
+              :download="(currentQuoteName || entry.quoteFileName) || 'request.pdf'"
             >
               Download
             </a>
@@ -393,9 +353,7 @@ export default {
       return appStore.currentUser?.userType;
     },
     currentUserId() { const appStore = useAppStore(); return appStore.userId; },
-    statusOptions() {
-      return ['Active', 'Pending', 'Completed']
-    },
+    
     sortedNotes() {
       const notes = this.entry?.notesLog || []
       // Oldest at top, newest at bottom
@@ -419,7 +377,9 @@ export default {
       editingKey: null,
       editingText: '',
       savingEdit: false,
-      updatingStatus: false
+      updatingStatus: false,
+      currentQuoteURL: '',
+      currentQuoteName: ''
     };
   },
   async mounted() {
@@ -428,6 +388,13 @@ export default {
     this.loadEntry(entryId);
   },
   methods: {
+    openRequest(doc) {
+      try {
+        this.currentQuoteURL = doc?.fileURL || ''
+        this.currentQuoteName = doc?.fileName || ''
+        if (this.currentQuoteURL) this.showQuoteDialog = true
+      } catch {}
+    },
     goBack() {
       try {
         const appStore = useAppStore();
@@ -537,19 +504,16 @@ export default {
           const data = docSnap.data();
           this.entry = {
             id: docSnap.id,
-            agencyName: data.agencyName || 'Not specified',
             unitName: data.unitName || '',
-            noticeGiven: data.noticeGiven || 'No',
-            vacateDate: data.vacateDate || '',
-            contactNumber: data.contactNumber || '',
-            address: data.address || '',
-            status: data.status || 'Pending',
-            priority: data.priority || 'Medium',
+            unitNumber: data.unitNumber || '',
+            contactPerson: data.contactPerson || '',
+            contactPersonNumber: (data.contactPersonNumber || data.contactNumber || ''),
             estimatedCost: data.estimatedCost || 0,
             notes: data.notes || '',
             notesLog: data.notesLog || [],
             quoteFileName: data.quoteFileName || '',
             quoteFileURL: data.quoteFileURL || '',
+            quotes: data.quotes || [],
             createdAt: data.createdAt?.toDate() || data.createdAt,
             updatedAt: data.updatedAt?.toDate() || data.updatedAt
           };
@@ -610,9 +574,8 @@ export default {
     },
     
     openInNewTab() {
-      if (this.entry.quoteFileURL) {
-        window.open(this.entry.quoteFileURL, '_blank');
-      }
+      const url = this.currentQuoteURL || this.entry.quoteFileURL
+      if (url) window.open(url, '_blank')
     },
     async updateStatus() {
       if (this.userType !== 'Admin') return

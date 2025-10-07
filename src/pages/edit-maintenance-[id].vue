@@ -42,27 +42,11 @@
             <v-form ref="form" v-model="valid" lazy-validation>
                   <v-card-text>
                 <v-row>
-                  <!-- Agency Selection -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="entry.agencyId"
-                      label="Select Agency"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="agencies"
-                      item-title="agencyName"
-                      item-value="id"
-                      :rules="agencyRules"
-                      required
-                      :loading="agenciesLoading"
-                    />
-                  </v-col>
-
-                  <!-- Unit Name -->
+                  <!-- Property Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.unitName"
-                      label="Unit Name"
+                      label="Property Name"
                       variant="outlined"
                       class="custom-input"
                       :rules="unitNameRules"
@@ -70,92 +54,50 @@
                     />
                   </v-col>
 
-                  <!-- Notice Given (Yes/No) -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="entry.noticeGiven"
-                      label="Notice Given (Yes/No)"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="noticeGivenRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Vacate Date -->
+                  <!-- Unit Number -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="entry.vacateDate"
-                      label="Vacate Date"
-                      type="date"
+                      v-model="entry.unitNumber"
+                      label="Unit Number"
                       variant="outlined"
                       class="custom-input"
-                      :rules="vacateDateRules"
+                      :rules="unitNumberRules"
                       required
                     />
                   </v-col>
 
-                  <!-- Contact Number -->
+                  <!-- Contact Person for Keys -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="entry.contactNumber"
-                      label="Contact Number"
+                      v-model="entry.contactPerson"
+                      label="Contact Person for Keys"
                       variant="outlined"
                       class="custom-input"
-                      :rules="contactNumberRules"
+                      :rules="contactPersonRules"
                       required
                     />
                   </v-col>
-
-                  <!-- Address -->
+                  
+                  <!-- Contact Person Number -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="entry.address"
-                      label="Address"
+                      v-model="entry.contactPersonNumber"
+                      label="Contact Person Number"
                       variant="outlined"
                       class="custom-input"
-                      :rules="addressRules"
-                      required
+                      type="tel"
+                      autocomplete="tel"
+                      prepend-inner-icon="mdi-phone"
                     />
                   </v-col>
 
-                  <!-- Maintenance Status -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="entry.status"
-                      label="Maintenance Status"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Pending', 'In Progress', 'Completed', 'Cancelled']"
-                      :rules="statusRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Priority Level -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="entry.priority"
-                      label="Priority Level"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Low', 'Medium', 'High', 'Urgent']"
-                      :rules="priorityRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Estimated Cost hidden (non-essential in UI) -->
-
-                  <!-- Quote Instructions Upload Section -->
+                  <!-- Request Upload Section (PDF only) -->
                   <v-col cols="12">
-               
                     <div class="upload-row">
                       <v-file-input
                         :key="`quotes-${quoteInputKey}`"
                         v-model="newQuoteFiles"
-                        label="Upload Quote Instructions (PDF only)"
+                        label="Upload Request (PDF only)"
                         variant="outlined"
                         class="custom-input file-input-flex"
                         accept=".pdf"
@@ -179,9 +121,9 @@
                       </v-btn>
                     </div>
 
-                    <!-- Existing Quotes List -->
+                    <!-- Existing Uploaded Requests -->
                     <div v-if="entry.quotes && entry.quotes.length > 0" class="existing-quotes mt-4">
-                      <h5 class="existing-title">Uploaded Quotes:</h5>
+                      <h5 class="existing-title">Uploaded Requests:</h5>
                       <div class="quote-list">
                         <div v-for="(quote, index) in entry.quotes" :key="`quote-${index}`" class="quote-item">
                           <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
@@ -424,6 +366,9 @@ export default {
         id: null,
         agencyId: "",
         unitName: "",
+        unitNumber: "",
+        contactPerson: "",
+        contactPersonNumber: "",
         noticeGiven: "No",
         vacateDate: "",
         contactNumber: "",
@@ -455,6 +400,8 @@ export default {
       // Validation rules
       agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
+      unitNumberRules: [v => !!v || "Unit Number is required"],
+      contactPersonRules: [v => !!v || "Contact Person is required"],
       noticeGivenRules: [v => !!v || "Notice Given is required"],
       vacateDateRules: [v => !!v || "Vacate Date is required"],
       contactNumberRules: [v => !!v || "Contact Number is required"],
@@ -617,6 +564,9 @@ export default {
             id: docSnap.id,
             agencyId: data.agencyId || "",
             unitName: data.unitName || "",
+            unitNumber: data.unitNumber || "",
+            contactPerson: data.contactPerson || "",
+            contactPersonNumber: data.contactPersonNumber || "",
             noticeGiven: data.noticeGiven || "No",
             vacateDate: data.vacateDate || "",
             contactNumber: data.contactNumber || "",
@@ -672,6 +622,9 @@ export default {
             agencyId: this.entry.agencyId,
             agencyName: selectedAgency ? selectedAgency.agencyName : '',
             unitName: this.entry.unitName,
+            unitNumber: this.entry.unitNumber,
+            contactPerson: String(this.entry.contactPerson || '').trim(),
+            contactPersonNumber: String(this.entry.contactPersonNumber || '').replace(/\s+/g,' ').trim(),
             noticeGiven: this.entry.noticeGiven,
             vacateDate: this.entry.vacateDate,
             contactNumber: this.entry.contactNumber,

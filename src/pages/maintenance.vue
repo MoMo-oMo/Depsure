@@ -49,7 +49,7 @@
               <v-text-field
                 v-bind="props"
                 :model-value="monthFilterLabel"
-                label="Filter by month (creation/vacate date)"
+                label="Filter by month (created)"
                 append-inner-icon="mdi-calendar-month"
                 flat
                 density="comfortable"
@@ -173,11 +173,6 @@
             :loading="loading"
             loading-text="Loading maintenance entries..."
           >
-            <template v-slot:item.noticeGiven="{ item }">
-              <v-chip :color="item.noticeGiven === 'Yes' ? 'success' : 'error'" size="small">
-                {{ item.noticeGiven }}
-              </v-chip>
-            </template>
             <!-- Action buttons - Edit/Delete hidden for Super Admin -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -238,9 +233,9 @@ export default {
   data() {
     return {
       searchQuery: "",
-      monthFilter: this.getCurrentMonth(),
+      monthFilter: '',
       monthMenu: false,
-      tempMonth: this.getCurrentMonth(),
+      tempMonth: '',
       propertyTypeFilter: null,
       selectedAgency: null,
       filteredEntries: [],
@@ -252,13 +247,8 @@ export default {
       activeUnitsCount: 0,
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
-        // { title: "Agency", key: "agencyName", sortable: true },
-        { title: "NOTICE GIVEN", key: "noticeGiven", sortable: true, align: "center" },
-        { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
-        { title: "CONTACT NUMBER", key: "contactNumber", sortable: true },
-        // { title: "Address", key: "address", sortable: true },
-        { title: "STATUS", key: "status", sortable: true, align: "center" },
-        // { title: "Priority", key: "priority", sortable: true, align: "center" },
+        { title: "UNIT NUMBER", key: "unitNumber", sortable: true, align: "center" },
+        { title: "CONTACT PERSON", key: "contactPerson", sortable: true },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" }
       ]
     };
@@ -363,7 +353,10 @@ export default {
     },
     filterEntries() {
       this.filteredEntries = this.entries.filter(entry => {
-        const textMatch = (entry.unitName || '').toLowerCase().includes((this.searchQuery || '').toLowerCase());
+        const q = (this.searchQuery || '').toLowerCase()
+        const textMatch = ((entry.unitName || '').toLowerCase().includes(q)
+          || (entry.unitNumber || '').toLowerCase().includes(q)
+          || (entry.contactPerson || '').toLowerCase().includes(q));
         let agencyMatch = true;
         let monthMatch = true;
         let propertyTypeMatch = true;
@@ -378,8 +371,7 @@ export default {
         }
         
         if (this.monthFilter) {
-          // Handle empty vacateDate (from onboard units) by using createdAt instead
-          const rawDate = entry.vacateDate && entry.vacateDate !== '' ? entry.vacateDate : entry.createdAt;
+          const rawDate = entry.createdAt;
           const dateToFilter = rawDate && typeof rawDate.toDate === 'function' ? rawDate.toDate() : rawDate;
           if (dateToFilter) {
             const entryDate = new Date(dateToFilter);
@@ -443,12 +435,9 @@ export default {
         const maintenanceData = {
           agencyId: agencyId,
           unitName: 'New Maintenance Entry',
-          noticeGiven: 'No',
-          vacateDate: '',
-          contactNumber: '',
-          address: '',
-          status: 'Pending',
-          priority: 'Medium',
+          unitNumber: '',
+          contactPerson: '',
+          contactPersonNumber: '',
           createdAt: new Date(),
           updatedAt: new Date()
         };

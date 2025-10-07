@@ -104,11 +104,23 @@
           @click="navigateTo('vacancies')"
         />
         <v-list-item
+          v-if="isAgencyUser || isAgencyAdmin || hasSelectedAgency"
           prepend-icon="mdi-message-text"
           title="CHAT"
           value="chat"
           @click="navigateTo('chat')"
-        />
+        >
+          <template #append>
+            <v-avatar
+              v-if="combinedUnread > 0"
+              color="red"
+              size="20"
+              class="ml-2 unread-badge"
+            >
+              <span class="text-white" style="font-size:11px;font-weight:700;line-height:1;">{{ displayUnread }}</span>
+            </v-avatar>
+          </template>
+        </v-list-item>
   
         </v-list>
 
@@ -130,7 +142,7 @@
 </template>
 
 <script>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useDrawer } from '@/composables/useDrawer'
@@ -138,6 +150,9 @@ import { useNav } from '@/composables/useNav'
 import { useAppStore } from '@/stores/app'
 import { useNotification } from '@/composables/useNotification'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { initMessaging } from '@/messaging'
+import { db } from '@/firebaseConfig'
+import { collection, query, where, getDocs, doc, onSnapshot, orderBy, limit, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 
 export default {
   name: 'NavDrawer',
@@ -152,6 +167,11 @@ export default {
     const { logAuditEvent, auditActions } = useAuditTrail()
     
     const logoutLoading = ref(false)
+    let unsubMessages = null
+    let unsubUnread = null
+    let unsubUnreadFallback = null
+    let targetChatId = null
+    let presenceCleanup = null
     
     const selected = computed({
       get: () => [selectedKey.value],
@@ -190,6 +210,9 @@ export default {
       return userType.value === 'Super Admin' || 
              (userType.value === 'Admin' && appStore.currentUser?.adminScope === 'depsure')
     })
+
+    // Show certain items only when an agency context is selected
+    const hasSelectedAgency = computed(() => !!appStore.currentAgency?.id)
 
     const headerImage = ref('https://images.pexels.com/photos/1370704/pexels-photo-1370704.jpeg?auto=compress&cs=tinysrgb&w=800')
 
@@ -236,6 +259,210 @@ export default {
       router.push('/profile')
     }
 
+    // Initialize web push when permission is already granted
+    onMounted(async () => {
+      try {
+        if (appStore.isLoggedIn && 'Notification' in window) {
+          const granted = (typeof Notification !== 'undefined' && Notification.permission === 'granted') || localStorage.getItem('fcmRegistered') === '1'
+          if (granted) await initMessaging(appStore.userId)
+        }
+      } catch {}
+    })
+
+    // Lightweight fallback: subscribe to latest message for current context and raise a local notification
+    async function subscribeToMessageFallback() {
+      try {
+        // cleanup previous
+        if (unsubMessages) { try { unsubMessages() } catch {} unsubMessages = null }
+        targetChatId = null
+
+        const user = appStore.currentUser
+        if (!user) return
+
+        // Skip fallback if FCM is registered (avoid duplicate notifications)
+        try {
+          const hasFCM = (typeof window !== 'undefined' && window.__fcmRegistered) || localStorage.getItem('fcmRegistered') === '1'
+          if (hasFCM) return
+        } catch {}
+
+        // Determine target agency chat
+        let agencyId = null
+        if (user.userType === 'Agency') agencyId = user.uid
+        else if (user.userType === 'Admin' && user.adminScope === 'agency') agencyId = user.managedAgencyId || null
+        else agencyId = appStore.currentAgency?.id || null
+
+        if (!agencyId) return
+
+        // Find chat for agency
+        const snap = await getDocs(query(collection(db, 'chats'), where('agencyId', '==', agencyId)))
+        if (snap.empty) return
+        targetChatId = snap.docs[0].id
+
+        const q = query(collection(db, 'chats', targetChatId, 'messages'), orderBy('timestamp', 'desc'), limit(1))
+        let firstLoad = true
+        let lastNotifiedId = null
+        unsubMessages = onSnapshot(q, (s) => {
+          try {
+            if (s.empty) return
+            const d = s.docs[0]
+            const m = d.data() || {}
+            if (firstLoad) { firstLoad = false; return }
+            if (lastNotifiedId && String(m.id) === String(lastNotifiedId)) return
+            lastNotifiedId = String(m.id)
+            // Ignore own messages
+            if (m.authorId === appStore.userId) return
+            // Only notify if tab not focused
+            try {
+              if (typeof document !== 'undefined') {
+                const focused = typeof document.hasFocus === 'function' ? document.hasFocus() : (document.visibilityState === 'visible')
+                if (focused) return
+              }
+            } catch {}
+            // Cross-tab de-dupe via localStorage
+            try {
+              const last = localStorage.getItem('lastNotifiedMessageId')
+              if (String(m.id) === String(last)) return
+            } catch {}
+            const title = (appStore.currentAgencyName ? `Chat • ${appStore.currentAgencyName}` : 'New chat message')
+            const body = (m.text && m.text.length) ? `${m.authorName || 'Someone'}: ${String(m.text).slice(0,120)}` : `${m.authorName || 'Someone'} sent a message`
+            // Try native notification first
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              try {
+                const n = new Notification(title, { body, icon: '/favicon.ico', data: { click_action: '/chat' } })
+                n.onclick = () => { window.focus?.(); router.push('/chat') }
+              } catch {}
+            } else {
+              // Fallback to in-app notification
+              showSuccess(body)
+            }
+            try { if (m.id) localStorage.setItem('lastNotifiedMessageId', String(m.id)) } catch {}
+          } catch {}
+        })
+      } catch (e) {
+        console.warn('Message fallback subscribe failed', e)
+      }
+    }
+
+    // Unread counter subscription (single doc)
+    const unreadCount = ref(0)
+    const fallbackUnread = ref(0)
+    const serverCounterReady = ref(false)
+    const combinedUnread = computed(() => Math.max(unreadCount.value, fallbackUnread.value))
+    const displayUnread = computed(() => combinedUnread.value > 99 ? '99+' : String(combinedUnread.value))
+
+    async function subscribeToUnread() {
+      try {
+        if (unsubUnread) { try { unsubUnread() } catch {} unsubUnread = null }
+        unreadCount.value = 0
+        serverCounterReady.value = false
+        const user = appStore.currentUser
+        if (!user) return
+        // Determine agency chat same as fallback
+        let agencyId = null
+        if (user.userType === 'Agency') agencyId = user.uid
+        else if (user.userType === 'Admin' && user.adminScope === 'agency') agencyId = user.managedAgencyId || null
+        else agencyId = appStore.currentAgency?.id || null
+        if (!agencyId) return
+        const uid = appStore.userId
+        if (!uid) return
+        // Listen to unread counter(s) filtered by agency; expected 1 doc, but sum for safety
+        const cRef = collection(db, 'unread', uid, 'chats')
+        const q = query(cRef, where('agencyId', '==', agencyId))
+        unsubUnread = onSnapshot(q, (s) => {
+          let total = 0
+          s.forEach(d => { total += Number(d.data()?.count || 0) })
+          unreadCount.value = total
+          const hasCounters = !s.empty
+          serverCounterReady.value = hasCounters
+          // Toggle fallback depending on server counter availability
+          if (hasCounters) {
+            if (unsubUnreadFallback) { try { unsubUnreadFallback() } catch {} unsubUnreadFallback = null }
+            fallbackUnread.value = 0
+          } else {
+            if (!unsubUnreadFallback) subscribeToUnreadFallback()
+          }
+        })
+      } catch (e) { console.warn('Unread subscribe failed', e) }
+    }
+
+    // Fallback: compute unread by scanning recent messages if server-side counters are absent
+    async function subscribeToUnreadFallback() {
+      try {
+        if (unsubUnreadFallback) { try { unsubUnreadFallback() } catch {} unsubUnreadFallback = null }
+        fallbackUnread.value = 0
+        const user = appStore.currentUser
+        if (!user) return
+        // Determine agency chat same as above
+        let agencyId = null
+        if (user.userType === 'Agency') agencyId = user.uid
+        else if (user.userType === 'Admin' && user.adminScope === 'agency') agencyId = user.managedAgencyId || null
+        else agencyId = appStore.currentAgency?.id || null
+        if (!agencyId) return
+        const uid = appStore.userId
+        if (!uid) return
+
+        // Resolve chatId for this agency
+        const snap = await getDocs(query(collection(db, 'chats'), where('agencyId', '==', agencyId)))
+        if (snap.empty) return
+        const chatId = snap.docs[0].id
+
+        // Watch the most recent messages and compute unread locally
+        // Keep this light: only last 30 messages
+        const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('timestamp', 'desc'), limit(30))
+        unsubUnreadFallback = onSnapshot(q, (s) => {
+          try {
+            let count = 0
+            s.forEach(d => {
+              const m = d.data() || {}
+              if (m.deleted) return
+              if (m.authorId === uid) return
+              const rb = Array.isArray(m.readBy) ? m.readBy : []
+              if (!rb.includes(uid)) count++
+            })
+            // Do not override server count if it is already higher
+            fallbackUnread.value = count
+          } catch {}
+        })
+      } catch (e) { console.warn('Unread fallback subscribe failed', e) }
+    }
+
+    onMounted(() => {
+      subscribeToMessageFallback()
+      subscribeToUnread()
+      // Presence across the whole app (low-cost: write on mount/visibility/unload)
+      try {
+        const uid = appStore.userId
+        if (uid) {
+          const ref = doc(db, 'presence', uid)
+          const writeOnline = () => updateDoc(ref, { state: 'online', lastActive: serverTimestamp() }).catch(() => setDoc(ref, { state: 'online', lastActive: serverTimestamp(), userType: appStore.userType || null }, { merge: true }))
+          const writeAway = () => updateDoc(ref, { state: document.visibilityState === 'visible' ? 'online' : 'away', lastActive: serverTimestamp() }).catch(()=>{})
+          const writeOffline = () => updateDoc(ref, { state: 'offline', lastActive: serverTimestamp() }).catch(()=>{})
+          writeOnline()
+          const onVis = () => writeAway()
+          const onBeforeUnload = () => writeOffline()
+          document.addEventListener('visibilitychange', onVis)
+          window.addEventListener('beforeunload', onBeforeUnload)
+          presenceCleanup = () => { document.removeEventListener('visibilitychange', onVis); window.removeEventListener('beforeunload', onBeforeUnload); try { writeOffline() } catch {} }
+        }
+      } catch {}
+      try {
+        if (typeof window !== 'undefined') {
+          window.addEventListener('fcm-registered', () => {
+            if (unsubMessages) { try { unsubMessages() } catch {} unsubMessages = null }
+          })
+        }
+      } catch {}
+    })
+    onUnmounted(() => {
+      if (unsubMessages) { try { unsubMessages() } catch {} unsubMessages = null }
+      if (unsubUnread) { try { unsubUnread() } catch {} unsubUnread = null }
+      if (unsubUnreadFallback) { try { unsubUnreadFallback() } catch {} unsubUnreadFallback = null }
+      if (presenceCleanup) { try { presenceCleanup() } catch {} presenceCleanup = null }
+    })
+
+    // Resubscribe when context changes
+    watch(() => [appStore.userId, appStore.userType, appStore.currentAgency?.id], () => { subscribeToMessageFallback(); subscribeToUnread() })
+
     return {
       isDesktop,
       isOpen,
@@ -252,13 +479,23 @@ export default {
        canAccessAuditTrail,
        isAgencyUser,
        isAgencyAdmin,
-       canAccessAgencyPage
+      canAccessAgencyPage,
+      hasSelectedAgency,
+      unreadCount,
+      combinedUnread,
+      displayUnread
     }
   }
 }
 </script>
 
 <style scoped>
+.unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+}
 .drawer-content {
   display: flex;
   flex-direction: column;

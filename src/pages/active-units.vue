@@ -97,8 +97,8 @@
 
         
 
-        <!-- Add Unit Button - Only visible to Super Admin -->
-        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin">
+        <!-- Add Unit Button - Only when Super Admin AND an agency exists and is selected -->
+        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin && agencies.length > 0 && selectedAgency">
           <v-btn
             icon="mdi-plus"
             variant="outlined"
@@ -320,9 +320,9 @@ export default {
   data() {
     return {
       searchQuery: "",
-      monthFilter: this.getCurrentMonth(),
+      monthFilter: '',
       monthMenu: false,
-      tempMonth: this.getCurrentMonth(),
+      tempMonth: '',
       propertyTypeFilter: null,
       flaggedFilter: 'all',
       filteredProperties: [],

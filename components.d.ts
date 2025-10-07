@@ -18,6 +18,7 @@ declare module 'vue' {
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     NavDrawer: typeof import('./src/components/NavDrawer.vue')['default']
     NotificationDialog: typeof import('./src/components/NotificationDialog.vue')['default']
+    PushPermissionPrompt: typeof import('./src/components/PushPermissionPrompt.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SuccessDialog: typeof import('./src/components/SuccessDialog.vue')['default']

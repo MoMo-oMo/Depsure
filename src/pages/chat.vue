@@ -351,6 +351,7 @@ import { db } from '@/firebaseConfig'
 import {
   collection,
   query,
+  orderBy,
   where,
   getDocs,
   doc,
@@ -359,7 +360,8 @@ import {
   updateDoc,
   arrayUnion,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  deleteField
 } from 'firebase/firestore'
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useAppStore } from '@/stores/app'
@@ -823,7 +825,6 @@ export default {
           const chatData = {
             agencyId: this.selectedAgencyId,
             agencyName: selectedAgency?.agencyName || '',
-            messages: [],
             createdAt: new Date(),
             updatedAt: new Date()
           }
@@ -835,29 +836,29 @@ export default {
           this.fetchPartnerPresenceOnce()
         } else {
           this.chatDocId = snapshot.docs[0].id
-          const data = snapshot.docs[0].data()
-          // Sort ascending
-          this.messages = (data.messages || []).sort((a, b) => {
-            const aTime = this.asDate(a.timestamp)
-            const bTime = this.asDate(b.timestamp)
-            return aTime - bTime
-          })
-          // auto-scroll
-          this.$nextTick(this.scrollToBottom)
-          // Presence (one-shot) after loading messages
+          // One-time migration: drop legacy messages array if present to keep doc < 1MB
+          try {
+            const chatRef = doc(db, 'chats', this.chatDocId)
+            const data = snapshot.docs[0].data() || {}
+            if (Array.isArray(data.messages) && data.messages.length) {
+              await updateDoc(chatRef, { messages: deleteField() })
+            }
+          } catch (e) { /* ignore */ }
+          // Presence (one-shot)
           this.fetchPartnerPresenceOnce()
         }
 
-        // Subscribe to real-time updates
-        this.unsubscribe = onSnapshot(doc(db, 'chats', this.chatDocId), (snap) => {
-          if (snap.exists()) {
-            const data = snap.data()
-            this.messages = (data.messages || []).sort((a, b) => this.asDate(a.timestamp) - this.asDate(b.timestamp))
-            this.$nextTick(() => this.scrollToBottom())
-            
-            // Mark messages as read when chat is viewed
-            this.markMessagesAsRead()
-          }
+        // Subscribe to messages subcollection ordered by timestamp
+        const msgsCol = collection(db, 'chats', this.chatDocId, 'messages')
+        const msgsQuery = query(msgsCol, orderBy('timestamp', 'asc'))
+        this.unsubscribe = onSnapshot(msgsQuery, (snap) => {
+          const list = []
+          snap.forEach(d => {
+            list.push({ ...d.data(), docId: d.id })
+          })
+          this.messages = list
+          this.$nextTick(() => this.scrollToBottom())
+          this.markMessagesAsRead()
         }, (error) => {
           console.error('Chat subscription error:', error)
           this.showErrorDialog && this.showErrorDialog(`Chat subscription failed: ${error.message}`, 'Error', 'OK')
@@ -880,33 +881,17 @@ export default {
       try {
         // If editing a message, update it instead of sending a new one
         if (this.editing && this.editing.active && this.editing.messageId) {
-          const chatRef = doc(db, 'chats', this.chatDocId)
-          const snap = await getDoc(chatRef)
-          if (snap.exists()) {
-            const data = snap.data() || {}
-            let changed = false
-            const userId = String(this.currentUserId || '')
-            const updated = (data.messages || []).map(msg => {
-              const id = String(msg.id || '')
-              if (id === String(this.editing.messageId)) {
-                // Enforce: only author can edit and not if deleted
-                if (String(msg.authorId || '') !== userId || msg.deleted) {
-                  console.warn('Edit attempt blocked: User', userId, 'tried to edit message by', msg.authorId)
-                  return msg
-                }
-                changed = true
-                return { ...msg, text, edited: true, editedAt: new Date() }
-              }
-              return msg
-            })
-            if (!changed) {
+          const userId = String(this.currentUserId || '')
+          const msgDoc = doc(db, 'chats', this.chatDocId, 'messages', String(this.editing.messageId))
+          const msnap = await getDoc(msgDoc)
+          if (msnap.exists()) {
+            const data = msnap.data() || {}
+            if (String(data.authorId || '') !== userId || data.deleted) {
               this.showErrorDialog && this.showErrorDialog('You can only edit your own messages.', 'Not allowed', 'OK')
-              // fall through to clear editing state locally
             } else {
-              await updateDoc(chatRef, { messages: updated, updatedAt: new Date() })
+              await updateDoc(msgDoc, { text, edited: true, editedAt: new Date() })
+              await updateDoc(doc(db, 'chats', this.chatDocId), { updatedAt: new Date() })
             }
-            // Local reflect
-            this.messages = updated
           }
           // Clear editor state
           this.clearComposer()
@@ -943,6 +928,7 @@ export default {
           authorId: user.uid,
           authorName,
           authorType: user.userType,
+          adminScope: user?.adminScope || '',
           authorAvatarUrl: user?.profileImageUrl || user?.profileImage || '',
           timestamp: new Date(),
           readBy: [user.uid],
@@ -952,10 +938,8 @@ export default {
           ...(this.replyTo ? { replyTo: this.buildReplyRef(this.replyTo) } : {})
         }
 
-        await updateDoc(doc(db, 'chats', this.chatDocId), {
-          messages: arrayUnion(message),
-          updatedAt: new Date()
-        })
+        await setDoc(doc(db, 'chats', this.chatDocId, 'messages', String(message.id)), message)
+        try { await updateDoc(doc(db, 'chats', this.chatDocId), { updatedAt: new Date() }) } catch {}
 
         // clear composer + reply
         this.clearComposer()
@@ -979,30 +963,26 @@ export default {
       const toDelete = this.selectedMessages
       if (!toDelete.length || !this.chatDocId) return
       try {
-        const chatRef = doc(db, 'chats', this.chatDocId)
-        const snap = await getDoc(chatRef)
-        if (!snap.exists()) return
-        const data = snap.data() || {}
         const ids = new Set(toDelete.map(m => String(m.id)))
         const userId = String(this.currentUserId || '')
-        let changed = false
-        const updated = (data.messages || []).map(msg => {
-          const id = String(msg.id || '')
-          if (ids.has(id)) {
-            // Enforce: only author can delete their message and only if not already deleted
-            if (String(msg.authorId || '') === userId && !msg.deleted) {
-              changed = true
-              return { ...msg, deleted: true, deletedAt: new Date() }
-            } else if (String(msg.authorId || '') !== userId) {
-              console.warn('Delete attempt blocked: User', userId, 'tried to delete message by', msg.authorId)
+        const batchOps = []
+        for (const mid of ids) {
+          const msgDoc = doc(db, 'chats', this.chatDocId, 'messages', mid)
+          const msnap = await getDoc(msgDoc)
+          if (msnap.exists()) {
+            const data = msnap.data() || {}
+            if (String(data.authorId || '') === userId && !data.deleted) {
+              batchOps.push(updateDoc(msgDoc, { deleted: true, deletedAt: new Date() }))
+            } else if (String(data.authorId || '') !== userId) {
+              console.warn('Delete attempt blocked for message', mid)
             }
           }
-          return msg
-        })
-        if (!changed) {
+        }
+        if (!batchOps.length) {
           this.showErrorDialog && this.showErrorDialog('You can only delete your own messages.', 'Not allowed', 'OK')
         } else {
-          await updateDoc(chatRef, { messages: updated, updatedAt: new Date() })
+          await Promise.all(batchOps)
+          await updateDoc(doc(db, 'chats', this.chatDocId), { updatedAt: new Date() })
         }
         this.selectionMode = false
         this.selected = {}
@@ -1132,36 +1112,39 @@ export default {
     },
     async markMessagesAsRead() {
       if (!this.chatDocId || !this.currentUserId) return
-      
       try {
-        const chatRef = doc(db, 'chats', this.chatDocId)
-        const chatSnap = await getDoc(chatRef)
-        
-        if (!chatSnap.exists()) return
-        
-        const messages = chatSnap.data().messages || []
-        let hasChanges = false
-        
-        // Mark all incoming messages as read by current user
-        const updatedMessages = messages.map(msg => {
-          if (msg.authorId !== this.currentUserId && msg.readBy && !msg.readBy.includes(this.currentUserId)) {
-            hasChanges = true
-            return {
-              ...msg,
-              readBy: [...msg.readBy, this.currentUserId]
-            }
+        // Only mark read if the tab is focused/visible to the user
+        try {
+          if (typeof document !== 'undefined') {
+            const focused = typeof document.hasFocus === 'function' ? document.hasFocus() : (document.visibilityState === 'visible')
+            if (!focused) return
           }
-          return msg
-        })
-        
-        if (hasChanges) {
-          await updateDoc(chatRef, {
-            messages: updatedMessages
-          })
+        } catch {}
+
+        const ops = []
+        for (const m of (this.messages || [])) {
+          if (!m || m.deleted) continue
+          if (m.authorId === this.currentUserId) continue
+          const rb = Array.isArray(m.readBy) ? m.readBy : []
+          if (rb.includes(this.currentUserId)) continue
+          const msgDoc = doc(db, 'chats', this.chatDocId, 'messages', String(m.id))
+          ops.push(updateDoc(msgDoc, { readBy: arrayUnion(this.currentUserId) }))
+        }
+        if (ops.length) {
+          await Promise.allSettled(ops)
+          await this.clearUnreadCounter()
         }
       } catch (error) {
         console.error('Error marking messages as read:', error)
       }
+    },
+    async clearUnreadCounter() {
+      try {
+        const appStore = useAppStore()
+        const uid = appStore.currentUser?.uid
+        if (!uid || !this.chatDocId) return
+        await setDoc(doc(db, 'unread', uid, 'chats', this.chatDocId), { count: 0, updatedAt: serverTimestamp() }, { merge: true })
+      } catch {}
     },
 
     /* =========================
@@ -1268,44 +1251,20 @@ export default {
       } catch {}
     },
     async setMessageReaction(messageId, emoji) {
-      if (!this.chatDocId) return
+      if (!this.chatDocId || !messageId) return
       try {
-        const chatRef = doc(db, 'chats', this.chatDocId)
-        const snap = await getDoc(chatRef)
-        if (!snap.exists()) return
-        const data = snap.data() || {}
-        const updated = (data.messages || []).map(msg => {
-          const id = String(msg.id || '')
-          if (id === String(messageId)) return { ...msg, reaction: emoji, reactedAt: new Date() }
-          return msg
-        })
-        await updateDoc(chatRef, { messages: updated, updatedAt: new Date() })
-        this.messages = updated
-      } catch (e) {
-        console.error('Set reaction failed', e)
-      }
+        const msgDoc = doc(db, 'chats', this.chatDocId, 'messages', String(messageId))
+        await updateDoc(msgDoc, { reaction: emoji, reactedAt: new Date() })
+        try { await updateDoc(doc(db, 'chats', this.chatDocId), { updatedAt: new Date() }) } catch {}
+      } catch (e) { console.error('Set reaction failed', e) }
     },
     async clearReaction(m) {
       if (!m?.id || !this.chatDocId) return
       try {
-        const chatRef = doc(db, 'chats', this.chatDocId)
-        const snap = await getDoc(chatRef)
-        if (!snap.exists()) return
-        const data = snap.data() || {}
-        const updated = (data.messages || []).map(msg => {
-          const id = String(msg.id || '')
-          if (id === String(m.id)) {
-            const clone = { ...msg }
-            delete clone.reaction
-            return clone
-          }
-          return msg
-        })
-        await updateDoc(chatRef, { messages: updated, updatedAt: new Date() })
-        this.messages = updated
-      } catch (e) {
-        console.error('Clear reaction failed', e)
-      }
+        const msgDoc = doc(db, 'chats', this.chatDocId, 'messages', String(m.id))
+        await updateDoc(msgDoc, { reaction: deleteField() })
+        try { await updateDoc(doc(db, 'chats', this.chatDocId), { updatedAt: new Date() }) } catch {}
+      } catch (e) { console.error('Clear reaction failed', e) }
     },
 
     /* =========================
@@ -1691,10 +1650,8 @@ export default {
               ...(this.replyTo ? { replyTo: this.buildReplyRef(this.replyTo) } : {})
             }
 
-            await updateDoc(doc(db, 'chats', this.chatDocId), {
-              messages: arrayUnion(message),
-              updatedAt: new Date()
-            })
+            await setDoc(doc(db, 'chats', this.chatDocId, 'messages', String(message.id)), message)
+            await updateDoc(doc(db, 'chats', this.chatDocId), { updatedAt: new Date() })
           } catch (e) {
             console.error('Image upload failed', e)
             this.showErrorDialog && this.showErrorDialog('Failed to upload image. Please try again.', 'Upload error', 'OK')

@@ -242,9 +242,9 @@ export default {
   data() {
     return {
       searchQuery: "",
-      monthFilter: this.getCurrentMonth(),
+      monthFilter: '',
       monthMenu: false,
-      tempMonth: this.getCurrentMonth(),
+      tempMonth: '',
       propertyTypeFilter: null,
       selectedAgency: null,
       filteredEntries: [],
