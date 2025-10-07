@@ -108,7 +108,7 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
-                      <span>Reg No: {{ selectedAgencyDetails.regNo || '—' }}</span>
+                      <span>Reg No: {{ selectedAgencyDetails.regNo || 'â€”' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-account" class="mr-2 text-white" />
@@ -230,7 +230,7 @@ import { collection, getDocs, deleteDoc, doc, query, where, addDoc, getDoc } fro
 import { useAppStore } from '@/stores/app'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { usePropertyType } from '@/composables/usePropertyType'
-import heroBg from '@/assets/title.png'
+const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
 
 export default {
   name: "InspectionPage",

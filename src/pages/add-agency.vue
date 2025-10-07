@@ -343,8 +343,8 @@ export default {
     handleImageUpload(event) {
       const file = event.target.files[0];
       if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-          this.showErrorDialog('File size must be less than 5MB', 'File Too Large', 'OK');
+        if (file.size > 25 * 1024 * 1024) {
+          this.showErrorDialog('File size must be less than 25MB', 'File Too Large', 'OK');
           return;
         }
         if (!file.type.startsWith('image/')) {

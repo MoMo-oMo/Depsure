@@ -132,7 +132,7 @@
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
-                      <span>Reg No: {{ selectedAgencyDetails.regNo || '—' }}</span>
+                      <span>Reg No: {{ selectedAgencyDetails.regNo || 'â€”' }}</span>
                     </div>
                     <div class="detail-item-black">
                       <v-icon icon="mdi-account" class="mr-2 text-white" />
@@ -221,7 +221,7 @@ import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
-import heroBg from '@/assets/title.png'
+const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
 
 export default {
   name: "MaintenancePage",
@@ -699,7 +699,7 @@ export default {
 
 /* Clean agency name-only hero with image (no overlay) */
 .agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
-.agency-hero-bg { position: absolute; inset: 0; background: url('https://i.pinimg.com/736x/4a/e1/03/4ae1030bfab9ca4b172a312e87982f35.jpg') center/cover no-repeat; }
+.agency-hero-bg { position: absolute; inset: 0; background: url('https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg') center/cover no-repeat; }
 .agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 
 @media(max-width:768px){

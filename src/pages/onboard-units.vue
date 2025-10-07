@@ -97,7 +97,7 @@
           <v-col cols="12">
             <v-card class="hero-card" elevation="1">
               <div class="hero-bg" :style="heroBgStyle"></div>
-              <div class="hero-center">Onboard Units</div>
+              <div class="hero-center">Onboarded Units</div>
             </v-card>
           </v-col>
         </v-row>
@@ -152,15 +152,7 @@
                     title="Vacate / Vacancies"
                     @click="openVacancy(item)"
                   />
-                  <!-- Property Details (edit) -->
-                  <v-btn
-                    icon="mdi-clipboard-text"
-                    color="black"
-                    variant="text"
-                    size="small"
-                    title="Property Details"
-                    @click="editProperty(item)"
-                  />
+                  
                   <!-- Documents -->
                   <v-btn
                     icon="mdi-file-document"
@@ -202,7 +194,7 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import heroBg from '@/assets/title.png'
+const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
 import { collection, getDocs, query, where, doc, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
@@ -380,8 +372,8 @@ export default {
       this.$router.push({ path: `/edit-property-${item.id}`, query: { from: 'onboard', tab: 'details', lock: 'details' } })
     },
     viewDocuments(item) {
-      // Open Documents only (hide Details tab) so agencies can upload PDFs easily
-      this.$router.push({ path: `/edit-property-${item.id}`, query: { tab: 'documents', lock: 'documents', from: 'onboard' } })
+      // Open read-only Documents page for onboard flow
+      this.$router.push({ path: `/property-documents-${item.id}`, query: { from: 'onboard' } })
     },
     async viewInspections(item) {
       try {

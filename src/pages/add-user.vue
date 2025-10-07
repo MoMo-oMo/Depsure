@@ -444,12 +444,6 @@ export default {
      handleImageUpload(event) {
        const file = event.target.files[0];
        if (file) {
-         // Validate file size (5MB limit)
-         if (file.size > 5 * 1024 * 1024) {
-           this.showErrorDialog('File size must be less than 5MB', 'File Too Large', 'OK');
-           return;
-         }
-         
          // Validate file type
          if (!file.type.startsWith('image/')) {
            this.showErrorDialog('Please select a valid image file', 'Invalid File', 'OK');

@@ -463,7 +463,7 @@ export default {
     ]
 
     const imageRules = [
-      v => !v || v.size <= 5 * 1024 * 1024 || 'Image size should be less than 5 MB'
+      v => !v || v.size <= 25 * 1024 * 1024 || 'Image size should be less than 25 MB'
     ]
 
     // Methods
@@ -620,9 +620,9 @@ export default {
       imageError.value = ''
       
       if (file) {
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          showError('Image size must be less than 5MB')
+        // Validate file size (max 25MB)
+        if (file.size > 25 * 1024 * 1024) {
+          showError('Image size must be less than 25MB')
           selectedImage.value = null
           return
         }

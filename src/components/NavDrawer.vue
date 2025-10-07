@@ -184,7 +184,14 @@ export default {
     // Get user data from Pinia store
     const userName = computed(() => appStore.userName)
     const userType = computed(() => appStore.userType)
-    const userAvatar = computed(() => appStore.userAvatar)
+    const userAvatar = computed(() => {
+      const u = appStore.currentUser || {}
+      return (
+        u.profileImageUrl ||
+        u.profileImage ||
+        'https://tse2.mm.bing.net/th/id/OIP.r2k0JLQia3jR_yrRDCmPcQHaHa?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3'
+      )
+    })
     
     // Role-based access control
     const canAccessUserManagement = computed(() => {

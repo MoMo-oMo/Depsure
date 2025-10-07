@@ -56,21 +56,21 @@
 
                 <!-- Inspection Required -->
                 <v-col cols="12" md="6">
-                  <label class="mb-1 font-weight-bold">Inspection Required</label>
-                  <div>
-                    <v-chip :color="entry.inspectionRequired === 'Yes' ? 'success' : 'error'" size="small">
-                      {{ entry.inspectionRequired }}
-                    </v-chip>
-                  </div>
+                  <v-select
+                    v-model="entry.inspectionRequired"
+                    :items="['Yes','No']"
+                    label="Inspection Required"
+                    variant="outlined"
+                    class="custom-input"
+                  />
                 </v-col>
 
                 <!-- Contact Person -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.contactPerson"
+                    v-model="entry.contactPerson"
                     label="Contact Person"
                     variant="outlined"
-                    readonly
                     class="custom-input"
                   />
                 </v-col>
@@ -78,52 +78,52 @@
                 <!-- Contact Number -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.contactNumber"
+                    v-model="entry.contactNumber"
                     label="Contact Number"
                     variant="outlined"
-                    readonly
                     class="custom-input"
                   />
                 </v-col>
 
                 <!-- Appointment Made -->
                 <v-col cols="12" md="6">
-                  <label class="mb-1 font-weight-bold">Appointment Made</label>
-                  <div>
-                    <v-chip :color="entry.appointmentMade === 'Yes' ? 'success' : 'error'" size="small">
-                      {{ entry.appointmentMade }}
-                    </v-chip>
-                  </div>
+                  <v-select
+                    v-model="entry.appointmentMade"
+                    :items="['Yes','No']"
+                    label="Appointment Made"
+                    variant="outlined"
+                    class="custom-input"
+                  />
                 </v-col>
 
                 <!-- Inspection Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.inspectionDate"
+                    v-model="entry.inspectionDate"
                     label="Inspection Date"
+                    type="date"
                     variant="outlined"
-                    readonly
                     class="custom-input"
                   />
                 </v-col>
 
                 <!-- Quotes Needed -->
                 <v-col cols="12" md="6">
-                  <label class="mb-1 font-weight-bold">Quotes Needed</label>
-                  <div>
-                    <v-chip :color="entry.quotesNeeded === 'Yes' ? 'success' : 'error'" size="small">
-                      {{ entry.quotesNeeded }}
-                    </v-chip>
-                  </div>
+                  <v-select
+                    v-model="entry.quotesNeeded"
+                    :items="['Yes','No']"
+                    label="Quotes Needed"
+                    variant="outlined"
+                    class="custom-input"
+                  />
                 </v-col>
 
                 <!-- Status -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.status"
+                    v-model="entry.status"
                     label="Status"
                     variant="outlined"
-                    readonly
                     class="custom-input"
                   />
                 </v-col>
@@ -131,10 +131,9 @@
                 <!-- Priority -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.priority"
+                    v-model="entry.priority"
                     label="Priority"
                     variant="outlined"
-                    readonly
                     class="custom-input"
                   />
                 </v-col>
@@ -142,10 +141,9 @@
                 <!-- Agency Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.agencyName"
+                    v-model="entry.agencyName"
                     label="Agency"
                     variant="outlined"
-                    readonly
                     class="custom-input"
                   />
                 </v-col>
@@ -178,6 +176,16 @@
               <!-- Action Buttons -->
               <v-card-actions class="pa-4">
                 <v-spacer />
+                <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">Save Changes</v-btn>
+
+                <v-btn 
+                  color="primary" 
+                  variant="outlined" 
+                  @click="openPropertyDetails" 
+                  class="cancel-btn property-btn"
+                >
+                  Property Details
+                </v-btn>
                 <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
                   Back
                 </v-btn>
@@ -275,7 +283,7 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 
@@ -327,7 +335,41 @@ export default {
     this.loadEntry(entryId);
   },
   methods: {
-    goBack() {
+    async openPropertyDetails() {
+      try {
+        const name = this.entry?.unitName || ''
+        if (!name) return this.showErrorDialog?.('No unit name on this inspection.', 'Not found', 'OK')
+        const q = query(collection(db, 'units'), where('propertyName', '==', name))
+        const snap = await getDocs(q)
+        if (snap.empty) return this.showErrorDialog?.('Could not find a property matching this unit.', 'Not found', 'OK')
+        const unitId = snap.docs[0].id
+        this.$router.push(`/view-property-${unitId}`)
+      } catch (e) {
+        console.error('Open property details failed', e)
+        this.showErrorDialog?.('Failed to open property details.', 'Error', 'OK')
+      }
+    },
+        async saveDetails () {
+      try {
+        if (!this.entry?.id) return
+        const payload = {
+          inspectionRequired: this.entry.inspectionRequired || '',
+          contactPerson: this.entry.contactPerson || '',
+          contactNumber: this.entry.contactNumber || '',
+          appointmentMade: this.entry.appointmentMade || '',
+          inspectionDate: this.entry.inspectionDate || '',
+          quotesNeeded: this.entry.quotesNeeded || '',
+          status: this.entry.status || '',
+          priority: this.entry.priority || '',
+          agencyName: this.entry.agencyName || '',
+          updatedAt: new Date()
+        }
+        await updateDoc(doc(db, 'inspections', this.entry.id), payload)
+      } catch (e) {
+        console.error('Save details failed', e)
+        this.showErrorDialog && this.showErrorDialog('Failed to save changes. Please try again.', 'Error', 'OK')
+      }
+    },goBack() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
       const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
@@ -647,15 +689,24 @@ export default {
   height: 44px;
 }
 
-.edit-btn {
-  background-color: black !important;
-  color: white !important;
+/* Bigger Save Changes button */
+.save-btn {
+  width: 160px;
+  height: 48px;
+  font-weight: 700;
 }
 
-.edit-btn:hover {
+/* Slightly bigger Property Details button */
+.property-btn {
+  width: 160px;
+  height: 48px;
+  font-weight: 600;
+}
+
+
+.edit-btn:hover, .save-btn:hover {
   background-color: #333 !important;
 }
-
 .delete-btn:hover {
   background-color: #d32f2f !important;
   color: white !important;
@@ -680,6 +731,8 @@ export default {
     width: 100px;
     height: 40px;
   }
+  .save-btn { width: 140px; height: 44px; }
+  .property-btn { width: 140px; height: 44px; }
 }
 /* Tabs styling */
 .property-tabs {

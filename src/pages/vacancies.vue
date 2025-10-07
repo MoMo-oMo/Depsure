@@ -129,7 +129,7 @@ import { db } from '@/firebaseConfig'
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
-import heroBg from '@/assets/title.png'
+const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
 
 export default {
   name: 'ViewVacancies',

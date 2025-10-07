@@ -48,6 +48,7 @@ declare module 'vue-router/auto-routes' {
     '/notices': RouteRecordInfo<'/notices', '/notices', Record<never, never>, Record<never, never>>,
     '/onboard-units': RouteRecordInfo<'/onboard-units', '/onboard-units', Record<never, never>, Record<never, never>>,
     '/profile': RouteRecordInfo<'/profile', '/profile', Record<never, never>, Record<never, never>>,
+    '/property-documents-[id]': RouteRecordInfo<'/property-documents-[id]', '/property-documents-:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/user-management': RouteRecordInfo<'/user-management', '/user-management', Record<never, never>, Record<never, never>>,
     '/vacancies': RouteRecordInfo<'/vacancies', '/vacancies', Record<never, never>, Record<never, never>>,
     '/view-agency': RouteRecordInfo<'/view-agency', '/view-agency', Record<never, never>, Record<never, never>>,

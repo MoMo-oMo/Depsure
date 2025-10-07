@@ -37,7 +37,7 @@ export const useAppStore = defineStore('app', {
       // Fallback for users without name fields
       return user.email || 'Unknown User';
     },
-    userAvatar: (state) => state.currentUser?.profileImageUrl || 'https://i.pravatar.cc/100?img=5',
+    userAvatar: (state) => state.currentUser?.profileImageUrl || 'https://tse2.mm.bing.net/th/id/OIP.r2k0JLQia3jR_yrRDCmPcQHaHa?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3',
     userEmail: (state) => state.currentUser?.email || '',
     userId: (state) => state.currentUser?.uid || '',
     hasCurrentAgency: (state) => !!state.currentAgency,
