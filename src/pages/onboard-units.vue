@@ -143,14 +143,14 @@
                     title="Maintenance"
                     @click="openMaintenance(item)"
                   />
-                  <!-- Vacancies (create or open) -->
+                  <!-- Vacate Date Setter -->
                   <v-btn
-                    icon="mdi-package-variant"
+                    icon="mdi-calendar-export"
                     color="black"
                     variant="text"
                     size="small"
-                    title="Vacate / Vacancies"
-                    @click="openVacancy(item)"
+                    title="Set Vacate Date"
+                    @click="setVacateDate(item)"
                   />
                   
                   <!-- Documents -->
@@ -444,6 +444,85 @@ export default {
         this.$router.push({ path: `/edit-maintenance-${foundId}`, query: { from: 'onboard' } })
       } catch (e) {
         console.error('Open maintenance failed:', e)
+      }
+    },
+    async setVacateDate(item) {
+      try {
+        const { showPromptDialog, showSuccessDialog } = useCustomDialogs()
+        
+        // Show date picker dialog
+        const vacateDate = await showPromptDialog({
+          title: 'Set Vacate Date',
+          message: `Set vacate date for ${item.propertyName || item.unitName || 'this unit'}:`,
+          inputType: 'date',
+          confirmText: 'Save',
+          cancelText: 'Cancel'
+        })
+        
+        if (!vacateDate) return
+        
+        // Update unit with vacate date and status
+        await updateDoc(doc(db, 'units', item.id), {
+          vacateDate: vacateDate,
+          status: 'Notice Given',
+          updatedAt: new Date()
+        })
+        
+        // Auto-create or update notice
+        const user = this.appStore.currentUser || {}
+        const agencyName = user?.agencyName || item.agencyName || 'Unknown Agency'
+        const agentName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || 'Unknown Agent'
+        
+        // Check if notice already exists for this unit
+        const existingNoticeQuery = query(
+          collection(db, 'notices'),
+          where('unitId', '==', item.id)
+        )
+        const existingNoticeSnapshot = await getDocs(existingNoticeQuery)
+        
+        const noticeData = {
+          agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
+          agencyName: agencyName,
+          unitId: item.id,
+          unitName: item.propertyName || item.unitName || '',
+          propertyName: item.propertyName || '',
+          tenantName: item.tenantRef || item.tenantName || 'N/A',
+          agentName: agentName,
+          vacateDate: vacateDate,
+          noticeGivenDate: new Date().toISOString().slice(0, 10),
+          status: 'Active',
+          maintenanceRequired: 'No',
+          leaseStartDate: item.leaseStartDate || '',
+          propertyType: item.propertyType || 'residential',
+          updatedAt: new Date()
+        }
+        
+        if (!existingNoticeSnapshot.empty) {
+          // Update existing notice
+          const existingNoticeId = existingNoticeSnapshot.docs[0].id
+          await updateDoc(doc(db, 'notices', existingNoticeId), noticeData)
+        } else {
+          // Create new notice
+          noticeData.createdAt = new Date()
+          await addDoc(collection(db, 'notices'), noticeData)
+        }
+        
+        // Update local state
+        item.vacateDate = vacateDate
+        item.status = 'Notice Given'
+        this.filterUnits()
+        
+        // Show success message
+        showSuccessDialog(
+          `Notice recorded for ${item.propertyName || item.unitName} — vacate date: ${new Date(vacateDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`,
+          'Success',
+          'OK'
+        )
+      } catch (e) {
+        if (e?.message === 'User cancelled') return
+        console.error('Set vacate date failed:', e)
+        const { showErrorDialog } = useCustomDialogs()
+        showErrorDialog('Failed to set vacate date. Please try again.', 'Error', 'OK')
       }
     },
     async openVacancy(item) {

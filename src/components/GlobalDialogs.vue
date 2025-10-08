@@ -29,6 +29,9 @@
       @confirm="confirm"
       @cancel="cancel"
     />
+
+    <!-- Prompt Dialog -->
+    <PromptDialog />
   </div>
 </template>
 
@@ -37,6 +40,7 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import SuccessDialog from '@/components/SuccessDialog.vue'
 import ErrorDialog from '@/components/ErrorDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import PromptDialog from '@/components/PromptDialog.vue'
 
 const {
   successDialog,

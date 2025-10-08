@@ -106,9 +106,27 @@
                       <div v-for="(doc, idx) in entry.quotes" :key="'rq-'+idx" class="quote-item">
                         <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                         <span class="quote-name">{{ doc.fileName }}</span>
-                        <v-btn size="small" color="primary" variant="outlined" class="view-btn"
-                          @click="openRequest(doc)">View</v-btn>
-                        <a v-if="doc.fileURL" :href="doc.fileURL" target="_blank" class="view-btn">Download</a>
+                        <v-btn 
+                          size="small" 
+                          color="black" 
+                          variant="outlined" 
+                          class="doc-action-btn"
+                          @click="openRequest(doc)"
+                        >
+                          View
+                        </v-btn>
+                        <v-btn 
+                          v-if="doc.fileURL"
+                          size="small"
+                          color="black"
+                          variant="outlined"
+                          class="doc-action-btn"
+                          :href="doc.fileURL"
+                          target="_blank"
+                          tag="a"
+                        >
+                          Download
+                        </v-btn>
                       </div>
                     </div>
                   </div>
@@ -164,7 +182,7 @@
                 @click="deleteEntry"
               >
                 Delete Entry
-                  </v-btn>
+              </v-btn>
                 </v-card-actions>
               <!-- Notes removed - using live chat -->
               <div style="display:none;">
@@ -771,6 +789,93 @@ export default {
   transform: translateY(-1px);
 }
 
+.delete-btn {
+  width: 160px;
+  height: 44px;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  background-color: #dc3545 !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+  transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #c82333 !important;
+  transform: translateY(-1px);
+}
+
+.update-status-btn {
+  width: 160px;
+  height: 44px;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.update-status-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Document action buttons styling */
+.existing-quotes {
+  margin-top: 16px;
+}
+
+.existing-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.quote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quote-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.quote-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.quote-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+  margin-left: 8px;
+}
+
+.doc-action-btn {
+  margin-left: 8px;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 6px;
+  min-width: 90px;
+  height: 36px;
+  border: 2px solid #000 !important;
+  transition: all 0.3s ease;
+}
+
+.doc-action-btn:hover {
+  background-color: #000 !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
 
 
 /* View Quote Button */

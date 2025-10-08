@@ -26,6 +26,18 @@ const dialogStore = reactive({
     // internal
     _resolver: null,
     _rejecter: null
+  },
+  promptDialog: {
+    show: false,
+    title: 'Enter Value',
+    message: 'Please enter a value:',
+    inputValue: '',
+    inputType: 'text',
+    confirmText: 'OK',
+    cancelText: 'Cancel',
+    // internal
+    _resolver: null,
+    _rejecter: null
   }
 })
 
@@ -86,6 +98,51 @@ export function useCustomDialogs() {
     if (dialogStore.confirmDialog._rejecter) dialogStore.confirmDialog._rejecter()
   }
 
+  const showPromptDialog = ({
+    message = 'Please enter a value:',
+    title = 'Enter Value',
+    inputType = 'text',
+    confirmText = 'OK',
+    cancelText = 'Cancel',
+    defaultValue = ''
+  } = {}) => {
+    // Set props
+    dialogStore.promptDialog.message = message
+    dialogStore.promptDialog.title = title
+    dialogStore.promptDialog.inputType = inputType
+    dialogStore.promptDialog.inputValue = defaultValue
+    dialogStore.promptDialog.confirmText = confirmText
+    dialogStore.promptDialog.cancelText = cancelText
+    dialogStore.promptDialog.show = true
+
+    // Return a promise that resolves with input value on confirm, rejects on cancel
+    return new Promise((resolve, reject) => {
+      dialogStore.promptDialog._resolver = () => {
+        const value = dialogStore.promptDialog.inputValue
+        dialogStore.promptDialog.show = false
+        dialogStore.promptDialog.inputValue = ''
+        dialogStore.promptDialog._resolver = null
+        dialogStore.promptDialog._rejecter = null
+        resolve(value)
+      }
+      dialogStore.promptDialog._rejecter = () => {
+        dialogStore.promptDialog.show = false
+        dialogStore.promptDialog.inputValue = ''
+        dialogStore.promptDialog._resolver = null
+        dialogStore.promptDialog._rejecter = null
+        reject(new Error('User cancelled'))
+      }
+    })
+  }
+
+  const confirmPrompt = () => {
+    if (dialogStore.promptDialog._resolver) dialogStore.promptDialog._resolver()
+  }
+
+  const cancelPrompt = () => {
+    if (dialogStore.promptDialog._rejecter) dialogStore.promptDialog._rejecter()
+  }
+
   const hideSuccessDialog = () => {
     dialogStore.successDialog.show = false
     // Handle redirect if specified
@@ -111,12 +168,16 @@ export function useCustomDialogs() {
     successDialog: computed(() => dialogStore.successDialog),
     errorDialog: computed(() => dialogStore.errorDialog),
     confirmDialog: computed(() => dialogStore.confirmDialog),
+    promptDialog: computed(() => dialogStore.promptDialog),
     showSuccessDialog,
     showErrorDialog,
     showConfirmDialog,
+    showPromptDialog,
     hideSuccessDialog,
     hideErrorDialog,
     confirm,
-    cancel
+    cancel,
+    confirmPrompt,
+    cancelPrompt
   }
 }

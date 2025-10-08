@@ -75,7 +75,7 @@
         </v-col>
 
         <!-- Add Notice Button - Only visible to Agency users -->
-        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="false && isAgencyUser">
           <v-btn @click="addNotice" class="back-btn">
             Add Notice
           </v-btn>
@@ -164,6 +164,15 @@
                 {{ getLabel(item.propertyType) }}
               </v-chip>
             </template>
+            <template v-slot:item.status="{ item }">
+              <v-chip 
+                :color="item.status === 'Active' ? 'success' : item.status === 'Completed' ? 'grey' : 'warning'" 
+                size="small"
+                variant="elevated"
+              >
+                {{ item.status || 'Active' }}
+              </v-chip>
+            </template>
             <template v-slot:item.maintenanceRequired="{ item }">
               <v-chip :color="item.maintenanceRequired === 'Yes' ? 'success' : 'error'" size="small">
                 {{ item.maintenanceRequired }}
@@ -198,7 +207,7 @@
                   icon="mdi-arrow-right-bold-box"
                   size="small"
                   variant="text"
-                  color="primary"
+                  color="black"
                   @click="moveToVacancies(item)"
                   class="action-btn"
                   title="Move to Vacancies"
@@ -229,6 +238,7 @@ import { collection, getDocs, query, where, deleteDoc, doc, getDoc, addDoc } fro
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { useNoticeVacancyAutomation } from '@/composables/useNoticeVacancyAutomation'
 const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
 
 export default {
@@ -237,7 +247,8 @@ export default {
     const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
     const { getOptions, getLabel, getColor, resolvePropertyTypeFromUnit } = usePropertyType()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, showConfirmDialog, getOptions, getLabel, getColor, resolvePropertyTypeFromUnit, logAuditEvent, auditActions, resourceTypes }
+    const { runAutomation } = useNoticeVacancyAutomation()
+    return { showSuccessDialog, showErrorDialog, showConfirmDialog, getOptions, getLabel, getColor, resolvePropertyTypeFromUnit, logAuditEvent, auditActions, resourceTypes, runAutomation }
   },
   data() {
     return {
@@ -256,6 +267,7 @@ export default {
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
         { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
+        { title: "STATUS", key: "status", sortable: true, align: "center" },
         { title: "NOTICE GIVEN", key: "noticeGivenDate", sortable: true, align: "center" },
         { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
         {
@@ -697,6 +709,16 @@ export default {
   },
   async mounted() {
     document.title = "Notice Page - Depsure";
+    
+    // Run automation to check for expired notices (only for non-agency users)
+    if (!this.isAgencyUser) {
+      try {
+        console.log('Running automation to check for expired notices...')
+        await this.runAutomation()
+      } catch (error) {
+        console.error('Automation failed:', error)
+      }
+    }
     
     // Fetch agencies first
     await this.fetchAgencies();

@@ -1446,11 +1446,13 @@ export default {
   font-weight: 500;
   text-transform: none;
   transition: color 0.2s ease;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab-label.v-tab--selected) {
   font-weight: 600;
   background-color: white;
+  color: #000000;
 }
 
 .property-tabs :deep(.v-tabs-slider) {
@@ -1458,35 +1460,35 @@ export default {
 }
 
 .property-tabs :deep(.tab--details) {
-  color: #1e88e5;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab--details.v-tab--selected) {
-  color: #0d47a1;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab--documents) {
-  color: #fb8c00;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab--documents.v-tab--selected) {
-  color: #ef6c00;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab--notes) {
-  color: #43a047;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab--notes.v-tab--selected) {
-  color: #1b5e20;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab--archive) {
-  color: #8e24aa;
+  color: #000000;
 }
 
 .property-tabs :deep(.tab--archive.v-tab--selected) {
-  color: #5e35b1;
+  color: #000000;
 }
 /* Documents section */
 .documents-section {

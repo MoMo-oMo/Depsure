@@ -136,7 +136,7 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, doc, getDoc, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc, getDoc, deleteDoc, setDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
 const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
@@ -237,6 +237,82 @@ export default {
           color: '#dc3545'
         })
         
+        // Find the archived unit to restore
+        let archivedUnit = null
+        let archivedUnitDocId = null
+        
+        console.log('[Delete Vacancy] Searching for archived unit...')
+        console.log('[Delete Vacancy] Vacancy data:', { unitId: item.unitId, unitName: item.unitName })
+        
+        if (item.unitId) {
+          // Try to find by unitId
+          console.log('[Delete Vacancy] Searching by originalId:', item.unitId)
+          const archivedQuery = query(collection(db, 'archivedUnits'), where('originalId', '==', item.unitId))
+          const archivedSnapshot = await getDocs(archivedQuery)
+          
+          console.log('[Delete Vacancy] Found', archivedSnapshot.size, 'archived units by originalId')
+          
+          if (!archivedSnapshot.empty) {
+            archivedUnit = archivedSnapshot.docs[0].data()
+            archivedUnitDocId = archivedSnapshot.docs[0].id
+            console.log('[Delete Vacancy] Found archived unit:', archivedUnitDocId)
+          }
+        }
+        
+        // If not found by unitId, try by unit name
+        if (!archivedUnit && item.unitName) {
+          console.log('[Delete Vacancy] Not found by unitId, searching by propertyName:', item.unitName)
+          const archivedQueryByName = query(
+            collection(db, 'archivedUnits'),
+            where('propertyName', '==', item.unitName)
+          )
+          const archivedSnapshotByName = await getDocs(archivedQueryByName)
+          
+          console.log('[Delete Vacancy] Found', archivedSnapshotByName.size, 'archived units by propertyName')
+          
+          if (!archivedSnapshotByName.empty) {
+            archivedUnit = archivedSnapshotByName.docs[0].data()
+            archivedUnitDocId = archivedSnapshotByName.docs[0].id
+            console.log('[Delete Vacancy] Found archived unit:', archivedUnitDocId)
+          }
+        }
+        
+        // Restore unit to Active Units if found in archives
+        if (archivedUnit && archivedUnitDocId) {
+          console.log('[Delete Vacancy] Restoring unit to Active Units...')
+          console.log('[Delete Vacancy] Archived unit data:', archivedUnit)
+          
+          // Prepare unit data (remove archive-specific fields)
+          const { originalId, archivedAt, archivedBy, archivedByUserType, archivedReason, ...unitData } = archivedUnit
+          
+          console.log('[Delete Vacancy] Unit data after removing archive fields:', unitData)
+          console.log('[Delete Vacancy] Original ID to restore:', originalId)
+          
+          // Restore to Active Units with original ID if possible
+          const unitRef = originalId ? doc(db, 'units', originalId) : doc(collection(db, 'units'))
+          
+          try {
+            await setDoc(unitRef, {
+              ...unitData,
+              status: 'Active',
+              vacateDate: null,
+              updatedAt: new Date()
+            })
+            console.log('[Delete Vacancy] Successfully restored unit to Active Units with ID:', originalId || 'new ID')
+            
+            // Delete from archived units
+            await deleteDoc(doc(db, 'archivedUnits', archivedUnitDocId))
+            console.log('[Delete Vacancy] Deleted unit from archivedUnits:', archivedUnitDocId)
+            
+            console.log(`[Delete Vacancy] Unit ${item.unitName} fully restored to Active Units`)
+          } catch (restoreError) {
+            console.error('[Delete Vacancy] Error restoring unit:', restoreError)
+            throw new Error(`Failed to restore unit: ${restoreError.message}`)
+          }
+        } else {
+          console.warn(`[Delete Vacancy] No archived unit found for vacancy ${item.id}. Vacancy will be deleted but unit won't be restored.`)
+        }
+        
         // Delete the vacancy from Firestore
         await deleteDoc(doc(db, 'vacancies', item.id))
         
@@ -248,7 +324,10 @@ export default {
         }
         
         // Show success message
-        this.showSuccessMessage?.(`Vacancy deleted successfully. ${item.unitName} will now appear in Active Units.`)
+        const message = archivedUnit 
+          ? `Vacancy deleted successfully. ${item.unitName} has been restored to Active Units.`
+          : `Vacancy deleted successfully. Note: Unit was not found in archives.`
+        this.showSuccessMessage?.(message)
       } catch (error) {
         if (error.message !== 'User cancelled') {
           console.error('Error deleting vacancy:', error)

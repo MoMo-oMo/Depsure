@@ -129,10 +129,10 @@
                     Save Changes
                   </v-btn>
                   <v-btn 
-                    color="primary" 
+                    color="black" 
                     variant="outlined" 
                     @click="openPropertyDetails" 
-                    class="cancel-btn property-btn"
+                    class="property-btn"
                   >
                     Property Details
                   </v-btn>
@@ -144,27 +144,27 @@
                     Save Changes
                   </v-btn>
                   <v-btn 
-                    color="primary" 
+                    color="black" 
                     variant="outlined" 
                     @click="openPropertyDetails" 
-                    class="cancel-btn property-btn"
+                    class="property-btn"
                   >
                     Property Details
                   </v-btn>
-                  <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
+                  <!-- <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
                     Back
-                  </v-btn>
-                  <v-btn 
+                  </v-btn> -->
+                  <!-- <v-btn 
                     color="black" 
                     variant="elevated" 
                     @click="editEntry" 
                     class="edit-btn"
                   >
                     Edit Entry
-                  </v-btn>
+                  </v-btn> -->
                   <v-btn 
                     color="error" 
-                    variant="outlined" 
+                    variant="elevated" 
                     @click="deleteEntry" 
                     class="delete-btn"
                   >
@@ -655,22 +655,52 @@ export default {
   width: 160px;
   height: 48px;
   font-weight: 700;
+  text-transform: none;
+  border-radius: 8px;
+  background-color: black !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+  background-color: #333 !important;
+  transform: translateY(-1px);
 }
 
 /* Slightly bigger Property Details button */
 .property-btn {
+  width: 180px;
+  height: 48px;
+  font-weight: 600;
+  text-transform: none;
+  border-radius: 8px;
+  border: 2px solid #000 !important;
+  transition: all 0.3s ease;
+}
+
+.property-btn:hover {
+  background-color: #000 !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.delete-btn {
   width: 160px;
   height: 48px;
   font-weight: 600;
-}
-
-
-.edit-btn:hover, .save-btn:hover {
-  background-color: #333 !important;
-}
-.delete-btn:hover {
-  background-color: #d32f2f !important;
+  text-transform: none;
+  border-radius: 8px;
+  background-color: #dc3545 !important;
   color: white !important;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+  transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #c82333 !important;
+  transform: translateY(-1px);
 }
 
 /* Responsive */
