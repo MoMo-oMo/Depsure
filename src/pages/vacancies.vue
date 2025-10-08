@@ -112,7 +112,17 @@
 
             <template #item.actions="{ item }">
               <div class="action-btn-container">
-                <v-btn icon="mdi-eye" size="small" variant="text" color="black" @click="viewVacancy(item)" class="action-btn" />
+                <v-btn icon="mdi-eye" size="small" variant="text" color="black" @click="viewVacancy(item)" class="action-btn" title="View Vacancy" />
+                <v-btn 
+                  v-if="userType === 'Admin' || userType === 'Super Admin'"
+                  icon="mdi-delete" 
+                  size="small" 
+                  variant="text" 
+                  color="error" 
+                  @click="deleteVacancy(item)" 
+                  class="action-btn" 
+                  title="Delete Vacancy"
+                />
               </div>
             </template>
           </v-data-table>
@@ -126,7 +136,7 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where, doc, getDoc, deleteDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
 const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
@@ -165,6 +175,10 @@ export default {
     }
   },
   computed: {
+    userType() {
+      const appStore = useAppStore()
+      return appStore.currentUser?.userType
+    },
     agencyHeroBgStyle() { return { background: `url(${heroBg}) center/cover no-repeat` } },
     heroTitle() { return this.selectedAgencyDetails?.agencyName || 'Vacancies' },
     monthFilterLabel() {
@@ -212,6 +226,36 @@ export default {
     },
     addVacancy() { this.$router.push('/add-vacancy') },
     viewVacancy(item) { this.$router.push(`/view-vacancy-${item.id}`) },
+    async deleteVacancy(item) {
+      try {
+        const { showConfirmDialog } = useCustomDialogs()
+        await showConfirmDialog({
+          title: 'Delete Vacancy?',
+          message: `Are you sure you want to delete the vacancy for ${item.unitName}? The unit will reappear in Active Units.`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          color: '#dc3545'
+        })
+        
+        // Delete the vacancy from Firestore
+        await deleteDoc(doc(db, 'vacancies', item.id))
+        
+        // Remove from local array
+        const index = this.vacancies.findIndex(v => v.id === item.id)
+        if (index > -1) {
+          this.vacancies.splice(index, 1)
+          this.filterVacancies()
+        }
+        
+        // Show success message
+        this.showSuccessMessage?.(`Vacancy deleted successfully. ${item.unitName} will now appear in Active Units.`)
+      } catch (error) {
+        if (error.message !== 'User cancelled') {
+          console.error('Error deleting vacancy:', error)
+          this.showErrorDialog?.('Failed to delete vacancy. Please try again.', 'Error', 'OK')
+        }
+      }
+    },
     async fetchAgencies() {
       this.agenciesLoading = true
       try {

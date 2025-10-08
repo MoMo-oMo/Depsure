@@ -117,96 +117,60 @@
                     class="custom-input"
                   />
                 </v-col>
-
-                <!-- Status -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="entry.status"
-                    label="Status"
-                    variant="outlined"
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Priority -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="entry.priority"
-                    label="Priority"
-                    variant="outlined"
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Agency Name -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="entry.agencyName"
-                    label="Agency"
-                    variant="outlined"
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Notes removed from Details tab -->
-
-                <!-- Created At -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.createdAt ? entry.createdAt.toLocaleDateString() : ''"
-                    label="Created At"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Updated At -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.updatedAt ? entry.updatedAt.toLocaleDateString() : ''"
-                    label="Updated At"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
               </v-row>
 
               <!-- Action Buttons -->
               <v-card-actions class="pa-4">
                 <v-spacer />
-                <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">Save Changes</v-btn>
-
-                <v-btn 
-                  color="primary" 
-                  variant="outlined" 
-                  @click="openPropertyDetails" 
-                  class="cancel-btn property-btn"
-                >
-                  Property Details
-                </v-btn>
-                <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
-                  Back
-                </v-btn>
-                <v-btn 
-                  v-if="isAgencyUser || userType === 'Admin'"
-                  color="black" 
-                  variant="elevated" 
-                  @click="editEntry" 
-                  class="edit-btn"
-                >
-                  Edit Entry
-                </v-btn>
-                <v-btn 
-                  v-if="isAgencyUser || userType === 'Admin'"
-                  color="error" 
-                  variant="outlined" 
-                  @click="deleteEntry" 
-                  class="delete-btn"
-                >
-                  Delete Entry
-                </v-btn>
+                
+                <!-- For Agency and Agency Admin users: Only show Save Changes and Property Details -->
+                <template v-if="isAgencyUser">
+                  <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">
+                    Save Changes
+                  </v-btn>
+                  <v-btn 
+                    color="primary" 
+                    variant="outlined" 
+                    @click="openPropertyDetails" 
+                    class="cancel-btn property-btn"
+                  >
+                    Property Details
+                  </v-btn>
+                </template>
+                
+                <!-- For Super Admin and Depsure Admin: Show all buttons -->
+                <template v-else>
+                  <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">
+                    Save Changes
+                  </v-btn>
+                  <v-btn 
+                    color="primary" 
+                    variant="outlined" 
+                    @click="openPropertyDetails" 
+                    class="cancel-btn property-btn"
+                  >
+                    Property Details
+                  </v-btn>
+                  <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
+                    Back
+                  </v-btn>
+                  <v-btn 
+                    color="black" 
+                    variant="elevated" 
+                    @click="editEntry" 
+                    class="edit-btn"
+                  >
+                    Edit Entry
+                  </v-btn>
+                  <v-btn 
+                    color="error" 
+                    variant="outlined" 
+                    @click="deleteEntry" 
+                    class="delete-btn"
+                  >
+                    Delete Entry
+                  </v-btn>
+                </template>
               </v-card-actions>
             </v-card-text>
               <!-- Notes removed - using live chat -->
@@ -359,9 +323,6 @@ export default {
           appointmentMade: this.entry.appointmentMade || '',
           inspectionDate: this.entry.inspectionDate || '',
           quotesNeeded: this.entry.quotesNeeded || '',
-          status: this.entry.status || '',
-          priority: this.entry.priority || '',
-          agencyName: this.entry.agencyName || '',
           updatedAt: new Date()
         }
         await updateDoc(doc(db, 'inspections', this.entry.id), payload)

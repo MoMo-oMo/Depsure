@@ -416,7 +416,10 @@ export default {
           await updateDoc(docRef, updateData);
 
           console.log('Vacancy updated successfully');
-          this.showSuccessDialog('Vacancy updated successfully!', 'Success!', 'Continue', `/view-vacancy-${this.vacancy.id}`);
+          // Pass the 'from' query parameter to maintain navigation context
+          const from = this.$route?.query?.from
+          const redirectUrl = from === 'onboard' ? `/view-vacancy-${this.vacancy.id}?from=onboard` : `/view-vacancy-${this.vacancy.id}`
+          this.showSuccessDialog('Vacancy updated successfully!', 'Success!', 'Continue', redirectUrl);
         } catch (err) {
           console.error('Error updating vacancy:', err);
           this.showErrorDialog('Failed to update vacancy. Please try again.', 'Error', 'OK');

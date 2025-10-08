@@ -220,7 +220,7 @@
 <script>
 import { db } from '@/firebaseConfig'
 const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
-import { collection, getDocs, query, where, deleteDoc, doc, getDoc, onSnapshot } from 'firebase/firestore'
+import { collection, getDocs, query, where, deleteDoc, doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
@@ -435,7 +435,37 @@ computed: {
         return
       }
       try {
+          // Delete flagged unit document
           await deleteDoc(doc(db, 'flaggedUnits', unit.id));
+          
+          // Also unflag the actual unit in the units collection
+          try {
+            // Try to find the unit by unitId first
+            if (unit.unitId) {
+              await updateDoc(doc(db, 'units', unit.unitId), { isFlagged: false });
+              console.log('Unit unflagged by unitId:', unit.unitId);
+            } else {
+              // If no unitId, try to find by propertyName/unitName
+              const unitName = unit.unitName || '';
+              if (unitName) {
+                const unitsQuery = query(
+                  collection(db, 'units'),
+                  where('propertyName', '==', unitName),
+                  where('agencyId', '==', unit.agencyId)
+                );
+                const unitsSnapshot = await getDocs(unitsQuery);
+                
+                if (!unitsSnapshot.empty) {
+                  const unitDoc = unitsSnapshot.docs[0];
+                  await updateDoc(doc(db, 'units', unitDoc.id), { isFlagged: false });
+                  console.log('Unit unflagged by propertyName:', unitName);
+                }
+              }
+            }
+          } catch (unflagError) {
+            console.warn('Could not unflag unit in units collection:', unflagError);
+            // Continue even if unflagging fails
+          }
           
           // Log the audit event
           await this.logAuditEvent(
@@ -456,7 +486,7 @@ computed: {
           if (index > -1) {
             this.units.splice(index, 1);
             this.filterUnits();
-            this.showSuccessDialog(`Flagged unit for ${unit.unitName} deleted successfully!`, 'Success!', 'Continue');
+            this.showSuccessDialog(`Flagged unit for ${unit.unitName} deleted successfully and unit unflagged!`, 'Success!', 'Continue');
           }
         } catch (error) {
           console.error('Error deleting flagged unit:', error);

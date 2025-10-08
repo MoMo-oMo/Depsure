@@ -138,43 +138,6 @@
                     />
                   </v-col>
 
-                  <!-- Status (Admin editable) -->
-                  <v-col cols="12" md="6">
-                    <template v-if="userType === 'Admin'">
-                      <v-select
-                        v-model="entry.status"
-                        label="Status"
-                        variant="outlined"
-                        class="custom-input"
-                        :items="['Active', 'Pending', 'Completed']"
-                        :rules="statusRules"
-                        required
-                      />
-                    </template>
-                    <template v-else>
-                      <v-text-field
-                        :model-value="entry.status"
-                        label="Status"
-                        variant="outlined"
-                        class="custom-input"
-                        readonly
-                      />
-                    </template>
-                  </v-col>
-
-                  <!-- Priority -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="entry.priority"
-                      label="Priority"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Low', 'Medium', 'High', 'Urgent']"
-                      :rules="priorityRules"
-                      required
-                    />
-                  </v-col>
-
                 </v-row>
                   </v-card-text>
 
@@ -312,9 +275,7 @@ export default {
       appointmentMadeRules: [v => !!v || "Appointment Made is required"],
       inspectionDateRules: [],
       requiredRule: [v => !!v || "This field is required"],
-      quotesNeededRules: [v => !!v || "Quotes Needed is required"],
-      statusRules: [v => !!v || "Status is required"],
-      priorityRules: [v => !!v || "Priority is required"]
+      quotesNeededRules: [v => !!v || "Quotes Needed is required"]
     };
   },
   computed: {
@@ -496,8 +457,6 @@ export default {
             inspectionDate: this.entry.inspectionDate,
             inspectionTime: this.entry.inspectionTime || '',
             quotesNeeded: this.entry.quotesNeeded,
-            status: this.entry.status,
-            priority: this.entry.priority,
             notes: this.entry.notes || "",
             updatedAt: new Date()
           };

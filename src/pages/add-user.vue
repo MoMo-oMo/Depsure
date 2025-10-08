@@ -270,9 +270,10 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
-import { auth, db } from '@/firebaseConfig'
+import { auth, db, storage } from '@/firebaseConfig'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { doc, setDoc, collection, getDocs, query, where } from 'firebase/firestore'
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage'
 import { useAppStore } from '@/stores/app'
 
 export default {
@@ -377,6 +378,20 @@ export default {
            
            const newUser = userCredential.user;
            
+           // Upload profile image to Firebase Storage if present
+           let profileImageUrl = null;
+           if (this.user.profileImage) {
+             try {
+               const imageRef = storageRef(storage, `profile-images/${newUser.uid}`);
+               await uploadString(imageRef, this.user.profileImage, 'data_url');
+               profileImageUrl = await getDownloadURL(imageRef);
+               console.log('Profile image uploaded successfully:', profileImageUrl);
+             } catch (error) {
+               console.error('Error uploading profile image:', error);
+               // Continue even if image upload fails
+             }
+           }
+           
            // Prepare user data for Firestore
            const userData = {
               email: this.user.email,
@@ -384,7 +399,7 @@ export default {
               status: this.user.status,
               createdAt: new Date(),
               createdBy: this.appStore.userId,
-              profileImageUrl: this.user.profileImage || null,
+              profileImageUrl: profileImageUrl,
               // Admin scope
               adminScope: this.user.userType === 'Admin' ? (this.user.adminScope || 'depsure') : null,
               managedAgencyId: this.user.userType === 'Admin' && this.user.adminScope === 'agency' ? (this.user.managedAgencyId || null) : null,
@@ -408,7 +423,7 @@ export default {
                 userEmail: this.user.email,
                 userType: this.user.userType,
                 status: this.user.status,
-                hasProfileImage: !!this.user.profileImage,
+                hasProfileImage: !!profileImageUrl,
                 agencyName: this.user.agencyName || null,
                 adminScope: this.user.userType === 'Admin' ? (this.user.adminScope || 'depsure') : null,
                 managedAgencyId: this.user.userType === 'Admin' && this.user.adminScope === 'agency' ? (this.user.managedAgencyId || null) : null
@@ -441,23 +456,84 @@ export default {
        this.$refs.fileInput.click();
      },
      
-     handleImageUpload(event) {
-       const file = event.target.files[0];
-       if (file) {
-         // Validate file type
-         if (!file.type.startsWith('image/')) {
-           this.showErrorDialog('Please select a valid image file', 'Invalid File', 'OK');
-           return;
-         }
-         
-         // Create preview URL
-         const reader = new FileReader();
-         reader.onload = (e) => {
-           this.user.profileImage = e.target.result;
-         };
-         reader.readAsDataURL(file);
-       }
-     },
+    handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          this.showErrorDialog('Please select a valid image file', 'Invalid File', 'OK');
+          return;
+        }
+        
+        // Handle ALL images - compress if larger than 2MB for optimal performance
+        const compressionThreshold = 2 * 1024 * 1024; // 2MB threshold
+        
+        if (file.size > compressionThreshold) {
+          // Compress the image for better performance
+          this.compressAndLoadImage(file);
+        } else {
+          // Create preview URL directly for small images
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.user.profileImage = e.target.result;
+          };
+          reader.onerror = (error) => {
+            console.error('Error reading file:', error);
+            this.showErrorDialog('Failed to load image. Please try a different file.', 'Error', 'OK');
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    },
+    
+    compressAndLoadImage(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Create canvas for compression
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate new dimensions (max 1920px on longest side)
+          let width = img.width;
+          let height = img.height;
+          const maxDimension = 1920;
+          
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw and compress
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with quality compression
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          this.user.profileImage = compressedDataUrl;
+          
+          // Show info that image was compressed
+          console.log('Large image compressed for upload');
+        };
+        img.onerror = () => {
+          this.showErrorDialog('Failed to process image. Please try a different file.', 'Error', 'OK');
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        this.showErrorDialog('Failed to load image. Please try a different file.', 'Error', 'OK');
+      };
+      reader.readAsDataURL(file);
+    },
      
      removeImage() {
        this.user.profileImage = null;

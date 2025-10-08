@@ -272,7 +272,7 @@
                 @click="editProperty(item)"
                 class="action-btn"
               />
-              <v-btn
+              <!-- <v-btn
                 :title="'Move to Vacancies'"
                 icon="mdi-arrow-right-bold-box"
                 size="small"
@@ -280,7 +280,7 @@
                 color="black"
                 @click="moveToVacancies(item)"
                 class="action-btn"
-              />
+              /> -->
               <v-btn
                 icon="mdi-delete"
                 size="small"
@@ -791,15 +791,50 @@ export default {
         }
         
         const querySnapshot = await getDocs(unitsQuery);
-        this.properties = querySnapshot.docs.map(doc => {
-          const data = doc.data()
-          return {
-            ...data,
-            id: doc.id,
-            unitNumber: data.unitNumber || '',
-            monthsMissed: (typeof data.monthsMissed === 'number' ? data.monthsMissed : 0)
+        
+        // Fetch all vacancies to exclude units with active vacancies
+        const vacanciesQuery = collection(db, 'vacancies');
+        const vacanciesSnapshot = await getDocs(vacanciesQuery);
+        
+        // Create a Set of unit IDs and unit names that have active vacancies
+        const vacantUnitIds = new Set();
+        const vacantUnitNames = new Set();
+        
+        vacanciesSnapshot.docs.forEach(doc => {
+          const vacancy = doc.data();
+          if (vacancy.unitId) {
+            vacantUnitIds.add(vacancy.unitId);
+          }
+          if (vacancy.unitName) {
+            vacantUnitNames.add(vacancy.unitName);
           }
         });
+        
+        // Filter out units that have active vacancies
+        this.properties = querySnapshot.docs
+          .map(doc => {
+            const data = doc.data()
+            return {
+              ...data,
+              id: doc.id,
+              unitNumber: data.unitNumber || '',
+              monthsMissed: (typeof data.monthsMissed === 'number' ? data.monthsMissed : 0)
+            }
+          })
+          .filter(unit => {
+            // Exclude if unit ID is in vacancies
+            if (vacantUnitIds.has(unit.id)) {
+              return false;
+            }
+            // Exclude if unit name/propertyName is in vacancies
+            if (unit.propertyName && vacantUnitNames.has(unit.propertyName)) {
+              return false;
+            }
+            if (unit.unitName && vacantUnitNames.has(unit.unitName)) {
+              return false;
+            }
+            return true;
+          });
         
         // If Super Admin, also refresh flagged units map for the same scope
         if (this.isSuperAdmin) {

@@ -179,7 +179,7 @@
                 <v-icon icon="mdi-file-remove" size="small" color="grey" />
               </div>
             </template>
-            <!-- Action buttons - Edit/Delete hidden for Super Admin -->
+            <!-- Action buttons - Edit only for Agency users, View/Delete for all -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
                 <v-btn
@@ -189,24 +189,26 @@
                   color="black"
                   @click="viewEntry(item)"
                   class="action-btn"
+                  title="View Inspection"
                 />
                 <v-btn
-                  v-if="isAgencyUser || userType === 'Admin'"
+                  v-if="isAgencyUser"
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
                   color="black"
                   @click="editEntry(item)"
                   class="action-btn"
+                  title="Edit Inspection"
                 />
                 <v-btn
-                  v-if="isAgencyUser || userType === 'Admin'"
                   icon="mdi-delete"
                   size="small"
                   variant="text"
                   color="error"
                   @click="deleteEntry(item)"
                   class="action-btn"
+                  title="Delete Inspection"
                 />
               </div>
             </template>
@@ -258,11 +260,7 @@ export default {
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
         { title: "INSPECTION REQUIRED", key: "inspectionRequired", sortable: true, align: "center" },
-        // { title: "Appointment Made", key: "appointmentMade", sortable: true, align: "center" },
         { title: "INSEPCTION DATE", key: "inspectionDate", sortable: true, align: "center" },
-        { title: "DOCUMENT", key: "document", sortable: false, align: "center" },
-        { title: "STATUS", key: "status", sortable: true, align: "center" },
-        // { title: "Priority", key: "priority", sortable: true, align: "center" },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" }
       ]
     };

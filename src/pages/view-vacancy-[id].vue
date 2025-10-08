@@ -3,7 +3,7 @@
     <v-container fluid>
       <v-row class="mb-4">
         <v-col cols="12">
-          <v-btn icon="mdi-arrow-left" variant="outlined" color="primary" @click="$router.push('/vacancies')" class="back-btn">Back</v-btn>
+          <v-btn icon="mdi-arrow-left" variant="outlined" color="primary" @click="goBack" class="back-btn">Back</v-btn>
         </v-col>
       </v-row>
 
@@ -41,7 +41,7 @@
               </v-card-text>
               <v-card-actions class="pa-4">
                 <v-spacer />
-                <v-btn color="grey" variant="outlined" @click="$router.push('/vacancies')">Close</v-btn>
+                <v-btn color="grey" variant="outlined" @click="goBack">Close</v-btn>
               </v-card-actions>
             </template>
           </v-card>
@@ -54,6 +54,7 @@
 <script>
 import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'ViewVacancyPage',
@@ -61,6 +62,23 @@ export default {
     return { vacancy: null, loading: true, error: null }
   },
   methods: {
+    goBack() {
+      try {
+        const appStore = useAppStore();
+        const user = appStore.currentUser;
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+        if (isAgency) { 
+          this.$router.push('/onboard-units'); 
+          return 
+        }
+      } catch(_) {}
+      const from = this.$route?.query?.from
+      if (from === 'onboard') {
+        this.$router.push('/onboard-units')
+      } else {
+        this.$router.push('/vacancies')
+      }
+    },
     async loadVacancy() {
       this.loading = true; this.error = null
       try {

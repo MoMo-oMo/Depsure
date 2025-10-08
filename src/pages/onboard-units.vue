@@ -223,7 +223,7 @@ export default {
       filteredUnits: [],
       headers: [
         { title: 'UNIT NAME', key: 'propertyName', sortable: true },
-        { title: 'UNIT NUMBER', key: 'tenantRef', sortable: true },
+        { title: 'UNIT NUMBER', key: 'unitNumber', sortable: true },
         { title: 'TYPE', key: 'propertyType', sortable: true, align: 'center' },
         { title: 'ONBOARDING DATE', key: 'onboardingDate', sortable: true, align: 'center' },
         { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center' },
@@ -280,7 +280,7 @@ export default {
       this.filteredUnits = (this.units || []).filter(u => {
         const textMatch = (
           (u.propertyName || '').toLowerCase().includes(term) ||
-          (u.tenantRef || '').toLowerCase().includes(term)
+          (u.unitNumber || '').toLowerCase().includes(term)
         )
 
         // Property type filter
@@ -341,7 +341,7 @@ export default {
               agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
               unitId: item.id,
               unitName: name,
-              tenantRef: item.tenantRef || '',
+              unitNumber: item.unitNumber || '',
               leaseStartDate: item.leaseStartDate || '',
               flagReason: 'Flagged from Onboard Units',
               dateFlagged: new Date().toISOString().slice(0,10),
@@ -428,6 +428,7 @@ export default {
             agencyId,
             unitId: item.id,
             unitName: item.propertyName || item.unitName || '',
+            unitNumber: item.unitNumber || '',
             noticeGiven: 'No',
             vacateDate: '',
             contactNumber: item.contactNumber || '',

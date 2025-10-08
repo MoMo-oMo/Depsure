@@ -192,7 +192,7 @@
                       :loading="saving"
                       @click="saveEntry"
                     >
-                      {{ saving ? 'Saving...' : 'Save Changes' }}
+                      {{ saving ? 'Saving...' : 'Submit Request' }}
                     </v-btn>
                   </v-card-actions>
                 <!-- Notes tab removed - using live chat instead -->
@@ -578,6 +578,32 @@ export default {
             notesLog: data.notesLog || [],
             quotes: data.quotes || []
           };
+          
+          // Automatically fetch and populate unit number from the unit
+          if (this.entry.unitName) {
+            try {
+              const unitsQuery = query(
+                collection(db, 'units'),
+                where('propertyName', '==', this.entry.unitName)
+              );
+              const unitsSnapshot = await getDocs(unitsQuery);
+              
+              if (!unitsSnapshot.empty) {
+                const unitData = unitsSnapshot.docs[0].data();
+                // Auto-populate unit number if it exists
+                if (unitData.unitNumber) {
+                  this.entry.unitNumber = unitData.unitNumber;
+                  console.log('Auto-populated unit number from property:', unitData.unitNumber);
+                }
+              } else {
+                console.log('No unit found with propertyName:', this.entry.unitName);
+              }
+            } catch (unitError) {
+              console.error('Could not fetch unit number:', unitError);
+              // Continue even if unit fetch fails
+            }
+          }
+          
           this.loading = false;
         } else {
           this.error = "Maintenance entry not found";
