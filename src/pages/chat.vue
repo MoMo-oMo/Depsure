@@ -15,7 +15,7 @@
             </v-avatar>
             <div class="user-meta">
               <div class="name">
-                <template v-if="isSuperAdmin && !selectedAgencyId">
+                <template v-if="isStaff && !selectedAgencyId">
                   <!-- Inline picker hint when no agency selected -->
                   <v-btn size="small" color="white" variant="text" class="pa-0 text-none" @click="openAgencyPicker = true">
                     Select Agency
@@ -301,7 +301,7 @@
 
     <!-- Header actions menu -->
     <div v-if="headerMenu && headerMenu.show" class="msg-menu" :style="headerMenuStyle" @click.stop>
-      <button class="menu-item" v-if="isSuperAdmin" @click.stop="openAgencyPicker = true; closeHeaderMenu()">Change agency</button>
+      <button class="menu-item" v-if="isStaff" @click.stop="openAgencyPicker = true; closeHeaderMenu()">Change agency</button>
       <button class="menu-item" @click.stop="enterSelection(); closeHeaderMenu()">Select messages</button>
       <button class="menu-item" @click.stop="scrollToBottom(); closeHeaderMenu()">Jump to bottom</button>
     </div>
@@ -458,6 +458,11 @@ export default {
       const appStore = useAppStore()
       return appStore.currentUser?.userType === 'Super Admin'
     },
+    isStaff() {
+      const appStore = useAppStore()
+      const user = appStore.currentUser
+      return user?.userType === 'Super Admin' || (user?.userType === 'Admin' && user?.adminScope === 'depsure')
+    },
     chatPartnerName() {
       if (this.isAgencyUser) return 'Support'
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
@@ -493,7 +498,7 @@ export default {
     // Identify likely partner id for presence
     partnerId() {
       try {
-        if (this.isSuperAdmin) return this.selectedAgencyId || null
+        if (this.isStaff) return this.selectedAgencyId || null
         const arr = Array.isArray(this.messages) ? this.messages : []
         for (let i = arr.length - 1; i >= 0; i--) {
           const m = arr[i]
@@ -800,7 +805,7 @@ export default {
       if (!this.selectedAgencyId) return
       
       // Update global agency selection for Super Admins
-      if (this.isSuperAdmin) {
+      if (this.isStaff) {
         const appStore = useAppStore()
         const selectedAgency = this.agencies.find(a => a.id === this.selectedAgencyId)
         if (selectedAgency && appStore.setCurrentAgency) {
