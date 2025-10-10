@@ -101,7 +101,7 @@
                       </v-col>
 
                       <!-- Flag dropdown -->
-                      <v-col cols="12" md="6">
+                      <!-- <v-col cols="12" md="6">
                         <v-select
                           v-model="property.isFlagged"
                           :items="flagOptions"
@@ -112,7 +112,7 @@
                           class="custom-input"
                           hide-details
                         />
-                      </v-col>
+                      </v-col> -->
 
                       <!-- Lease Starting Date -->
                       <v-col cols="12" md="6">
@@ -894,6 +894,9 @@ export default {
             propertyData.leaseEndDate = '';
           }
 
+          // Handle flag status changes - sync with flaggedUnits collection
+          await this.syncFlagStatus(id, propertyData.isFlagged, propertyData);
+
           // Log update
           await this.logAuditEvent(
             this.auditActions.UPDATE,
@@ -919,6 +922,67 @@ export default {
         } finally {
           this.loading = false;
         }
+    },
+
+    async syncFlagStatus(unitId, isFlagged, propertyData) {
+      try {
+        // Import required Firestore functions
+        const { collection, query, where, getDocs, addDoc, deleteDoc, doc } = await import('firebase/firestore');
+        
+        // Check if flagged unit entry exists
+        const flaggedQuery = query(
+          collection(db, 'flaggedUnits'),
+          where('unitId', '==', unitId)
+        );
+        const flaggedSnapshot = await getDocs(flaggedQuery);
+        
+        if (isFlagged && flaggedSnapshot.empty) {
+          // Unit was flagged but no entry exists - create one
+          console.log('Creating flagged unit entry for:', unitId);
+          const flaggedUnitData = {
+            agencyId: propertyData.agencyId || '',
+            unitId: unitId,
+            unitName: propertyData.propertyName || '',
+            tenantRef: propertyData.tenantRef || '',
+            leaseStartDate: propertyData.leaseStartDate || '',
+            flagReason: 'Flagged via Edit Property',
+            dateFlagged: new Date().toISOString().slice(0, 10),
+            missedPaymentFlag: propertyData.monthsMissed > 0 ? 'Yes' : 'No',
+            noticeToVacateGiven: '',
+            actionTaken: '',
+            notes: '',
+            propertyType: propertyData.propertyType || 'residential',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          await addDoc(collection(db, 'flaggedUnits'), flaggedUnitData);
+          console.log('Flagged unit entry created successfully');
+        } else if (!isFlagged && !flaggedSnapshot.empty) {
+          // Unit was unflagged and entry exists - remove it
+          console.log('Removing flagged unit entry for:', unitId);
+          for (const flaggedDoc of flaggedSnapshot.docs) {
+            await deleteDoc(doc(db, 'flaggedUnits', flaggedDoc.id));
+          }
+          console.log('Flagged unit entry removed successfully');
+        } else if (isFlagged && !flaggedSnapshot.empty) {
+          // Unit is flagged and entry exists - update it
+          console.log('Updating flagged unit entry for:', unitId);
+          const flaggedDoc = flaggedSnapshot.docs[0];
+          const { updateDoc } = await import('firebase/firestore');
+          await updateDoc(doc(db, 'flaggedUnits', flaggedDoc.id), {
+            unitName: propertyData.propertyName || '',
+            tenantRef: propertyData.tenantRef || '',
+            leaseStartDate: propertyData.leaseStartDate || '',
+            missedPaymentFlag: propertyData.monthsMissed > 0 ? 'Yes' : 'No',
+            propertyType: propertyData.propertyType || 'residential',
+            updatedAt: new Date()
+          });
+          console.log('Flagged unit entry updated successfully');
+        }
+      } catch (error) {
+        console.error('Error syncing flag status:', error);
+        // Don't throw - allow the save to continue even if flag sync fails
+      }
     },
     
     async uploadDocuments() {

@@ -74,7 +74,7 @@
                 </v-col>
 
                 <!-- Flag status -->
-                <v-col cols="12" md="6">
+                <!-- <v-col cols="12" md="6">
                   <v-text-field
                     :model-value="(property.isFlagged === true || property.isFlagged === 'Yes') ? 'Flagged' : 'Not Flagged'"
                     label="Flag Status"
@@ -82,7 +82,7 @@
                     readonly
                     class="custom-input"
                   />
-                </v-col>
+                </v-col> -->
 
                 <!-- Property Type -->
                 <v-col cols="12" md="6">
