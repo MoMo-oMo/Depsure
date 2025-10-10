@@ -470,7 +470,7 @@ export default {
       }
     },
 
-    async fetchAgencies(createTestData = true) {
+    async fetchAgencies(createTestData = false) {
       this.agenciesLoading = true;
       try {
         const appStore = useAppStore();
@@ -532,11 +532,7 @@ export default {
           if (this.agencies.length > 0) {
             console.log('First agency structure:', this.agencies[0]);
             console.log('First agency agencyName:', this.agencies[0].agencyName);
-          } else if (createTestData) {
-            console.log('No agencies found in database');
-            // Create some test agencies in the database
-            await this.createTestAgencies();
-          }
+          } // Do not auto-create test agencies in production
         }
       } catch (error) {
         console.error('Error fetching agencies:', error);
@@ -545,139 +541,6 @@ export default {
       }
     },
 
-    async createTestAgencies() {
-      try {
-        console.log('Creating test agencies...');
-        const testAgencies = [
-          {
-            agencyName: 'Pam Golding Properties',
-            userType: 'Agency',
-            location: 'Cape Town, South Africa',
-            establishedYear: 1976,
-            numberOfProperties: 1250,
-            rating: '5 Stars',
-            agencyDescription: 'Premium real estate agency specializing in inspections.',
-            agencyTagline: 'Excellence in Real Estate'
-          },
-          {
-            agencyName: 'RE/MAX Properties',
-            userType: 'Agency',
-            location: 'Johannesburg, South Africa',
-            establishedYear: 1973,
-            numberOfProperties: 890,
-            rating: '4 Stars',
-            agencyDescription: 'Global real estate network with local expertise.',
-            agencyTagline: 'Above the Crowd'
-          },
-          {
-            agencyName: 'Seeff Properties',
-            userType: 'Agency',
-            location: 'Durban, South Africa',
-            establishedYear: 1964,
-            numberOfProperties: 1100,
-            rating: '5 Stars',
-            agencyDescription: 'Leading real estate agency with comprehensive property services.',
-            agencyTagline: 'Your Property Partner'
-          }
-        ];
-
-        const createdAgencies = [];
-        for (const agencyData of testAgencies) {
-          const docRef = await addDoc(collection(db, 'users'), agencyData);
-          createdAgencies.push({ id: docRef.id, ...agencyData });
-        }
-
-        console.log('Test agencies created successfully');
-        
-        // Create some test inspections for these agencies
-        await this.createTestInspections(createdAgencies);
-        
-        // Fetch agencies again
-        await this.fetchAgencies();
-      } catch (error) {
-        console.error('Error creating test agencies:', error);
-      }
-    },
-
-    async createTestInspections(agencies) {
-      try {
-        console.log('Creating test inspections...');
-        const testInspections = [
-          {
-            agencyId: agencies[0].id,
-            agencyName: agencies[0].agencyName,
-            unitName: 'Unit 101 - Sea Point',
-            inspectionRequired: 'Yes',
-            contactPerson: 'John Smith',
-            contactNumber: '+27 82 123 4567',
-            appointmentMade: 'Yes',
-            inspectionDate: '2024-12-15',
-            quotesNeeded: 'No',
-            status: 'Pending',
-            priority: 'High',
-            notes: '',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
-          {
-            agencyId: agencies[0].id,
-            agencyName: agencies[0].agencyName,
-            unitName: 'Unit 205 - Green Point',
-            inspectionRequired: 'No',
-            contactPerson: 'Sarah Johnson',
-            contactNumber: '+27 83 234 5678',
-            appointmentMade: 'No',
-            inspectionDate: '2024-12-20',
-            quotesNeeded: 'Yes',
-            status: 'Completed',
-            priority: 'Medium',
-            notes: '',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
-          {
-            agencyId: agencies[1].id,
-            agencyName: agencies[1].agencyName,
-            unitName: 'Unit 301 - Sandton',
-            inspectionRequired: 'Yes',
-            contactPerson: 'Mike Wilson',
-            contactNumber: '+27 84 345 6789',
-            appointmentMade: 'Yes',
-            inspectionDate: '2024-12-18',
-            quotesNeeded: 'Yes',
-            status: 'In Progress',
-            priority: 'Urgent',
-            notes: '',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
-          {
-            agencyId: agencies[2].id,
-            agencyName: agencies[2].agencyName,
-            unitName: 'Unit 102 - Umhlanga',
-            inspectionRequired: 'No',
-            contactPerson: 'Lisa Brown',
-            contactNumber: '+27 85 456 7890',
-            appointmentMade: 'No',
-            inspectionDate: '2024-12-25',
-            quotesNeeded: 'No',
-            status: 'Pending',
-            priority: 'Low',
-            notes: '',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        ];
-
-        for (const inspectionData of testInspections) {
-          await addDoc(collection(db, 'inspections'), inspectionData);
-        }
-
-        console.log('Test inspections created successfully');
-      } catch (error) {
-        console.error('Error creating test inspections:', error);
-      }
-    },
 
     filterEntries() {
       this.filteredEntries = this.entries.filter(entry => {

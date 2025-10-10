@@ -460,8 +460,7 @@ export default {
             console.log('First agency agencyName:', this.agencies[0].agencyName)
           } else {
             console.log('No agencies found in database')
-            // Create some test agencies in the database
-            await this.createTestAgencies()
+            // Avoid auto-creating test agencies from this page
           }
         }
       } catch (error) {
@@ -514,43 +513,6 @@ export default {
       }
     },
 
-    async createTestAgencies() {
-      try {
-        const testAgencies = [
-          {
-            agencyName: 'Pam Golding Properties',
-            userType: 'Agency',
-            location: 'Cape Town, South Africa',
-            establishedYear: 1976,
-            numberOfProperties: 1250,
-            rating: '5 Stars',
-            agencyDescription: 'Premium real estate agency specializing in inspections.',
-            agencyTagline: 'Excellence in Real Estate'
-          },
-          {
-            agencyName: 'RE/MAX Properties',
-            userType: 'Agency',
-            location: 'Johannesburg, South Africa',
-            establishedYear: 1973,
-            numberOfProperties: 890,
-            rating: '4 Stars',
-            agencyDescription: 'Global real estate network with local expertise.',
-            agencyTagline: 'Above the Crowd'
-          }
-        ]
-
-        for (const agencyData of testAgencies) {
-          await addDoc(collection(db, 'users'), agencyData)
-        }
-
-        console.log('Test agencies created successfully')
-        
-        // Fetch agencies again
-        await this.fetchAgencies()
-      } catch (error) {
-        console.error('Error creating test agencies:', error)
-      }
-    },
 
     goBack() {
       this.$router.push("/inspections");
