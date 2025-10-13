@@ -271,7 +271,7 @@ export default {
         { title: "NOTICE GIVEN", key: "noticeGivenDate", sortable: true, align: "center" },
         { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
         {
-          title: "MAINTENANCE REQUIRED (YES/NO)",
+          title: "MAINTENANCE (YES/NO)",
           key: "maintenanceRequired",
           sortable: true,
           align: "center",

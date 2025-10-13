@@ -123,18 +123,10 @@
               <v-card-actions class="pa-4">
                 <v-spacer />
                 
-                <!-- For Agency and Agency Admin users: Only show Save Changes and Property Details -->
+                <!-- For Agency and Agency Admin users: Only show Save Changes -->
                 <template v-if="isAgencyUser">
                   <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">
                     Save Changes
-                  </v-btn>
-                  <v-btn 
-                    color="black" 
-                    variant="outlined" 
-                    @click="openPropertyDetails" 
-                    class="property-btn"
-                  >
-                    Property Details
                   </v-btn>
                 </template>
                 

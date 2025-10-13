@@ -43,17 +43,6 @@
           <div v-else class="form-card" elevation="0">
                 <v-card-text>
                   <v-row>
-                <!-- Agency -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="agencyName"
-                    label="Agency"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
                 <!-- Unit Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
@@ -65,33 +54,11 @@
                   />
                 </v-col>
 
-                <!-- Tenant Reference -->
+                <!-- Unit Number -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="unit.tenantRef"
-                    label="Tenant Reference"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Lease Start Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="unit.leaseStartDate"
-                    label="Lease Start Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Flag Reason -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="unit.flagReason"
-                    label="Reason Flagged"
+                    :model-value="unit.unitNumber"
+                    label="Unit Number"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -106,39 +73,6 @@
                     variant="outlined"
                     readonly
                     class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Missed Payment Flag -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="unit.missedPaymentFlag"
-                    label="Missed Payment Flag"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Notice to Vacate Given -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="noticeToVacateDisplay"
-                    label="Notice to Vacate"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Action Taken -->
-                <v-col cols="12">
-                  <v-textarea
-                    :model-value="unit.actionTaken"
-                    label="Action Taken"
-                    readonly
-                    class="custom-input"
-                    rows="3"
                   />
                 </v-col>
 
@@ -246,7 +180,6 @@ export default {
     return {
       activeTab: 'details',
       unit: {},
-      agencyName: '',
       loading: true,
       error: null,
       newNote: '',
@@ -268,18 +201,6 @@ export default {
         const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
         return ad - bd
       })
-    },
-    noticeToVacateDisplay() {
-      const v = this.unit?.noticeToVacateGiven
-      if (!v) return 'No'
-      // Keep original string or show formatted date appended to Yes
-      try {
-        const d = new Date(v)
-        const pretty = isNaN(d.getTime()) ? v : d.toLocaleDateString()
-        return `Yes - ${pretty}`
-      } catch (_) {
-        return `Yes - ${v}`
-      }
     }
   },
   async mounted() {
@@ -371,11 +292,6 @@ export default {
             ...unitData
           };
           
-          // Fetch agency name if agencyId exists
-          if (unitData.agencyId) {
-            await this.loadAgencyName(unitData.agencyId);
-          }
-          
           console.log('Flagged unit loaded:', this.unit);
           this.scrollNotesToBottom()
         } else {
@@ -462,21 +378,6 @@ export default {
         this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
       } finally {
         this.savingNote = false
-      }
-    },
-
-    async loadAgencyName(agencyId) {
-      try {
-        const agencyDoc = await getDoc(doc(db, 'users', agencyId));
-        if (agencyDoc.exists()) {
-          const agencyData = agencyDoc.data();
-          this.agencyName = agencyData.agencyName || 'Unknown Agency';
-        } else {
-          this.agencyName = 'Unknown Agency';
-        }
-      } catch (error) {
-        console.error('Error loading agency name:', error);
-        this.agencyName = 'Unknown Agency';
       }
     }
   },

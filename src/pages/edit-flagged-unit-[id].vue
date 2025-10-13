@@ -41,17 +41,6 @@
             <v-form ref="form" v-model="valid" lazy-validation>
                   <v-card-text>
                 <v-row>
-                  <!-- Agency -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      :model-value="agencyName"
-                      label="Agency"
-                      variant="outlined"
-                      readonly
-                      class="custom-input"
-                    />
-                  </v-col>
-
                   <!-- Unit Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -64,40 +53,13 @@
                     />
                   </v-col>
 
-                  <!-- Tenant Reference -->
+                  <!-- Unit Number -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="unit.tenantRef"
-                      label="Tenant Reference"
+                      v-model="unit.unitNumber"
+                      label="Unit Number"
                       variant="outlined"
                       class="custom-input"
-                      :rules="tenantRefRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Lease Start Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="unit.leaseStartDate"
-                      label="Lease Start Date"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="leaseStartDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Flag Reason -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="unit.flagReason"
-                      label="Reason Flagged"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="flagReasonRules"
-                      required
                     />
                   </v-col>
 
@@ -110,47 +72,6 @@
                       variant="outlined"
                       class="custom-input"
                       :rules="dateFlaggedRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Missed Payment Flag -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="unit.missedPaymentFlag"
-                      :items="['Yes', 'No']"
-                      label="Missed Payment Flag"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="missedPaymentFlagRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Notice to Vacate Given -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="unit.noticeToVacateGiven"
-                      label="Notice to Vacate Given"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="noticeToVacateGivenRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Action Taken -->
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="unit.actionTaken"
-                      label="Action Taken"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="actionTakenRules"
-                      :counter="500"
-                      maxlength="500"
-                      rows="3"
                       required
                     />
                   </v-col>
@@ -300,17 +221,10 @@ export default {
       activeTab: 'details',
       unit: {
         unitName: '',
-        tenantRef: '',
-        leaseStartDate: '',
-        flagReason: '',
+        unitNumber: '',
         dateFlagged: '',
-        missedPaymentFlag: '',
-        noticeToVacateGiven: '',
-        actionTaken: '',
-        notes: '',
         notesLog: []
       },
-      agencyName: '',
       loading: true,
       saving: false,
       error: null,
@@ -324,19 +238,7 @@ export default {
         v => !!v || "Unit Name is required",
         v => v.length >= 3 || "Unit Name must be at least 3 characters"
       ],
-      tenantRefRules: [v => !!v || "Tenant Reference is required"],
-      leaseStartDateRules: [v => !!v || "Lease Start Date is required"],
-      flagReasonRules: [v => !!v || "Reason Flagged is required"],
-      dateFlaggedRules: [v => !!v || "Date Flagged is required"],
-      missedPaymentFlagRules: [v => !!v || "Missed Payment Flag is required"],
-      noticeToVacateGivenRules: [v => !!v || "Notice To Vacate Given is required"],
-      actionTakenRules: [
-        v => !!v || "Action Taken is required",
-        v => (v ? v.length <= 500 : true) || 'Action Taken cannot exceed 500 characters'
-      ],
-      notesRules: [
-        v => (v ? v.length <= 500 : true) || 'Additional Notes cannot exceed 500 characters'
-      ],
+      dateFlaggedRules: [v => !!v || "Date Flagged is required"]
       
     };
   },
@@ -484,14 +386,8 @@ export default {
           // Prepare the update data
           const updateData = {
             unitName: this.unit.unitName,
-            tenantRef: this.unit.tenantRef,
-            leaseStartDate: this.unit.leaseStartDate,
-            flagReason: this.unit.flagReason,
+            unitNumber: this.unit.unitNumber || '',
             dateFlagged: this.unit.dateFlagged,
-            missedPaymentFlag: this.unit.missedPaymentFlag,
-            noticeToVacateGiven: this.unit.noticeToVacateGiven,
-            actionTaken: this.unit.actionTaken,
-            notes: this.unit.notes,
             updatedAt: new Date()
           };
 

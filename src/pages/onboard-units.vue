@@ -338,17 +338,9 @@ export default {
           const existingId = await this.findExistingFlagged(item)
           if (!existingId) {
             const flaggedData = {
-              agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
-              unitId: item.id,
               unitName: name,
-              unitNumber: item.unitNumber || '',
-              leaseStartDate: item.leaseStartDate || '',
-              flagReason: 'Flagged from Onboard Units',
+              unitNumber: item.unitNumber || item.propertyNumber || '',
               dateFlagged: new Date().toISOString().slice(0,10),
-              missedPaymentFlag: item.monthsMissed > 0 ? 'Yes' : 'No',
-              noticeToVacateGiven: '',
-              actionTaken: '',
-              notes: '',
               createdAt: new Date(),
               updatedAt: new Date()
             }
@@ -579,14 +571,22 @@ export default {
     async findExistingFlagged(item) {
       try {
         const name = item.propertyName || item.unitName || ''
-        let q1 = query(collection(db, 'flaggedUnits'), where('unitId', '==', item.id))
-        let s1 = await getDocs(q1)
-        if (!s1.empty) return s1.docs[0].id
-        let q2 = query(collection(db, 'flaggedUnits'), where('unitName', '==', name))
-        let s2 = await getDocs(q2)
-        const f2 = s2.docs.find(d => (d.data()?.agencyId || '') === (item.agencyId || ''))
-        if (f2) return f2.id
-        return null
+        const number = item.unitNumber || item.propertyNumber || ''
+        
+        // First try to find by unitName
+        let q = query(collection(db, 'flaggedUnits'), where('unitName', '==', name))
+        let snapshot = await getDocs(q)
+        
+        if (snapshot.empty) return null
+        
+        // If we have a unit number, try to match by both name and number
+        if (number) {
+          const match = snapshot.docs.find(d => d.data()?.unitNumber === number)
+          if (match) return match.id
+        }
+        
+        // Otherwise return the first match by name
+        return snapshot.docs[0].id
       } catch (e) { console.warn('findExistingFlagged error', e); return null }
     },
     async findExistingInspection(item) {

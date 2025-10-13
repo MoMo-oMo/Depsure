@@ -169,16 +169,6 @@
             :loading="unitsLoading"
             no-data-text="No data available"
           >
-            <template v-slot:item.missedPaymentFlag="{ item }">
-              <v-chip :color="item.missedPaymentFlag === 'Yes' ? 'error' : 'success'" size="small">
-                {{ item.missedPaymentFlag }}
-              </v-chip>
-            </template>
-            <template v-slot:item.noticeToVacateGiven="{ item }">
-              <span class="font-weight-medium">
-                {{ item.noticeToVacateGiven ? `Yes - ${item.noticeToVacateGiven}` : 'No' }}
-              </span>
-            </template>
             <!-- Centered Action Buttons -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -261,9 +251,8 @@ export default {
       activeUnitsCount: 0,
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
-        { title: "MISSED PAYMENT FLAG", key: "missedPaymentFlag", sortable: true, align: "center" },
-        { title: "NOTICE TO VACATE GIVEN", key: "noticeToVacateGiven", sortable: true, align: "center" },
-        { title: "ACTION TAKEN", key: "actionTaken", sortable: true },
+        { title: "UNIT NUMBER", key: "unitNumber", sortable: true },
+        { title: "DATE FLAGGED", key: "dateFlagged", sortable: true },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ]
     };
@@ -374,11 +363,9 @@ computed: {
     },
     filterUnits() {
       this.filteredUnits = this.units.filter((unit) => {
-        const textMatch = unit.unitName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          unit.tenantRef.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          unit.flagReason.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          unit.actionTaken.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          unit.notes.toLowerCase().includes(this.searchQuery.toLowerCase());
+        const textMatch = (unit.unitName || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          (unit.unitNumber || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          (unit.dateFlagged || '').toLowerCase().includes(this.searchQuery.toLowerCase());
 
         let agencyMatch = true;
         let monthMatch = true;
@@ -472,10 +459,8 @@ computed: {
             this.auditActions.DELETE,
             {
               unitName: unit.unitName,
-              agencyId: unit.agencyId,
-              tenantRef: unit.tenantRef,
-              flagReason: unit.flagReason,
-              missedPaymentFlag: unit.missedPaymentFlag
+              unitNumber: unit.unitNumber,
+              dateFlagged: unit.dateFlagged
             },
             this.resourceTypes.UNIT,
             unit.id
@@ -512,18 +497,11 @@ computed: {
           return;
         }
 
-        // Create a new flagged unit entry with default values
+        // Create a new flagged unit entry with only the essential fields
         const flaggedUnitData = {
-          agencyId: agencyId,
           unitName: 'New Flagged Unit',
-          tenantRef: '',
-          leaseStartDate: '',
-          flagReason: 'Flagged from Quick Add',
+          unitNumber: '',
           dateFlagged: new Date().toISOString().slice(0,10),
-          missedPaymentFlag: 'No',
-          noticeToVacateGiven: '',
-          actionTaken: '',
-          notes: '',
           createdAt: new Date(),
           updatedAt: new Date()
         };

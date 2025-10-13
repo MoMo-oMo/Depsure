@@ -356,9 +356,14 @@ export default {
       if (this.$refs.form.validate()) {
         this.loading = true;
         try {
-          // Prepare the flagged unit data
+          // Find the selected unit to get unit number if available
+          const selectedUnit = this.units.find(u => u.propertyName === this.unit.unitName);
+          
+          // Prepare the flagged unit data - only save unit name, unit number, and flagged date
           const flaggedUnitData = {
-            ...this.unit,
+            unitName: this.unit.unitName,
+            unitNumber: selectedUnit?.unitNumber || selectedUnit?.propertyNumber || '',
+            dateFlagged: this.unit.dateFlagged,
             createdAt: new Date(),
             updatedAt: new Date()
           };
@@ -370,14 +375,9 @@ export default {
           await this.logAuditEvent(
             this.auditActions.CREATE,
             {
-              unitName: this.unit.unitName,
-              agencyId: this.unit.agencyId,
-              tenantRef: this.unit.tenantRef,
-              flagReason: this.unit.flagReason,
-              dateFlagged: this.unit.dateFlagged,
-              missedPaymentFlag: this.unit.missedPaymentFlag,
-              noticeToVacateGiven: this.unit.noticeToVacateGiven,
-              actionTaken: this.unit.actionTaken
+              unitName: flaggedUnitData.unitName,
+              unitNumber: flaggedUnitData.unitNumber,
+              dateFlagged: flaggedUnitData.dateFlagged
             },
             this.resourceTypes.UNIT,
             docRef.id
