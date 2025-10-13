@@ -479,7 +479,12 @@ export default {
           await updateDoc(docRef, updateData);
           
           console.log('Inspection entry updated successfully');
-          this.showSuccessDialog("Inspection entry saved successfully!", "Success!", "Continue", `/view-inspection-${this.entry.id}`);
+          // Success pop and role-based redirect
+          const appStore = useAppStore();
+          const user = appStore.currentUser;
+          const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+          const redirectTo = isAgency ? '/onboard-units' : '/inspections';
+          this.showSuccessDialog("Inspection entry saved successfully!", "Success!", "Continue", redirectTo);
         } catch (error) {
           console.error('Error updating inspection entry:', error);
           this.showErrorDialog('Failed to save inspection entry. Please try again.', 'Error', 'OK');

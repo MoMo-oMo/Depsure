@@ -246,8 +246,8 @@ import { useAppStore } from '@/stores/app'
 export default {
   name: "ViewInspectionPage",
   setup() {
-    const { showConfirmDialog, showErrorDialog } = useCustomDialogs()
-    return { showConfirmDialog, showErrorDialog }
+    const { showConfirmDialog, showErrorDialog, showSuccessDialog } = useCustomDialogs()
+    return { showConfirmDialog, showErrorDialog, showSuccessDialog }
   },
   computed: {
     isAgencyUser() {
@@ -318,6 +318,12 @@ export default {
           updatedAt: new Date()
         }
         await updateDoc(doc(db, 'inspections', this.entry.id), payload)
+        // Success pop and role-based redirect
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+        const redirectTo = isAgency ? '/onboard-units' : '/inspections'
+        this.showSuccessDialog?.('Inspection changes saved successfully!', 'Success!', 'Continue', redirectTo)
       } catch (e) {
         console.error('Save details failed', e)
         this.showErrorDialog && this.showErrorDialog('Failed to save changes. Please try again.', 'Error', 'OK')

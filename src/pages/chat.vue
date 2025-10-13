@@ -1847,8 +1847,8 @@ export default {
 
 /* Bubble base */
 .bubble {
-  max-width: 88%;
-  border-radius: 18px;
+  max-width: 45%;
+  border-radius: 8px;
   padding: 12px 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   position: relative;
@@ -1886,10 +1886,10 @@ export default {
 
 /* Image bubble */
 .image-bubble { padding: 0; background: transparent; border: none; box-shadow: none; }
-.image-bubble.incoming { background: #ffffff; border: 1px solid #ecedf0; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-radius: 18px; overflow: hidden; }
+.image-bubble.incoming { background: #ffffff; border: 1px solid #ecedf0; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-radius: 8px; overflow: hidden; }
 .image-bubble.outgoing { background: transparent; border: none; box-shadow: none; }
-.message-image { display: block; max-width: min(320px, 86vw); height: auto; border-radius: 18px; }
-.image-bubble.incoming .message-image { border-radius: 18px; }
+.message-image { display: block; max-width: min(320px, 86vw); height: auto; border-radius: 8px; }
+.image-bubble.incoming .message-image { border-radius: 8px; }
 .image-bubble .bubble-meta { position: absolute; right: 10px; bottom: 10px; }
 .image-bubble .bubble-meta .time { color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
 .image-bubble.incoming .bubble-meta .time { color: #64748b; text-shadow: none; }
@@ -2067,6 +2067,6 @@ export default {
 .upload-text { color: #1f2937; font-weight: 700; font-size: 14px; }
 
 @media (max-width: 480px) {
-  .bubble { max-width: 96%; }
+  .bubble { max-width: 65%; }
 }
 </style>

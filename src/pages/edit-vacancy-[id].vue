@@ -387,6 +387,7 @@ export default {
       if (this.valid) {
         this.saving = true;
         
+
         try {
           console.log('Updating vacancy:', this.vacancy);
           

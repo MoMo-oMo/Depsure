@@ -93,6 +93,13 @@
             Quick Add
           </v-btn>
         </v-col>
+
+        <!-- Export to Excel Button -->
+        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center justify-end">
+          <v-btn style="margin-right:45%;" :loading="exportLoading" @click="exportFlaggedUnitsXLSX" class="back-btn ">
+            {{ exportLoading ? 'Exporting...' : 'Export to Excel' }}
+          </v-btn>
+        </v-col>
       </v-row>
 
       <!-- Clean Agency Header (image, centered title, no overlay) -->
@@ -208,13 +215,14 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+import { Workbook } from 'exceljs'
 import { collection, getDocs, query, where, deleteDoc, doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore'
+import { db } from '@/firebaseConfig'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
+const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
 
 export default {
   name: "FlaggedUnitsPage",
@@ -247,6 +255,7 @@ export default {
       agenciesLoading: false,
       units: [],
       unitsLoading: false,
+      exportLoading: false,
       flaggedUnsubscribe: null,
       activeUnitsCount: 0,
       headers: [
@@ -480,6 +489,95 @@ computed: {
     },
     addFlaggedUnit() {
       this.$router.push('/add-flagged-unit');
+    },
+    async exportFlaggedUnitsXLSX() {
+      this.exportLoading = true
+      try {
+        try {
+          await this.logAuditEvent(
+            this.auditActions.EXPORT,
+            {
+              exportType: 'XLSX',
+              recordCount: this.filteredUnits.length,
+              filters: {
+                searchQuery: this.searchQuery,
+                propertyType: this.propertyTypeFilter,
+                month: this.monthFilter
+              }
+            },
+            this.resourceTypes.UNIT,
+            null
+          )
+        } catch (_) {}
+
+        const columns = [
+          { header: 'UNIT NAME', key: 'unitName' },
+          { header: 'UNIT NUMBER', key: 'unitNumber' },
+          { header: 'DATE FLAGGED', key: 'dateFlagged' },
+          { header: 'PROPERTY TYPE', key: 'propertyType' }
+        ]
+
+        const rows = (this.filteredUnits || []).map(u => ({
+          unitName: u.unitName || '',
+          unitNumber: u.unitNumber || '',
+          dateFlagged: this.formatCsvDate(u.createdAt || u.dateFlagged),
+          propertyType: this.getPropertyTypeLabel?.(u.propertyType) || u.propertyType || ''
+        }))
+
+        const wb = new Workbook()
+        const ws = wb.addWorksheet('Flagged Units')
+        ws.columns = columns.map(c => ({ header: c.header, key: c.key, width: 22 }))
+        rows.forEach(r => ws.addRow(r))
+
+        const headerRow = ws.getRow(1)
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }
+        headerRow.height = 20
+
+        ws.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
+        const lastCol = String.fromCharCode(64 + columns.length)
+        ws.autoFilter = { from: 'A1', to: lastCol + '1' }
+
+        // Auto-fit widths within bounds
+        columns.forEach((col, idx) => {
+          const lengths = rows.map(r => {
+            const val = r[col.key]
+            if (val == null) return 0
+            if (typeof val === 'string') return val.split('\n').reduce((m, s) => Math.max(m, s.length), 0)
+            return String(val).length
+          })
+          const headerLen = col.header.length
+          const maxLen = Math.max(headerLen, ...lengths)
+          const minW = 14
+          const maxW = 40
+          ws.getColumn(idx + 1).width = Math.min(Math.max(maxLen + 2, minW), maxW)
+        })
+
+        const filename = `flagged-units-${new Date().toISOString().split('T')[0]}.xlsx`
+        const buffer = await wb.xlsx.writeBuffer()
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } catch (e) {
+        console.error('Export flagged units failed', e)
+        this.showErrorDialog?.('Failed to export flagged units. Please try again.', 'Error', 'OK')
+      } finally {
+        this.exportLoading = false
+      }
+    },
+    formatCsvDate(val) {
+      if (!val) return ''
+      const d = typeof val?.toDate === 'function' ? val.toDate() : new Date(val)
+      if (isNaN(d)) return ''
+      const pad = (n) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
     },
     async quickAddFlaggedUnit() {
       try {
