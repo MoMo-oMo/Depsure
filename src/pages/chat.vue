@@ -395,7 +395,7 @@ export default {
       unsubscribe: null,
 
       // Header / contact fallback (if no logo)
-      fallbackAvatar: 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg',
+      fallbackAvatar: 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d',
       
       // Super Admin profile for support chat
       superAdminProfile: null,
@@ -464,7 +464,7 @@ export default {
       return user?.userType === 'Super Admin' || (user?.userType === 'Admin' && user?.adminScope === 'depsure')
     },
     chatPartnerName() {
-      if (this.isAgencyUser) return 'Support'
+      if (this.isAgencyUser) return 'Depsure Support'
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
       return agency ? agency.agencyName : '—'
     },
@@ -485,15 +485,15 @@ export default {
         
         // If no message avatar found, try to get Super Admin profile from stored data
         if (this.superAdminProfile) {
-          return this.superAdminProfile.profileImageUrl || this.superAdminProfile.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+          return this.superAdminProfile.profileImageUrl || this.superAdminProfile.profileImage || 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d'
         }
         
         // Fallback to default support avatar
-        return 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+        return 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d'
       }
       // Super Admin side: show the agency's profile/logo
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
-      return agency?.profileImageUrl || agency?.profileImage || agency?.logoUrl || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+      return agency?.profileImageUrl || agency?.profileImage || agency?.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d'
     },
     // Identify likely partner id for presence
     partnerId() {
