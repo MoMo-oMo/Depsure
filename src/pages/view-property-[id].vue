@@ -288,13 +288,13 @@
                     <div class="document-category category-invoices">
                       <div class="category-header">
                         <h4 class="category-title">
-                          <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
+                          <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
                           Invoices
                         </h4>
                       </div>
                       <div v-if="filteredInvoices.length > 0" class="document-list">
                         <div v-for="(invoice, index) in filteredInvoices" :key="index" class="document-item">
-                          <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
+                          <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
                           <span class="document-name">{{ invoice.fileName }}</span>
                           <v-btn
                             size="small"
@@ -308,7 +308,7 @@
                         </div>
                       </div>
                       <div v-else class="no-documents">
-                        <v-icon color="grey" class="mr-2">mdi-receipt</v-icon>
+                        <v-icon color="grey" class="mr-2">mdi-receipt-text</v-icon>
                         No invoices uploaded for selected month
                       </div>
                     </div>

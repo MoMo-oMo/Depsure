@@ -67,6 +67,18 @@
                     />
                   </v-col>
 
+                  <!-- Lease End Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="notice.leaseEndDate"
+                      label="Lease End Date"
+                      type="date"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="leaseEndDateRules"
+                    />
+                  </v-col>
+
                   <!-- Notice Given Date -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -103,6 +115,34 @@
                       :items="['Yes', 'No']"
                       :rules="maintenanceRequiredRules"
                       required
+                    />
+                  </v-col>
+
+                  <!-- Paid Towards Fund -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="notice.paidTowardsFund"
+                      label="Paid Towards Fund"
+                      type="number"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="paidTowardsFundRules"
+                      min="0"
+                      step="0.01"
+                    />
+                  </v-col>
+
+                  <!-- Amount to be Paid Out (Inc Interest) -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="notice.amountToBePaidOut"
+                      label="Amount to be Paid Out (Inc Interest)"
+                      type="number"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="amountToBePaidOutRules"
+                      min="0"
+                      step="0.01"
                     />
                   </v-col>
                 </v-row>
@@ -157,9 +197,12 @@ export default {
         id: '',
         unitName: '',
         leaseStartDate: '',
+        leaseEndDate: '',
         noticeGivenDate: '',
         vacateDate: '',
-        maintenanceRequired: ''
+        maintenanceRequired: '',
+        paidTowardsFund: 0,
+        amountToBePaidOut: 0
       },
       loading: true,
       error: null,
@@ -172,6 +215,9 @@ export default {
       leaseStartDateRules: [
         v => !!v || "Lease Start Date is required"
       ],
+      leaseEndDateRules: [
+        v => (v === '' || !!v) || "Lease End Date is invalid"
+      ],
       noticeGivenDateRules: [
         v => !!v || "Notice Given Date is required"
       ],
@@ -180,6 +226,12 @@ export default {
       ],
       maintenanceRequiredRules: [
         v => !!v || "Maintenance Required is required"
+      ],
+      paidTowardsFundRules: [
+        v => v >= 0 || 'Paid Towards Fund cannot be negative'
+      ],
+      amountToBePaidOutRules: [
+        v => v >= 0 || 'Amount to be Paid Out cannot be negative'
       ]
     };
   },

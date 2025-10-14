@@ -254,6 +254,12 @@
                 R{{ item.amountToBePaidOut.toLocaleString() }}
               </span>
             </template>
+            <template v-slot:item.leaseStartDate="{ item }">
+              <span>{{ formatDate(item.leaseStartDate) }}</span>
+            </template>
+            <template v-slot:item.leaseEndDate="{ item }">
+              <span>{{ formatDate(item.leaseEndDate) }}</span>
+            </template>
             <template v-slot:item.actions="{ item }">
             <div class ="v-data-table_actions-cell">
               <v-btn
@@ -339,19 +345,7 @@ export default {
         { title: "UNIT NO.", key: "unitNumber", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
         { title: "TYPE", key: "propertyType", sortable: true, align: "center" },
-        { title: "MISSED RENT", key: "monthsMissed", sortable: true, align: "center" },
-        // {
-        //   title: "LEASE STARTING DATE",
-        //   key: "leaseStartDate",
-        //   sortable: true,
-        //   align: "center",
-        // },
-        // {
-        //   title: "LEASE END DATE",
-        //   key: "leaseEndDate",
-        //   sortable: true,
-        //   align: "center",
-        // },
+        { title: "LEASE STARTING DATE", key: "leaseStartDate", sortable: true, align: "center" },
 
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ],
@@ -458,6 +452,17 @@ export default {
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       return `${year}-${month}`;
+    },
+    formatDate(v) {
+      if (!v) return ''
+      try {
+        const d = typeof v.toDate === 'function' ? v.toDate() : new Date(v)
+        if (isNaN(d.getTime())) return String(v)
+        const dd = String(d.getDate()).padStart(2, '0')
+        const mm = String(d.getMonth() + 1).padStart(2, '0')
+        const yy = d.getFullYear()
+        return `${dd}/${mm}/${yy}`
+      } catch { return String(v) }
     },
     filterProperties() {
       this.filteredProperties = this.properties.filter((property) => {

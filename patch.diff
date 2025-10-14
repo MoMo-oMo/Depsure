@@ -1,0 +1,26 @@
+*** Begin Patch
+*** Update File: src/pages/index.vue
+@@
+-          <v-form ref="form" v-model="valid" class="pa-0 animate-form-fields" lazy-validation>
++          <v-form ref="form" v-model="valid" class="pa-0 animate-form-fields">
+@@
+-          <button
+-            class="custom-btn animate-button"
+-            :disabled="!valid || loading"
+-            @click="onSubmit"
+-          >
++          <button
++            class="custom-btn animate-button"
++            :disabled="loading"
++            @click="onSubmit"
++          >
+@@
+-    async onSubmit() {
+-      if (this.$refs.form.validate()) {
+-        this.loading = true;
++    async onSubmit() {
++      const result = await (this.$refs.form?.validate?.() || Promise.resolve({ valid: true }))
++      if (result?.valid) {
++        this.loading = true;
+         try {
+*** End Patch

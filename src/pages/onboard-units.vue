@@ -123,6 +123,9 @@
               <template #item.onboardingDate="{ item }">
                 {{ formatDate(item.leaseStartDate) }}
               </template>
+              <template #item.leaseEndDate="{ item }">
+                {{ formatDate(item.leaseEndDate) }}
+              </template>
               <template #item.actions="{ item }">
                 <div class="actions">
                   <!-- Flag / Unflag -->
@@ -226,6 +229,7 @@ export default {
         { title: 'UNIT NUMBER', key: 'unitNumber', sortable: true },
         { title: 'TYPE', key: 'propertyType', sortable: true, align: 'center' },
         { title: 'ONBOARDING DATE', key: 'onboardingDate', sortable: true, align: 'center' },
+        { title: 'LEASE END DATE', key: 'leaseEndDate', sortable: true, align: 'center' },
         { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center' },
       ],
     }
@@ -338,6 +342,8 @@ export default {
           const existingId = await this.findExistingFlagged(item)
           if (!existingId) {
             const flaggedData = {
+              agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
+              unitId: item.id,
               unitName: name,
               unitNumber: item.unitNumber || item.propertyNumber || '',
               dateFlagged: new Date().toISOString().slice(0,10),
@@ -485,6 +491,9 @@ export default {
           status: 'Active',
           maintenanceRequired: 'No',
           leaseStartDate: item.leaseStartDate || '',
+          leaseEndDate: item.leaseEndDate || '',
+          paidTowardsFund: item.paidTowardsFund ?? 0,
+          amountToBePaidOut: item.amountToBePaidOut ?? 0,
           propertyType: item.propertyType || 'residential',
           updatedAt: new Date()
         }

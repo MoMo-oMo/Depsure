@@ -132,8 +132,61 @@
                       required
                     />
                   </v-col>
+                  <!-- Lease End Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="property.leaseEndDate"
+                      label="Lease End Date"
+                      variant="outlined"
+                      type="date"
+                      class="custom-input"
+                      :rules="leaseEndDateRules"
+                      required
+                    />
+                  </v-col>
 
-                  <!-- Removed advanced fields from minimal form -->
+                  <!-- Paid Towards Fund -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="property.paidTowardsFund"
+                      label="Paid Towards Fund"
+                      variant="outlined"
+                      type="number"
+                      class="custom-input"
+                      :rules="paidTowardsFundRules"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Amount to be Paid Out (Inc Interest) -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="property.amountToBePaidOut"
+                      label="Amount to be Paid Out (Inc Interest)"
+                      variant="outlined"
+                      type="number"
+                      class="custom-input"
+                      :rules="amountToBePaidOutRules"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Paid Out Yes/No -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="property.paidOut"
+                      label="Paid Out Yes/No"
+                      variant="outlined"
+                      class="custom-input"
+                      :items="['Yes', 'No']"
+                      :rules="paidOutRules"
+                      required
+                    />
+                  </v-col>
                 </v-row>
               </v-card-text>
 

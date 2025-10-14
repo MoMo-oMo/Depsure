@@ -175,6 +175,18 @@
                   <v-text-field v-model="moveToActive.leaseStartDate" label="Lease Start Date" type="date" variant="outlined" class="custom-input" density="compact" :rules="[v=>!!v||'Required']" required />
                 </v-col>
                 <v-col cols="12" md="6">
+                  <v-text-field v-model="moveToActive.leaseEndDate" label="Lease End Date" type="date" variant="outlined" class="custom-input" density="compact" />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model.number="moveToActive.paidTowardsFund" label="Paid Towards Fund (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model.number="moveToActive.amountToBePaidOut" label="Amount to be Paid Out (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-select v-model="moveToActive.paidOut" :items="['Yes','No']" label="Paid Out Yes/No" variant="outlined" class="custom-input" density="compact" />
+                </v-col>
+                <v-col cols="12" md="6">
                   <v-text-field v-model="moveToActive.tenantRef" label="New Tenant Reference" variant="outlined" class="custom-input" density="compact" :rules="[v=>!!v||'Required']" required />
                 </v-col>
                 <v-col cols="12">
@@ -256,7 +268,11 @@ export default {
         unitNumber: '',
         propertyType: 'residential',
         leaseStartDate: '',
+        leaseEndDate: '',
         tenantRef: '',
+        paidTowardsFund: null,
+        amountToBePaidOut: null,
+        paidOut: 'No',
         notes: ''
       },
       headers: [
@@ -329,6 +345,13 @@ export default {
         this.moveToActive.unitName = item.unitName || ''
         this.moveToActive.propertyType = item.propertyType || 'residential'
         this.moveToActive.unitNumber = ''
+        // reset optional fields to empty for new lease
+        this.moveToActive.leaseEndDate = ''
+        this.moveToActive.tenantRef = ''
+        this.moveToActive.paidTowardsFund = null
+        this.moveToActive.amountToBePaidOut = null
+        this.moveToActive.paidOut = 'No'
+        this.moveToActive.notes = ''
 
         // Load archived unit details to get unit number/type if missing
         let archivedDoc = null
@@ -345,8 +368,10 @@ export default {
         if (archivedDoc) {
           const data = archivedDoc.data() || {}
           this.moveToActive.unitNumber = data.unitNumber || data.propertyNumber || ''
+          this.moveToActive.tenantRef = data.tenantRef || data.tenantName || ''
           if (!item.propertyType) this.moveToActive.propertyType = data.propertyType || 'residential'
           if (!this.moveToActive.unitId && data.originalId) this.moveToActive.unitId = data.originalId
+          // Do not carry over past lease/payment values
         }
       } catch (e) {
         console.error('Open move to active failed', e)
@@ -411,6 +436,19 @@ export default {
           tenantRef: this.moveToActive.tenantRef,
           status: 'Active',
           updatedAt: new Date()
+        }
+        // Only include new lease/payment values if provided (do not carry over past ones)
+        if (this.moveToActive.leaseEndDate) {
+          unitPayload.leaseEndDate = this.moveToActive.leaseEndDate
+        }
+        if (this.moveToActive.paidTowardsFund !== null && this.moveToActive.paidTowardsFund !== '') {
+          unitPayload.paidTowardsFund = Number(this.moveToActive.paidTowardsFund)
+        }
+        if (this.moveToActive.amountToBePaidOut !== null && this.moveToActive.amountToBePaidOut !== '') {
+          unitPayload.amountToBePaidOut = Number(this.moveToActive.amountToBePaidOut)
+        }
+        if (this.moveToActive.paidOut) {
+          unitPayload.paidOut = this.moveToActive.paidOut
         }
         // Remove archive-only fields
         delete unitPayload.originalId; delete unitPayload.archivedAt; delete unitPayload.archivedBy; delete unitPayload.archivedByUserType; delete unitPayload.archivedReason
@@ -667,4 +705,3 @@ export default {
   .notification-button { width: 100%; }
 }
 </style>
-

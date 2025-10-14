@@ -376,13 +376,10 @@ computed: {
           (unit.unitNumber || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           (unit.dateFlagged || '').toLowerCase().includes(this.searchQuery.toLowerCase());
 
-        let agencyMatch = true;
+        // Agency filtering is already done in fetchFlaggedUnits() - no need to do it again here
+        // (this allows old flagged units without agencyId to show up)
         let monthMatch = true;
         let propertyTypeMatch = true;
-
-        if (this.selectedAgency) {
-          agencyMatch = unit.agencyId === this.selectedAgency;
-        }
 
         if (this.propertyTypeFilter) {
           propertyTypeMatch = unit.propertyType === this.propertyTypeFilter;
@@ -399,7 +396,7 @@ computed: {
             unitDate = new Date(unit.createdAt);
           } else {
             // No createdAt date, skip this unit
-            return textMatch && agencyMatch && propertyTypeMatch;
+            return textMatch && propertyTypeMatch;
           }
           
           const filterDate = new Date(this.monthFilter + "-01");
@@ -408,8 +405,9 @@ computed: {
           monthMatch = unitMonth === filterMonth;
         }
 
-        return textMatch && agencyMatch && monthMatch && propertyTypeMatch;
+        return textMatch && monthMatch && propertyTypeMatch;
       });
+      console.log(`filterUnits: ${this.filteredUnits.length} units after applying filters`);
     },
     viewUnit(unit) {
       console.log("Viewing flagged unit:", unit);
@@ -691,29 +689,73 @@ computed: {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         
-        let unitsQuery;
-        
-        if (userType === 'Agency') {
-          // Agency users can only see their own flagged units
-          unitsQuery = query(
-            collection(db, 'flaggedUnits'),
-            where('agencyId', '==', currentUser.uid)
-          );
-        } else if (agencyId) {
-          // Super Admin/Admin users query flagged units for specific agency
-          unitsQuery = query(
-            collection(db, 'flaggedUnits'),
-            where('agencyId', '==', agencyId)
-          );
-        } else {
-          // Super Admin/Admin users query all flagged units when no agency selected
-          unitsQuery = collection(db, 'flaggedUnits');
-        }
+        // Fetch ALL flagged units (we'll filter client-side to handle old units without agencyId)
+        let unitsQuery = collection(db, 'flaggedUnits');
         
         // Live subscribe to flagged units
         this.flaggedUnsubscribe = onSnapshot(unitsQuery, async (querySnapshot) => {
           try {
-            const unitsData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            let unitsData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // Filter by agency - need to check both flagged unit's agencyId and the actual unit's agencyId
+            const targetAgencyId = userType === 'Agency' ? currentUser.uid : agencyId;
+            
+            if (targetAgencyId) {
+              console.log('Filtering flagged units for agency:', targetAgencyId);
+              const filtered = [];
+              
+              for (const unit of unitsData) {
+                let shouldInclude = false;
+                
+                // Check 1: If flagged unit has agencyId, use that
+                if (unit.agencyId && unit.agencyId === targetAgencyId) {
+                  shouldInclude = true;
+                  console.log('✓ Flagged unit matched by agencyId:', unit.unitName);
+                }
+                
+                // Check 2: Look up the actual unit to check agency
+                if (!shouldInclude && unit.unitId) {
+                  try {
+                    const unitDoc = await getDoc(doc(db, 'units', unit.unitId));
+                    if (unitDoc.exists()) {
+                      const unitData = unitDoc.data();
+                      if (unitData?.agencyId === targetAgencyId) {
+                        shouldInclude = true;
+                        console.log('✓ Flagged unit matched by unitId lookup:', unit.unitName);
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('Error checking unit agencyId by unitId:', e);
+                  }
+                }
+                
+                // Check 3: Try to find by unit name
+                if (!shouldInclude && unit.unitName) {
+                  try {
+                    const uq = query(collection(db, 'units'), where('propertyName', '==', unit.unitName));
+                    const uSnap = await getDocs(uq);
+                    if (!uSnap.empty) {
+                      // Check if any of the matched units belong to this agency
+                      const matchedUnit = uSnap.docs.find(d => d.data()?.agencyId === targetAgencyId);
+                      if (matchedUnit) {
+                        shouldInclude = true;
+                        console.log('✓ Flagged unit matched by unitName lookup:', unit.unitName);
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('Error checking unit by name:', e);
+                  }
+                }
+                
+                if (shouldInclude) {
+                  filtered.push(unit);
+                }
+              }
+              
+              console.log(`Filtered ${filtered.length} flagged units for agency ${targetAgencyId}`);
+              unitsData = filtered;
+            }
+            
             // Resolve property types for each flagged unit (async)
             const enriched = await Promise.all(
               unitsData.map(async (unit) => {
@@ -722,7 +764,7 @@ computed: {
                     const propertyType = await this.resolvePropertyTypeFromUnit(unit.unitId);
                     return { ...unit, propertyType };
                   } else if (unit.unitName) {
-                    const uq = query(collection(db, 'units'), where('unitName', '==', unit.unitName));
+                    const uq = query(collection(db, 'units'), where('propertyName', '==', unit.unitName));
                     const uSnap = await getDocs(uq);
                     if (!uSnap.empty) {
                       const unitDoc = uSnap.docs[0];

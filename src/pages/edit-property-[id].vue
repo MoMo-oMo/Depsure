@@ -380,7 +380,7 @@
                       <!-- Invoices Upload Section -->
                       <div class="document-category category-invoices">
                         <h4 class="category-title">
-                          <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
+                          <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
                           Invoices
                         </h4>
                         <div class="upload-row">
@@ -393,7 +393,7 @@
                             accept=".pdf"
                             multiple
                             show-size
-                            prepend-icon="mdi-receipt"
+                            prepend-icon="mdi-receipt-text"
                             :loading="uploadingInvoices"
                             :rules="invoiceFileRules"
                             hint="Only PDF files are allowed. Maximum size: 50MB per file"
@@ -414,7 +414,7 @@
                           <h5 class="existing-title">Existing Invoices:</h5>
                           <div class="document-list">
                             <div v-for="(invoice, index) in editFilteredInvoices" :key="`inv-${index}`" class="document-item">
-                              <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
+                              <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
                               <span class="document-name">{{ invoice.fileName }}</span>
                               <v-btn
                                 size="small"

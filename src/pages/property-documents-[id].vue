@@ -89,7 +89,7 @@
                 <h3 class="docs-title">Invoices</h3>
                 <div v-if="filteredInvoices.length" class="doc-list">
                   <div v-for="(docItem, idx) in filteredInvoices" :key="'inv-'+idx" class="doc-item">
-                    <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
+                    <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
                     <span class="doc-name">{{ docItem.fileName || 'Document' }}</span>
                     <v-btn size="small" variant="outlined" color="success" class="ml-2" @click="viewDoc(docItem)">View</v-btn>
                     <a v-if="docItem.fileURL" class="ml-2" :href="docItem.fileURL" target="_blank">Download</a>
@@ -237,4 +237,3 @@ export default {
 .document-button.secondary { background-color: #6b7280; }
 .document-button.primary { background-color: #111827; }
 </style>
-

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-app>
     <NavDrawer v-if="showDrawer" />
     <AppBar v-if="showDrawer" />
@@ -6,10 +6,12 @@
     <GlobalNotification />
     <GlobalDialogs />
     <PushPermissionPrompt v-model:visible="pushPromptVisible" @accepted="onPushAccepted" />
+    <ClearCookies :showOnFirstVisit="false" />
   </v-app>
 </template>
-
 <script setup>
+
+import ClearCookies from '@/components/ClearCookies.vue'
 import NavDrawer from '@/components/NavDrawer.vue'
 import AppBar from '@/components/AppBar.vue'
 import GlobalNotification from '@/components/GlobalNotification.vue'
@@ -61,8 +63,7 @@ onMounted(async () => {
     }
   } catch (e) {
     console.warn('Messaging init skipped', e)
-  }
-})
+  }})
 
 // Protected routes list
 const protectedRoutes = [
@@ -281,3 +282,10 @@ watch(() => appStore.isLoggedIn, async (loggedIn) => {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .fade-enter-to, .fade-leave-from { opacity: 1; }
 </style>
+
+
+
+
+
+
+

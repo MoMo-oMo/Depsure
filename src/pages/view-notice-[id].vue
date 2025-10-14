@@ -65,6 +65,17 @@
                   />
                 </v-col>
 
+                <!-- Lease End Date -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="notice.leaseEndDate"
+                    label="Lease End Date"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
                 <!-- Notice Given Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
@@ -92,6 +103,28 @@
                   <v-text-field
                     :model-value="notice.maintenanceRequired"
                     label="Maintenance Required After Inspection"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Paid Towards Fund -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="`R${Number(notice.paidTowardsFund || 0).toLocaleString()}`"
+                    label="Paid Towards Fund"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Amount to be Paid Out -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="`R${Number(notice.amountToBePaidOut || 0).toLocaleString()}`"
+                    label="Amount to be Paid Out (Inc Interest)"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -144,9 +177,12 @@ export default {
         id: '',
         unitName: '',
         leaseStartDate: '',
+        leaseEndDate: '',
         noticeGivenDate: '',
         vacateDate: '',
-        maintenanceRequired: ''
+        maintenanceRequired: '',
+        paidTowardsFund: 0,
+        amountToBePaidOut: 0
       },
       loading: true,
       error: null,

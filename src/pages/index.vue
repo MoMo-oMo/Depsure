@@ -1,13 +1,12 @@
 <template>
-  <v-app>
-    <v-main class="split-login">
+  <v-main class="split-login">
       <!-- Left Panel: Form -->
       <div class="left-panel">
         <div class="login-card animate-form">
           <h2 class="login-title animate-title">Hello!</h2>
           <small class="animate-subtitle">Login to Get Started</small>
 
-          <v-form ref="form" v-model="valid" class="pa-0 animate-form-fields" lazy-validation>
+          <v-form ref="form" v-model="valid" class="pa-0 animate-form-fields">
             <!-- Email Field -->
             <v-text-field
               v-model="email"
@@ -31,8 +30,9 @@
                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                @click:append-inner="showPassword = !showPassword"
                flat="true"
+               style="margin-top: -18px;"
                variant="outlined"
-               class="custom-input animate-input"
+               class="custom-input animate-input pa-0"
                :rules="passwordRules"
                dense
              />
@@ -47,7 +47,7 @@
           <!-- Custom Black Login Button -->
           <button
             class="custom-btn animate-button"
-            :disabled="!valid || loading"
+            :disabled="loading"
             @click="onSubmit"
           >
             {{ loading ? 'Logging in...' : 'Login' }}
@@ -77,7 +77,7 @@
        v-model:visible="showForgotPasswordDialog"
        @close="showForgotPasswordDialog = false"
      />
-   </v-app>
+   
 </template>
 
 <script>
@@ -302,7 +302,6 @@ export default {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   z-index: 3;
   position: relative;
   display: flex;
