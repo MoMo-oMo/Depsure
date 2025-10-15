@@ -77,6 +77,13 @@
         />
         <v-list-item
           v-if="!(isAgencyUser || isAgencyAdmin)"
+          prepend-icon="mdi-home-outline"
+          title="VACANCIES"
+          value="vacancies"
+          @click="navigateTo('vacancies')"
+        />
+        <v-list-item
+          v-if="!(isAgencyUser || isAgencyAdmin)"
           prepend-icon="mdi-flag"
           title="FLAGGED UNITS"
           value="flagged-units"
@@ -96,13 +103,7 @@
           value="inspections"
           @click="navigateTo('inspections')"
         />
-        <v-list-item
-          v-if="!(isAgencyUser || isAgencyAdmin)"
-          prepend-icon="mdi-home-outline"
-          title="VACANCIES"
-          value="vacancies"
-          @click="navigateTo('vacancies')"
-        />
+   
         <v-list-item
           v-if="isAgencyUser || isAgencyAdmin || hasSelectedAgency"
           prepend-icon="mdi-message-text"

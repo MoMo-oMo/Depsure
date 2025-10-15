@@ -132,7 +132,7 @@
                       required
                     />
                   </v-col>
-                  <!-- Lease End Date -->
+                  <!-- Lease End Date (optional) -->
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="property.leaseEndDate"
@@ -141,7 +141,6 @@
                       type="date"
                       class="custom-input"
                       :rules="leaseEndDateRules"
-                      required
                     />
                   </v-col>
 
@@ -153,6 +152,7 @@
                       variant="outlined"
                       type="number"
                       class="custom-input"
+                      prefix="R"
                       :rules="paidTowardsFundRules"
                       min="0"
                       step="0.01"
@@ -168,6 +168,7 @@
                       variant="outlined"
                       type="number"
                       class="custom-input"
+                      prefix="R"
                       :rules="amountToBePaidOutRules"
                       min="0"
                       step="0.01"
@@ -280,9 +281,7 @@ export default {
       leaseStartDateRules: [
         v => !!v || 'Lease Start Date is required'
       ],
-      leaseEndDateRules: [
-        v => !!v || 'Lease End Date is required'
-      ],
+      leaseEndDateRules: [],
       monthsMissedRules: [
         v => v >= 0 || 'Months Missed cannot be negative',
         v => v <= 12 || 'Months Missed cannot exceed 12'

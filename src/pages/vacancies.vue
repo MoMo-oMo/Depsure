@@ -178,10 +178,10 @@
                   <v-text-field v-model="moveToActive.leaseEndDate" label="Lease End Date" type="date" variant="outlined" class="custom-input" density="compact" />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field v-model.number="moveToActive.paidTowardsFund" label="Paid Towards Fund (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" />
+                  <v-text-field v-model.number="moveToActive.paidTowardsFund" label="Paid Towards Fund (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" prefix="R" />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field v-model.number="moveToActive.amountToBePaidOut" label="Amount to be Paid Out (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" />
+                  <v-text-field v-model.number="moveToActive.amountToBePaidOut" label="Amount to be Paid Out (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" prefix="R" />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-select v-model="moveToActive.paidOut" :items="['Yes','No']" label="Paid Out Yes/No" variant="outlined" class="custom-input" density="compact" />
@@ -437,7 +437,12 @@ export default {
           status: 'Active',
           updatedAt: new Date()
         }
-        // Only include new lease/payment values if provided (do not carry over past ones)
+        // Do not carry over archived lease/payment values by default
+        delete unitPayload.leaseEndDate
+        delete unitPayload.paidTowardsFund
+        delete unitPayload.amountToBePaidOut
+        delete unitPayload.paidOut
+        // Only include new lease/payment values if provided
         if (this.moveToActive.leaseEndDate) {
           unitPayload.leaseEndDate = this.moveToActive.leaseEndDate
         }

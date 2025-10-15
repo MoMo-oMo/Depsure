@@ -909,22 +909,21 @@ export default {
 
         const appStore = useAppStore()
         const user = appStore.currentUser
-        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
-        
+        const isAgency = user?.userType === 'Agency'
+        const isAgencyAdmin = user?.userType === 'Admin' && user?.adminScope === 'agency'
+
         let authorName = 'Unknown User'
         if (isAgency) {
+          // Pure Agency users use their Agency name
           authorName = user?.agencyName || 'Agency'
-        } else {
-          // For Super Admin and Admin users, use their name or email
-          if (user?.userType === 'Super Admin') {
-            authorName = user?.firstName && user?.lastName 
-              ? `${user.firstName} ${user.lastName}`
-              : user?.firstName || user?.lastName || user?.email || 'Super Admin'
-          } else {
-            authorName = user?.firstName && user?.lastName 
-              ? `${user.firstName} ${user.lastName}`
-              : user?.firstName || user?.lastName || user?.email || 'Admin'
-          }
+        } else if (user?.userType === 'Super Admin') {
+          // Support should appear as Support
+          authorName = 'Support'
+        } else if (isAgencyAdmin || user?.userType === 'Admin') {
+          // Agency Admin and Depsure Admin use Firstname Lastname (fallbacks as needed)
+          authorName = user?.firstName && user?.lastName 
+            ? `${user.firstName} ${user.lastName}`
+            : user?.firstName || user?.lastName || user?.email || 'Admin'
         }
 
         const message = {
@@ -1645,7 +1644,13 @@ export default {
               imageUrl: url,
               text: '',
               authorId: user.uid,
-              authorName: (user?.userType === 'Agency') ? (user?.agencyName || 'Agency') : (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (user?.firstName || user?.lastName || user?.email || 'Admin')),
+              authorName: (user?.userType === 'Agency')
+                ? (user?.agencyName || 'Agency')
+                : (user?.userType === 'Super Admin')
+                  ? 'Support'
+                  : (user?.firstName && user?.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : (user?.firstName || user?.lastName || user?.email || 'Admin')),
               authorType: user.userType,
               authorAvatarUrl: user?.profileImageUrl || user?.profileImage || '',
               timestamp: new Date(),

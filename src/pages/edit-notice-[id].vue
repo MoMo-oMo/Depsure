@@ -129,6 +129,7 @@
                       :rules="paidTowardsFundRules"
                       min="0"
                       step="0.01"
+                      prefix="R"
                     />
                   </v-col>
 
@@ -143,6 +144,7 @@
                       :rules="amountToBePaidOutRules"
                       min="0"
                       step="0.01"
+                      prefix="R"
                     />
                   </v-col>
                 </v-row>

@@ -135,14 +135,7 @@
                   <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">
                     Save Changes
                   </v-btn>
-                  <v-btn 
-                    color="black" 
-                    variant="outlined" 
-                    @click="openPropertyDetails" 
-                    class="property-btn"
-                  >
-                    Property Details
-                  </v-btn>
+                  
                   <!-- <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
                     Back
                   </v-btn> -->
@@ -479,7 +472,7 @@ export default {
         this.savingNote = true
         const appStore = useAppStore()
         const currentUser = appStore.currentUser
-        const isAgency = currentUser?.userType === 'Agency'
+        const isAgency = currentUser?.userType === 'Agency' || (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency')
         
         // Get proper author name based on user type
         let authorName = 'Unknown User'

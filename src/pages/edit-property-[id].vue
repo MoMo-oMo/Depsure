@@ -169,6 +169,7 @@
                           variant="outlined"
                           type="number"
                           class="custom-input"
+                          prefix="R"
                           :rules="[]"
                         />
                       </v-col>
@@ -193,6 +194,7 @@
                           variant="outlined"
                           type="number"
                           class="custom-input"
+                          prefix="R"
                           :rules="[]"
                         />
                       </v-col>
@@ -205,6 +207,7 @@
                           variant="outlined"
                           type="number"
                           class="custom-input"
+                          prefix="R"
                           :rules="[]"
                         />
                       </v-col>

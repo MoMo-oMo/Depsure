@@ -128,6 +128,7 @@
                         required
                       />
                     </v-col>
+                    <!-- Agency Admin specific fields -->
                     <v-col cols="12" md="6" v-if="user.adminScope === 'agency'">
                       <v-select
                         v-model="user.managedAgencyId"
@@ -139,6 +140,26 @@
                         variant="outlined"
                         class="custom-input"
                         :rules="[v => !!v || 'Please select an agency']"
+                        required
+                      />
+                    </v-col>
+                    <v-col cols="12" md="6" v-if="user.adminScope === 'agency'">
+                      <v-text-field
+                        v-model="user.firstName"
+                        label="First Name"
+                        variant="outlined"
+                        class="custom-input"
+                        :rules="firstNameRules"
+                        required
+                      />
+                    </v-col>
+                    <v-col cols="12" md="6" v-if="user.adminScope === 'agency'">
+                      <v-text-field
+                        v-model="user.lastName"
+                        label="Last Name"
+                        variant="outlined"
+                        class="custom-input"
+                        :rules="lastNameRules"
                         required
                       />
                     </v-col>
@@ -296,6 +317,8 @@ export default {
         adminScope: 'depsure', // 'depsure' | 'agency'
         managedAgencyId: '',
         managedAgencyName: '',
+        firstName: '',
+        lastName: '',
         // Agency fields (mirror View Agency)
         agencyName: '',
         regNo: '',
@@ -336,6 +359,12 @@ export default {
       phoneRules: [
         v => (this.user.userType !== 'Agency') || !!v || 'Contact Number is required',
         v => (this.user.userType !== 'Agency') || (/^(0[1-9]\d{8}|\+27[1-9]\d{8})$/).test((v||'').replace(/\s|-/g,'')) || 'Enter a valid SA number (0XXXXXXXXX or +27XXXXXXXXX)'
+      ],
+      firstNameRules: [
+        v => (this.user.userType !== 'Admin' || this.user.adminScope !== 'agency') || !!v || 'First name is required for Agency Admin'
+      ],
+      lastNameRules: [
+        v => (this.user.userType !== 'Admin' || this.user.adminScope !== 'agency') || !!v || 'Last name is required for Agency Admin'
       ]
     }
   },
@@ -404,6 +433,8 @@ export default {
               adminScope: this.user.userType === 'Admin' ? (this.user.adminScope || 'depsure') : null,
               managedAgencyId: this.user.userType === 'Admin' && this.user.adminScope === 'agency' ? (this.user.managedAgencyId || null) : null,
               managedAgencyName: this.user.userType === 'Admin' && this.user.adminScope === 'agency' ? (this.agencies.find(a => a.id === this.user.managedAgencyId)?.agencyName || null) : null,
+              firstName: this.user.userType === 'Admin' ? (this.user.firstName || null) : null,
+              lastName: this.user.userType === 'Admin' ? (this.user.lastName || null) : null,
               // Agency-specific fields
               agencyName: this.user.userType === 'Agency' ? this.user.agencyName : null,
               regNo: this.user.userType === 'Agency' ? (this.user.regNo || '') : null,

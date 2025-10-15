@@ -499,7 +499,7 @@ export default {
         this.savingNote = true
         const appStore = useAppStore()
         const currentUser = appStore.currentUser
-        const isAgency = currentUser?.userType === 'Agency'
+        const isAgency = currentUser?.userType === 'Agency' || (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency')
         
         // Get proper author name based on user type
         let authorName = 'Unknown User'
