@@ -36,7 +36,7 @@ export default {
   data() {
     return {
       open: false,
-      currentVersion: '1.0.1'
+      currentVersion: '1.0.2'
     }
   },
   computed: {

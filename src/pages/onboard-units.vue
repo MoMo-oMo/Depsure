@@ -478,7 +478,7 @@ export default {
         )
         const existingNoticeSnapshot = await getDocs(existingNoticeQuery)
         
-        const noticeData = {
+        const baseNoticeData = {
           agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
           agencyName: agencyName,
           unitId: item.id,
@@ -492,20 +492,23 @@ export default {
           maintenanceRequired: 'No',
           leaseStartDate: item.leaseStartDate || '',
           leaseEndDate: item.leaseEndDate || '',
-          paidTowardsFund: item.paidTowardsFund ?? 0,
-          amountToBePaidOut: item.amountToBePaidOut ?? 0,
           propertyType: item.propertyType || 'residential',
           updatedAt: new Date()
         }
         
         if (!existingNoticeSnapshot.empty) {
-          // Update existing notice
+          // Update existing notice (preserve any previously set financial amounts)
           const existingNoticeId = existingNoticeSnapshot.docs[0].id
-          await updateDoc(doc(db, 'notices', existingNoticeId), noticeData)
+          await updateDoc(doc(db, 'notices', existingNoticeId), baseNoticeData)
         } else {
-          // Create new notice
-          noticeData.createdAt = new Date()
-          await addDoc(collection(db, 'notices'), noticeData)
+          // Create new notice with defaulted financial amounts
+          const newNoticeData = {
+            ...baseNoticeData,
+            paidTowardsFund: 0,
+            amountToBePaidOut: 0,
+            createdAt: new Date()
+          }
+          await addDoc(collection(db, 'notices'), newNoticeData)
         }
         
         // Update local state

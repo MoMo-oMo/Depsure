@@ -469,31 +469,13 @@ export default {
       return agency ? agency.agencyName : '—'
     },
     chatAvatarUrl() {
-      // Show the chat partner's avatar
+      // Agency users always see the hardcoded Depsure Support avatar
       if (this.isAgencyUser) {
-        // Agency users are chatting with Support (Super Admin side).
-        // Try to get Super Admin avatar from messages first
-        try {
-          const arr = Array.isArray(this.messages) ? this.messages : []
-          for (let i = arr.length - 1; i >= 0; i--) {
-            const m = arr[i]
-            if (m && String(m.authorId || '') !== String(this.currentUserId || '')) {
-              if (m.authorAvatarUrl) return m.authorAvatarUrl
-            }
-          }
-        } catch {}
-        
-        // If no message avatar found, try to get Super Admin profile from stored data
-        if (this.superAdminProfile) {
-          return this.superAdminProfile.profileImageUrl || this.superAdminProfile.profileImage || 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d'
-        }
-        
-        // Fallback to default support avatar
-        return 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d'
+        return this.fallbackAvatar
       }
-      // Super Admin side: show the agency's profile/logo
+      // Staff/Super Admin side: show the agency's profile/logo dynamically
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
-      return agency?.profileImageUrl || agency?.profileImage || agency?.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d'
+      return agency?.profileImageUrl || agency?.profileImage || agency?.logoUrl || this.fallbackAvatar
     },
     // Identify likely partner id for presence
     partnerId() {

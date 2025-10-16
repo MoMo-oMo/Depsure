@@ -9,7 +9,7 @@
 	>
 		<v-app-bar-nav-icon color="black" @click="toggle" />
 		<v-toolbar-title class="title-black">
-			<span class="title-text" :key="current.title">{{ current.title }}</span>
+			<span class="title-text" :key="displayTitle">{{ displayTitle }}</span>
 		</v-toolbar-title>
 		<v-spacer />
 		<!-- Chat Icon with Notification Badge -->
@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-	import { ref, onMounted, onUnmounted } from 'vue'
+	import { ref, computed, onMounted, onUnmounted } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useDrawer } from '@/composables/useDrawer'
 	import { useNav } from '@/composables/useNav'
@@ -30,6 +30,21 @@
 	const { current } = useNav()
 	const router = useRouter()
 	const appStore = useAppStore()
+
+	// Dynamic app bar title for Chat route
+	const displayTitle = computed(() => {
+		const user = appStore.currentUser
+		const isAgencyUser = user?.userType === 'Agency'
+		const isAgencyAdmin = user?.userType === 'Admin' && user?.adminScope === 'agency'
+		const isDepsureAdmin = user?.userType === 'Admin' && user?.adminScope === 'depsure'
+		const isSuperAdmin = user?.userType === 'Super Admin'
+		const key = current.value?.key
+		if (key === 'chat') {
+			if (isAgencyUser || isAgencyAdmin) return 'Depsure Support'
+			if (isSuperAdmin || isDepsureAdmin) return appStore.currentAgency?.agencyName || 'Chat'
+		}
+		return current.value?.title || ''
+	})
 	
 	const unreadCount = ref(0)
 	let unsubscribe = null
