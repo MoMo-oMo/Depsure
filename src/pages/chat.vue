@@ -395,7 +395,7 @@ export default {
       unsubscribe: null,
 
       // Header / contact fallback (if no logo)
-      fallbackAvatar: 'https://firebasestorage.googleapis.com/v0/b/depsure-a9b61.firebasestorage.app/o/ChatGPT%20Image%20Aug%2025%2C%202025%2C%2009_03_46%20PM.png?alt=media&token=604bc334-793f-4c56-ad94-7e3c40d2357d',
+      fallbackAvatar: 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg',
       
       // Super Admin profile for support chat
       superAdminProfile: null,
@@ -464,18 +464,36 @@ export default {
       return user?.userType === 'Super Admin' || (user?.userType === 'Admin' && user?.adminScope === 'depsure')
     },
     chatPartnerName() {
-      if (this.isAgencyUser) return 'Depsure Support'
+      if (this.isAgencyUser) return 'Support'
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
       return agency ? agency.agencyName : '—'
     },
     chatAvatarUrl() {
-      // Agency users always see the hardcoded Depsure Support avatar
+      // Show the chat partner's avatar
       if (this.isAgencyUser) {
-        return this.fallbackAvatar
+        // Agency users are chatting with Support (Super Admin side).
+        // Try to get Super Admin avatar from messages first
+        try {
+          const arr = Array.isArray(this.messages) ? this.messages : []
+          for (let i = arr.length - 1; i >= 0; i--) {
+            const m = arr[i]
+            if (m && String(m.authorId || '') !== String(this.currentUserId || '')) {
+              if (m.authorAvatarUrl) return m.authorAvatarUrl
+            }
+          }
+        } catch {}
+        
+        // If no message avatar found, try to get Super Admin profile from stored data
+        if (this.superAdminProfile) {
+          return this.superAdminProfile.profileImageUrl || this.superAdminProfile.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+        }
+        
+        // Fallback to default support avatar
+        return 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
       }
-      // Staff/Super Admin side: show the agency's profile/logo dynamically
+      // Super Admin side: show the agency's profile/logo
       const agency = this.agencies.find(a => a.id === this.selectedAgencyId)
-      return agency?.profileImageUrl || agency?.profileImage || agency?.logoUrl || this.fallbackAvatar
+      return agency?.profileImageUrl || agency?.profileImage || agency?.logoUrl || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
     },
     // Identify likely partner id for presence
     partnerId() {
@@ -891,21 +909,22 @@ export default {
 
         const appStore = useAppStore()
         const user = appStore.currentUser
-        const isAgency = user?.userType === 'Agency'
-        const isAgencyAdmin = user?.userType === 'Admin' && user?.adminScope === 'agency'
-
+        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+        
         let authorName = 'Unknown User'
         if (isAgency) {
-          // Pure Agency users use their Agency name
           authorName = user?.agencyName || 'Agency'
-        } else if (user?.userType === 'Super Admin') {
-          // Support should appear as Support
-          authorName = 'Support'
-        } else if (isAgencyAdmin || user?.userType === 'Admin') {
-          // Agency Admin and Depsure Admin use Firstname Lastname (fallbacks as needed)
-          authorName = user?.firstName && user?.lastName 
-            ? `${user.firstName} ${user.lastName}`
-            : user?.firstName || user?.lastName || user?.email || 'Admin'
+        } else {
+          // For Super Admin and Admin users, use their name or email
+          if (user?.userType === 'Super Admin') {
+            authorName = user?.firstName && user?.lastName 
+              ? `${user.firstName} ${user.lastName}`
+              : user?.firstName || user?.lastName || user?.email || 'Super Admin'
+          } else {
+            authorName = user?.firstName && user?.lastName 
+              ? `${user.firstName} ${user.lastName}`
+              : user?.firstName || user?.lastName || user?.email || 'Admin'
+          }
         }
 
         const message = {
@@ -1626,13 +1645,7 @@ export default {
               imageUrl: url,
               text: '',
               authorId: user.uid,
-              authorName: (user?.userType === 'Agency')
-                ? (user?.agencyName || 'Agency')
-                : (user?.userType === 'Super Admin')
-                  ? 'Support'
-                  : (user?.firstName && user?.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : (user?.firstName || user?.lastName || user?.email || 'Admin')),
+              authorName: (user?.userType === 'Agency') ? (user?.agencyName || 'Agency') : (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (user?.firstName || user?.lastName || user?.email || 'Admin')),
               authorType: user.userType,
               authorAvatarUrl: user?.profileImageUrl || user?.profileImage || '',
               timestamp: new Date(),
@@ -1834,8 +1847,8 @@ export default {
 
 /* Bubble base */
 .bubble {
-  max-width: 45%;
-  border-radius: 8px;
+  max-width: 88%;
+  border-radius: 18px;
   padding: 12px 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   position: relative;
@@ -1872,11 +1885,37 @@ export default {
 .msg-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* Image bubble */
-.image-bubble { padding: 0; background: transparent; border: none; box-shadow: none; }
-.image-bubble.incoming { background: #ffffff; border: 1px solid #ecedf0; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-radius: 8px; overflow: hidden; }
-.image-bubble.outgoing { background: transparent; border: none; box-shadow: none; }
-.message-image { display: block; max-width: min(320px, 86vw); height: auto; border-radius: 8px; }
-.image-bubble.incoming .message-image { border-radius: 8px; }
+.image-bubble { 
+  padding: 0; 
+  background: transparent; 
+  border: none; 
+  box-shadow: none; 
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+}
+.image-bubble.incoming { 
+  background: #ffffff; 
+  border: 1px solid #ecedf0; 
+  padding: 0; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06); 
+  border-radius: 18px; 
+  overflow: visible;
+}
+.image-bubble.outgoing { 
+  background: transparent; 
+  border: none; 
+  box-shadow: none; 
+  overflow: visible;
+}
+.message-image { 
+  display: block; 
+  max-width: min(320px, 86vw); 
+  height: auto; 
+  border-radius: 18px;
+  overflow: hidden;
+}
+.image-bubble.incoming .message-image { border-radius: 18px; }
 .image-bubble .bubble-meta { position: absolute; right: 10px; bottom: 10px; }
 .image-bubble .bubble-meta .time { color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
 .image-bubble.incoming .bubble-meta .time { color: #64748b; text-shadow: none; }
@@ -1917,9 +1956,39 @@ export default {
 }
 
 /* Reaction under bubble */
-.reaction-under { position: absolute; bottom: -22px; font-size: 12px; background: #ffffff; color: #0f172a; border: 1px solid #e5e7eb; border-radius: 999px; padding: 2px 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+.reaction-under { 
+  position: absolute; 
+  bottom: -22px; 
+  font-size: 16px; 
+  background: #ffffff; 
+  color: #0f172a; 
+  border: 1px solid #e5e7eb; 
+  border-radius: 999px; 
+  padding: 4px 10px; 
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 5;
+}
+.reaction-under:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
 .reaction-under.incoming { left: 6px; }
 .reaction-under.outgoing { right: 10px; }
+
+/* Specific styling for reactions on image bubbles */
+.image-bubble .reaction-under {
+  bottom: -24px;
+  font-size: 16px;
+  padding: 4px 10px;
+}
+.image-bubble.incoming .reaction-under {
+  left: 10px;
+}
+.image-bubble.outgoing .reaction-under {
+  right: 10px;
+}
 
 /* Deleted bubble */
 .deleted-bubble { background: #f1f5f9; color: #64748b; border: 1px dashed #e2e8f0; display: flex; align-items: center; gap: 6px; }
@@ -2054,6 +2123,6 @@ export default {
 .upload-text { color: #1f2937; font-weight: 700; font-size: 14px; }
 
 @media (max-width: 480px) {
-  .bubble { max-width: 65%; }
+  .bubble { max-width: 96%; }
 }
 </style>

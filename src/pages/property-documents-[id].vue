@@ -62,7 +62,7 @@
                     <v-icon color="primary" class="mr-2">mdi-file-document</v-icon>
                     <span class="doc-name">{{ docItem.fileName || 'Document' }}</span>
                     <v-btn size="small" variant="outlined" color="primary" class="ml-2" @click="viewDoc(docItem)">View</v-btn>
-                    <a v-if="docItem.fileURL" class="ml-2" :href="docItem.fileURL" target="_blank">Download</a>
+                    <a v-if="docItem.fileURL" class="download-link ml-2" :href="docItem.fileURL" target="_blank">Download</a>
                   </div>
                 </div>
                 <div v-else class="text-medium-emphasis">No quotes uploaded.</div>
@@ -77,7 +77,7 @@
                     <v-icon color="success" class="mr-2">mdi-clipboard-check</v-icon>
                     <span class="doc-name">{{ docItem.fileName || 'Document' }}</span>
                     <v-btn size="small" variant="outlined" color="success" class="ml-2" @click="viewDoc(docItem)">View</v-btn>
-                    <a v-if="docItem.fileURL" class="ml-2" :href="docItem.fileURL" target="_blank">Download</a>
+                    <a v-if="docItem.fileURL" class="download-link ml-2" :href="docItem.fileURL" target="_blank">Download</a>
                   </div>
                 </div>
                 <div v-else class="text-medium-emphasis">No inspection documents uploaded.</div>
@@ -92,7 +92,7 @@
                     <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
                     <span class="doc-name">{{ docItem.fileName || 'Document' }}</span>
                     <v-btn size="small" variant="outlined" color="success" class="ml-2" @click="viewDoc(docItem)">View</v-btn>
-                    <a v-if="docItem.fileURL" class="ml-2" :href="docItem.fileURL" target="_blank">Download</a>
+                    <a v-if="docItem.fileURL" class="download-link ml-2" :href="docItem.fileURL" target="_blank">Download</a>
                   </div>
                 </div>
                 <div v-else class="text-medium-emphasis">No invoices uploaded.</div>
@@ -212,15 +212,81 @@ export default {
 .back-btn:hover { background-color: #333 !important; border-color: #333 !important; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
 .title-section { background: black; color: white; padding: 0.75rem; border-radius: 12px 12px 0 0; }
 .page-title { font-size: 1.25rem; font-weight: 600; color: white; margin: 0; text-align: center; text-transform: uppercase; }
-.form-card { background: white; border-radius: 0 0 12px 12px; padding: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
-.docs-section { margin: 10px 0 20px 0; }
-.docs-title { font-weight: 700; margin: 0 0 8px 0; }
-.doc-list { display: flex; flex-direction: column; gap: 8px; }
-.doc-item { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid #eee; border-radius: 8px; }
-.doc-name { font-weight: 500; }
+.form-card { background: white; border-radius: 0 0 12px 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
+
+/* Document sections - enhanced styling */
+.docs-section { 
+  margin-bottom: 32px;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #e5e7eb;
+}
+
+.docs-title { 
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+}
+
+.doc-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px;
+}
+
+.doc-item { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  padding: 12px; 
+  background-color: white;
+  border: 1px solid #e9ecef; 
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.doc-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.doc-name { 
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+  margin-left: 8px;
+}
+
+/* Download link button styling */
+.download-link {
+  display: inline-block;
+  padding: 6px 16px;
+  background-color: #000;
+  color: white !important;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #000;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.download-link:hover {
+  background-color: #333;
+  border-color: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 /* Centered search styling */
-.doc-search { display: flex; justify-content: center; margin: 14px 0 18px 0; }
+.doc-search { display: flex; justify-content: center; margin: 14px 0 24px 0; }
 .search-input { max-width: 520px; width: 100%; }
+
+/* Document viewer dialog */
 .document-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100000; }
 .document-dialog { position: relative; width: 90vw; max-width: 900px; min-height: 300px; }
 .document-dialog-bg { position: absolute; top: 12px; left: 12px; width: 96%; height: 100%; border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.15); background: #111; }
@@ -230,10 +296,20 @@ export default {
 .document-subtitle { font-size: 1.1rem; margin: 0 0 16px 0; color: #6b7280; }
 .pdf-container { position: relative; margin-top: 8px; }
 .pdf-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; }
-.zoom-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #ddd; background: #000; color: #fff; }
+.zoom-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #ddd; background: #000; color: #fff; cursor: pointer; }
+.zoom-btn:hover { background: #333; }
 .pdf-wrapper { transform-origin: top left; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
 .document-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
-.document-button { border: none; border-radius: 8px; color: #ffffff; font-size: 0.95rem; padding: 10px 16px; cursor: pointer; }
+.document-button { border: none; border-radius: 8px; color: #ffffff; font-size: 0.95rem; padding: 10px 16px; cursor: pointer; transition: opacity 0.3s ease; }
 .document-button.secondary { background-color: #6b7280; }
 .document-button.primary { background-color: #111827; }
+.document-button:hover { opacity: 0.9; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .property-docs-page { padding: 10px; }
+  .form-card { padding: 16px; }
+  .docs-section { padding: 16px; }
+  .doc-item { padding: 10px; }
+}
 </style>

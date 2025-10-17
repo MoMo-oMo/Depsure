@@ -292,7 +292,7 @@
                         <div v-if="editFilteredQuotes.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Quotes:</h5>
                           <div class="document-list">
-                            <div v-for="(quote, index) in editFilteredQuotes" :key="`q-${index}`" class="document-item">
+                            <div v-for="(quote, index) in editFilteredQuotes" :key="`q-${quote.fileName}-${quote.fileURL}`" class="document-item">
                               <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                               <span class="document-name">{{ quote.fileName }}</span>
                               <v-btn
@@ -308,7 +308,7 @@
                                 size="small"
                                 color="error"
                                 variant="outlined"
-                                @click="removeDocument('quotes', index)"
+                                @click="removeDocument('quotes', quote)"
                                 class="remove-btn"
                               >
                                 Delete
@@ -354,7 +354,7 @@
                         <div v-if="editFilteredInspections.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Inspections:</h5>
                           <div class="document-list">
-                            <div v-for="(inspection, index) in editFilteredInspections" :key="`i-${index}`" class="document-item">
+                            <div v-for="(inspection, index) in editFilteredInspections" :key="`i-${inspection.fileName}-${inspection.fileURL}`" class="document-item">
                               <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
                               <span class="document-name">{{ inspection.fileName }}</span>
                               <v-btn
@@ -370,7 +370,7 @@
                                 size="small"
                                 color="error"
                                 variant="outlined"
-                                @click="removeDocument('inspections', index)"
+                                @click="removeDocument('inspections', inspection)"
                                 class="remove-btn"
                               >
                                 Delete
@@ -416,7 +416,7 @@
                         <div v-if="editFilteredInvoices.length > 0" class="existing-documents">
                           <h5 class="existing-title">Existing Invoices:</h5>
                           <div class="document-list">
-                            <div v-for="(invoice, index) in editFilteredInvoices" :key="`inv-${index}`" class="document-item">
+                            <div v-for="(invoice, index) in editFilteredInvoices" :key="`inv-${invoice.fileName}-${invoice.fileURL}`" class="document-item">
                               <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
                               <span class="document-name">{{ invoice.fileName }}</span>
                               <v-btn
@@ -432,7 +432,7 @@
                                 size="small"
                                 color="error"
                                 variant="outlined"
-                                @click="removeDocument('invoices', index)"
+                                @click="removeDocument('invoices', invoice)"
                                 class="remove-btn"
                               >
                                 Delete
@@ -1186,12 +1186,20 @@ export default {
       }
     },
     
-    async removeDocument(type, index) {
+    async removeDocument(type, documentToRemove) {
       if (!this.property || !this.property.id) {
         console.error('Property not loaded or invalid property ID');
         return;
       }
-      if (!this.property[type] || !this.property[type][index]) {
+      
+      // Find the actual index in the original array
+      const originalArray = this.property[type] || [];
+      const index = originalArray.findIndex(doc => 
+        doc.fileName === documentToRemove.fileName && 
+        doc.fileURL === documentToRemove.fileURL
+      );
+      
+      if (index === -1) {
         console.error('Document not found in property data');
         return;
       }
