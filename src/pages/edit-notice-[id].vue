@@ -118,35 +118,6 @@
                     />
                   </v-col>
 
-                  <!-- Paid Towards Fund -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="notice.paidTowardsFund"
-                      label="Paid Towards Fund"
-                      type="number"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="paidTowardsFundRules"
-                      min="0"
-                      step="0.01"
-                      prefix="R"
-                    />
-                  </v-col>
-
-                  <!-- Amount to be Paid Out (Inc Interest) -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model.number="notice.amountToBePaidOut"
-                      label="Amount to be Paid Out (Inc Interest)"
-                      type="number"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="amountToBePaidOutRules"
-                      min="0"
-                      step="0.01"
-                      prefix="R"
-                    />
-                  </v-col>
                 </v-row>
               </v-card-text>
 
@@ -202,9 +173,7 @@ export default {
         leaseEndDate: '',
         noticeGivenDate: '',
         vacateDate: '',
-        maintenanceRequired: '',
-        paidTowardsFund: 0,
-        amountToBePaidOut: 0
+        maintenanceRequired: ''
       },
       loading: true,
       error: null,
@@ -228,12 +197,6 @@ export default {
       ],
       maintenanceRequiredRules: [
         v => !!v || "Maintenance Required is required"
-      ],
-      paidTowardsFundRules: [
-        v => v >= 0 || 'Paid Towards Fund cannot be negative'
-      ],
-      amountToBePaidOutRules: [
-        v => v >= 0 || 'Amount to be Paid Out cannot be negative'
       ]
     };
   },

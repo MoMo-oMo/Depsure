@@ -271,7 +271,7 @@ computed: {
       return { background: `url(${heroBg}) center/cover no-repeat` }
     },
     heroTitle() {
-      return this.selectedAgencyDetails?.agencyName || 'Flagged Units'
+      return 'Flagged Units'
     },
     monthFilterLabel() {
       if (!this.monthFilter) return 'All Months'

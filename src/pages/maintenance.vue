@@ -258,7 +258,7 @@ export default {
       return { background: `url(${heroBg}) center/cover no-repeat` }
     },
     heroTitle() {
-      return this.selectedAgencyDetails?.agencyName || 'Maintenance'
+      return 'Maintenance'
     },
     agencyCardBgStyle() {
       const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'

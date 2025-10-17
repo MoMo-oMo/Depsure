@@ -533,19 +533,48 @@ export default {
       try {
         let foundId = await this.findExistingVacancy(item)
         if (!foundId) {
-          const vacancyData = {
-            agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
-            unitId: item.id,
-            unitName: item.propertyName || item.unitName || '',
-            dateVacated: '',
-            moveInDate: null,
-            propertyManager: item.propertyManager || '',
-            contactNumber: item.contactNumber || '',
-            notes: '',
-            propertyType: item.propertyType || 'residential',
-            createdAt: new Date(),
-            updatedAt: new Date()
+        const normalizeDateValue = (value) => {
+          if (!value) return ''
+          if (typeof value === 'string') return value
+          if (value instanceof Date) return value.toISOString().slice(0, 10)
+          if (value?.toDate) {
+            try {
+              return value.toDate().toISOString().slice(0, 10)
+            } catch {
+              return ''
+            }
           }
+          const parsed = new Date(value)
+          return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10)
+        }
+        const normalizeCurrency = (value) => {
+          if (value === null || value === undefined || value === '') return 0
+          const num = typeof value === 'number' ? value : Number(value)
+          return Number.isFinite(num) ? num : 0
+        }
+        const normalizePaidOut = (value) => {
+          if (value === true || value === 'Yes' || value === 'yes') return 'Yes'
+          if (value === false || value === 'No' || value === 'no') return 'No'
+          return value || ''
+        }
+
+        const vacancyData = {
+          agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
+          unitId: item.id,
+          unitName: item.propertyName || item.unitName || '',
+          dateVacated: '',
+          leaseStartDate: normalizeDateValue(item.leaseStartDate),
+          leaseEndDate: normalizeDateValue(item.leaseEndDate),
+          moveInDate: null,
+          propertyManager: item.propertyManager || '',
+          contactNumber: item.contactNumber || '',
+          paidTowardsFund: normalizeCurrency(item.paidTowardsFund),
+          paidOut: normalizePaidOut(item.paidOut),
+          notes: '',
+          propertyType: item.propertyType || 'residential',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
           const ref = await addDoc(collection(db, 'vacancies'), vacancyData)
           foundId = ref.id
         }

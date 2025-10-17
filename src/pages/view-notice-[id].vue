@@ -57,7 +57,7 @@
                 <!-- Lease Start Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.leaseStartDate"
+                    :model-value="formatDateField(notice.leaseStartDate)"
                     label="Lease Start Date"
                     variant="outlined"
                     readonly
@@ -68,7 +68,7 @@
                 <!-- Lease End Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.leaseEndDate"
+                    :model-value="formatDateField(notice.leaseEndDate)"
                     label="Lease End Date"
                     variant="outlined"
                     readonly
@@ -79,7 +79,7 @@
                 <!-- Notice Given Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.noticeGivenDate"
+                    :model-value="formatDateField(notice.noticeGivenDate)"
                     label="Notice Given Date"
                     variant="outlined"
                     readonly
@@ -90,7 +90,7 @@
                 <!-- Vacate Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="notice.vacateDate"
+                    :model-value="formatDateField(notice.vacateDate)"
                     label="Vacate Date"
                     variant="outlined"
                     readonly
@@ -112,7 +112,7 @@
                 <!-- Paid Towards Fund -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="`R${Number(notice.paidTowardsFund || 0).toLocaleString()}`"
+                    :model-value="formatCurrency(notice.paidTowardsFund)"
                     label="Paid Towards Fund"
                     variant="outlined"
                     readonly
@@ -120,11 +120,11 @@
                   />
                 </v-col>
 
-                <!-- Amount to be Paid Out -->
+                <!-- Paid Out -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="`R${Number(notice.amountToBePaidOut || 0).toLocaleString()}`"
-                    label="Amount to be Paid Out (Inc Interest)"
+                    :model-value="formatPaidOut(notice.paidOut)"
+                    label="Paid Out (Yes/No)"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -182,7 +182,7 @@ export default {
         vacateDate: '',
         maintenanceRequired: '',
         paidTowardsFund: 0,
-        amountToBePaidOut: 0
+        paidOut: ''
       },
       loading: true,
       error: null,
@@ -210,6 +210,43 @@ export default {
     }
   },
   methods: {
+    formatDateField(value) {
+      if (!value) return 'N/A';
+      if (typeof value === 'string') return value;
+      if (value instanceof Date) return value.toISOString().slice(0, 10);
+      if (value?.toDate) {
+        try {
+          return value.toDate().toISOString().slice(0, 10);
+        } catch (error) {
+          console.warn('Failed to convert Firestore timestamp:', error);
+        }
+      }
+      return String(value);
+    },
+    toNumber(value, fallback = 0) {
+      if (value === null || value === undefined || value === '') return fallback;
+      const num = typeof value === 'number' ? value : Number(value);
+      return Number.isFinite(num) ? num : fallback;
+    },
+    formatCurrency(value) {
+      const amount = this.toNumber(value, 0);
+      return `R${amount.toLocaleString()}`;
+    },
+    formatPaidOut(value) {
+      if (value === true || value === 'Yes' || value === 'yes') return 'Yes';
+      if (value === false || value === 'No' || value === 'no') return 'No';
+      return String(value || 'Not specified');
+    },
+    normalizeNoticeData(data, id) {
+      const base = {
+        ...this.notice,
+        ...(data || {}),
+        id: id ?? this.notice.id
+      };
+      base.paidTowardsFund = this.toNumber(data?.paidTowardsFund ?? base.paidTowardsFund);
+      base.paidOut = data?.paidOut ?? base.paidOut ?? '';
+      return base;
+    },
     async loadNotice(noticeId) {
       this.loading = true;
       this.error = null;
@@ -222,10 +259,7 @@ export default {
         
         if (noticeDoc.exists()) {
           const noticeData = noticeDoc.data();
-          this.notice = {
-            id: noticeDoc.id,
-            ...noticeData
-          };
+          this.notice = this.normalizeNoticeData(noticeData, noticeDoc.id);
           console.log('Notice loaded successfully:', this.notice);
         } else {
           this.error = 'Notice not found';

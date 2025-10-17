@@ -289,7 +289,7 @@ export default {
       return appStore.currentUser?.userType
     },
     agencyHeroBgStyle() { return { background: `url(${heroBg}) center/cover no-repeat` } },
-    heroTitle() { return this.selectedAgencyDetails?.agencyName || 'Vacancies' },
+    heroTitle() { return 'Vacancies' },
     monthFilterLabel() {
       if (!this.monthFilter) return 'All Months'
       try {

@@ -103,6 +103,32 @@
                     />
                   </v-col>
 
+                  <!-- Lease Start Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="vacancy.leaseStartDate"
+                      label="Lease Start Date"
+                      variant="outlined"
+                      type="date"
+                      class="custom-input"
+                      :rules="leaseStartDateRules"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Lease End Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="vacancy.leaseEndDate"
+                      label="Lease End Date"
+                      variant="outlined"
+                      type="date"
+                      class="custom-input"
+                      :rules="leaseEndDateRules"
+                      required
+                    />
+                  </v-col>
+
                   <!-- Property Manager -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -124,6 +150,34 @@
                       class="custom-input"
                       :rules="contactNumberRules"
                       required
+                    />
+                  </v-col>
+
+                  <!-- Paid Towards Fund -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="vacancy.paidTowardsFund"
+                      label="Paid Towards Fund"
+                      variant="outlined"
+                      type="number"
+                      class="custom-input"
+                      :rules="paidTowardsFundRules"
+                      prefix="R"
+                      min="0"
+                      step="0.01"
+                    />
+                  </v-col>
+
+                  <!-- Paid Out -->
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="vacancy.paidOut"
+                      :items="paidOutOptions"
+                      label="Paid Out (Yes/No)"
+                      variant="outlined"
+                      class="custom-input"
+                      :rules="paidOutRules"
+                      clearable
                     />
                   </v-col>
 
@@ -191,8 +245,12 @@ export default {
         unitName: '',
         dateVacated: '',
         moveInDate: '',
+        leaseStartDate: '',
+        leaseEndDate: '',
         propertyManager: '',
-        contactNumber: ''
+        contactNumber: '',
+        paidTowardsFund: 0,
+        paidOut: ''
       },
       agencies: [],
       agenciesLoading: false,
@@ -210,12 +268,23 @@ export default {
       dateVacatedRules: [
         v => !!v || 'Date vacated is required'
       ],
+      leaseStartDateRules: [
+        v => !!v || 'Lease start date is required'
+      ],
+      leaseEndDateRules: [
+        v => !!v || 'Lease end date is required'
+      ],
       propertyManagerRules: [
         v => !!v || 'Property manager is required'
       ],
       contactNumberRules: [
         v => !!v || 'Contact number is required'
       ],
+      paidTowardsFundRules: [
+        v => v === '' || Number(v) >= 0 || 'Amount must be zero or higher'
+      ],
+      paidOutRules: [],
+      paidOutOptions: ['Yes', 'No'],
       notesRules: []
     }
   },
@@ -268,8 +337,12 @@ export default {
             unitName: this.vacancy.unitName,
             dateVacated: this.vacancy.dateVacated,
             moveInDate: this.vacancy.moveInDate || null,
+            leaseStartDate: this.vacancy.leaseStartDate || null,
+            leaseEndDate: this.vacancy.leaseEndDate || null,
             propertyManager: this.vacancy.propertyManager,
             contactNumber: this.vacancy.contactNumber,
+            paidTowardsFund: this.normalizeCurrencyInput(this.vacancy.paidTowardsFund),
+            paidOut: this.normalizePaidOut(this.vacancy.paidOut),
             notes: this.vacancy.notes || '',
             propertyType: propertyType,
             createdAt: new Date(),
@@ -287,7 +360,11 @@ export default {
               agencyId: this.vacancy.agencyId,
               dateVacated: this.vacancy.dateVacated,
               moveInDate: this.vacancy.moveInDate,
-              propertyManager: this.vacancy.propertyManager
+              leaseStartDate: this.vacancy.leaseStartDate,
+              leaseEndDate: this.vacancy.leaseEndDate,
+              propertyManager: this.vacancy.propertyManager,
+              paidTowardsFund: this.normalizeCurrencyInput(this.vacancy.paidTowardsFund),
+              paidOut: this.normalizePaidOut(this.vacancy.paidOut)
             },
             this.resourceTypes.VACANCY,
             docRef.id
@@ -303,6 +380,30 @@ export default {
           this.loading = false
         }
       }
+    },
+    normalizeCurrencyInput(value) {
+      if (value === null || value === undefined || value === '') return 0
+      const num = typeof value === 'number' ? value : Number(value)
+      return Number.isFinite(num) ? num : 0
+    },
+    normalizePaidOut(value) {
+      if (value === true || value === 'Yes' || value === 'yes') return 'Yes'
+      if (value === false || value === 'No' || value === 'no') return 'No'
+      return value || ''
+    },
+    normalizeDateInput(value) {
+      if (!value) return ''
+      if (typeof value === 'string') return value
+      if (value instanceof Date) return value.toISOString().slice(0, 10)
+      if (typeof value?.toDate === 'function') {
+        try {
+          return value.toDate().toISOString().slice(0, 10)
+        } catch {
+          return ''
+        }
+      }
+      const d = new Date(value)
+      return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10)
     },
 
     async fetchAgencies() {
@@ -430,6 +531,26 @@ export default {
         }
       },
       immediate: false
+    },
+    'vacancy.unitName'(unitName) {
+      if (!unitName) {
+        this.vacancy.leaseStartDate = '';
+        this.vacancy.leaseEndDate = '';
+        this.vacancy.paidTowardsFund = 0;
+        this.vacancy.paidOut = '';
+        return;
+      }
+      const selectedUnit = this.units.find(
+        unit => unit.propertyName === unitName || unit.unitName === unitName
+      );
+      if (!selectedUnit) return;
+      this.vacancy.leaseStartDate = this.normalizeDateInput(selectedUnit.leaseStartDate);
+      this.vacancy.leaseEndDate = this.normalizeDateInput(selectedUnit.leaseEndDate);
+      const paidAmount = selectedUnit.paidTowardsFund ?? selectedUnit.paidTowards ?? '';
+      this.vacancy.paidTowardsFund = this.normalizeCurrencyInput(paidAmount);
+      this.vacancy.paidOut = this.normalizePaidOut(
+        selectedUnit.paidOut ?? selectedUnit.hasPaidOut ?? ''
+      );
     }
   }
 }

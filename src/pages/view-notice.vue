@@ -72,7 +72,7 @@
                 <!-- Lease Starting Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="property.leaseStartDate"
+                    :model-value="formatDateField(property.leaseStartDate)"
                     label="Lease Starting Date"
                     variant="outlined"
                     readonly
@@ -83,7 +83,7 @@
                 <!-- Lease End Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="property.leaseEndDate"
+                    :model-value="formatDateField(property.leaseEndDate)"
                     label="Lease End Date"
                     variant="outlined"
                     readonly
@@ -105,7 +105,7 @@
                 <!-- Maintenance Amount -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="`R${property.maintenanceAmount.toLocaleString()}`"
+                    :model-value="formatCurrency(property.maintenanceAmount)"
                     label="Maintenance Amount"
                     variant="outlined"
                     readonly
@@ -124,33 +124,22 @@
                   />
                 </v-col>
 
-                <!-- Paid Towards Fund -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="`R${property.paidTowardsFund.toLocaleString()}`"
-                    label="Paid Towards Fund"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Amount to be Paid Out -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="`R${property.amountToBePaidOut.toLocaleString()}`"
-                    label="Amount to be Paid Out (Inc Interest)"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
                 <!-- Paid Out -->
                 <v-col cols="12" md="6">
                   <v-text-field
                     :model-value="property.paidOut"
                     label="Paid Out Yes/No"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Paid Towards Fund -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    :model-value="formatCurrency(property.paidTowardsFund)"
+                    label="Paid Towards Fund"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -180,9 +169,8 @@ export default {
         monthsMissed: 2,
         maintenanceAmount: 15000,
         contractorRequested: 'Yes',
-        paidTowardsFund: 5000,
-        amountToBePaidOut: 25000,
-        paidOut: 'No'
+        paidOut: 'No',
+        paidTowardsFund: 5000
       }
     }
   },
@@ -202,6 +190,25 @@ export default {
     }
   },
   methods: {
+    formatDateField(value) {
+      if (!value) return 'N/A';
+      if (typeof value === 'string') return value;
+      if (value instanceof Date) return value.toISOString().slice(0, 10);
+      if (value?.toDate) {
+        try {
+          return value.toDate().toISOString().slice(0, 10);
+        } catch (error) {
+          console.warn('Failed to convert Firestore timestamp:', error);
+        }
+      }
+      return String(value);
+    },
+    formatCurrency(value) {
+      if (value === null || value === undefined || value === '') return 'R0';
+      const amount = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(amount)) return 'R0';
+      return `R${amount.toLocaleString()}`;
+    },
     loadPropertyData(propertyId) {
       // Mock data - in a real app this would be an API call
       const mockProperties = [
@@ -215,9 +222,8 @@ export default {
           monthsMissed: 2,
           maintenanceAmount: 15000,
           contractorRequested: 'Yes',
-          paidTowardsFund: 5000,
-          amountToBePaidOut: 25000,
-          paidOut: 'No'
+          paidOut: 'No',
+          paidTowardsFund: 5000
         },
         {
           id: 2,
@@ -229,9 +235,8 @@ export default {
           monthsMissed: 0,
           maintenanceAmount: 8000,
           contractorRequested: 'No',
-          paidTowardsFund: 12000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
+          paidOut: 'Yes',
+          paidTowardsFund: 12000
         },
         {
           id: 3,
@@ -243,9 +248,8 @@ export default {
           monthsMissed: 1,
           maintenanceAmount: 22000,
           contractorRequested: 'Yes',
-          paidTowardsFund: 8000,
-          amountToBePaidOut: 18000,
-          paidOut: 'No'
+          paidOut: 'No',
+          paidTowardsFund: 8000
         },
         {
           id: 4,
@@ -257,9 +261,8 @@ export default {
           monthsMissed: 3,
           maintenanceAmount: 30000,
           contractorRequested: 'Yes',
-          paidTowardsFund: 15000,
-          amountToBePaidOut: 35000,
-          paidOut: 'No'
+          paidOut: 'No',
+          paidTowardsFund: 15000
         },
         {
           id: 5,
@@ -271,9 +274,8 @@ export default {
           monthsMissed: 0,
           maintenanceAmount: 12000,
           contractorRequested: 'No',
-          paidTowardsFund: 10000,
-          amountToBePaidOut: 0,
-          paidOut: 'Yes'
+          paidOut: 'Yes',
+          paidTowardsFund: 10000
         }
       ];
       

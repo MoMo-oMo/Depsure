@@ -285,7 +285,7 @@ export default {
       return { background: `url(${heroBg}) center/cover no-repeat` }
     },
     heroTitle() {
-      return this.selectedAgencyDetails?.agencyName || 'Notices'
+      return 'Notices'
     },
     agencyCardBgStyle() {
       const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
@@ -620,15 +620,44 @@ export default {
         }
         
         // Create vacancy entry
+        const normalizeDateValue = (value) => {
+          if (!value) return '';
+          if (typeof value === 'string') return value;
+          if (value instanceof Date) return value.toISOString().slice(0, 10);
+          if (value?.toDate) {
+            try {
+              return value.toDate().toISOString().slice(0, 10);
+            } catch {
+              return '';
+            }
+          }
+          const parsed = new Date(value);
+          return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
+        };
+        const normalizeCurrency = (value) => {
+          if (value === null || value === undefined || value === '') return 0;
+          const num = typeof value === 'number' ? value : Number(value);
+          return Number.isFinite(num) ? num : 0;
+        };
+        const normalizePaidOut = (value) => {
+          if (value === true || value === 'Yes' || value === 'yes') return 'Yes';
+          if (value === false || value === 'No' || value === 'no') return 'No';
+          return value || '';
+        };
+
         const vacancyData = {
           agencyId: notice.agencyId || unitData.agencyId || '',
           unitId: unitDoc.id,
           unitName: notice.unitName,
           dateVacated: notice.vacateDate || new Date().toISOString().slice(0, 10),
+          leaseStartDate: normalizeDateValue(notice.leaseStartDate || unitData.leaseStartDate),
+          leaseEndDate: normalizeDateValue(notice.leaseEndDate || unitData.leaseEndDate),
           moveInDate: null,
           propertyManager: unitData.propertyManager || '',
           contactNumber: unitData.contactNumber || '',
-          notes: `Processed from notice. Lease start: ${notice.leaseStartDate || 'N/A'}`,
+          paidTowardsFund: normalizeCurrency(notice.paidTowardsFund ?? unitData.paidTowardsFund),
+          paidOut: normalizePaidOut(notice.paidOut ?? unitData.paidOut),
+          notes: `Processed from notice. Lease start: ${normalizeDateValue(notice.leaseStartDate) || 'N/A'}`,
           propertyType: unitData.propertyType || 'residential',
           createdAt: new Date(),
           updatedAt: new Date()

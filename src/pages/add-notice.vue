@@ -89,6 +89,19 @@
                     />
                   </v-col>
 
+                  <!-- Lease End Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="notice.leaseEndDate"
+                      label="Lease End Date"
+                      variant="outlined"
+                      type="date"
+                      class="custom-input"
+                      :rules="leaseEndDateRules"
+                      required
+                    />
+                  </v-col>
+
                   <!-- Notice Given Date -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -188,6 +201,7 @@ export default {
         agencyId: '',
         unitName: '',
         leaseStartDate: '',
+        leaseEndDate: '',
         noticeGivenDate: '',
         vacateDate: '',
         maintenanceRequired: ''
@@ -198,6 +212,7 @@ export default {
         v => v.length >= 2 || 'Unit Name must be at least 2 characters'
       ],
       leaseStartDateRules: [v => !!v || 'Lease Start Date is required'],
+      leaseEndDateRules: [v => !!v || 'Lease End Date is required'],
       noticeGivenDateRules: [v => !!v || 'Notice Given Date is required'],
       vacateDateRules: [v => !!v || 'Vacate Date is required'],
       maintenanceRequiredRules: [v => !!v || 'Maintenance selection is required']
@@ -342,11 +357,15 @@ export default {
               unitId: unitDoc?.id || null,
               unitName: this.notice.unitName,
               dateVacated: this.notice.vacateDate,
+              leaseStartDate: this.notice.leaseStartDate || null,
+              leaseEndDate: this.notice.leaseEndDate || null,
               moveInDate: null,
               propertyManager: unitData?.propertyManager || '',
               contactNumber: unitData?.contactNumber || '',
               notes: '',
               propertyType: unitData?.propertyType || 'residential',
+              paidTowardsFund: 0,
+              paidOut: '',
               createdAt: new Date(),
               updatedAt: new Date()
             };
@@ -362,6 +381,7 @@ export default {
               unitName: this.notice.unitName,
               agencyId: this.notice.agencyId,
               leaseStartDate: this.notice.leaseStartDate,
+              leaseEndDate: this.notice.leaseEndDate,
               noticeGivenDate: this.notice.noticeGivenDate,
               vacateDate: this.notice.vacateDate,
               maintenanceRequired: this.notice.maintenanceRequired
@@ -439,6 +459,16 @@ export default {
         }
       },
       immediate: false
+    },
+    'notice.unitName'(unitName) {
+      if (!unitName) {
+        return;
+      }
+      const selectedUnit = this.units.find(unit => unit.propertyName === unitName || unit.unitName === unitName);
+      if (selectedUnit) {
+        this.notice.leaseStartDate = selectedUnit.leaseStartDate || '';
+        this.notice.leaseEndDate = selectedUnit.leaseEndDate || '';
+      }
     }
   }
 }

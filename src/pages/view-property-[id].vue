@@ -109,7 +109,7 @@
                 <!-- Lease Starting Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="property.leaseStartDate"
+                    :model-value="formatDateField(property.leaseStartDate)"
                     label="Lease Starting Date"
                     variant="outlined"
                     readonly
@@ -120,7 +120,7 @@
                 <!-- Lease End Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="property.leaseEndDate"
+                    :model-value="formatDateField(property.leaseEndDate)"
                     label="Lease End Date"
                     variant="outlined"
                     readonly
@@ -142,7 +142,7 @@
                 <!-- Maintenance Amount -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="`R${property.maintenanceAmount.toLocaleString()}`"
+                    :model-value="formatCurrency(property.maintenanceAmount)"
                     label="Maintenance Amount"
                     variant="outlined"
                     readonly
@@ -164,7 +164,7 @@
                 <!-- Paid Towards Fund -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="`R${property.paidTowardsFund.toLocaleString()}`"
+                    :model-value="formatCurrency(property.paidTowardsFund)"
                     label="Paid Towards Fund"
                     variant="outlined"
                     readonly
@@ -175,7 +175,7 @@
                 <!-- Amount to be Paid Out -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="`R${property.amountToBePaidOut.toLocaleString()}`"
+                    :model-value="formatCurrency(property.amountToBePaidOut)"
                     label="Amount to be Paid Out (Inc Interest)"
                     variant="outlined"
                     readonly
@@ -460,6 +460,43 @@ export default {
     }
   },
   methods: {
+    formatDateField(value) {
+      if (!value) return '—';
+      if (typeof value === 'string') return value;
+      if (value instanceof Date) return value.toISOString().slice(0, 10);
+      if (value?.toDate) {
+        try {
+          return value.toDate().toISOString().slice(0, 10);
+        } catch (error) {
+          console.warn('Failed to convert Firestore timestamp:', error);
+        }
+      }
+      return String(value);
+    },
+    formatCurrency(value) {
+      const amount = this.toNumber(value, 0);
+      return `R${amount.toLocaleString()}`;
+    },
+    toNumber(value, fallback = 0) {
+      if (value === null || value === undefined || value === '') return fallback;
+      const num = typeof value === 'number' ? value : Number(value);
+      return Number.isFinite(num) ? num : fallback;
+    },
+    normalizePropertyData(data, id) {
+      const base = {
+        ...this.property,
+        ...(data || {}),
+        id: id ?? this.property.id
+      };
+      base.maintenanceAmount = this.toNumber(data?.maintenanceAmount ?? base.maintenanceAmount);
+      base.paidTowardsFund = this.toNumber(data?.paidTowardsFund ?? base.paidTowardsFund);
+      base.amountToBePaidOut = this.toNumber(data?.amountToBePaidOut ?? base.amountToBePaidOut);
+      base.monthsMissed = this.toNumber(data?.monthsMissed ?? base.monthsMissed);
+      base.quotes = Array.isArray(data?.quotes) ? data.quotes : [];
+      base.inspections = Array.isArray(data?.inspections) ? data.inspections : [];
+      base.invoices = Array.isArray(data?.invoices) ? data.invoices : [];
+      return base;
+    },
     goBack() {
       // Agency and Agency Admin go back to Onboard Units; others to original list
       try {
@@ -540,10 +577,7 @@ export default {
         
         if (propertyDoc.exists()) {
           const propertyData = propertyDoc.data();
-          this.property = {
-            id: propertyDoc.id,
-            ...propertyData
-          };
+          this.property = this.normalizePropertyData(propertyData, propertyDoc.id);
           console.log('Property loaded successfully:', this.property);
         } else {
           this.error = 'Property not found';

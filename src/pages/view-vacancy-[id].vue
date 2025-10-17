@@ -30,12 +30,26 @@
                   <v-col cols="12" md="6">
                     <v-text-field :model-value="formatDate(vacancy.dateVacated)" label="Date Vacated" variant="outlined" readonly class="custom-input" />
                   </v-col>
-                  
+
                   <v-col cols="12" md="6">
-                    <v-text-field :model-value="vacancy.createdAt ? formatDate(vacancy.createdAt) : 'Not specified'" label="Created At" variant="outlined" readonly class="custom-input" />
+                    <v-text-field :model-value="formatDate(vacancy.leaseStartDate, 'Not specified')" label="Lease Start Date" variant="outlined" readonly class="custom-input" />
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-text-field :model-value="vacancy.updatedAt ? formatDate(vacancy.updatedAt) : 'Not specified'" label="Updated At" variant="outlined" readonly class="custom-input" />
+                    <v-text-field :model-value="formatDate(vacancy.leaseEndDate, 'Not specified')" label="Lease End Date" variant="outlined" readonly class="custom-input" />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-text-field :model-value="formatDate(vacancy.createdAt, 'Not specified')" label="Created At" variant="outlined" readonly class="custom-input" />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field :model-value="formatDate(vacancy.updatedAt, 'Not specified')" label="Updated At" variant="outlined" readonly class="custom-input" />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-text-field :model-value="formatCurrency(vacancy.paidTowardsFund)" label="Paid Towards Fund" variant="outlined" readonly class="custom-input" />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field :model-value="formatPaidOut(vacancy.paidOut)" label="Paid Out (Yes/No)" variant="outlined" readonly class="custom-input" />
                   </v-col>
                 </v-row>
               </v-card-text>
@@ -85,19 +99,58 @@ export default {
         const ref = doc(db, 'vacancies', this.$route.params.id)
         const snap = await getDoc(ref)
         if (snap.exists()) {
-          const d = snap.data()
-          this.vacancy = {
-            id: snap.id,
-            ...d,
-            createdAt: d.createdAt?.toDate ? d.createdAt.toDate() : d.createdAt,
-            updatedAt: d.updatedAt?.toDate ? d.updatedAt.toDate() : d.updatedAt
-          }
+          const data = snap.data()
+          this.vacancy = this.normalizeVacancyData(data, snap.id)
         } else {
           this.error = 'Vacancy not found'
         }
       } catch (e) { this.error = 'Failed to load vacancy' } finally { this.loading = false }
     },
-    formatDate(val) { try { const d = typeof val?.toDate === 'function' ? val.toDate() : new Date(val); return d.toLocaleString() } catch { return String(val || 'N/A') } }
+    toDateValue(val) {
+      if (!val) return null
+      try {
+        if (typeof val?.toDate === 'function') return val.toDate()
+        const date = new Date(val)
+        return Number.isNaN(date.getTime()) ? null : date
+      } catch {
+        return null
+      }
+    },
+    toNumber(val, fallback = 0) {
+      if (val === null || val === undefined || val === '') return fallback
+      const num = typeof val === 'number' ? val : Number(val)
+      return Number.isFinite(num) ? num : fallback
+    },
+    formatDate(val, fallback = 'N/A') {
+      const date = this.toDateValue(val)
+      if (date) return date.toISOString().slice(0, 10)
+      if (typeof val === 'string' && val) return val
+      return fallback
+    },
+    formatCurrency(val) {
+      const amount = this.toNumber(val, 0)
+      return `R${amount.toLocaleString()}`
+    },
+    formatPaidOut(val) {
+      if (val === true || val === 'Yes' || val === 'yes') return 'Yes'
+      if (val === false || val === 'No' || val === 'no') return 'No'
+      return String(val || 'Not specified')
+    },
+    normalizeVacancyData(data, id) {
+      const base = {
+        id,
+        ...data,
+        unitName: data?.unitName || 'Not specified',
+        dateVacated: this.toDateValue(data?.dateVacated) || data?.dateVacated || null,
+        leaseStartDate: this.toDateValue(data?.leaseStartDate) || data?.leaseStartDate || null,
+        leaseEndDate: this.toDateValue(data?.leaseEndDate) || data?.leaseEndDate || null,
+        createdAt: this.toDateValue(data?.createdAt) || data?.createdAt || null,
+        updatedAt: this.toDateValue(data?.updatedAt) || data?.updatedAt || null,
+        paidTowardsFund: this.toNumber(data?.paidTowardsFund, 0),
+        paidOut: data?.paidOut ?? '',
+      }
+      return base
+    }
   },
   mounted() { this.loadVacancy() }
 }
