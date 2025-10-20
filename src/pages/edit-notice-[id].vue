@@ -76,45 +76,22 @@
                       variant="outlined"
                       class="custom-input"
                       :rules="leaseEndDateRules"
+                      required
                     />
                   </v-col>
 
-                  <!-- Notice Given Date -->
+                  <!-- Month's Missed Rent -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.noticeGivenDate"
-                      label="Notice Given Date"
-                      type="date"
+                      v-model.number="notice.monthsMissedRent"
+                      label="Month's Missed Rent"
                       variant="outlined"
+                      type="number"
                       class="custom-input"
-                      :rules="noticeGivenDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Vacate Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.vacateDate"
-                      label="Vacate Date"
-                      type="date"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="vacateDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Maintenance Required -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="notice.maintenanceRequired"
-                      label="Maintenance Required (Yes/No)"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="maintenanceRequiredRules"
-                      required
+                      min="0"
+                      step="1"
+                      hint="Enter number of months rent was missed"
+                      persistent-hint
                     />
                   </v-col>
 
@@ -156,13 +133,15 @@ import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { useNoticeToVacancyTransition } from '@/composables/useNoticeToVacancyTransition'
 
 export default {
   name: 'EditNoticePage',
   setup() {
     const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
     const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes }
+    const { autoTransitionToVacancy } = useNoticeToVacancyTransition()
+    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, autoTransitionToVacancy }
   },
   data() {
     return {
@@ -171,9 +150,7 @@ export default {
         unitName: '',
         leaseStartDate: '',
         leaseEndDate: '',
-        noticeGivenDate: '',
-        vacateDate: '',
-        maintenanceRequired: ''
+        monthsMissedRent: 0
       },
       loading: true,
       error: null,
@@ -187,16 +164,7 @@ export default {
         v => !!v || "Lease Start Date is required"
       ],
       leaseEndDateRules: [
-        v => (v === '' || !!v) || "Lease End Date is invalid"
-      ],
-      noticeGivenDateRules: [
-        v => !!v || "Notice Given Date is required"
-      ],
-      vacateDateRules: [
-        v => !!v || "Vacate Date is required"
-      ],
-      maintenanceRequiredRules: [
-        v => !!v || "Maintenance Required is required"
+        v => !!v || "Lease End Date is required"
       ]
     };
   },
@@ -254,6 +222,9 @@ export default {
           // Prepare notice data for Firestore (remove id field)
           const { id, ...noticeData } = this.notice;
           
+          // Set vacateDate to match leaseEndDate (they are the same thing)
+          noticeData.vacateDate = this.notice.leaseEndDate;
+          
           // Add updated timestamp
           noticeData.updatedAt = new Date();
           
@@ -276,7 +247,27 @@ export default {
           await updateDoc(doc(db, 'notices', id), noticeData);
           
           console.log('Notice updated successfully');
-          this.showSuccessDialog('Notice saved successfully!', 'Success!', 'Continue', `/view-notice-${id}`);
+          
+          // AUTO-TRANSITION: Check if notice is complete and move to vacancies
+          const transitioned = await this.autoTransitionToVacancy(id);
+          
+          if (transitioned) {
+            // Notice was moved to vacancies
+            this.showSuccessDialog(
+              'Notice completed and moved to Vacancies!',
+              'Success!',
+              'Continue',
+              '/vacancies'
+            );
+          } else {
+            // Notice saved but not complete yet
+            this.showSuccessDialog(
+              'Notice saved successfully!',
+              'Success!',
+              'Continue',
+              `/view-notice-${id}`
+            );
+          }
           
         } catch (error) {
           console.error('Error saving notice:', error);

@@ -448,10 +448,15 @@ export default {
       try {
         const { showPromptDialog, showSuccessDialog } = useCustomDialogs()
         
-        // Show date picker dialog
+        // Show date picker dialog with appropriate label for agency users
+        const dialogTitle = this.isAgencyRole ? 'Set Lease End Date' : 'Set Vacate Date'
+        const dialogMessage = this.isAgencyRole 
+          ? `Set lease end date for ${item.propertyName || item.unitName || 'this unit'}:`
+          : `Set vacate date for ${item.propertyName || item.unitName || 'this unit'}:`
+        
         const vacateDate = await showPromptDialog({
-          title: 'Set Vacate Date',
-          message: `Set vacate date for ${item.propertyName || item.unitName || 'this unit'}:`,
+          title: dialogTitle,
+          message: dialogMessage,
           inputType: 'date',
           confirmText: 'Save',
           cancelText: 'Cancel'
@@ -487,29 +492,37 @@ export default {
           tenantName: item.tenantRef || item.tenantName || 'N/A',
           agentName: agentName,
           vacateDate: vacateDate,
+          leaseEndDate: vacateDate, // Lease end date is same as vacate date
           noticeGivenDate: new Date().toISOString().slice(0, 10),
           status: 'Active',
-          maintenanceRequired: 'No',
           leaseStartDate: item.leaseStartDate || '',
-          leaseEndDate: item.leaseEndDate || '',
           propertyType: item.propertyType || 'residential',
+          monthsMissedRent: 0,
           updatedAt: new Date()
         }
         
+        let noticeId = null;
         if (!existingNoticeSnapshot.empty) {
-          // Update existing notice (preserve any previously set financial amounts)
-          const existingNoticeId = existingNoticeSnapshot.docs[0].id
-          await updateDoc(doc(db, 'notices', existingNoticeId), baseNoticeData)
+          // Update existing notice
+          noticeId = existingNoticeSnapshot.docs[0].id
+          await updateDoc(doc(db, 'notices', noticeId), baseNoticeData)
         } else {
-          // Create new notice with defaulted financial amounts
+          // Create new notice
           const newNoticeData = {
             ...baseNoticeData,
-            paidTowardsFund: 0,
-            amountToBePaidOut: 0,
             createdAt: new Date()
           }
-          await addDoc(collection(db, 'notices'), newNoticeData)
+          const noticeRef = await addDoc(collection(db, 'notices'), newNoticeData)
+          noticeId = noticeRef.id
         }
+        
+        // Mark the unit with "Notice Given" status and link to notice
+        await updateDoc(doc(db, 'units', item.id), {
+          status: 'Notice Given',
+          noticeId: noticeId,
+          vacateDate: vacateDate,
+          updatedAt: new Date()
+        })
         
         // Update local state
         item.vacateDate = vacateDate
@@ -517,8 +530,9 @@ export default {
         this.filterUnits()
         
         // Show success message
+        const successDateLabel = this.isAgencyRole ? 'lease end date' : 'vacate date'
         showSuccessDialog(
-          `Notice recorded for ${item.propertyName || item.unitName} — vacate date: ${new Date(vacateDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`,
+          `Notice recorded for ${item.propertyName || item.unitName} — ${successDateLabel}: ${new Date(vacateDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`,
           'Success',
           'OK'
         )
@@ -526,7 +540,10 @@ export default {
         if (e?.message === 'User cancelled') return
         console.error('Set vacate date failed:', e)
         const { showErrorDialog } = useCustomDialogs()
-        showErrorDialog('Failed to set vacate date. Please try again.', 'Error', 'OK')
+        const errorMessage = this.isAgencyRole 
+          ? 'Failed to set lease end date. Please try again.'
+          : 'Failed to set vacate date. Please try again.'
+        showErrorDialog(errorMessage, 'Error', 'OK')
       }
     },
     async openVacancy(item) {

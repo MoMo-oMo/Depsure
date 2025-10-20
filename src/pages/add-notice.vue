@@ -102,42 +102,18 @@
                     />
                   </v-col>
 
-                  <!-- Notice Given Date -->
+                  <!-- Month's Missed Rent -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="notice.noticeGivenDate"
-                      label="Notice Given Date"
+                      v-model.number="notice.monthsMissedRent"
+                      label="Month's Missed Rent"
                       variant="outlined"
-                      type="date"
+                      type="number"
                       class="custom-input"
-                      :rules="noticeGivenDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Vacate Date -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="notice.vacateDate"
-                      label="Vacate Date"
-                      variant="outlined"
-                      type="date"
-                      class="custom-input"
-                      :rules="vacateDateRules"
-                      required
-                    />
-                  </v-col>
-
-                  <!-- Maintenance Required -->
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="notice.maintenanceRequired"
-                      label="Maintenance Required After Inspection"
-                      variant="outlined"
-                      class="custom-input"
-                      :items="['Yes', 'No']"
-                      :rules="maintenanceRequiredRules"
-                      required
+                      min="0"
+                      step="1"
+                      hint="Enter number of months rent was missed"
+                      persistent-hint
                     />
                   </v-col>
                 </v-row>
@@ -176,7 +152,7 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, addDoc, query, where, getDocs, doc, getDoc, deleteDoc } from 'firebase/firestore'
+import { collection, addDoc, query, where, getDocs, doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
@@ -202,9 +178,7 @@ export default {
         unitName: '',
         leaseStartDate: '',
         leaseEndDate: '',
-        noticeGivenDate: '',
-        vacateDate: '',
-        maintenanceRequired: ''
+        monthsMissedRent: 0
       },
       agencyRules: [v => !!v || 'Agency selection is required'],
       unitNameRules: [
@@ -212,10 +186,7 @@ export default {
         v => v.length >= 2 || 'Unit Name must be at least 2 characters'
       ],
       leaseStartDateRules: [v => !!v || 'Lease Start Date is required'],
-      leaseEndDateRules: [v => !!v || 'Lease End Date is required'],
-      noticeGivenDateRules: [v => !!v || 'Notice Given Date is required'],
-      vacateDateRules: [v => !!v || 'Vacate Date is required'],
-      maintenanceRequiredRules: [v => !!v || 'Maintenance selection is required']
+      leaseEndDateRules: [v => !!v || 'Lease End Date is required']
     }
   },
   computed: {
@@ -314,6 +285,8 @@ export default {
           // Prepare notice data for Firestore
           const noticeData = {
             ...this.notice,
+            noticeGivenDate: new Date().toISOString().split('T')[0], // Auto-set to today
+            vacateDate: this.notice.leaseEndDate, // Same as lease end date
             createdAt: new Date(),
             updatedAt: new Date()
           };
@@ -323,55 +296,33 @@ export default {
           // Add notice to Firestore
           const docRef = await addDoc(collection(db, 'notices'), noticeData);
 
-          // Automatic transition: remove from Active Units and add to Vacancies
+          // NEW FLOW: Remove from Active Units, store in Notice (don't create vacancy yet)
+          let unitId = null;
           try {
-            // Attempt to find the unit by propertyName to archive from active units
+            // Find the unit by propertyName
             const unitsCol = collection(db, 'units');
             const q = query(unitsCol, where('propertyName', '==', this.notice.unitName));
             const snap = await getDocs(q);
             if (!snap.empty) {
-              // Archive the first matched unit
               const unitDoc = snap.docs[0];
               const unitData = unitDoc.data();
+              unitId = unitDoc.id;
               
-              // Create archived unit data
-              const archivedUnitData = {
-                ...unitData,
-                originalId: unitDoc.id,
-                archivedAt: new Date(),
-                archivedBy: this.appStore.currentUser?.uid || 'unknown',
-                archivedByUserType: this.appStore.currentUser?.userType || 'unknown',
-                archivedReason: 'Notice created - moved to vacancies'
-              };
+              // Update the notice with unitId reference
+              await updateDoc(doc(db, 'notices', docRef.id), {
+                unitId: unitId,
+                propertyType: unitData.propertyType || 'residential'
+              });
               
-              // Add to archivedUnits collection
-              const archivedRef = collection(db, 'archivedUnits');
-              await addDoc(archivedRef, archivedUnitData);
-              
-              // Then remove from active units
-              await deleteDoc(doc(db, 'units', unitDoc.id));
+              // Mark unit as having a notice (add status field)
+              await updateDoc(doc(db, 'units', unitDoc.id), {
+                status: 'Notice Given',
+                noticeId: docRef.id,
+                updatedAt: new Date()
+              });
             }
-            // Add vacancy entry
-            const vacancy = {
-              agencyId: this.notice.agencyId,
-              unitId: unitDoc?.id || null,
-              unitName: this.notice.unitName,
-              dateVacated: this.notice.vacateDate,
-              leaseStartDate: this.notice.leaseStartDate || null,
-              leaseEndDate: this.notice.leaseEndDate || null,
-              moveInDate: null,
-              propertyManager: unitData?.propertyManager || '',
-              contactNumber: unitData?.contactNumber || '',
-              notes: '',
-              propertyType: unitData?.propertyType || 'residential',
-              paidTowardsFund: 0,
-              paidOut: '',
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-            await addDoc(collection(db, 'vacancies'), vacancy);
           } catch (transitionErr) {
-            console.error('Error transitioning unit to vacancies:', transitionErr);
+            console.error('Error updating unit status:', transitionErr);
           }
           
           // Log the audit event
@@ -381,10 +332,7 @@ export default {
               unitName: this.notice.unitName,
               agencyId: this.notice.agencyId,
               leaseStartDate: this.notice.leaseStartDate,
-              leaseEndDate: this.notice.leaseEndDate,
-              noticeGivenDate: this.notice.noticeGivenDate,
-              vacateDate: this.notice.vacateDate,
-              maintenanceRequired: this.notice.maintenanceRequired
+              leaseEndDate: this.notice.leaseEndDate
             },
             this.resourceTypes.NOTICE,
             docRef.id

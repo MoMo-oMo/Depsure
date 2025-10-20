@@ -130,32 +130,7 @@
                   </v-btn>
                 </template>
                 
-                <!-- For Super Admin and Depsure Admin: Show all buttons -->
-                <template v-else>
-                  <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">
-                    Save Changes
-                  </v-btn>
-                  
-                  <!-- <v-btn color="grey" variant="outlined" @click="goBack" class="cancel-btn">
-                    Back
-                  </v-btn> -->
-                  <!-- <v-btn 
-                    color="black" 
-                    variant="elevated" 
-                    @click="editEntry" 
-                    class="edit-btn"
-                  >
-                    Edit Entry
-                  </v-btn> -->
-                  <v-btn 
-                    color="error" 
-                    variant="elevated" 
-                    @click="deleteEntry" 
-                    class="delete-btn"
-                  >
-                    Delete Entry
-                  </v-btn>
-                </template>
+                <!-- For Super Admin and Depsure Admin: No action buttons -->
               </v-card-actions>
             </v-card-text>
               <!-- Notes removed - using live chat -->

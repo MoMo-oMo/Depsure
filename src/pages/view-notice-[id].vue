@@ -76,55 +76,11 @@
                   />
                 </v-col>
 
-                <!-- Notice Given Date -->
+                <!-- Month's Missed Rent -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="formatDateField(notice.noticeGivenDate)"
-                    label="Notice Given Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Vacate Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="formatDateField(notice.vacateDate)"
-                    label="Vacate Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Maintenance Required -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="notice.maintenanceRequired"
-                    label="Maintenance Required After Inspection"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Paid Towards Fund -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="formatCurrency(notice.paidTowardsFund)"
-                    label="Paid Towards Fund"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
-
-                <!-- Paid Out -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="formatPaidOut(notice.paidOut)"
-                    label="Paid Out (Yes/No)"
+                    :model-value="notice.monthsMissedRent || 0"
+                    label="Month's Missed Rent"
                     variant="outlined"
                     readonly
                     class="custom-input"
@@ -178,11 +134,7 @@ export default {
         unitName: '',
         leaseStartDate: '',
         leaseEndDate: '',
-        noticeGivenDate: '',
-        vacateDate: '',
-        maintenanceRequired: '',
-        paidTowardsFund: 0,
-        paidOut: ''
+        monthsMissedRent: 0
       },
       loading: true,
       error: null,
@@ -223,30 +175,6 @@ export default {
       }
       return String(value);
     },
-    toNumber(value, fallback = 0) {
-      if (value === null || value === undefined || value === '') return fallback;
-      const num = typeof value === 'number' ? value : Number(value);
-      return Number.isFinite(num) ? num : fallback;
-    },
-    formatCurrency(value) {
-      const amount = this.toNumber(value, 0);
-      return `R${amount.toLocaleString()}`;
-    },
-    formatPaidOut(value) {
-      if (value === true || value === 'Yes' || value === 'yes') return 'Yes';
-      if (value === false || value === 'No' || value === 'no') return 'No';
-      return String(value || 'Not specified');
-    },
-    normalizeNoticeData(data, id) {
-      const base = {
-        ...this.notice,
-        ...(data || {}),
-        id: id ?? this.notice.id
-      };
-      base.paidTowardsFund = this.toNumber(data?.paidTowardsFund ?? base.paidTowardsFund);
-      base.paidOut = data?.paidOut ?? base.paidOut ?? '';
-      return base;
-    },
     async loadNotice(noticeId) {
       this.loading = true;
       this.error = null;
@@ -259,7 +187,13 @@ export default {
         
         if (noticeDoc.exists()) {
           const noticeData = noticeDoc.data();
-          this.notice = this.normalizeNoticeData(noticeData, noticeDoc.id);
+          this.notice = {
+            id: noticeDoc.id,
+            unitName: noticeData.unitName || '',
+            leaseStartDate: noticeData.leaseStartDate || '',
+            leaseEndDate: noticeData.leaseEndDate || '',
+            monthsMissedRent: noticeData.monthsMissedRent || 0
+          };
           console.log('Notice loaded successfully:', this.notice);
         } else {
           this.error = 'Notice not found';

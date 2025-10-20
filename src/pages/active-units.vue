@@ -522,7 +522,10 @@ export default {
           flaggedMatch = this.isUnitFlagged(property);
         }
 
-        return textMatch && propertyTypeMatch && monthMatch && flaggedMatch;
+        // NEW FLOW: Exclude units with "Notice Given" status (they should appear in Notices page)
+        const notNoticeGiven = property.status !== 'Notice Given';
+
+        return textMatch && propertyTypeMatch && monthMatch && flaggedMatch && notNoticeGiven;
       });
     },
     isUnitFlagged(item) {

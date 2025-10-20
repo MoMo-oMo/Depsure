@@ -173,10 +173,8 @@
                 {{ item.status || 'Active' }}
               </v-chip>
             </template>
-            <template v-slot:item.maintenanceRequired="{ item }">
-              <v-chip :color="item.maintenanceRequired === 'Yes' ? 'success' : 'error'" size="small">
-                {{ item.maintenanceRequired }}
-              </v-chip>
+            <template v-slot:item.monthsMissedRent="{ item }">
+              <span>{{ item.monthsMissedRent || 0 }}</span>
             </template>
 
             <!-- Centered Action Buttons -->
@@ -269,13 +267,8 @@ export default {
         { title: "PROPERTY TYPE", key: "propertyType", sortable: true, align: "center" },
         { title: "STATUS", key: "status", sortable: true, align: "center" },
         { title: "NOTICE GIVEN", key: "noticeGivenDate", sortable: true, align: "center" },
-        { title: "VACATE DATE", key: "vacateDate", sortable: true, align: "center" },
-        {
-          title: "MAINTENANCE (YES/NO)",
-          key: "maintenanceRequired",
-          sortable: true,
-          align: "center",
-        },
+        { title: "LEASE END DATE", key: "leaseEndDate", sortable: true, align: "center" },
+        { title: "MONTH'S MISSED RENT", key: "monthsMissedRent", sortable: true, align: "center" },
         { title: "Actions", key: "actions", sortable: false, align: "center" },
       ],
     };

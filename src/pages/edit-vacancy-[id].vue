@@ -59,11 +59,11 @@
                     />
                   </v-col>
 
-                  <!-- Date Vacated -->
+                  <!-- Date Vacated (shown as Lease End Date for agents) -->
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="vacancy.dateVacated"
-                      label="Date Vacated"
+                      :label="isAgency ? 'Lease End Date' : 'Date Vacated'"
                       variant="outlined"
                       type="date"
                       class="custom-input"
