@@ -56,11 +56,11 @@
 
                 <!-- Inspection Required -->
                 <v-col cols="12" md="6">
-                  <v-select
-                    v-model="entry.inspectionRequired"
-                    :items="['Yes','No']"
+                  <v-text-field
+                    :model-value="entry.inspectionRequired"
                     label="Inspection Required"
                     variant="outlined"
+                    readonly
                     class="custom-input"
                   />
                 </v-col>
@@ -68,9 +68,10 @@
                 <!-- Contact Person -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="entry.contactPerson"
+                    :model-value="entry.contactPerson"
                     label="Contact Person"
                     variant="outlined"
+                    readonly
                     class="custom-input"
                   />
                 </v-col>
@@ -78,20 +79,21 @@
                 <!-- Contact Number -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="entry.contactNumber"
+                    :model-value="entry.contactNumber"
                     label="Contact Number"
                     variant="outlined"
+                    readonly
                     class="custom-input"
                   />
                 </v-col>
 
                 <!-- Appointment Made -->
                 <v-col cols="12" md="6">
-                  <v-select
-                    v-model="entry.appointmentMade"
-                    :items="['Yes','No']"
+                  <v-text-field
+                    :model-value="entry.appointmentMade"
                     label="Appointment Made"
                     variant="outlined"
+                    readonly
                     class="custom-input"
                   />
                 </v-col>
@@ -99,21 +101,21 @@
                 <!-- Inspection Date -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="entry.inspectionDate"
+                    :model-value="entry.inspectionDate"
                     label="Inspection Date"
-                    type="date"
                     variant="outlined"
+                    readonly
                     class="custom-input"
                   />
                 </v-col>
 
                 <!-- Quotes Needed -->
                 <v-col cols="12" md="6">
-                  <v-select
-                    v-model="entry.quotesNeeded"
-                    :items="['Yes','No']"
+                  <v-text-field
+                    :model-value="entry.quotesNeeded"
                     label="Quotes Needed"
                     variant="outlined"
+                    readonly
                     class="custom-input"
                   />
                 </v-col>
