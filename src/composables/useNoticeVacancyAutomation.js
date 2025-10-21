@@ -1,5 +1,5 @@
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, updateDoc, doc, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, getDocs, query, where, updateDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore'
 
 /**
  * Composable for automating notice and vacancy transitions
@@ -115,9 +115,9 @@ export function useNoticeVacancyAutomation() {
         }
       }
       
-      // 3. If unit exists, archive it and create vacancy
+      // 3. If unit exists, create vacancy and update unit status (keep in active units)
       if (unitExists && unitDocId) {
-        console.log(`[Automation] Unit ${unitDocId} found, moving to vacancies`)
+        console.log(`[Automation] Unit ${unitDocId} found, creating vacancy`)
         
         // Check if vacancy already exists
         const existingVacanciesQuery = query(
@@ -129,15 +129,41 @@ export function useNoticeVacancyAutomation() {
         if (existingVacancies.empty) {
           // Create vacancy entry
           const vacancyData = {
+            // Keep all unit information
             agencyId: notice.agencyId || unitData?.agencyId || '',
             unitId: unitDocId,
             unitName: notice.unitName || unitData?.propertyName || '',
-            dateVacated: vacateDate.toISOString().slice(0, 10),
-            moveInDate: null,
+            unitNumber: unitData?.unitNumber || '',
+            tenantRef: unitData?.tenantRef || '',
+            propertyType: notice.propertyType || unitData?.propertyType || 'residential',
             propertyManager: unitData?.propertyManager || '',
             contactNumber: unitData?.contactNumber || '',
-            notes: `Auto-created from expired notice on ${new Date().toLocaleDateString()}`,
-            propertyType: notice.propertyType || unitData?.propertyType || 'residential',
+            newOccupation: unitData?.newOccupation || '',
+            contractorRequested: unitData?.contractorRequested || '',
+            maintenanceAmount: unitData?.maintenanceAmount || 0,
+            monthsMissed: unitData?.monthsMissed || 0,
+            
+            // Vacancy specific dates
+            dateVacated: vacateDate.toISOString().slice(0, 10),
+            leaseStartDate: (() => {
+              const lsd = notice.leaseStartDate || unitData?.leaseStartDate
+              if (!lsd) return ''
+              if (typeof lsd === 'string') return lsd
+              if (lsd instanceof Date) return lsd.toISOString().slice(0, 10)
+              if (lsd?.toDate) return lsd.toDate().toISOString().slice(0, 10)
+              return ''
+            })(),
+            moveInDate: null,
+            
+            // Fields that should be EMPTY initially (as per user request)
+            leaseEndDate: '', // Empty - for new tenant
+            paidTowardsFund: 0, // Empty
+            amountToBePaidOut: 0, // Empty
+            newTenantRef: '', // Empty - for new tenant
+            notes: '', // Empty
+            paidOut: '', // Empty
+            
+            // System fields
             status: 'Available',
             createdAt: new Date(),
             updatedAt: new Date()
@@ -149,24 +175,16 @@ export function useNoticeVacancyAutomation() {
           console.log(`[Automation] Vacancy already exists for unit ${unitDocId}`)
         }
         
-        // Archive the unit
-        const archivedUnitData = {
-          ...unitData,
-          originalId: unitDocId,
-          archivedAt: new Date(),
-          archivedBy: 'system-automation',
-          archivedByUserType: 'system',
-          archivedReason: 'Automatically archived - vacate date passed'
-        }
-        
-        await addDoc(collection(db, 'archivedUnits'), archivedUnitData)
-        console.log(`[Automation] Archived unit ${unitDocId}`)
-        
-        // Delete from active units
-        await deleteDoc(doc(db, 'units', unitDocId))
-        console.log(`[Automation] Removed unit ${unitDocId} from active units`)
+        // Update unit status (keep it in active units, don't archive)
+        await updateDoc(doc(db, 'units', unitDocId), {
+          status: 'Vacancy Created',
+          vacancyCreatedAt: new Date(),
+          noticeId: null, // Clear the notice reference
+          updatedAt: new Date()
+        })
+        console.log(`[Automation] Updated unit ${unitDocId} status to 'Vacancy Created' - kept in active units`)
       } else {
-        console.log(`[Automation] Unit for notice ${noticeId} not found in active units, skipping archival`)
+        console.log(`[Automation] Unit for notice ${noticeId} not found in active units, skipping vacancy creation`)
       }
       
     } catch (error) {

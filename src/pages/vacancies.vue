@@ -175,7 +175,7 @@
                   <v-text-field v-model="moveToActive.leaseStartDate" label="Lease Start Date" type="date" variant="outlined" class="custom-input" density="compact" :rules="[v=>!!v||'Required']" required />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field v-model="moveToActive.leaseEndDate" label="Lease End Date" type="date" variant="outlined" class="custom-input" density="compact" />
+                  <v-text-field v-model="moveToActive.leaseEndDate" label="Lease End Date (Optional)" type="date" variant="outlined" class="custom-input" density="compact" :rules="[]" />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field v-model.number="moveToActive.paidTowardsFund" label="Paid Towards Fund (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" prefix="R" />
@@ -184,10 +184,10 @@
                   <v-text-field v-model.number="moveToActive.amountToBePaidOut" label="Amount to be Paid Out (Optional)" type="number" variant="outlined" class="custom-input" density="compact" :rules="[]" min="0" step="0.01" prefix="R" />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-select v-model="moveToActive.paidOut" :items="['Yes','No']" label="Paid Out Yes/No" variant="outlined" class="custom-input" density="compact" />
+                  <v-select v-model="moveToActive.paidOut" :items="['Yes','No']" label="Paid Out Yes/No (Optional)" variant="outlined" class="custom-input" density="compact" :rules="[]" />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field v-model="moveToActive.tenantRef" label="New Tenant Reference" variant="outlined" class="custom-input" density="compact" :rules="[v=>!!v||'Required']" required />
+                  <v-text-field v-model="moveToActive.tenantRef" label="New Tenant Reference (Optional)" variant="outlined" class="custom-input" density="compact" :rules="[]" />
                 </v-col>
                 <v-col cols="12">
                   <v-textarea v-model="moveToActive.notes" label="Notes (optional)" variant="outlined" class="custom-input pl-3 pr-3" density="compact" rows="2" />
@@ -277,6 +277,7 @@ export default {
       },
       headers: [
         { title: 'UNIT NAME', key: 'unitName', sortable: true },
+        { title: 'UNIT NO.', key: 'unitNumber', sortable: true },
         { title: 'DATE VACATED', key: 'dateVacated', sortable: true, align: 'center' },
         { title: 'PROPERTY TYPE', key: 'propertyType', sortable: true, align: 'center' },
         { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center' }
@@ -344,7 +345,7 @@ export default {
         this.moveToActive.unitId = item.unitId || null
         this.moveToActive.unitName = item.unitName || ''
         this.moveToActive.propertyType = item.propertyType || 'residential'
-        this.moveToActive.unitNumber = ''
+        this.moveToActive.unitNumber = item.unitNumber || ''
         // reset optional fields to empty for new lease
         this.moveToActive.leaseEndDate = ''
         this.moveToActive.tenantRef = ''
@@ -353,24 +354,43 @@ export default {
         this.moveToActive.paidOut = 'No'
         this.moveToActive.notes = ''
 
-        // Load archived unit details to get unit number/type if missing
-        let archivedDoc = null
+        // Try to load existing unit data from active units first (new workflow)
+        let existingUnit = null
         if (item.unitId) {
-          const q1 = query(collection(db, 'archivedUnits'), where('originalId', '==', item.unitId))
-          const s1 = await getDocs(q1)
-          if (!s1.empty) archivedDoc = s1.docs[0]
+          try {
+            const unitDoc = await getDoc(doc(db, 'units', item.unitId))
+            if (unitDoc.exists()) {
+              existingUnit = unitDoc.data()
+            }
+          } catch (e) {
+            console.log('Could not fetch existing unit:', e)
+          }
         }
-        if (!archivedDoc && item.unitName) {
-          const q2 = query(collection(db, 'archivedUnits'), where('propertyName', '==', item.unitName))
-          const s2 = await getDocs(q2)
-          if (!s2.empty) archivedDoc = s2.docs[0]
+
+        // Fallback: Load from archived units (old workflow)
+        if (!existingUnit) {
+          let archivedDoc = null
+          if (item.unitId) {
+            const q1 = query(collection(db, 'archivedUnits'), where('originalId', '==', item.unitId))
+            const s1 = await getDocs(q1)
+            if (!s1.empty) archivedDoc = s1.docs[0]
+          }
+          if (!archivedDoc && item.unitName) {
+            const q2 = query(collection(db, 'archivedUnits'), where('propertyName', '==', item.unitName))
+            const s2 = await getDocs(q2)
+            if (!s2.empty) archivedDoc = s2.docs[0]
+          }
+          if (archivedDoc) {
+            existingUnit = archivedDoc.data() || {}
+          }
         }
-        if (archivedDoc) {
-          const data = archivedDoc.data() || {}
-          this.moveToActive.unitNumber = data.unitNumber || data.propertyNumber || ''
-          this.moveToActive.tenantRef = data.tenantRef || data.tenantName || ''
-          if (!item.propertyType) this.moveToActive.propertyType = data.propertyType || 'residential'
-          if (!this.moveToActive.unitId && data.originalId) this.moveToActive.unitId = data.originalId
+
+        // Pre-populate fields from existing unit data
+        if (existingUnit) {
+          this.moveToActive.unitNumber = this.moveToActive.unitNumber || existingUnit.unitNumber || existingUnit.propertyNumber || ''
+          this.moveToActive.tenantRef = existingUnit.tenantRef || existingUnit.tenantName || ''
+          if (!item.propertyType) this.moveToActive.propertyType = existingUnit.propertyType || 'residential'
+          if (!this.moveToActive.unitId && existingUnit.originalId) this.moveToActive.unitId = existingUnit.originalId
           // Do not carry over past lease/payment values
         }
       } catch (e) {
@@ -393,47 +413,48 @@ export default {
         const name = this.moveToActive.unitName
         const originalId = this.moveToActive.unitId || null
 
-        // Overlap guard: block if an active unit already exists with same originalId or name
-        let overlap = false
-        try {
-          if (originalId) {
-            const existing = await getDoc(doc(db, 'units', originalId))
-            overlap = existing.exists()
-          }
-          if (!overlap && name) {
-            const qx = query(collection(db, 'units'), where('propertyName', '==', name))
-            const sx = await getDocs(qx)
-            overlap = !sx.empty
-          }
-        } catch {}
-        if (overlap) {
-          this.moveToActive.error = 'This unit already has an active/overlapping lease. Adjust dates or close the existing lease first.'
-          this.moveToActive.loading = false
-          return
-        }
-
-        // Find archived unit doc for data source and for cleanup
-        let archivedDoc = null
+        // Note: Units now stay in active units when vacancy is created (not archived)
+        // So we're updating the existing unit with new tenant information
+        
+        // Get existing unit data from active units
+        let existingUnitData = {}
         if (originalId) {
-          const q1 = query(collection(db, 'archivedUnits'), where('originalId', '==', originalId))
-          const s1 = await getDocs(q1)
-          if (!s1.empty) archivedDoc = s1.docs[0]
+          try {
+            const unitDoc = await getDoc(doc(db, 'units', originalId))
+            if (unitDoc.exists()) {
+              existingUnitData = unitDoc.data()
+            }
+          } catch (e) {
+            console.log('Could not fetch existing unit data:', e)
+          }
         }
-        if (!archivedDoc) {
-          const q2 = query(collection(db, 'archivedUnits'), where('propertyName', '==', name))
-          const s2 = await getDocs(q2)
-          if (!s2.empty) archivedDoc = s2.docs[0]
+        
+        // Fallback: check archived units for legacy data (old workflow)
+        let archivedDoc = null
+        if (!Object.keys(existingUnitData).length) {
+          if (originalId) {
+            const q1 = query(collection(db, 'archivedUnits'), where('originalId', '==', originalId))
+            const s1 = await getDocs(q1)
+            if (!s1.empty) archivedDoc = s1.docs[0]
+          }
+          if (!archivedDoc && name) {
+            const q2 = query(collection(db, 'archivedUnits'), where('propertyName', '==', name))
+            const s2 = await getDocs(q2)
+            if (!s2.empty) archivedDoc = s2.docs[0]
+          }
+          if (archivedDoc) {
+            existingUnitData = archivedDoc.data() || {}
+          }
         }
-        const archivedData = archivedDoc ? archivedDoc.data() : {}
 
-        // Prepare unit payload (preserve name/number/type; set new lease fields)
+        // Prepare unit payload (preserve existing data, update with new tenant info)
         const unitPayload = {
-          ...(archivedData || {}),
+          ...existingUnitData,
           propertyName: name,
-          unitNumber: this.moveToActive.unitNumber || archivedData?.unitNumber || archivedData?.propertyNumber || '',
-          propertyType: this.moveToActive.propertyType || archivedData?.propertyType || 'residential',
+          unitNumber: this.moveToActive.unitNumber || existingUnitData?.unitNumber || '',
+          propertyType: this.moveToActive.propertyType || existingUnitData?.propertyType || 'residential',
           leaseStartDate: this.moveToActive.leaseStartDate,
-          tenantRef: this.moveToActive.tenantRef,
+          tenantRef: this.moveToActive.tenantRef || existingUnitData?.tenantRef || '',
           status: 'Active',
           updatedAt: new Date()
         }
@@ -455,22 +476,26 @@ export default {
         if (this.moveToActive.paidOut) {
           unitPayload.paidOut = this.moveToActive.paidOut
         }
+        if (this.moveToActive.notes) {
+          unitPayload.notes = this.moveToActive.notes
+        }
         // Remove archive-only fields
         delete unitPayload.originalId; delete unitPayload.archivedAt; delete unitPayload.archivedBy; delete unitPayload.archivedByUserType; delete unitPayload.archivedReason
 
-        // Restore to units with original ID if available to retain document links
+        // Update the unit in active units with new tenant information
         const unitRef = originalId ? doc(db, 'units', originalId) : doc(collection(db, 'units'))
         await setDoc(unitRef, unitPayload)
 
-        // Clean up: delete vacancy; delete archivedUnits doc (documents remain under unit id path)
+        // Clean up: delete vacancy (unit stays in active units)
         if (this.moveToActive.vacancyId) await deleteDoc(doc(db, 'vacancies', this.moveToActive.vacancyId))
+        // Also delete any legacy archived unit doc if it exists (old workflow)
         if (archivedDoc) await deleteDoc(doc(db, 'archivedUnits', archivedDoc.id))
 
         // Update UI: remove from local list
         const idx = this.vacancies.findIndex(v => v.id === this.moveToActive.vacancyId)
         if (idx > -1) { this.vacancies.splice(idx, 1); this.filterVacancies() }
 
-        this.showSuccessMessage?.('Unit moved to Active with new lease details.')
+        this.showSuccessMessage?.('Unit updated with new tenant details. Vacancy removed.')
         this.closeMoveToActive()
       } catch (e) {
         console.error('Move to Active failed', e)
@@ -539,7 +564,16 @@ export default {
         }
         if (!qRef) { this.vacancies = []; this.filteredVacancies = []; return }
         const snap = await getDocs(qRef)
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate(), updatedAt: d.data().updatedAt?.toDate() }))
+        const list = snap.docs.map(d => {
+          const data = d.data()
+          return {
+            id: d.id,
+            ...data,
+            unitNumber: data.unitNumber || '', // Ensure unitNumber is always present
+            createdAt: data.createdAt?.toDate(),
+            updatedAt: data.updatedAt?.toDate()
+          }
+        })
         // Resolve property types if missing
         this.vacancies = await Promise.all(list.map(async v => {
           try {

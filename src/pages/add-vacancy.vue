@@ -64,6 +64,18 @@
                     />
                   </v-col>
 
+                  <!-- Unit Number (read-only) -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="vacancy.unitNumber"
+                      label="Unit Number"
+                      variant="outlined"
+                      class="custom-input"
+                      readonly
+                      prepend-inner-icon="mdi-numeric"
+                    />
+                  </v-col>
+
                   <!-- Property Type (read-only) -->
                   <v-col v-if="selectedUnitPropertyType" cols="12" md="6">
                     <v-text-field
@@ -243,6 +255,7 @@ export default {
       vacancy: {
         agencyId: '',
         unitName: '',
+        unitNumber: '',
         dateVacated: '',
         moveInDate: '',
         leaseStartDate: '',
@@ -335,6 +348,7 @@ export default {
           const vacancyData = {
             agencyId: this.vacancy.agencyId,
             unitName: this.vacancy.unitName,
+            unitNumber: this.vacancy.unitNumber || '',
             dateVacated: this.vacancy.dateVacated,
             moveInDate: this.vacancy.moveInDate || null,
             leaseStartDate: this.vacancy.leaseStartDate || null,
@@ -534,6 +548,7 @@ export default {
     },
     'vacancy.unitName'(unitName) {
       if (!unitName) {
+        this.vacancy.unitNumber = '';
         this.vacancy.leaseStartDate = '';
         this.vacancy.leaseEndDate = '';
         this.vacancy.paidTowardsFund = 0;
@@ -544,6 +559,7 @@ export default {
         unit => unit.propertyName === unitName || unit.unitName === unitName
       );
       if (!selectedUnit) return;
+      this.vacancy.unitNumber = selectedUnit.unitNumber || '';
       this.vacancy.leaseStartDate = this.normalizeDateInput(selectedUnit.leaseStartDate);
       this.vacancy.leaseEndDate = this.normalizeDateInput(selectedUnit.leaseEndDate);
       const paidAmount = selectedUnit.paidTowardsFund ?? selectedUnit.paidTowards ?? '';

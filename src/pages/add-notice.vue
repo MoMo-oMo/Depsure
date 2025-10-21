@@ -377,12 +377,72 @@ export default {
         }
         
         const querySnapshot = await getDocs(unitsQuery);
-        this.units = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
         
-        console.log('Units fetched:', this.units);
+        // Get all vacancies to filter out units that already have vacancies
+        const vacanciesQuery = collection(db, 'vacancies');
+        const vacanciesSnapshot = await getDocs(vacanciesQuery);
+        const vacantUnitIds = new Set();
+        const vacantUnitNames = new Set();
+        
+        vacanciesSnapshot.docs.forEach(doc => {
+          const vacancy = doc.data();
+          if (vacancy.unitId) {
+            vacantUnitIds.add(vacancy.unitId);
+          }
+          if (vacancy.unitName) {
+            vacantUnitNames.add(vacancy.unitName);
+          }
+        });
+        
+        // Get all notices to filter out units that already have notices
+        const noticesQuery = collection(db, 'notices');
+        const noticesSnapshot = await getDocs(noticesQuery);
+        const noticeUnitIds = new Set();
+        const noticeUnitNames = new Set();
+        
+        noticesSnapshot.docs.forEach(doc => {
+          const notice = doc.data();
+          if (notice.unitId) {
+            noticeUnitIds.add(notice.unitId);
+          }
+          if (notice.unitName) {
+            noticeUnitNames.add(notice.unitName);
+          }
+        });
+        
+        // Filter out units that have active vacancies or notices
+        this.units = querySnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(unit => {
+            // Exclude if unit ID is in vacancies
+            if (vacantUnitIds.has(unit.id)) {
+              return false;
+            }
+            // Exclude if unit name/propertyName is in vacancies
+            if (unit.propertyName && vacantUnitNames.has(unit.propertyName)) {
+              return false;
+            }
+            if (unit.unitName && vacantUnitNames.has(unit.unitName)) {
+              return false;
+            }
+            // Exclude if unit ID is in notices
+            if (noticeUnitIds.has(unit.id)) {
+              return false;
+            }
+            // Exclude if unit name/propertyName is in notices
+            if (unit.propertyName && noticeUnitNames.has(unit.propertyName)) {
+              return false;
+            }
+            if (unit.unitName && noticeUnitNames.has(unit.unitName)) {
+              return false;
+            }
+            return true;
+          });
+        
+        console.log('Units fetched (excluding units with vacancies or notices):', this.units);
         console.log('User type:', userType, 'Agency ID filter:', agencyId);
       } catch (error) {
         console.error('Error fetching units:', error);

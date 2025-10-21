@@ -95,6 +95,17 @@
                   />
                 </v-col>
 
+                <!-- Square Meterage -->
+                <v-col cols="12" md="6" v-if="showSquareMeterage">
+                  <v-text-field
+                    :model-value="formatSquareMeterage(property.squareMeterage)"
+                    label="Square Meterage"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
+                </v-col>
+
                 <!-- New Occupation -->
                 <v-col cols="12" md="6">
                   <v-text-field
@@ -381,6 +392,9 @@ import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
 import { usePropertyType } from '@/composables/usePropertyType'
 import { useAppStore } from '@/stores/app'
+import { PROPERTY_TYPES } from '@/constants/propertyTypes'
+
+const SQUARE_METER_TYPES = [PROPERTY_TYPES.COMMERCIAL, PROPERTY_TYPES.INDUSTRIAL]
 
 export default {
   name: 'ViewPropertyPage',
@@ -395,6 +409,7 @@ export default {
         tenantRef: 'T001',
         propertyName: '123 Main Street, Cape Town',
         propertyType: '',
+        squareMeterage: null,
         newOccupation: 'Yes',
         leaseStartDate: '2024-01-15',
         leaseEndDate: '2025-01-15',
@@ -423,6 +438,9 @@ export default {
   computed: {
     propertyTypeLabel() {
       return this.getLabel(this.property.propertyType) || 'Unknown'
+    },
+    showSquareMeterage() {
+      return this.requiresSquareMeterageFor(this.property.propertyType)
     },
     filteredQuotes() {
       return this.filterDocs(this.property?.quotes || [])
@@ -460,8 +478,16 @@ export default {
     }
   },
   methods: {
+    requiresSquareMeterageFor(type) {
+      return SQUARE_METER_TYPES.includes(type)
+    },
+    formatSquareMeterage(value) {
+      const numeric = this.toNumber(value, null)
+      if (numeric === null || numeric <= 0) return 'Not provided'
+      return `${numeric.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} sqm`
+    },
     formatDateField(value) {
-      if (!value) return '—';
+      if (!value) return '-';
       if (typeof value === 'string') return value;
       if (value instanceof Date) return value.toISOString().slice(0, 10);
       if (value?.toDate) {
@@ -492,6 +518,10 @@ export default {
       base.paidTowardsFund = this.toNumber(data?.paidTowardsFund ?? base.paidTowardsFund);
       base.amountToBePaidOut = this.toNumber(data?.amountToBePaidOut ?? base.amountToBePaidOut);
       base.monthsMissed = this.toNumber(data?.monthsMissed ?? base.monthsMissed);
+      const squareValue = this.toNumber(data?.squareMeterage ?? base.squareMeterage, null);
+      base.squareMeterage = this.requiresSquareMeterageFor(base.propertyType)
+        ? (squareValue !== null && squareValue > 0 ? squareValue : null)
+        : null;
       base.quotes = Array.isArray(data?.quotes) ? data.quotes : [];
       base.inspections = Array.isArray(data?.inspections) ? data.inspections : [];
       base.invoices = Array.isArray(data?.invoices) ? data.invoices : [];

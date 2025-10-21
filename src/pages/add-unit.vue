@@ -104,6 +104,24 @@
                       item-value="value"
                       :rules="propertyTypeRules"
                       required
+                      @update:model-value="onPropertyTypeChange"
+                    />
+                  </v-col>
+
+                  <!-- Square Meterage -->
+                  <v-col cols="12" md="6" v-if="requiresSquareMeterage">
+                    <v-text-field
+                      v-model="property.squareMeterage"
+                      label="Square Meterage (sqm)"
+                      variant="outlined"
+                      class="custom-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputmode="decimal"
+                      suffix="sqm"
+                      :rules="[validateSquareMeterage]"
+                      required
                     />
                   </v-col>
 
@@ -228,6 +246,9 @@ import { collection, getDocs, addDoc, query, where, doc, getDoc } from 'firebase
 import { useAppStore } from '@/stores/app'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
+import { PROPERTY_TYPES } from '@/constants/propertyTypes'
+
+const SQUARE_METER_TYPES = [PROPERTY_TYPES.COMMERCIAL, PROPERTY_TYPES.INDUSTRIAL]
 
 export default {
   name: 'AddUnitPage',
@@ -245,6 +266,7 @@ export default {
         propertyName: '',
         unitNumber: '',     // <-- Added Unit Number
         propertyType: '',
+        squareMeterage: null,
         newOccupation: '',
         leaseStartDate: '',
         leaseEndDate: '',
@@ -307,6 +329,9 @@ export default {
     }
   },
   computed: {
+    requiresSquareMeterage() {
+      return this.requiresSquareMeterageFor(this.property.propertyType)
+    },
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
@@ -341,6 +366,28 @@ export default {
     }
   },
   methods: {
+    requiresSquareMeterageFor(type) {
+      return SQUARE_METER_TYPES.includes(type)
+    },
+    parseSquareMeterage(value) {
+      if (value === null || value === undefined || value === '') return null
+      const numeric = typeof value === 'number' ? value : Number(value)
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : null
+    },
+    validateSquareMeterage(value) {
+      if (!this.requiresSquareMeterage) return true
+      if (value === null || value === undefined || value === '') {
+        return 'Square meterage is required'
+      }
+      const parsed = this.parseSquareMeterage(value)
+      if (parsed === null) return 'Enter a valid square meterage greater than 0'
+      return true
+    },
+    onPropertyTypeChange(value) {
+      if (!this.requiresSquareMeterageFor(value)) {
+        this.property.squareMeterage = null
+      }
+    },
     async fetchAgencies() {
       this.agenciesLoading = true;
       try {
@@ -403,6 +450,15 @@ export default {
             createdAt: new Date(),
             updatedAt: new Date()
           };
+          const squareMeterageRequired = this.requiresSquareMeterageFor(unitData.propertyType)
+          const normalizedSquareMeterage = squareMeterageRequired ? this.parseSquareMeterage(this.property.squareMeterage) : null
+          if (squareMeterageRequired && normalizedSquareMeterage === null) {
+            this.loading = false
+            this.showErrorDialog('Square meterage is required for commercial or industrial units.', 'Validation Error', 'OK')
+            return
+          }
+          unitData.squareMeterage = squareMeterageRequired ? normalizedSquareMeterage : null
+          this.property.squareMeterage = unitData.squareMeterage
           const docRef = await addDoc(collection(db, 'units'), unitData);
           await this.logAuditEvent(
             this.auditActions.CREATE,

@@ -85,6 +85,23 @@
                           item-title="title"
                           item-value="value"
                           :rules="[]"
+                          @update:model-value="onPropertyTypeChange"
+                        />
+                      </v-col>
+
+                      <!-- Square Meterage -->
+                      <v-col cols="12" md="6" v-if="requiresSquareMeterage">
+                        <v-text-field
+                          v-model="property.squareMeterage"
+                          label="Square Meterage (sqm)"
+                          variant="outlined"
+                          class="custom-input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputmode="decimal"
+                          suffix="sqm"
+                          :rules="[validateSquareMeterage]"
                         />
                       </v-col>
 
@@ -538,8 +555,10 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
 import { useAppStore } from '@/stores/app'
+import { PROPERTY_TYPES } from '@/constants/propertyTypes'
 
 const COLLECTION = 'units' // <-- fix: use the same collection everywhere
+const SQUARE_METER_TYPES = [PROPERTY_TYPES.COMMERCIAL, PROPERTY_TYPES.INDUSTRIAL]
 
 export default {
   name: 'EditPropertyPage',
@@ -556,6 +575,7 @@ export default {
         tenantRef: '',
         propertyName: '',
         propertyType: '',
+        squareMeterage: null,
         newOccupation: '',
         leaseStartDate: '',
         leaseEndDate: '',
@@ -653,6 +673,9 @@ export default {
     }
   },
   computed: {
+    requiresSquareMeterage() {
+      return this.requiresSquareMeterageFor(this.property.propertyType)
+    },
     showDetailsTab() {
       const lock = this.$route?.query?.lock
       return !lock || lock === 'details'
@@ -711,6 +734,28 @@ export default {
     }
   },
   methods: {
+    requiresSquareMeterageFor(type) {
+      return SQUARE_METER_TYPES.includes(type)
+    },
+    parseSquareMeterage(value) {
+      if (value === null || value === undefined || value === '') return null
+      const numeric = typeof value === 'number' ? value : Number(value)
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : null
+    },
+    validateSquareMeterage(value) {
+      if (!this.requiresSquareMeterage) return true
+      if (value === null || value === undefined || value === '') {
+        return 'Square meterage is required'
+      }
+      const parsed = this.parseSquareMeterage(value)
+      if (parsed === null) return 'Enter a valid square meterage greater than 0'
+      return true
+    },
+    onPropertyTypeChange(value) {
+      if (!this.requiresSquareMeterageFor(value)) {
+        this.property.squareMeterage = null
+      }
+    },
     goBack() {
       try {
         const appStore = useAppStore();
@@ -813,6 +858,10 @@ export default {
           this.property.amountToBePaidOut = this.property.amountToBePaidOut || 0;
           this.property.paidOut = this.property.paidOut || '';
           this.property.isFlagged = (this.property.isFlagged === true || this.property.isFlagged === 'Yes') ? true : false;
+          const normalizedSquare = this.parseSquareMeterage(this.property.squareMeterage)
+          this.property.squareMeterage = this.requiresSquareMeterageFor(this.property.propertyType)
+            ? (normalizedSquare ?? this.property.squareMeterage ?? null)
+            : null;
 
           // Set lease end mode based on data
           this.leaseEndMode = (this.property.leaseEndNotApplicable || !this.property.leaseEndDate) ? 'na' : 'date';
@@ -890,6 +939,15 @@ export default {
             ...propertyDataBase,
             updatedAt
           };
+          const squareMeterageRequired = this.requiresSquareMeterageFor(propertyData.propertyType)
+          const normalizedSquareMeterage = squareMeterageRequired ? this.parseSquareMeterage(this.property.squareMeterage) : null
+          if (squareMeterageRequired && normalizedSquareMeterage === null) {
+            this.loading = false
+            this.showErrorDialog('Square meterage is required for commercial or industrial units.', 'Validation Error', 'OK')
+            return
+          }
+          propertyData.squareMeterage = squareMeterageRequired ? normalizedSquareMeterage : null
+          this.property.squareMeterage = propertyData.squareMeterage
 
           // Apply Lease End union and flag values
           propertyData.leaseEndNotApplicable = this.leaseEndMode === 'na';

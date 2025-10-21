@@ -92,6 +92,19 @@
           </v-col>
         </v-row>
 
+        <v-row v-if="showSquareMeterageSummary" class="mb-4">
+          <v-col cols="12" class="pa-4 pt-0">
+            <div class="square-meter-summary">
+              <div class="summary-title">
+                {{ squareMeterageSummaryLabel }} Total Square Meterage
+              </div>
+              <div class="summary-value">
+                {{ squareMeterageTotalFormatted }} sqm
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+
         <!-- Header image with centered title -->
         <v-row class="mb-4">
           <v-col cols="12">
@@ -203,6 +216,9 @@ import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
+import { PROPERTY_TYPES } from '@/constants/propertyTypes'
+
+const SQUARE_METER_TYPES = [PROPERTY_TYPES.COMMERCIAL, PROPERTY_TYPES.INDUSTRIAL]
 
 export default {
   name: 'OnboardUnitsPage',
@@ -224,6 +240,11 @@ export default {
       loading: false,
       units: [],
       filteredUnits: [],
+      // Cache for quick lookups
+      noticeUnitIds: new Set(),
+      noticeUnitNames: new Set(),
+      vacancyUnitIds: new Set(),
+      vacancyUnitNames: new Set(),
       headers: [
         { title: 'UNIT NAME', key: 'propertyName', sortable: true },
         { title: 'UNIT NUMBER', key: 'unitNumber', sortable: true },
@@ -257,12 +278,37 @@ export default {
     },
     heroBgStyle() {
       return { background: `url(${heroBg}) center/cover no-repeat` }
+    },
+    showSquareMeterageSummary() {
+      return SQUARE_METER_TYPES.includes(this.propertyTypeFilter)
+    },
+    squareMeterageTotal() {
+      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return 0
+      return (this.filteredUnits || []).reduce((sum, unit) => {
+        return sum + this.parseSquareMeterage(unit?.squareMeterage)
+      }, 0)
+    },
+    squareMeterageTotalFormatted() {
+      if (!this.showSquareMeterageSummary) return ''
+      return this.squareMeterageTotal.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })
+    },
+    squareMeterageSummaryLabel() {
+      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return ''
+      return this.getLabel(this.propertyTypeFilter) || ''
     }
   },
   methods: {
     onMonthMenuToggle(open) { if (open) this.tempMonth = this.monthFilter || '' },
     applyMonth() { this.monthFilter = this.tempMonth || ''; this.filterUnits(); this.monthMenu = false },
     clearMonth() { this.tempMonth = ''; this.monthFilter = ''; this.filterUnits(); this.monthMenu = false },
+    parseSquareMeterage(value) {
+      if (value === null || value === undefined || value === '') return 0
+      const numeric = typeof value === 'number' ? value : Number(value)
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : 0
+    },
     getCurrentMonth() {
       const now = new Date();
       const year = now.getFullYear();
@@ -318,9 +364,40 @@ export default {
 
         if (!agencyId) { this.units = []; this.filteredUnits = []; return }
 
-        const q = query(collection(db, 'units'), where('agencyId', '==', agencyId))
-        const snap = await getDocs(q)
-        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        // Fetch units, notices, and vacancies in parallel for better performance
+        const [unitsSnap, noticesSnap, vacanciesSnap] = await Promise.all([
+          getDocs(query(collection(db, 'units'), where('agencyId', '==', agencyId))),
+          getDocs(collection(db, 'notices')),
+          getDocs(collection(db, 'vacancies'))
+        ])
+        
+        // Cache notices for quick lookups
+        this.noticeUnitIds = new Set()
+        this.noticeUnitNames = new Set()
+        noticesSnap.docs.forEach(doc => {
+          const notice = doc.data()
+          if (notice.unitId) this.noticeUnitIds.add(notice.unitId)
+          if (notice.unitName) this.noticeUnitNames.add(notice.unitName)
+        })
+        
+        // Cache vacancies for quick lookups
+        this.vacancyUnitIds = new Set()
+        this.vacancyUnitNames = new Set()
+        vacanciesSnap.docs.forEach(doc => {
+          const vacancy = doc.data()
+          if (vacancy.unitId) this.vacancyUnitIds.add(vacancy.unitId)
+          if (vacancy.unitName) this.vacancyUnitNames.add(vacancy.unitName)
+        })
+        
+        const all = unitsSnap.docs.map(d => {
+          const data = d.data()
+          return {
+            id: d.id,
+            ...data,
+            unitNumber: data.unitNumber || '' // Ensure unitNumber is always present
+          }
+        })
+        
         // By default, show only units marked as new occupation if present
         const onboard = all.filter(u => (u.newOccupation || '').toString().toLowerCase() === 'yes')
         this.units = onboard.length ? onboard : all
@@ -446,7 +523,26 @@ export default {
     },
     async setVacateDate(item) {
       try {
-        const { showPromptDialog, showSuccessDialog } = useCustomDialogs()
+        const { showPromptDialog, showSuccessDialog, showErrorDialog } = useCustomDialogs()
+        
+        // Check if unit already has a notice using cached data (instant!)
+        const unitName = item.propertyName || item.unitName || ''
+        const hasNotice = this.noticeUnitIds.has(item.id) || 
+                         (unitName && this.noticeUnitNames.has(unitName))
+        
+        if (hasNotice) {
+          showErrorDialog('Error: Notice has already been added.', 'Notice Exists', 'OK')
+          return
+        }
+        
+        // Check if unit already has a vacancy using cached data (instant!)
+        const hasVacancy = this.vacancyUnitIds.has(item.id) || 
+                          (unitName && this.vacancyUnitNames.has(unitName))
+        
+        if (hasVacancy) {
+          showErrorDialog('Vacancy exists. Wait till it gets added as an active unit.', 'Vacancy Exists', 'OK')
+          return
+        }
         
         // Show date picker dialog with appropriate label for agency users
         const dialogTitle = this.isAgencyRole ? 'Set Lease End Date' : 'Set Vacate Date'
@@ -514,6 +610,12 @@ export default {
           }
           const noticeRef = await addDoc(collection(db, 'notices'), newNoticeData)
           noticeId = noticeRef.id
+          
+          // Update cache with new notice
+          this.noticeUnitIds.add(item.id)
+          if (item.propertyName || item.unitName) {
+            this.noticeUnitNames.add(item.propertyName || item.unitName)
+          }
         }
         
         // Mark the unit with "Notice Given" status and link to notice
@@ -579,14 +681,22 @@ export default {
           agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
           unitId: item.id,
           unitName: item.propertyName || item.unitName || '',
+          unitNumber: item.unitNumber || '',
+          tenantRef: item.tenantRef || '',
           dateVacated: '',
           leaseStartDate: normalizeDateValue(item.leaseStartDate),
-          leaseEndDate: normalizeDateValue(item.leaseEndDate),
+          leaseEndDate: '', // Empty for new tenant
           moveInDate: null,
           propertyManager: item.propertyManager || '',
           contactNumber: item.contactNumber || '',
-          paidTowardsFund: normalizeCurrency(item.paidTowardsFund),
-          paidOut: normalizePaidOut(item.paidOut),
+          newOccupation: item.newOccupation || '',
+          contractorRequested: item.contractorRequested || '',
+          maintenanceAmount: item.maintenanceAmount || 0,
+          monthsMissed: item.monthsMissed || 0,
+          paidTowardsFund: 0, // Empty for new tenant
+          amountToBePaidOut: 0, // Empty for new tenant
+          paidOut: '', // Empty for new tenant
+          newTenantRef: '', // Empty for new tenant
           notes: '',
           propertyType: item.propertyType || 'residential',
           createdAt: new Date(),
@@ -594,6 +704,12 @@ export default {
         }
           const ref = await addDoc(collection(db, 'vacancies'), vacancyData)
           foundId = ref.id
+          
+          // Update cache with new vacancy
+          this.vacancyUnitIds.add(item.id)
+          if (item.propertyName || item.unitName) {
+            this.vacancyUnitNames.add(item.propertyName || item.unitName)
+          }
         }
         this.$router.push({ path: `/edit-vacancy-${foundId}`, query: { from: 'onboard' } })
       } catch (e) {
@@ -683,6 +799,9 @@ export default {
 .month-menu__input { width: 100%; padding: 8px 10px; border: 1px solid #d0d0d0; border-radius: 8px; }
 .month-menu__input:focus { outline: none; border-color: #000; box-shadow: 0 0 0 2px rgba(0,0,0,0.08); }
 .month-menu__actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.square-meter-summary { display: flex; align-items: center; justify-content: space-between; background: #f5f7fa; border: 1px solid #e0e4ea; border-radius: 12px; padding: 16px 20px; }
+.square-meter-summary .summary-title { font-weight: 600; color: #0a2f3d; }
+.square-meter-summary .summary-value { font-weight: 700; font-size: 1.25rem; color: #0a2f3d; }
 
 .actions { display: inline-flex; align-items: center; gap: 6px; }
 

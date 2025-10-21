@@ -111,6 +111,19 @@
         </v-col>
       </v-row>
 
+      <v-row v-if="showSquareMeterageSummary" class="mb-4">
+        <v-col cols="12" class="pa-4 pt-0">
+          <div class="square-meter-summary">
+            <div class="summary-title">
+              {{ squareMeterageSummaryLabel }} Total Square Meterage
+            </div>
+            <div class="summary-value">
+              {{ squareMeterageTotalFormatted }} sqm
+            </div>
+          </div>
+        </v-col>
+      </v-row>
+
       <!-- Clean Agency Header (static image, centered title) -->
       <v-row class="mb-4">
         <v-col cols="12">
@@ -313,6 +326,9 @@ import { useAppStore } from '@/stores/app'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAuditTrail } from '@/composables/useAuditTrail'
 import { usePropertyType } from '@/composables/usePropertyType'
+import { PROPERTY_TYPES } from '@/constants/propertyTypes'
+
+const SQUARE_METER_TYPES = [PROPERTY_TYPES.COMMERCIAL, PROPERTY_TYPES.INDUSTRIAL]
 
 export default {
   name: "ActiveUnitsPage",
@@ -421,6 +437,26 @@ export default {
         { value: 'all', title: 'All' },
         { value: 'only', title: 'Only Flagged' }
       ];
+    },
+    showSquareMeterageSummary() {
+      return SQUARE_METER_TYPES.includes(this.propertyTypeFilter)
+    },
+    squareMeterageTotal() {
+      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return 0
+      return (this.filteredProperties || []).reduce((sum, property) => {
+        return sum + this.parseSquareMeterage(property?.squareMeterage)
+      }, 0)
+    },
+    squareMeterageSummaryLabel() {
+      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return ''
+      return this.getLabel(this.propertyTypeFilter) || ''
+    },
+    squareMeterageTotalFormatted() {
+      if (!this.showSquareMeterageSummary) return ''
+      return this.squareMeterageTotal.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })
     }
   },
   methods: {
@@ -439,6 +475,11 @@ export default {
       this.monthFilter = ''
       this.filterProperties()
       this.monthMenu = false
+    },
+    parseSquareMeterage(value) {
+      if (value === null || value === undefined || value === '') return 0
+      const numeric = typeof value === 'number' ? value : Number(value)
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : 0
     },
     openMonthPicker() {
       const el = this.$refs.monthInput?.$el?.querySelector('input');
@@ -1218,6 +1259,24 @@ export default {
   justify-content: space-between;
   gap: 8px;
   margin-top: 10px;
+}
+.square-meter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f5f7fa;
+  border: 1px solid #e0e4ea;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+.square-meter-summary .summary-title {
+  font-weight: 600;
+  color: #0a2f3d;
+}
+.square-meter-summary .summary-value {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #0a2f3d;
 }
 
 /* Action Button Styling */

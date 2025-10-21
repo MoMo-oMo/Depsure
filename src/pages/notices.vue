@@ -232,7 +232,7 @@
 <script>
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, deleteDoc, doc, getDoc, addDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where, deleteDoc, doc, getDoc, addDoc, updateDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { usePropertyType } from '@/composables/usePropertyType'
 import { useAuditTrail } from '@/composables/useAuditTrail'
@@ -563,10 +563,22 @@ export default {
     editProperty(property) { this.$router.push(`/edit-notice-${property.id}`); },
     
     async moveToVacancies(notice) {
+      const normalizeString = (value) => {
+        if (typeof value !== 'string') return '';
+        return value.replace(/\s+/g, ' ').trim();
+      };
+      const normalizeForMatch = (value) => normalizeString(value).toLowerCase();
+
+      const rawUnitName = notice?.unitName ?? '';
+      const normalizedUnitName = normalizeString(rawUnitName);
+      const rawPropertyName = notice?.propertyName ?? '';
+      const normalizedPropertyName = normalizeString(rawPropertyName);
+      const displayUnitName = normalizedUnitName || normalizedPropertyName || rawUnitName || rawPropertyName || 'this unit';
+
       try {
         await this.showConfirmDialog({
           title: 'Process Notice?',
-          message: `Move unit "${notice.unitName}" to Vacancies and delete this notice?`,
+          message: `Move unit "${displayUnitName}" to Vacancies and delete this notice?`,
           confirmText: 'Process',
           cancelText: 'Cancel',
           color: '#000000'
@@ -576,41 +588,169 @@ export default {
       }
       
       try {
-        // Find the unit in active units
-        const unitsQuery = query(
-          collection(db, 'units'),
-          where('propertyName', '==', notice.unitName)
+        const nameCandidates = Array.from(
+          new Set(
+            [rawUnitName, normalizedUnitName, rawPropertyName, normalizedPropertyName]
+              .map((value) => (typeof value === 'string' ? value.trim() : value))
+              .filter(Boolean)
+          )
         );
-        const unitsSnapshot = await getDocs(unitsQuery);
-        
-        if (unitsSnapshot.empty) {
-          // Try by unitName field as well
-          const unitsQuery2 = query(
-            collection(db, 'units'),
-            where('unitName', '==', notice.unitName)
+        const normalizedCandidateSet = new Set(
+          [rawUnitName, normalizedUnitName, rawPropertyName, normalizedPropertyName]
+            .map(normalizeForMatch)
+            .filter(Boolean)
+        );
+
+        const tryFindUnitByField = async (field, value) => {
+          const snapshot = await getDocs(
+            query(collection(db, 'units'), where(field, '==', value))
           );
-          const unitsSnapshot2 = await getDocs(unitsQuery2);
+          return snapshot.empty ? null : snapshot.docs[0];
+        };
+
+        let unitDoc = null;
+
+        if (notice.unitId) {
+          const unitSnapshot = await getDoc(doc(db, 'units', notice.unitId));
+          if (unitSnapshot.exists()) {
+            unitDoc = unitSnapshot;
+          }
+        }
+
+        if (!unitDoc) {
+          const noticeTaggedSnapshot = await getDocs(
+            query(collection(db, 'units'), where('noticeId', '==', notice.id))
+          );
+          unitDoc = noticeTaggedSnapshot.empty ? null : noticeTaggedSnapshot.docs[0];
+        }
+
+        if (!unitDoc) {
+          for (const candidate of nameCandidates) {
+            unitDoc = await tryFindUnitByField('unitName', candidate);
+            if (unitDoc) break;
+            unitDoc = await tryFindUnitByField('propertyName', candidate);
+            if (unitDoc) break;
+          }
+        }
+
+        if (!unitDoc) {
+          const unitQueryConstraints = [];
+          if (notice.agencyId) {
+            unitQueryConstraints.push(where('agencyId', '==', notice.agencyId));
+          }
+          const fallbackSnapshot = await getDocs(
+            unitQueryConstraints.length
+              ? query(collection(db, 'units'), ...unitQueryConstraints)
+              : collection(db, 'units')
+          );
+
+          const normalizedCandidateList = Array.from(normalizedCandidateSet);
+          unitDoc = fallbackSnapshot.docs.find((docSnap) => {
+            const data = docSnap.data() || {};
+            const candidates = [
+              normalizeForMatch(data.unitName),
+              normalizeForMatch(data.propertyName),
+              normalizeForMatch(data.propertyFullName),
+              normalizeForMatch(data.property?.name),
+              normalizeForMatch(data.property?.fullName),
+              normalizeForMatch(data.unitCode),
+              normalizeForMatch(data.unitNumber),
+              normalizeForMatch(data.address),
+              normalizeForMatch(data.addressLine1),
+              normalizeForMatch(data.addressLine2)
+            ].filter(Boolean);
+            if (!candidates.length) return false;
+            return candidates.some((candidateValue) =>
+              normalizedCandidateList.some((searchValue) => {
+                if (!searchValue) return false;
+                return (
+                  candidateValue === searchValue ||
+                  candidateValue.includes(searchValue) ||
+                  searchValue.includes(candidateValue)
+                );
+              })
+            );
+          }) || null;
+        }
+
+        if (!unitDoc) {
+          // Check if unit is already archived (if we have a unitId)
+          let archivedSnapshot = { empty: true };
+          if (notice.unitId) {
+            const archivedUnitsQuery = query(
+              collection(db, 'archivedUnits'),
+              where('originalId', '==', notice.unitId)
+            );
+            archivedSnapshot = await getDocs(archivedUnitsQuery);
+          }
           
-          if (unitsSnapshot2.empty) {
-            this.showErrorDialog('Unit not found in Active Units. It may have already been moved.', 'Error', 'OK');
+          if (!archivedSnapshot.empty) {
+            // Unit was already archived, just delete the notice
+            this.showErrorDialog(
+              'Unit has already been archived. The notice will be deleted.',
+              'Unit Already Archived',
+              'OK'
+            );
+            await deleteDoc(doc(db, 'notices', notice.id));
+            const index = this.properties.findIndex(p => p.id === notice.id);
+            if (index > -1) {
+              this.properties.splice(index, 1);
+              this.filterProperties();
+            }
+            return;
+          }
+          
+          // Unit not found anywhere - offer to delete the notice
+          try {
+            await this.showConfirmDialog({
+              title: 'Unit Not Found',
+              message: `Unit "${displayUnitName}" not found in Active Units. It may have been deleted or moved. Would you like to delete this notice?`,
+              confirmText: 'Delete Notice',
+              cancelText: 'Cancel',
+              color: '#dc3545'
+            });
+            
+            // User confirmed deletion
+            await deleteDoc(doc(db, 'notices', notice.id));
+            const index = this.properties.findIndex(p => p.id === notice.id);
+            if (index > -1) {
+              this.properties.splice(index, 1);
+              this.filterProperties();
+            }
+            this.showSuccessDialog('Notice deleted successfully.', 'Success!', 'Continue');
+          } catch (_) {
+            // User cancelled
+            return;
+          }
+          return;
+        }
+
+        const unitData = unitDoc.data();
+        const vacancyChecks = [];
+
+        vacancyChecks.push({ field: 'unitId', value: unitDoc.id });
+        vacancyChecks.push({ field: 'noticeId', value: notice.id });
+        for (const candidate of nameCandidates) {
+          vacancyChecks.push({ field: 'unitName', value: candidate });
+        }
+
+        const vacancyCollectionRef = collection(db, 'vacancies');
+        for (const { field, value } of vacancyChecks) {
+          if (!value) continue;
+          const snapshot = await getDocs(query(vacancyCollectionRef, where(field, '==', value)));
+          if (!snapshot.empty) {
+            this.showErrorDialog('A vacancy already exists for this unit.', 'Already Exists', 'OK');
             return;
           }
         }
         
-        const unitDoc = unitsSnapshot.empty ? (await getDocs(query(collection(db, 'units'), where('unitName', '==', notice.unitName)))).docs[0] : unitsSnapshot.docs[0];
-        const unitData = unitDoc.data();
-        
-        // Check if vacancy already exists for this unit
-        const existingVacancyQuery = query(
-          collection(db, 'vacancies'),
-          where('unitName', '==', notice.unitName)
-        );
-        const existingVacancySnapshot = await getDocs(existingVacancyQuery);
-        
-        if (!existingVacancySnapshot.empty) {
-          this.showErrorDialog('A vacancy already exists for this unit.', 'Already Exists', 'OK');
-          return;
-        }
+        const vacancyUnitName =
+          (typeof unitData.unitName === 'string' && unitData.unitName.trim()) ||
+          normalizedUnitName ||
+          normalizedPropertyName ||
+          rawUnitName ||
+          rawPropertyName ||
+          displayUnitName;
         
         // Create vacancy entry
         const normalizeDateValue = (value) => {
@@ -639,35 +779,47 @@ export default {
         };
 
         const vacancyData = {
+          // Keep all unit information
           agencyId: notice.agencyId || unitData.agencyId || '',
           unitId: unitDoc.id,
-          unitName: notice.unitName,
-          dateVacated: notice.vacateDate || new Date().toISOString().slice(0, 10),
-          leaseStartDate: normalizeDateValue(notice.leaseStartDate || unitData.leaseStartDate),
-          leaseEndDate: normalizeDateValue(notice.leaseEndDate || unitData.leaseEndDate),
-          moveInDate: null,
+          unitName: vacancyUnitName,
+          unitNumber: unitData.unitNumber || '',
+          tenantRef: unitData.tenantRef || '',
+          propertyType: unitData.propertyType || 'residential',
           propertyManager: unitData.propertyManager || '',
           contactNumber: unitData.contactNumber || '',
-          paidTowardsFund: normalizeCurrency(notice.paidTowardsFund ?? unitData.paidTowardsFund),
-          paidOut: normalizePaidOut(notice.paidOut ?? unitData.paidOut),
-          notes: `Processed from notice. Lease start: ${normalizeDateValue(notice.leaseStartDate) || 'N/A'}`,
-          propertyType: unitData.propertyType || 'residential',
+          newOccupation: unitData.newOccupation || '',
+          contractorRequested: unitData.contractorRequested || '',
+          maintenanceAmount: unitData.maintenanceAmount || 0,
+          monthsMissed: unitData.monthsMissed || 0,
+          
+          // Vacancy specific dates
+          dateVacated: notice.vacateDate || new Date().toISOString().slice(0, 10),
+          leaseStartDate: normalizeDateValue(notice.leaseStartDate || unitData.leaseStartDate),
+          moveInDate: null,
+          
+          // Fields that should be EMPTY initially (as per user request)
+          leaseEndDate: '', // Empty - for new tenant
+          paidTowardsFund: 0, // Empty
+          amountToBePaidOut: 0, // Empty
+          newTenantRef: '', // Empty - for new tenant
+          notes: '', // Empty
+          paidOut: '', // Empty
+          
+          // System fields
           createdAt: new Date(),
           updatedAt: new Date()
         };
         await addDoc(collection(db, 'vacancies'), vacancyData);
         
-        // Archive the unit (not hard delete)
+        // Update unit status (keep it in active units, don't archive)
         const appStore = useAppStore();
-        const archivedUnitData = {
-          ...unitData,
-          originalId: unitDoc.id,
-          archivedAt: new Date(),
-          archivedBy: appStore.currentUser?.uid || 'unknown',
-          archivedByUserType: appStore.currentUser?.userType || 'unknown',
-          archivedReason: 'Notice processed - moved to vacancies'
-        };
-        await addDoc(collection(db, 'archivedUnits'), archivedUnitData);
+        await updateDoc(doc(db, 'units', unitDoc.id), {
+          status: 'Vacancy Created',
+          vacancyCreatedAt: new Date(),
+          noticeId: null, // Clear the notice reference
+          updatedAt: new Date()
+        });
         
         // Log audit event
         await this.logAuditEvent(
@@ -675,16 +827,13 @@ export default {
           {
             noticeId: notice.id,
             unitId: unitDoc.id,
-            unitName: notice.unitName,
+            unitName: vacancyUnitName,
             movedToVacancies: true,
             vacateDate: notice.vacateDate
           },
           this.resourceTypes.UNIT,
           unitDoc.id
         );
-        
-        // Delete from active units
-        await deleteDoc(doc(db, 'units', unitDoc.id));
         
         // Delete the notice
         await deleteDoc(doc(db, 'notices', notice.id));
@@ -694,7 +843,7 @@ export default {
           this.filterProperties();
         }
         
-        this.showSuccessDialog(`Unit moved to Vacancies and notice deleted!`, 'Success!', 'Continue');
+        this.showSuccessDialog(`Vacancy created for unit "${displayUnitName}". Notice has been deleted. Unit remains in active units.`, 'Success!', 'Continue');
       } catch (error) {
         console.error('Error processing notice:', error);
         this.showErrorDialog(`Failed to process notice: ${error.message}`, 'Error', 'OK');
