@@ -623,7 +623,45 @@ export default {
         // Add to archivedUnits collection
         const archivedRef = collection(db, 'archivedUnits')
         await addDoc(archivedRef, archivedUnitData)
-        
+
+        // Cascade: remove related docs (flaggedUnits, maintenance, inspections)
+        const unitNameKey = item.propertyName || item.unitName || ''
+        const deletes = []
+        try {
+          // Flagged Units by unitName
+          if (unitNameKey) {
+            const fq1 = query(collection(db, 'flaggedUnits'), where('unitName', '==', unitNameKey))
+            const fqs1 = await getDocs(fq1)
+            fqs1.forEach(d => deletes.push(deleteDoc(d.ref)))
+          }
+          // Flagged Units by unitId (if schema supports it)
+          if (item.id) {
+            const fq2 = query(collection(db, 'flaggedUnits'), where('unitId', '==', item.id))
+            const fqs2 = await getDocs(fq2)
+            fqs2.forEach(d => deletes.push(deleteDoc(d.ref)))
+          }
+          // Flagged Units by unitNumber (if captured)
+          if (item.unitNumber) {
+            const fq3 = query(collection(db, 'flaggedUnits'), where('unitNumber', '==', item.unitNumber))
+            const fqs3 = await getDocs(fq3)
+            fqs3.forEach(d => deletes.push(deleteDoc(d.ref)))
+          }
+          // Maintenance by unitName
+          if (unitNameKey) {
+            const mq = query(collection(db, 'maintenance'), where('unitName', '==', unitNameKey))
+            const ms = await getDocs(mq)
+            ms.forEach(d => deletes.push(deleteDoc(d.ref)))
+          }
+          // Inspections by unitName
+          if (unitNameKey) {
+            const iq = query(collection(db, 'inspections'), where('unitName', '==', unitNameKey))
+            const is = await getDocs(iq)
+            is.forEach(d => deletes.push(deleteDoc(d.ref)))
+          }
+        } catch (cascadeErr) {
+          console.error('Error preparing cascade deletes:', cascadeErr)
+        }
+
         // Log archive action
         await this.logAuditEvent(
           this.auditActions.ARCHIVE,
@@ -640,6 +678,15 @@ export default {
         // Delete from original units collection
         const unitRef = doc(db, 'units', item.id)
         await deleteDoc(unitRef)
+
+        // Execute related deletions
+        if (deletes.length) {
+          try {
+            await Promise.allSettled(deletes)
+          } catch (err) {
+            console.error('Some related records could not be deleted:', err)
+          }
+        }
         
         // Remove from local arrays
         this.properties = this.properties.filter(prop => prop.id !== item.id)
@@ -1174,6 +1221,7 @@ export default {
   overflow: hidden;
   min-height: 220px;
 }
+
 .agency-hero-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .agency-hero-gradient { position:absolute; inset:0; background: linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); }
 .agency-hero-content {
@@ -1181,6 +1229,7 @@ export default {
   z-index: 1;
   padding: 16px;
 }
+.agency-hero-center { position: absolute; inset: 0; z-index: 2; display:flex; align-items:center; justify-content:center; padding:0 16px; color:#fff; font-weight:800; font-size:1.6rem; text-align:center; letter-spacing:.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 .agency-hero-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; }
 .agency-hero-details .detail-item-black { color: #ffffff; }
 
@@ -1304,7 +1353,7 @@ export default {
 /* Static hero with image, centered title (no overlay) */
 .agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
 .agency-hero-bg { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
-.agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+.agency-hero-center { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 
 /* Custom table header styling - black headers */
 :deep(.custom-header .v-data-table-header) {

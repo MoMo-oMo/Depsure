@@ -37,7 +37,7 @@
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12">
                 <div class="agency-content-right">
-                  <v-card-title class="text-white text-h4 mb-2">{{ agency.agencyName }}</v-card-title>
+                  <v-card-title class="agency-title text-white text-h4 mb-2">{{ agency.agencyName }}</v-card-title>
                   <v-card-text class="text-white">
                   <div class="agency-details-black">
                     <div class="detail-item-black">
@@ -373,7 +373,7 @@ export default {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0));
+  background: linear-gradient(to left, rgba(0,0,0,0.85) 65%, rgba(0,0,0,0));
   pointer-events: none;
 }
 .agency-info-card-black .no-gutters,
@@ -385,9 +385,20 @@ export default {
 /* Content aligned to the right dark area */
 .agency-content-right {
   margin-left: auto;
-  width: min(720px, 55%);
+  width: min(1100px, 80%);
   padding: 16px 16px 24px;
   text-align: left;
+}
+
+.agency-title {
+  display: block;
+  margin: 0 0 8px;
+  white-space: nowrap !important;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.2;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Remove row/column gutters so the image sits flush with the top/edges */

@@ -476,6 +476,9 @@ export default {
       if (selectedUnit) {
         this.notice.leaseStartDate = selectedUnit.leaseStartDate || '';
         this.notice.leaseEndDate = selectedUnit.leaseEndDate || '';
+        // Prefill months missed rent from the unit if available
+        const mm = typeof selectedUnit.monthsMissed === 'number' ? selectedUnit.monthsMissed : Number(selectedUnit.monthsMissed);
+        this.notice.monthsMissedRent = Number.isFinite(mm) ? mm : 0;
       }
     }
   }

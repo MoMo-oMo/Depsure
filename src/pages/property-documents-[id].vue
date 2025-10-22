@@ -140,6 +140,7 @@
 <script>
 import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
+import { useAppStore } from '@/stores/app'
 
 export default {
   name: 'PropertyDocumentsPage',
@@ -156,26 +157,60 @@ export default {
     }
   },
   computed: {
+    isAgencyContext() {
+      const appStore = useAppStore()
+      const u = appStore.currentUser
+      return u?.userType === 'Agency' || (u?.userType === 'Admin' && u?.adminScope === 'agency')
+    },
     filteredQuotes() {
       const q = (this.search || '').toLowerCase()
-      const list = Array.isArray(this.property?.quotes) ? this.property.quotes : []
-      if (!q) return list
-      return list.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
+      const list = Array.isArray(this.property?.quotes) ? [...this.property.quotes] : []
+      const sorted = this.sortByNewest(list)
+      if (q) return sorted.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
+      return this.isAgencyContext ? sorted.slice(0, 3) : sorted
     },
     filteredInspections() {
       const q = (this.search || '').toLowerCase()
-      const list = Array.isArray(this.property?.inspections) ? this.property.inspections : []
-      if (!q) return list
-      return list.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
+      const list = Array.isArray(this.property?.inspections) ? [...this.property.inspections] : []
+      const sorted = this.sortByNewest(list)
+      if (q) return sorted.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
+      return this.isAgencyContext ? sorted.slice(0, 3) : sorted
     },
     filteredInvoices() {
       const q = (this.search || '').toLowerCase()
-      const list = Array.isArray(this.property?.invoices) ? this.property.invoices : []
-      if (!q) return list
-      return list.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
+      const list = Array.isArray(this.property?.invoices) ? [...this.property.invoices] : []
+      const sorted = this.sortByNewest(list)
+      if (q) return sorted.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
+      return this.isAgencyContext ? sorted.slice(0, 3) : sorted
     }
   },
   methods: {
+    sortByNewest(arr) {
+      try {
+        const withKeys = (arr || []).map((d, i) => ({
+          item: d,
+          ts: this.extractTimestamp(d),
+          idx: i
+        }))
+        // Sort descending by timestamp; fall back to original order when equal
+        withKeys.sort((a, b) => {
+          if (a.ts === b.ts) return b.idx - a.idx // assume later index is newer
+          return (b.ts || 0) - (a.ts || 0)
+        })
+        return withKeys.map(x => x.item)
+      } catch (_) { return Array.isArray(arr) ? arr : [] }
+    },
+    extractTimestamp(d) {
+      try {
+        const raw = d?.uploadedAt || d?.createdAt || d?.date || d?.timestamp || null
+        if (!raw) return 0
+        if (raw?.toDate) {
+          return raw.toDate().getTime()
+        }
+        const t = new Date(raw).getTime()
+        return Number.isFinite(t) ? t : 0
+      } catch { return 0 }
+    },
     async loadPropertyData(id) {
       this.loading = true
       try {

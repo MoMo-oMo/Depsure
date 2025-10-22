@@ -67,59 +67,168 @@
 
                 <!-- Contact Person -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.contactPerson"
-                    label="Contact Person"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <template v-if="isAgencyUser">
+                    <v-text-field
+                      v-model="entry.contactPerson"
+                      label="Contact Person"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </template>
+                  <template v-else>
+                    <v-text-field
+                      :model-value="entry.contactPerson"
+                      label="Contact Person"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </template>
                 </v-col>
 
                 <!-- Contact Number -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.contactNumber"
-                    label="Contact Number"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <template v-if="isAgencyUser">
+                    <v-text-field
+                      v-model="entry.contactNumber"
+                      label="Contact Number"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </template>
+                  <template v-else>
+                    <v-text-field
+                      :model-value="entry.contactNumber"
+                      label="Contact Number"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </template>
                 </v-col>
 
                 <!-- Appointment Made -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.appointmentMade"
-                    label="Appointment Made"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <template v-if="isAgencyUser">
+                    <v-select
+                      v-model="entry.appointmentMade"
+                      :items="['Yes','No']"
+                      label="Appointment Made (Yes/No)"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </template>
+                  <template v-else>
+                    <v-text-field
+                      :model-value="entry.appointmentMade"
+                      label="Appointment Made"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </template>
                 </v-col>
 
                 <!-- Inspection Date -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.inspectionDate"
-                    label="Inspection Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <template v-if="isAgencyUser">
+                    <v-text-field
+                      v-model="entry.inspectionDate"
+                      type="date"
+                      label="Inspection Date"
+                      variant="outlined"
+                      class="custom-input"
+                      :disabled="!appointmentMadeIsYes"
+                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
+                    />
+                  </template>
+                  <template v-else>
+                    <v-text-field
+                      :model-value="entry.inspectionDate"
+                      label="Inspection Date"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </template>
+                </v-col>
+
+                <!-- Inspection Time -->
+                <v-col cols="12" md="6">
+                  <template v-if="isAgencyUser">
+                    <v-text-field
+                      v-model="entry.inspectionTime"
+                      type="time"
+                      label="Inspection Time"
+                      variant="outlined"
+                      class="custom-input"
+                      :disabled="!appointmentMadeIsYes"
+                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
+                    />
+                  </template>
+                  <template v-else>
+                    <v-text-field
+                      :model-value="entry.inspectionTime || ''"
+                      label="Inspection Time"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </template>
                 </v-col>
 
                 <!-- Quotes Needed -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="entry.quotesNeeded"
-                    label="Quotes Needed"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
+                  <template v-if="isAgencyUser">
+                    <v-select
+                      v-model="entry.quotesNeeded"
+                      :items="['Yes','No']"
+                      label="Quotes Needed (Yes/No)"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </template>
+                  <template v-else>
+                    <v-text-field
+                      :model-value="entry.quotesNeeded"
+                      label="Quotes Needed"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </template>
                 </v-col>
               </v-row>
+
+              <v-divider class="my-4" />
+              <!-- Documents section -->
+              <h3 class="mb-2">Documents</h3>
+              <div v-if="canUploadDoc" class="upload-row mb-2">
+                <v-file-input
+                  v-model="newInspectionFile"
+                  label="Upload Inspection Document (PDF only)"
+                  variant="outlined"
+                  class="custom-input upload-input"
+                  accept=".pdf"
+                  show-size
+                  prepend-icon="mdi-file-pdf-box"
+                  :loading="uploading"
+                  :rules="inspectionFileRules"
+                />
+                <v-btn class="save-btn mb-6" :disabled="!newInspectionFile || uploading" :loading="uploading" @click="uploadInspectionDocument">
+                  <v-icon start>mdi-upload</v-icon>
+                  Upload
+                </v-btn>
+              </div>
+              <div class="uploaded-docs">
+                <div v-if="entry.inspectionFileName && entry.inspectionFileURL" class="doc-item d-flex align-center mb-2">
+                  <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                  <span class="mr-4">{{ entry.inspectionFileName }}</span>
+                  <v-btn size="small" color="black" variant="outlined" class="mr-2" :href="entry.inspectionFileURL" target="_blank" tag="a">View</v-btn>
+                  <v-btn size="small" color="black" variant="outlined" class="mr-2" :href="entry.inspectionFileURL" download>Download</v-btn>
+                </div>
+                <div v-else class="text-medium-emphasis">No documents uploaded yet.</div>
+              </div>
 
               <!-- Action Buttons -->
               <v-card-actions class="pa-4">
@@ -208,8 +317,9 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
+import { db, storage } from '@/firebaseConfig'
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 import { useAppStore } from '@/stores/app'
 
@@ -228,6 +338,20 @@ export default {
     userType() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType;
+    },
+    canUploadDoc() {
+      const appStore = useAppStore();
+      const user = appStore.currentUser;
+      const fromOnboard = this.$route?.query?.from === 'onboard';
+      const isSuperAdmin = user?.userType === 'Super Admin';
+      const isDepsureAdmin = user?.userType === 'Admin' && user?.adminScope === 'depsure';
+      // Hide upload for Super Admin and Depsure Admin; allow Agency roles when coming from onboard flow
+      if (isSuperAdmin || isDepsureAdmin) return false;
+      return fromOnboard && this.isAgencyUser;
+    },
+    appointmentMadeIsYes() {
+      const val = String(this.entry?.appointmentMade || '').toLowerCase();
+      return val === 'yes';
     },
     currentUserId() {
       const appStore = useAppStore();
@@ -252,7 +376,14 @@ export default {
       savingNote: false,
       editingKey: null,
       editingText: '',
-      savingEdit: false
+      savingEdit: false,
+      // Document upload state
+      uploading: false,
+      newInspectionFile: null,
+      inspectionFileRules: [
+        v => !v || (v && (!v.size || v.size <= 50 * 1024 * 1024)) || 'File size must be less than 50MB',
+        v => !v || (v && (!v.type || v.type === 'application/pdf')) || 'Only PDF files are allowed'
+      ]
     };
   },
   mounted() {
@@ -275,15 +406,49 @@ export default {
         this.showErrorDialog?.('Failed to open property details.', 'Error', 'OK')
       }
     },
+    async uploadInspectionDocument() {
+      try {
+        if (!this.entry?.id) return this.showErrorDialog?.('Invalid inspection entry.', 'Error', 'OK')
+        if (!this.newInspectionFile) return
+        const file = this.newInspectionFile
+        // Basic validation (also covered by rules)
+        if (file.type !== 'application/pdf') {
+          return this.showErrorDialog?.('Only PDF files are allowed.', 'Invalid File', 'OK')
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          return this.showErrorDialog?.('File size must be under 50MB.', 'Invalid File', 'OK')
+        }
+        this.uploading = true
+        const path = `inspection-documents/${this.entry.id}/${Date.now()}_${file.name}`
+        const fileRef = storageRef(storage, path)
+        const snap = await uploadBytes(fileRef, file)
+        const url = await getDownloadURL(snap.ref)
+        await updateDoc(doc(db, 'inspections', this.entry.id), {
+          inspectionFileURL: url,
+          inspectionFileName: file.name,
+          updatedAt: serverTimestamp()
+        })
+        this.entry.inspectionFileURL = url
+        this.entry.inspectionFileName = file.name
+        this.newInspectionFile = null
+        this.showSuccessDialog?.('Document uploaded successfully!', 'Success', 'OK')
+      } catch (e) {
+        console.error('Upload document failed', e)
+        this.showErrorDialog?.('Failed to upload document. Please try again.', 'Upload Error', 'OK')
+      } finally {
+        this.uploading = false
+      }
+    },
         async saveDetails () {
       try {
         if (!this.entry?.id) return
         const payload = {
-          inspectionRequired: this.entry.inspectionRequired || '',
+          inspectionRequired: this.entry.inspectionRequired || 'Yes',
           contactPerson: this.entry.contactPerson || '',
           contactNumber: this.entry.contactNumber || '',
           appointmentMade: this.entry.appointmentMade || '',
           inspectionDate: this.entry.inspectionDate || '',
+          inspectionTime: this.entry.inspectionTime || '',
           quotesNeeded: this.entry.quotesNeeded || '',
           updatedAt: new Date()
         }
@@ -635,6 +800,12 @@ export default {
   background-color: #333 !important;
   transform: translateY(-1px);
 }
+.save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Documents layout */
+.upload-row { display: flex; align-items: center; gap: 12px; }
+.upload-input { flex: 1; min-width: 0; }
+.uploaded-docs .doc-item { align-items: center; }
 
 /* Slightly bigger Property Details button */
 .property-btn {

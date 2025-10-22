@@ -1,8 +1,8 @@
 <template>
   <div class="onboard-units-page">
     <v-container fluid>
-      <!-- Restrict to Agency role -->
-      <template v-if="isAgencyRole">
+      <!-- Visible to all roles; actions are gated by role -->
+
         <!-- Filters -->
         <v-row class="mb-4">
           <!-- Month filter -->
@@ -141,35 +141,34 @@
               </template>
               <template #item.actions="{ item }">
                 <div class="actions">
-                  <!-- Flag / Unflag -->
-                  <v-btn
-                    :icon="item.isFlagged ? 'mdi-flag' : 'mdi-flag-outline'"
-                    :color="item.isFlagged ? 'error' : 'grey-darken-1'"
-                    variant="text"
-                    size="small"
-                    :title="item.isFlagged ? 'Unflag' : 'Flag'"
-                    @click="toggleFlag(item)"
-                  />
-                  <!-- Maintenance (create or open) -->
-                  <v-btn
-                    icon="mdi-wrench"
-                    color="black"
-                    variant="text"
-                    size="small"
-                    title="Maintenance"
-                    @click="openMaintenance(item)"
-                  />
-                  <!-- Vacate Date Setter -->
-                  <v-btn
-                    icon="mdi-calendar-export"
-                    color="black"
-                    variant="text"
-                    size="small"
-                    title="Set Vacate Date"
-                    @click="setVacateDate(item)"
-                  />
-                  
-                  <!-- Documents -->
+                  <!-- Agency actions -->
+                  <template v-if="isAgencyRole">
+                    <v-btn
+                      :icon="item.isFlagged ? 'mdi-flag' : 'mdi-flag-outline'"
+                      :color="item.isFlagged ? 'error' : 'grey-darken-1'"
+                      variant="text"
+                      size="small"
+                      :title="item.isFlagged ? 'Unflag' : 'Flag'"
+                      @click="toggleFlag(item)"
+                    />
+                    <v-btn
+                      icon="mdi-wrench"
+                      color="black"
+                      variant="text"
+                      size="small"
+                      title="Maintenance"
+                      @click="openMaintenance(item)"
+                    />
+                    <v-btn
+                      icon="mdi-calendar-export"
+                      color="black"
+                      variant="text"
+                      size="small"
+                      title="Set Vacate Date"
+                      @click="setVacateDate(item)"
+                    />
+                  </template>
+                  <!-- View-only actions for Admin/Super Admin -->
                   <v-btn
                     icon="mdi-file-document"
                     color="black"
@@ -178,7 +177,6 @@
                     title="Unit Documents"
                     @click="viewDocuments(item)"
                   />
-                  <!-- Inspections -->
                   <v-btn
                     icon="mdi-clipboard-check"
                     color="black"
@@ -192,18 +190,9 @@
             </v-data-table>
           </v-col>
         </v-row>
-      </template>
 
-      <!-- Non-agency message -->
-      <template v-else>
-        <v-row>
-          <v-col cols="12" class="pa-6">
-            <v-alert type="warning" variant="tonal" border="start" color="amber">
-              This page is available to Agency users only.
-            </v-alert>
-          </v-col>
-        </v-row>
-      </template>
+
+      
     </v-container>
   </div>
 </template>
@@ -350,23 +339,33 @@ export default {
         // Flagged filter
         const flaggedMatch = this.flaggedFilter === 'only' ? (u.isFlagged === true || u.isFlagged === 'Yes') : true
 
-        return textMatch && typeMatch && monthMatch && flaggedMatch
+        // Exclude units that have an active notice or vacancy
+        const unitNameKey = (u.propertyName || u.unitName || '').toString()
+        const hasNotice = this.noticeUnitIds.has(u.id) || (unitNameKey && this.noticeUnitNames.has(unitNameKey))
+        const hasVacancy = this.vacancyUnitIds.has(u.id) || (unitNameKey && this.vacancyUnitNames.has(unitNameKey))
+        const availabilityMatch = !(hasNotice || hasVacancy)
+
+        return textMatch && typeMatch && monthMatch && flaggedMatch && availabilityMatch
       })
     },
     async fetchUnits() {
-      if (!this.isAgencyRole) return
       this.loading = true
       try {
         const user = this.appStore.currentUser
         let agencyId = null
-        if (user?.userType === 'Agency') agencyId = user.uid
-        else if (user?.userType === 'Admin' && user?.adminScope === 'agency') agencyId = user.managedAgencyId
-
-        if (!agencyId) { this.units = []; this.filteredUnits = []; return }
+        if (this.isAgencyRole) {
+          if (user?.userType === 'Agency') agencyId = user.uid
+          else if (user?.userType === 'Admin' && user?.adminScope === 'agency') agencyId = user.managedAgencyId
+        } else {
+          agencyId = this.appStore.currentAgency?.id || null
+        }
 
         // Fetch units, notices, and vacancies in parallel for better performance
+        const unitsPromise = agencyId
+          ? getDocs(query(collection(db, 'units'), where('agencyId', '==', agencyId)))
+          : getDocs(collection(db, 'units'))
         const [unitsSnap, noticesSnap, vacanciesSnap] = await Promise.all([
-          getDocs(query(collection(db, 'units'), where('agencyId', '==', agencyId))),
+          unitsPromise,
           getDocs(collection(db, 'notices')),
           getDocs(collection(db, 'vacancies'))
         ])
@@ -467,7 +466,7 @@ export default {
             agencyId,
             unitId: item.id,
             unitName: item.propertyName || item.unitName || '',
-            inspectionRequired: 'No',
+            inspectionRequired: 'Yes',
             contactPerson: item.contactPerson || '',
             contactNumber: item.contactNumber || '',
             appointmentMade: 'No',
@@ -593,7 +592,7 @@ export default {
           status: 'Active',
           leaseStartDate: item.leaseStartDate || '',
           propertyType: item.propertyType || 'residential',
-          monthsMissedRent: 0,
+          monthsMissedRent: (typeof item.monthsMissed === 'number' ? item.monthsMissed : Number(item.monthsMissed) || 0),
           updatedAt: new Date()
         }
         

@@ -84,7 +84,7 @@
               <v-row>
                 <v-col cols="12" md="8">
                   <div class="agency-content-right">
-                    <v-card-title class="text-white text-h3 mb-4">{{ agency.agencyName }}</v-card-title>
+                    <v-card-title class="agency-title text-white text-h3 mb-4">{{ agency.agencyName }}</v-card-title>
                     <v-card-text class="text-white">
                       <div class="agency-details-black">
                         <div class="detail-item-black">
@@ -317,11 +317,19 @@ export default {
   background-position: center;
   background-repeat: no-repeat;
 }
+.agency-info-card-black::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* sits above image, below content */
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
 .agency-info-card-black { position: relative; }
 .agency-content-overlay { 
   position: absolute; 
   inset: 0; 
-  z-index: 1; 
+  z-index: 2; 
   display: flex; 
   align-items: center; 
   padding: 24px; 
@@ -329,13 +337,23 @@ export default {
 .agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
 .agency-content-right { 
   margin-left: auto; 
-  width: min(720px, 55%); 
+  width: min(1100px, 80%); 
   padding: 24px; 
   text-align: left; 
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
+  background: transparent;
+  backdrop-filter: none;
+  border-radius: 0;
   margin: 16px;
+}
+.agency-title {
+  display: block;
+  margin: 0 0 8px;
+  white-space: nowrap !important;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.2;
+  width: 100%;
+  max-width: 100%;
 }
 .view-agency-page {
   padding: 20px;
@@ -513,6 +531,9 @@ export default {
     width: 100%;
     height: 220px; /* give it a nice visible height when stacked */
     object-fit: cover;
+  }
+  .agency-content-right {
+    width: 100%;
   }
 }
 </style>

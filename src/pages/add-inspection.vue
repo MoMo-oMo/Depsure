@@ -61,16 +61,7 @@
                     />
                   </v-col>
 
-                  <!-- Inspection Required (always Yes) -->
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      :model-value="'Yes'"
-                      label="Inspection Required"
-                      variant="outlined"
-                      class="custom-input"
-                      readonly
-                    />
-                  </v-col>
+                  
 
                   <!-- Contact Person -->
                   <v-col cols="12" md="6">
@@ -268,7 +259,6 @@ export default {
       entry: {
         agencyId: "",
         unitName: "",
-        inspectionRequired: "Yes",
         contactPerson: "",
         contactNumber: "",
         appointmentMade: "No",
@@ -283,7 +273,6 @@ export default {
       },
       agencyRules: [v => !!v || "Agency selection is required"],
       unitNameRules: [v => !!v || "Unit Name is required"],
-      inspectionRequiredRules: [],
       contactPersonRules: [v => !!v || "Contact Person is required"],
       contactNumberRules: [v => !!v || "Contact Number is required"],
       appointmentMadeRules: [v => !!v || "Appointment Made is required"],
