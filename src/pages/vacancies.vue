@@ -456,6 +456,7 @@ export default {
           leaseStartDate: this.moveToActive.leaseStartDate,
           tenantRef: this.moveToActive.tenantRef || existingUnitData?.tenantRef || '',
           status: 'Active',
+          newOccupation: 'Yes',
           updatedAt: new Date()
         }
         // Do not carry over archived lease/payment values by default

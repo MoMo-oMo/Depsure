@@ -529,7 +529,8 @@ export default {
           })
         );
         
-        this.properties = noticesWithPropertyTypes;
+        // Only show active notices in the list; hide completed/archived
+        this.properties = noticesWithPropertyTypes.filter(n => (n.status || 'Active') === 'Active');
         console.log('Notices loaded with property types:', this.properties);
         console.log('Number of notices found:', this.properties.length);
         console.log('User type:', userType, 'Agency ID filter:', agencyId);

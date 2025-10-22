@@ -366,8 +366,15 @@ export default {
           : getDocs(collection(db, 'units'))
         const [unitsSnap, noticesSnap, vacanciesSnap] = await Promise.all([
           unitsPromise,
-          getDocs(collection(db, 'notices')),
-          getDocs(collection(db, 'vacancies'))
+          // Only consider Active notices when excluding from Onboarded Units,
+          // and scope by agency when available to avoid cross-agency name collisions
+          agencyId
+            ? getDocs(query(collection(db, 'notices'), where('status', '==', 'Active'), where('agencyId', '==', agencyId)))
+            : getDocs(query(collection(db, 'notices'), where('status', '==', 'Active'))),
+          // Scope vacancies by agency when available
+          agencyId
+            ? getDocs(query(collection(db, 'vacancies'), where('agencyId', '==', agencyId)))
+            : getDocs(collection(db, 'vacancies'))
         ])
         
         // Cache notices for quick lookups
@@ -625,9 +632,12 @@ export default {
           updatedAt: new Date()
         })
         
-        // Update local state
+        // Update local state and optimistically remove from view
         item.vacateDate = vacateDate
         item.status = 'Notice Given'
+        // Ensure immediate removal without waiting for re-fetch
+        this.units = (this.units || []).filter(u => u.id !== item.id)
+        this.filteredUnits = (this.filteredUnits || []).filter(u => u.id !== item.id)
         this.filterUnits()
         
         // Show success message
