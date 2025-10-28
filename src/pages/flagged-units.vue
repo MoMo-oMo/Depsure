@@ -1,7 +1,6 @@
 <template>
   <div class="view-agency-page">
     <v-container fluid>
-      
       <!-- Filters and Add Flagged Unit Button -->
       <v-row class="mb-4">
         <!-- Search -->
@@ -31,7 +30,6 @@
             item-title="title"
             item-value="value"
             label="Property Type"
-
             density="comfortable"
             variant="outlined"
             hide-details
@@ -69,35 +67,73 @@
               <input
                 type="month"
                 :value="tempMonth"
-                @input="(e) => { tempMonth = e.target.value }"
+                @input="
+                  (e) => {
+                    tempMonth = e.target.value;
+                  }
+                "
                 class="month-menu__input"
               />
               <div class="month-menu__actions">
-                <v-btn color="black" variant="elevated" size="small" @click="applyMonth">Apply</v-btn>
-                <v-btn color="grey" variant="text" size="small" @click="clearMonth">All</v-btn>
+                <v-btn
+                  color="black"
+                  variant="elevated"
+                  size="small"
+                  @click="applyMonth"
+                  >Apply</v-btn
+                >
+                <v-btn
+                  color="grey"
+                  variant="text"
+                  size="small"
+                  @click="clearMonth"
+                  >All</v-btn
+                >
               </div>
             </div>
           </v-menu>
         </v-col>
 
         <!-- Add Flagged Unit Button - Only visible to Agency users -->
-        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+        <v-col
+          cols="12"
+          md="3"
+          lg="3"
+          class="pa-4 d-flex align-center"
+          v-if="isAgencyUser"
+        >
           <v-btn @click="addFlaggedUnit" class="back-btn">
             Add Flagged Unit
           </v-btn>
         </v-col>
 
         <!-- Quick Add Flagged Unit Button -->
-        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+        <v-col
+          cols="12"
+          md="3"
+          lg="3"
+          class="pa-4 d-flex align-center"
+          v-if="isAgencyUser"
+        >
           <v-btn @click="quickAddFlaggedUnit" class="back-btn" color="success">
             Quick Add
           </v-btn>
         </v-col>
 
         <!-- Export to Excel Button -->
-        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center justify-end">
-          <v-btn style="margin-right:45%;" :loading="exportLoading" @click="exportFlaggedUnitsXLSX" class="back-btn ">
-            {{ exportLoading ? 'Exporting...' : 'Export to Excel' }}
+        <v-col
+          cols="12"
+          md="3"
+          lg="3"
+          class="pa-4 d-flex align-center justify-end"
+        >
+          <v-btn
+            style="margin-right: 45%"
+            :loading="exportLoading"
+            @click="exportFlaggedUnitsXLSX"
+            class="back-btn"
+          >
+            {{ exportLoading ? "Exporting..." : "Export to Excel" }}
           </v-btn>
         </v-col>
       </v-row>
@@ -122,46 +158,61 @@
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12">
                 <div class="agency-content-right">
-                <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.agencyName }}
-                </v-card-title>
-                <v-card-text class="text-white">
-                  <div class="agency-details-black">
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.address || 'Address not provided' }}</span>
+                  <v-card-title class="text-white text-h4 mb-2">
+                    {{ selectedAgencyDetails.agencyName }}
+                  </v-card-title>
+                  <v-card-text class="text-white">
+                    <div class="agency-details-black">
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
+                        <span>{{
+                          selectedAgencyDetails.address ||
+                          "Address not provided"
+                        }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon
+                          icon="mdi-card-account-details"
+                          class="mr-2 text-white"
+                        />
+                        <span
+                          >Reg No:
+                          {{ selectedAgencyDetails.regNo || "â€”" }}</span
+                        >
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-account" class="mr-2 text-white" />
+                        <span
+                          >Primary Contact:
+                          {{
+                            selectedAgencyDetails.primaryContactName || "N/A"
+                          }}</span
+                        >
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                        <span>{{
+                          selectedAgencyDetails.contactNumber || "N/A"
+                        }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-email" class="mr-2 text-white" />
+                        <span>{{ selectedAgencyDetails.email || "N/A" }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-home" class="mr-2 text-white" />
+                        <span>{{ activeUnitsCount }} Properties</span>
+                      </div>
                     </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
-                      <span>Reg No: {{ selectedAgencyDetails.regNo || 'â€”' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-account" class="mr-2 text-white" />
-                      <span>Primary Contact: {{ selectedAgencyDetails.primaryContactName || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.contactNumber || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-email" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.email || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ activeUnitsCount }} Properties</span>
-                    </div>
-                  </div>
-                  <!-- Description hidden to reduce visual noise over image -->
-                  <!-- <v-divider class="my-4 bg-white" /> -->
-                </v-card-text>
+                    <!-- Description hidden to reduce visual noise over image -->
+                    <!-- <v-divider class="my-4 bg-white" /> -->
+                  </v-card-text>
                 </div>
               </v-col>
             </v-row>
           </v-card>
         </v-col>
       </v-row>
-      
 
       <!-- Flagged Units Table -->
       <v-row>
@@ -197,7 +248,6 @@
                   class="action-btn"
                 />
                 <v-btn
-
                   icon="mdi-delete"
                   size="small"
                   variant="text"
@@ -215,39 +265,52 @@
 </template>
 
 <script>
-import { Workbook } from 'exceljs'
-import { collection, getDocs, query, where, deleteDoc, doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore'
-import { db } from '@/firebaseConfig'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { useAppStore } from '@/stores/app'
-import { usePropertyType } from '@/composables/usePropertyType'
-const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+import { Workbook } from "exceljs";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  updateDoc,
+} from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { useAppStore } from "@/stores/app";
+import { usePropertyType } from "@/composables/usePropertyType";
+const heroBg =
+  "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
 
 export default {
   name: "FlaggedUnitsPage",
   setup() {
-    const { showConfirmDialog, showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getLabel, getColor, getOptions, resolvePropertyTypeFromUnit } = usePropertyType()
-    return { 
+    const { showConfirmDialog, showSuccessDialog, showErrorDialog } =
+      useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    const { getLabel, getColor, getOptions, resolvePropertyTypeFromUnit } =
+      usePropertyType();
+    return {
       showConfirmDialog,
       showSuccessDialog,
       showErrorDialog,
-      logAuditEvent, 
-      auditActions, 
+      logAuditEvent,
+      auditActions,
       resourceTypes,
       getPropertyTypeLabel: getLabel,
       getPropertyTypeColor: getColor,
-      resolvePropertyTypeFromUnit
-    }
+      resolvePropertyTypeFromUnit,
+    };
   },
   data() {
     return {
       searchQuery: "",
-      monthFilter: '',
+      monthFilter: "",
       monthMenu: false,
-      tempMonth: '',
+      tempMonth: "",
       selectedAgency: null,
       propertyTypeFilter: null,
       filteredUnits: [],
@@ -263,31 +326,34 @@ export default {
         { title: "UNIT NUMBER", key: "unitNumber", sortable: true },
         { title: "DATE FLAGGED", key: "dateFlagged", sortable: true },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
-      ]
+      ],
     };
   },
-computed: {
+  computed: {
     agencyHeroBgStyle() {
-      return { background: `url(${heroBg}) center/cover no-repeat` }
+      return { background: `url(${heroBg}) center/cover no-repeat` };
     },
     heroTitle() {
-      return 'Flagged Units'
+      return "Flagged Units";
     },
     monthFilterLabel() {
-      if (!this.monthFilter) return 'All Months'
+      if (!this.monthFilter) return "All Months";
       try {
-        const [yy, mm] = String(this.monthFilter).split('-')
-        const d = new Date(Number(yy), Number(mm) - 1, 1)
-        return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+        const [yy, mm] = String(this.monthFilter).split("-");
+        const d = new Date(Number(yy), Number(mm) - 1, 1);
+        return d.toLocaleString("en-US", { month: "long", year: "numeric" });
       } catch {
-        return this.monthFilter
+        return this.monthFilter;
       }
     },
     agencyCardBgStyle() {
-      const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+      const url =
+        this.selectedAgencyDetails?.profileImageUrl ||
+        this.selectedAgencyDetails?.profileImage ||
+        "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
       return {
-        background: `url(${url}) center/cover no-repeat`
-      }
+        background: `url(${url}) center/cover no-repeat`,
+      };
     },
     hasCurrentAgency() {
       const appStore = useAppStore();
@@ -299,47 +365,52 @@ computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     isSuperAdmin() {
       const appStore = useAppStore();
       const userType = appStore.currentUser?.userType;
-      console.log('Flagged Units - User Type:', userType, 'Is Super Admin:', userType === 'Super Admin');
-      return userType === 'Super Admin';
+      console.log(
+        "Flagged Units - User Type:",
+        userType,
+        "Is Super Admin:",
+        userType === "Super Admin"
+      );
+      return userType === "Super Admin";
     },
     propertyTypeFilterOptions() {
-      const { getOptions } = usePropertyType()
-      return [
-        { value: null, title: 'All Types' },
-        ...getOptions()
-      ]
-    }
+      const { getOptions } = usePropertyType();
+      return [{ value: null, title: "All Types" }, ...getOptions()];
+    },
   },
   methods: {
     onMonthMenuToggle(open) {
       if (open) {
-        this.tempMonth = this.monthFilter || ''
+        this.tempMonth = this.monthFilter || "";
       }
     },
     openMonthMenu() {
-      this.tempMonth = this.monthFilter || ''
-      this.monthMenu = true
+      this.tempMonth = this.monthFilter || "";
+      this.monthMenu = true;
     },
     applyMonth() {
-      this.monthFilter = this.tempMonth || ''
-      this.filterUnits()
-      this.monthMenu = false
+      this.monthFilter = this.tempMonth || "";
+      this.filterUnits();
+      this.monthMenu = false;
     },
     clearMonth() {
-      this.tempMonth = ''
-      this.monthFilter = ''
-      this.filterUnits()
-      this.monthMenu = false
+      this.tempMonth = "";
+      this.monthFilter = "";
+      this.filterUnits();
+      this.monthMenu = false;
     },
     openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      const el = this.$refs.monthInput?.$el?.querySelector("input");
       if (el) {
-        if (typeof el.showPicker === 'function') el.showPicker();
+        if (typeof el.showPicker === "function") el.showPicker();
         else el.focus();
       }
     },
@@ -349,10 +420,16 @@ computed: {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         let unitsQuery;
-        if (userType === 'Agency') {
-          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid));
+        if (userType === "Agency") {
+          unitsQuery = query(
+            collection(db, "units"),
+            where("agencyId", "==", currentUser.uid)
+          );
         } else if (agencyId) {
-          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
+          unitsQuery = query(
+            collection(db, "units"),
+            where("agencyId", "==", agencyId)
+          );
         } else {
           this.activeUnitsCount = 0;
           return;
@@ -360,7 +437,7 @@ computed: {
         const snap = await getDocs(unitsQuery);
         this.activeUnitsCount = snap.size;
       } catch (error) {
-        console.error('Error counting active units:', error);
+        console.error("Error counting active units:", error);
         this.activeUnitsCount = 0;
       }
     },
@@ -372,9 +449,16 @@ computed: {
     },
     filterUnits() {
       this.filteredUnits = this.units.filter((unit) => {
-        const textMatch = (unit.unitName || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          (unit.unitNumber || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          (unit.dateFlagged || '').toLowerCase().includes(this.searchQuery.toLowerCase());
+        const textMatch =
+          (unit.unitName || "")
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase()) ||
+          (unit.unitNumber || "")
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase()) ||
+          (unit.dateFlagged || "")
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase());
 
         // Agency filtering is already done in fetchFlaggedUnits() - no need to do it again here
         // (this allows old flagged units without agencyId to show up)
@@ -398,16 +482,22 @@ computed: {
             // No createdAt date, skip this unit
             return textMatch && propertyTypeMatch;
           }
-          
+
           const filterDate = new Date(this.monthFilter + "-01");
-          const unitMonth = `${unitDate.getFullYear()}-${String(unitDate.getMonth() + 1).padStart(2, "0")}`;
-          const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, "0")}`;
+          const unitMonth = `${unitDate.getFullYear()}-${String(
+            unitDate.getMonth() + 1
+          ).padStart(2, "0")}`;
+          const filterMonth = `${filterDate.getFullYear()}-${String(
+            filterDate.getMonth() + 1
+          ).padStart(2, "0")}`;
           monthMatch = unitMonth === filterMonth;
         }
 
         return textMatch && monthMatch && propertyTypeMatch;
       });
-      console.log(`filterUnits: ${this.filteredUnits.length} units after applying filters`);
+      console.log(
+        `filterUnits: ${this.filteredUnits.length} units after applying filters`
+      );
     },
     viewUnit(unit) {
       console.log("Viewing flagged unit:", unit);
@@ -419,163 +509,200 @@ computed: {
     async deleteUnit(unit) {
       try {
         await this.showConfirmDialog({
-          title: 'Delete unit?',
-          message: `Are you sure you want to delete ${unit.unitName || 'this unit'}?`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
+          title: "Delete unit?",
+          message: `Are you sure you want to delete ${
+            unit.unitName || "this unit"
+          }?`,
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
       } catch (_) {
-        return
+        return;
       }
       try {
-          // Delete flagged unit document
-          await deleteDoc(doc(db, 'flaggedUnits', unit.id));
-          
-          // Also unflag the actual unit in the units collection
-          try {
-            // Try to find the unit by unitId first
-            if (unit.unitId) {
-              await updateDoc(doc(db, 'units', unit.unitId), { isFlagged: false });
-              console.log('Unit unflagged by unitId:', unit.unitId);
-            } else {
-              // If no unitId, try to find by propertyName/unitName
-              const unitName = unit.unitName || '';
-              if (unitName) {
-                const unitsQuery = query(
-                  collection(db, 'units'),
-                  where('propertyName', '==', unitName),
-                  where('agencyId', '==', unit.agencyId)
-                );
-                const unitsSnapshot = await getDocs(unitsQuery);
-                
-                if (!unitsSnapshot.empty) {
-                  const unitDoc = unitsSnapshot.docs[0];
-                  await updateDoc(doc(db, 'units', unitDoc.id), { isFlagged: false });
-                  console.log('Unit unflagged by propertyName:', unitName);
-                }
+        // Delete flagged unit document
+        await deleteDoc(doc(db, "flaggedUnits", unit.id));
+
+        // Also unflag the actual unit in the units collection
+        try {
+          // Try to find the unit by unitId first
+          if (unit.unitId) {
+            await updateDoc(doc(db, "units", unit.unitId), {
+              isFlagged: false,
+            });
+            console.log("Unit unflagged by unitId:", unit.unitId);
+          } else {
+            // If no unitId, try to find by propertyName/unitName
+            const unitName = unit.unitName || "";
+            if (unitName) {
+              const unitsQuery = query(
+                collection(db, "units"),
+                where("propertyName", "==", unitName),
+                where("agencyId", "==", unit.agencyId)
+              );
+              const unitsSnapshot = await getDocs(unitsQuery);
+
+              if (!unitsSnapshot.empty) {
+                const unitDoc = unitsSnapshot.docs[0];
+                await updateDoc(doc(db, "units", unitDoc.id), {
+                  isFlagged: false,
+                });
+                console.log("Unit unflagged by propertyName:", unitName);
               }
             }
-          } catch (unflagError) {
-            console.warn('Could not unflag unit in units collection:', unflagError);
-            // Continue even if unflagging fails
           }
-          
-          // Log the audit event
-          await this.logAuditEvent(
-            this.auditActions.DELETE,
-            {
-              unitName: unit.unitName,
-              unitNumber: unit.unitNumber,
-              dateFlagged: unit.dateFlagged
-            },
-            this.resourceTypes.UNIT,
-            unit.id
-          )
-          
-          // Remove from local array
-          const index = this.units.findIndex(u => u.id === unit.id);
-          if (index > -1) {
-            this.units.splice(index, 1);
-            this.filterUnits();
-            this.showSuccessDialog(`Flagged unit for ${unit.unitName} deleted successfully and unit unflagged!`, 'Success!', 'Continue');
-          }
-        } catch (error) {
-          console.error('Error deleting flagged unit:', error);
-          this.showErrorDialog('Failed to delete flagged unit. Please try again.');
+        } catch (unflagError) {
+          console.warn(
+            "Could not unflag unit in units collection:",
+            unflagError
+          );
+          // Continue even if unflagging fails
         }
+
+        // Log the audit event
+        await this.logAuditEvent(
+          this.auditActions.DELETE,
+          {
+            unitName: unit.unitName,
+            unitNumber: unit.unitNumber,
+            dateFlagged: unit.dateFlagged,
+          },
+          this.resourceTypes.UNIT,
+          unit.id
+        );
+
+        // Remove from local array
+        const index = this.units.findIndex((u) => u.id === unit.id);
+        if (index > -1) {
+          this.units.splice(index, 1);
+          this.filterUnits();
+          this.showSuccessDialog(
+            `Flagged unit for ${unit.unitName} deleted successfully and unit unflagged!`,
+            "Success!",
+            "Continue"
+          );
+        }
+      } catch (error) {
+        console.error("Error deleting flagged unit:", error);
+        this.showErrorDialog(
+          "Failed to delete flagged unit. Please try again."
+        );
+      }
     },
     addFlaggedUnit() {
-      this.$router.push('/add-flagged-unit');
+      this.$router.push("/add-flagged-unit");
     },
     async exportFlaggedUnitsXLSX() {
-      this.exportLoading = true
+      this.exportLoading = true;
       try {
         try {
           await this.logAuditEvent(
             this.auditActions.EXPORT,
             {
-              exportType: 'XLSX',
+              exportType: "XLSX",
               recordCount: this.filteredUnits.length,
               filters: {
                 searchQuery: this.searchQuery,
                 propertyType: this.propertyTypeFilter,
-                month: this.monthFilter
-              }
+                month: this.monthFilter,
+              },
             },
             this.resourceTypes.UNIT,
             null
-          )
+          );
         } catch (_) {}
 
         const columns = [
-          { header: 'UNIT NAME', key: 'unitName' },
-          { header: 'UNIT NUMBER', key: 'unitNumber' },
-          { header: 'DATE FLAGGED', key: 'dateFlagged' },
-          { header: 'PROPERTY TYPE', key: 'propertyType' }
-        ]
+          { header: "UNIT NAME", key: "unitName" },
+          { header: "UNIT NUMBER", key: "unitNumber" },
+          { header: "DATE FLAGGED", key: "dateFlagged" },
+          { header: "PROPERTY TYPE", key: "propertyType" },
+        ];
 
-        const rows = (this.filteredUnits || []).map(u => ({
-          unitName: u.unitName || '',
-          unitNumber: u.unitNumber || '',
+        const rows = (this.filteredUnits || []).map((u) => ({
+          unitName: u.unitName || "",
+          unitNumber: u.unitNumber || "",
           dateFlagged: this.formatCsvDate(u.createdAt || u.dateFlagged),
-          propertyType: this.getPropertyTypeLabel?.(u.propertyType) || u.propertyType || ''
-        }))
+          propertyType:
+            this.getPropertyTypeLabel?.(u.propertyType) || u.propertyType || "",
+        }));
 
-        const wb = new Workbook()
-        const ws = wb.addWorksheet('Flagged Units')
-        ws.columns = columns.map(c => ({ header: c.header, key: c.key, width: 22 }))
-        rows.forEach(r => ws.addRow(r))
+        const wb = new Workbook();
+        const ws = wb.addWorksheet("Flagged Units");
+        ws.columns = columns.map((c) => ({
+          header: c.header,
+          key: c.key,
+          width: 22,
+        }));
+        rows.forEach((r) => ws.addRow(r));
 
-        const headerRow = ws.getRow(1)
-        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
-        headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }
-        headerRow.height = 20
+        const headerRow = ws.getRow(1);
+        headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+        headerRow.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF000000" },
+        };
+        headerRow.height = 20;
 
-        ws.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
-        const lastCol = String.fromCharCode(64 + columns.length)
-        ws.autoFilter = { from: 'A1', to: lastCol + '1' }
+        ws.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
+        const lastCol = String.fromCharCode(64 + columns.length);
+        ws.autoFilter = { from: "A1", to: lastCol + "1" };
 
         // Auto-fit widths within bounds
         columns.forEach((col, idx) => {
-          const lengths = rows.map(r => {
-            const val = r[col.key]
-            if (val == null) return 0
-            if (typeof val === 'string') return val.split('\n').reduce((m, s) => Math.max(m, s.length), 0)
-            return String(val).length
-          })
-          const headerLen = col.header.length
-          const maxLen = Math.max(headerLen, ...lengths)
-          const minW = 14
-          const maxW = 40
-          ws.getColumn(idx + 1).width = Math.min(Math.max(maxLen + 2, minW), maxW)
-        })
+          const lengths = rows.map((r) => {
+            const val = r[col.key];
+            if (val == null) return 0;
+            if (typeof val === "string")
+              return val.split("\n").reduce((m, s) => Math.max(m, s.length), 0);
+            return String(val).length;
+          });
+          const headerLen = col.header.length;
+          const maxLen = Math.max(headerLen, ...lengths);
+          const minW = 14;
+          const maxW = 40;
+          ws.getColumn(idx + 1).width = Math.min(
+            Math.max(maxLen + 2, minW),
+            maxW
+          );
+        });
 
-        const filename = `flagged-units-${new Date().toISOString().split('T')[0]}.xlsx`
-        const buffer = await wb.xlsx.writeBuffer()
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        const filename = `flagged-units-${
+          new Date().toISOString().split("T")[0]
+        }.xlsx`;
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       } catch (e) {
-        console.error('Export flagged units failed', e)
-        this.showErrorDialog?.('Failed to export flagged units. Please try again.', 'Error', 'OK')
+        console.error("Export flagged units failed", e);
+        this.showErrorDialog?.(
+          "Failed to export flagged units. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.exportLoading = false
+        this.exportLoading = false;
       }
     },
     formatCsvDate(val) {
-      if (!val) return ''
-      const d = typeof val?.toDate === 'function' ? val.toDate() : new Date(val)
-      if (isNaN(d)) return ''
-      const pad = (n) => String(n).padStart(2, '0')
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      if (!val) return "";
+      const d =
+        typeof val?.toDate === "function" ? val.toDate() : new Date(val);
+      if (isNaN(d)) return "";
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     },
     async quickAddFlaggedUnit() {
       try {
@@ -583,35 +710,52 @@ computed: {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         let agencyId = currentUser.uid; // Default for Agency users
-        
-        if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
+
+        if (
+          currentUser?.userType === "Admin" &&
+          currentUser?.adminScope === "agency"
+        ) {
           agencyId = currentUser.managedAgencyId;
         }
 
         if (!agencyId) {
-          this.showErrorDialog('Unable to determine agency. Please try again.', 'Error', 'OK');
+          this.showErrorDialog(
+            "Unable to determine agency. Please try again.",
+            "Error",
+            "OK"
+          );
           return;
         }
 
         // Create a new flagged unit entry with only the essential fields
         const flaggedUnitData = {
-          unitName: 'New Flagged Unit',
-          unitNumber: '',
-          dateFlagged: new Date().toISOString().slice(0,10),
+          unitName: "New Flagged Unit",
+          unitNumber: "",
+          dateFlagged: new Date().toISOString().slice(0, 10),
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         };
 
         // Add to flaggedUnits collection
-        const { addDoc, collection } = await import('firebase/firestore');
-        const { db } = await import('@/firebaseConfig');
-        const docRef = await addDoc(collection(db, 'flaggedUnits'), flaggedUnitData);
-        
+        const { addDoc, collection } = await import("firebase/firestore");
+        const { db } = await import("@/firebaseConfig");
+        const docRef = await addDoc(
+          collection(db, "flaggedUnits"),
+          flaggedUnitData
+        );
+
         // Navigate to edit page
-        this.$router.push({ path: `/edit-flagged-unit-${docRef.id}`, query: { from: 'flagged-units' } });
+        this.$router.push({
+          path: `/edit-flagged-unit-${docRef.id}`,
+          query: { from: "flagged-units" },
+        });
       } catch (error) {
-        console.error('Error creating quick flagged unit:', error);
-        this.showErrorDialog('Failed to create flagged unit. Please try again.', 'Error', 'OK');
+        console.error("Error creating quick flagged unit:", error);
+        this.showErrorDialog(
+          "Failed to create flagged unit. Please try again.",
+          "Error",
+          "OK"
+        );
       }
     },
     async fetchAgencies() {
@@ -620,33 +764,41 @@ computed: {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only see their own agency
           let agencyData = null;
-          
-          if (userType === 'Agency') {
+
+          if (userType === "Agency") {
             // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
                 id: agencyDoc.id,
-                ...agencyDoc.data()
+                ...agencyDoc.data(),
               };
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+          } else if (
+            userType === "Admin" &&
+            currentUser.adminScope === "agency"
+          ) {
             // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              const agencyDoc = await getDoc(
+                doc(db, "users", currentUser.managedAgencyId)
+              );
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
+                  ...agencyDoc.data(),
                 };
               }
             }
           }
-          
+
           if (agencyData) {
             this.agencies = [agencyData];
             // Pre-select the agency for agency users and agency admins
@@ -655,32 +807,34 @@ computed: {
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
+          console.log("Agency user - own agency loaded:", this.agencies);
         } else {
           // Super Admin and Admin users can see all agencies
           const agenciesQuery = query(
-            collection(db, 'users'),
-            where('userType', '==', 'Agency')
+            collection(db, "users"),
+            where("userType", "==", "Agency")
           );
-          
+
           const querySnapshot = await getDocs(agenciesQuery);
-          this.agencies = querySnapshot.docs.map(doc => ({
+          this.agencies = querySnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }));
-          console.log('All agencies fetched:', this.agencies);
+          console.log("All agencies fetched:", this.agencies);
         }
       } catch (error) {
-        console.error('Error fetching agencies:', error);
+        console.error("Error fetching agencies:", error);
       } finally {
         this.agenciesLoading = false;
       }
     },
-    
+
     async fetchFlaggedUnits(agencyId = null) {
       // Clean up previous listener
       if (this.flaggedUnsubscribe) {
-        try { this.flaggedUnsubscribe(); } catch(_) {}
+        try {
+          this.flaggedUnsubscribe();
+        } catch (_) {}
         this.flaggedUnsubscribe = null;
       }
       this.unitsLoading = true;
@@ -688,119 +842,167 @@ computed: {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        // Fetch ALL flagged units (we'll filter client-side to handle old units without agencyId)
-        let unitsQuery = collection(db, 'flaggedUnits');
-        
+
+        // For non-agency users, only fetch flagged units if an agency is selected
+        if (userType !== "Agency" && !agencyId) {
+          // No agency selected, return empty results
+          this.units = [];
+          this.filteredUnits = [];
+          this.unitsLoading = false;
+          return;
+        }
+
+        // Fetch flagged units (filtered by agency if specified)
+        let unitsQuery = collection(db, "flaggedUnits");
+
         // Live subscribe to flagged units
-        this.flaggedUnsubscribe = onSnapshot(unitsQuery, async (querySnapshot) => {
-          try {
-            let unitsData = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            
-            // Filter by agency - need to check both flagged unit's agencyId and the actual unit's agencyId
-            const targetAgencyId = userType === 'Agency' ? currentUser.uid : agencyId;
-            
-            if (targetAgencyId) {
-              console.log('Filtering flagged units for agency:', targetAgencyId);
-              const filtered = [];
-              
-              for (const unit of unitsData) {
-                let shouldInclude = false;
-                
-                // Check 1: If flagged unit has agencyId, use that
-                if (unit.agencyId && unit.agencyId === targetAgencyId) {
-                  shouldInclude = true;
-                  console.log('✓ Flagged unit matched by agencyId:', unit.unitName);
-                }
-                
-                // Check 2: Look up the actual unit to check agency
-                if (!shouldInclude && unit.unitId) {
-                  try {
-                    const unitDoc = await getDoc(doc(db, 'units', unit.unitId));
-                    if (unitDoc.exists()) {
-                      const unitData = unitDoc.data();
-                      if (unitData?.agencyId === targetAgencyId) {
-                        shouldInclude = true;
-                        console.log('✓ Flagged unit matched by unitId lookup:', unit.unitName);
+        this.flaggedUnsubscribe = onSnapshot(
+          unitsQuery,
+          async (querySnapshot) => {
+            try {
+              let unitsData = querySnapshot.docs.map((d) => ({
+                id: d.id,
+                ...d.data(),
+              }));
+
+              // Filter by agency - need to check both flagged unit's agencyId and the actual unit's agencyId
+              const targetAgencyId =
+                userType === "Agency" ? currentUser.uid : agencyId;
+
+              if (targetAgencyId) {
+                console.log(
+                  "Filtering flagged units for agency:",
+                  targetAgencyId
+                );
+                const filtered = [];
+
+                for (const unit of unitsData) {
+                  let shouldInclude = false;
+
+                  // Check 1: If flagged unit has agencyId, use that
+                  if (unit.agencyId && unit.agencyId === targetAgencyId) {
+                    shouldInclude = true;
+                    console.log(
+                      "✓ Flagged unit matched by agencyId:",
+                      unit.unitName
+                    );
+                  }
+
+                  // Check 2: Look up the actual unit to check agency
+                  if (!shouldInclude && unit.unitId) {
+                    try {
+                      const unitDoc = await getDoc(
+                        doc(db, "units", unit.unitId)
+                      );
+                      if (unitDoc.exists()) {
+                        const unitData = unitDoc.data();
+                        if (unitData?.agencyId === targetAgencyId) {
+                          shouldInclude = true;
+                          console.log(
+                            "✓ Flagged unit matched by unitId lookup:",
+                            unit.unitName
+                          );
+                        }
                       }
+                    } catch (e) {
+                      console.warn(
+                        "Error checking unit agencyId by unitId:",
+                        e
+                      );
                     }
-                  } catch (e) {
-                    console.warn('Error checking unit agencyId by unitId:', e);
+                  }
+
+                  // Check 3: Try to find by unit name
+                  if (!shouldInclude && unit.unitName) {
+                    try {
+                      const uq = query(
+                        collection(db, "units"),
+                        where("propertyName", "==", unit.unitName)
+                      );
+                      const uSnap = await getDocs(uq);
+                      if (!uSnap.empty) {
+                        // Check if any of the matched units belong to this agency
+                        const matchedUnit = uSnap.docs.find(
+                          (d) => d.data()?.agencyId === targetAgencyId
+                        );
+                        if (matchedUnit) {
+                          shouldInclude = true;
+                          console.log(
+                            "✓ Flagged unit matched by unitName lookup:",
+                            unit.unitName
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      console.warn("Error checking unit by name:", e);
+                    }
+                  }
+
+                  if (shouldInclude) {
+                    filtered.push(unit);
                   }
                 }
-                
-                // Check 3: Try to find by unit name
-                if (!shouldInclude && unit.unitName) {
-                  try {
-                    const uq = query(collection(db, 'units'), where('propertyName', '==', unit.unitName));
-                    const uSnap = await getDocs(uq);
-                    if (!uSnap.empty) {
-                      // Check if any of the matched units belong to this agency
-                      const matchedUnit = uSnap.docs.find(d => d.data()?.agencyId === targetAgencyId);
-                      if (matchedUnit) {
-                        shouldInclude = true;
-                        console.log('✓ Flagged unit matched by unitName lookup:', unit.unitName);
-                      }
-                    }
-                  } catch (e) {
-                    console.warn('Error checking unit by name:', e);
-                  }
-                }
-                
-                if (shouldInclude) {
-                  filtered.push(unit);
-                }
+
+                console.log(
+                  `Filtered ${filtered.length} flagged units for agency ${targetAgencyId}`
+                );
+                unitsData = filtered;
               }
-              
-              console.log(`Filtered ${filtered.length} flagged units for agency ${targetAgencyId}`);
-              unitsData = filtered;
-            }
-            
-            // Resolve property types for each flagged unit (async)
-            const enriched = await Promise.all(
-              unitsData.map(async (unit) => {
-                try {
-                  if (unit.unitId) {
-                    const propertyType = await this.resolvePropertyTypeFromUnit(unit.unitId);
-                    return { ...unit, propertyType };
-                  } else if (unit.unitName) {
-                    const uq = query(collection(db, 'units'), where('propertyName', '==', unit.unitName));
-                    const uSnap = await getDocs(uq);
-                    if (!uSnap.empty) {
-                      const unitDoc = uSnap.docs[0];
-                      const propertyType = await this.resolvePropertyTypeFromUnit(unitDoc.id);
+
+              // Resolve property types for each flagged unit (async)
+              const enriched = await Promise.all(
+                unitsData.map(async (unit) => {
+                  try {
+                    if (unit.unitId) {
+                      const propertyType =
+                        await this.resolvePropertyTypeFromUnit(unit.unitId);
                       return { ...unit, propertyType };
+                    } else if (unit.unitName) {
+                      const uq = query(
+                        collection(db, "units"),
+                        where("propertyName", "==", unit.unitName)
+                      );
+                      const uSnap = await getDocs(uq);
+                      if (!uSnap.empty) {
+                        const unitDoc = uSnap.docs[0];
+                        const propertyType =
+                          await this.resolvePropertyTypeFromUnit(unitDoc.id);
+                        return { ...unit, propertyType };
+                      }
                     }
+                    return { ...unit, propertyType: "residential" };
+                  } catch (e) {
+                    console.error(
+                      `Error resolving property type for unit ${unit.id}:`,
+                      e
+                    );
+                    return { ...unit, propertyType: "residential" };
                   }
-                  return { ...unit, propertyType: 'residential' };
-                } catch (e) {
-                  console.error(`Error resolving property type for unit ${unit.id}:`, e);
-                  return { ...unit, propertyType: 'residential' };
-                }
-              })
-            );
-            this.units = enriched;
-            this.filterUnits();
-          } finally {
-            this.unitsLoading = false;
+                })
+              );
+              this.units = enriched;
+              this.filterUnits();
+            } finally {
+              this.unitsLoading = false;
+            }
           }
-        });
-        console.log('Subscribed to flagged units');
+        );
+        console.log("Subscribed to flagged units");
       } catch (error) {
-        console.error('Error fetching flagged units:', error);
+        console.error("Error fetching flagged units:", error);
         this.unitsLoading = false;
       } finally {
         // Listener controls loading state on first snapshot
       }
     },
-    
+
     onAgencyChange(agencyId) {
-      console.log('Agency changed to:', agencyId);
+      console.log("Agency changed to:", agencyId);
       if (this.isAgencyUser) {
         // Agency users can't change agency selection
         return;
       }
-      
+
       if (agencyId) {
         // Fetch flagged units for selected agency
         this.fetchFlaggedUnits(agencyId);
@@ -810,14 +1012,14 @@ computed: {
         this.fetchFlaggedUnits();
         this.refreshActiveUnitsCount();
       }
-    }
+    },
   },
   async mounted() {
     document.title = "Flagged Units - Depsure";
-    
+
     // Fetch agencies first
     await this.fetchAgencies();
-    
+
     // Fetch flagged units based on user role and selected agency
     if (this.isAgencyUser) {
       // Agency users will automatically get their own flagged units
@@ -831,19 +1033,20 @@ computed: {
         await this.fetchFlaggedUnits(globalId);
         await this.refreshActiveUnitsCount(globalId);
       } else {
-        // Super Admin/Admin users get all flagged units initially
-        await this.fetchFlaggedUnits();
-        if (this.selectedAgency) await this.refreshActiveUnitsCount(this.selectedAgency);
+        // Super Admin/Admin users: no agency selected, show empty state
+        this.units = [];
+        this.filteredUnits = [];
       }
     }
-  }
-  ,
+  },
   unmounted() {
     if (this.flaggedUnsubscribe) {
-      try { this.flaggedUnsubscribe(); } catch(_) {}
+      try {
+        this.flaggedUnsubscribe();
+      } catch (_) {}
       this.flaggedUnsubscribe = null;
     }
-  }
+  },
 };
 </script>
 
@@ -911,10 +1114,14 @@ computed: {
 
 /* Dark right-to-left gradient overlay so info sits on dark side */
 .agency-info-card-black::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.0) 100%);
+  background: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 0.85) 45%,
+    rgba(0, 0, 0, 0) 100%
+  );
   pointer-events: none;
 }
 .agency-info-card-black .no-gutters,
@@ -979,28 +1186,55 @@ computed: {
 :deep(.custom-header .v-data-table-header th) {
   background-color: #000000 !important;
   color: white !important;
-
 }
 
 :deep(.custom-header .v-data-table-header .v-data-table-header__content) {
   color: white !important;
-
 }
 
 /* Month input UX tweaks */
-.month-input { min-width: 220px; }
-:deep(.month-input .v-field-label) { white-space: nowrap; }
+.month-input {
+  min-width: 220px;
+}
+:deep(.month-input .v-field-label) {
+  white-space: nowrap;
+}
 
 /* Clean agency name-only hero with image (no overlay) */
-.agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
-.agency-hero-bg { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
-.agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+.agency-hero-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 180px;
+}
+.agency-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.agency-hero-center {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.6rem;
+  text-align: center;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
 
 /* Custom month menu styling */
 .month-menu {
   background: #ffffff;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   padding: 12px;
   min-width: 260px;
 }
@@ -1017,7 +1251,7 @@ computed: {
 .month-menu__input:focus {
   outline: none;
   border-color: #000000;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 .month-menu__actions {
   display: flex;
@@ -1057,4 +1291,3 @@ computed: {
   }
 }
 </style>
-

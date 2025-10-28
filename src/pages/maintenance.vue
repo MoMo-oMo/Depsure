@@ -62,10 +62,31 @@
             </template>
             <div class="month-menu">
               <div class="month-menu__title">Pick month</div>
-              <input type="month" :value="tempMonth" @input="(e)=>{ tempMonth = e.target.value }" class="month-menu__input" />
+              <input
+                type="month"
+                :value="tempMonth"
+                @input="
+                  (e) => {
+                    tempMonth = e.target.value;
+                  }
+                "
+                class="month-menu__input"
+              />
               <div class="month-menu__actions">
-                <v-btn color="black" variant="elevated" size="small" @click="applyMonth">Apply</v-btn>
-                <v-btn color="grey" variant="text" size="small" @click="clearMonth">All</v-btn>
+                <v-btn
+                  color="black"
+                  variant="elevated"
+                  size="small"
+                  @click="applyMonth"
+                  >Apply</v-btn
+                >
+                <v-btn
+                  color="grey"
+                  variant="text"
+                  size="small"
+                  @click="clearMonth"
+                  >All</v-btn
+                >
               </div>
             </div>
           </v-menu>
@@ -88,14 +109,24 @@
           />
         </v-col>
 
-        <v-col cols="12" md="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+        <v-col
+          cols="12"
+          md="2"
+          class="pa-4 d-flex align-center"
+          v-if="isAgencyUser"
+        >
           <v-btn @click="addMaintenance" class="back-btn">
             Add Maintenance
           </v-btn>
         </v-col>
 
         <!-- Quick Add Maintenance Button -->
-        <v-col cols="12" md="2" class="pa-4 d-flex align-center" v-if="isAgencyUser">
+        <v-col
+          cols="12"
+          md="2"
+          class="pa-4 d-flex align-center"
+          v-if="isAgencyUser"
+        >
           <v-btn @click="quickAddMaintenance" class="back-btn" color="success">
             Quick Add
           </v-btn>
@@ -121,39 +152,55 @@
             <v-row class="no-gutters" align="stretch">
               <v-col cols="12">
                 <div class="agency-content-right">
-                <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.agencyName }}
-                </v-card-title>
-                <v-card-text class="text-white">
-                  <div class="agency-details-black">
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.address || 'Address not provided' }}</span>
+                  <v-card-title class="text-white text-h4 mb-2">
+                    {{ selectedAgencyDetails.agencyName }}
+                  </v-card-title>
+                  <v-card-text class="text-white">
+                    <div class="agency-details-black">
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
+                        <span>{{
+                          selectedAgencyDetails.address ||
+                          "Address not provided"
+                        }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon
+                          icon="mdi-card-account-details"
+                          class="mr-2 text-white"
+                        />
+                        <span
+                          >Reg No:
+                          {{ selectedAgencyDetails.regNo || "â€”" }}</span
+                        >
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-account" class="mr-2 text-white" />
+                        <span
+                          >Primary Contact:
+                          {{
+                            selectedAgencyDetails.primaryContactName || "N/A"
+                          }}</span
+                        >
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                        <span>{{
+                          selectedAgencyDetails.contactNumber || "N/A"
+                        }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-email" class="mr-2 text-white" />
+                        <span>{{ selectedAgencyDetails.email || "N/A" }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-home" class="mr-2 text-white" />
+                        <span>{{ activeUnitsCount }} Properties</span>
+                      </div>
                     </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
-                      <span>Reg No: {{ selectedAgencyDetails.regNo || 'â€”' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-account" class="mr-2 text-white" />
-                      <span>Primary Contact: {{ selectedAgencyDetails.primaryContactName || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.contactNumber || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-email" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.email || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ activeUnitsCount }} Properties</span>
-                    </div>
-                  </div>
-                  <!-- Description hidden to reduce visual noise over image -->
-                  <!-- <v-divider class="my-4 bg-white" /> -->
-                </v-card-text>
+                    <!-- Description hidden to reduce visual noise over image -->
+                    <!-- <v-divider class="my-4 bg-white" /> -->
+                  </v-card-text>
                 </div>
               </v-col>
             </v-row>
@@ -209,33 +256,50 @@
           </v-data-table>
         </v-col>
       </v-row>
-
-
     </v-container>
   </div>
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
-import { usePropertyType } from '@/composables/usePropertyType'
-const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { db } from "@/firebaseConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { useAppStore } from "@/stores/app";
+import { usePropertyType } from "@/composables/usePropertyType";
+const heroBg =
+  "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
 
 export default {
   name: "MaintenancePage",
   setup() {
-    const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    const { getOptions, getLabel, getColor, resolvePropertyTypeFromUnit } = usePropertyType()
-    return { showSuccessDialog, showErrorDialog, showConfirmDialog, getOptions, getLabel, getColor, resolvePropertyTypeFromUnit }
+    const { showSuccessDialog, showErrorDialog, showConfirmDialog } =
+      useCustomDialogs();
+    const { getOptions, getLabel, getColor, resolvePropertyTypeFromUnit } =
+      usePropertyType();
+    return {
+      showSuccessDialog,
+      showErrorDialog,
+      showConfirmDialog,
+      getOptions,
+      getLabel,
+      getColor,
+      resolvePropertyTypeFromUnit,
+    };
   },
   data() {
     return {
       searchQuery: "",
-      monthFilter: '',
+      monthFilter: "",
       monthMenu: false,
-      tempMonth: '',
+      tempMonth: "",
       propertyTypeFilter: null,
       selectedAgency: null,
       filteredEntries: [],
@@ -247,50 +311,68 @@ export default {
       activeUnitsCount: 0,
       headers: [
         { title: "UNIT NAME", key: "unitName", sortable: true },
-        { title: "UNIT NUMBER", key: "unitNumber", sortable: true, align: "center" },
+        {
+          title: "UNIT NUMBER",
+          key: "unitNumber",
+          sortable: true,
+          align: "center",
+        },
         { title: "CONTACT PERSON", key: "contactPerson", sortable: true },
-        { title: "ACTIONS", key: "actions", sortable: false, align: "center" }
-      ]
+        { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
+      ],
     };
   },
   computed: {
     agencyHeroBgStyle() {
-      return { background: `url(${heroBg}) center/cover no-repeat` }
+      return { background: `url(${heroBg}) center/cover no-repeat` };
     },
     heroTitle() {
-      return 'Maintenance'
+      return "Maintenance";
     },
     agencyCardBgStyle() {
-      const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+      const url =
+        this.selectedAgencyDetails?.profileImageUrl ||
+        this.selectedAgencyDetails?.profileImage ||
+        "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
       return {
-        background: `url(${url}) center/cover no-repeat`
-      }
+        background: `url(${url}) center/cover no-repeat`,
+      };
     },
     monthFilterLabel() {
-      if (!this.monthFilter) return 'All Months'
+      if (!this.monthFilter) return "All Months";
       try {
-        const [yy, mm] = String(this.monthFilter).split('-')
-        const d = new Date(Number(yy), Number(mm) - 1, 1)
-        return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
-      } catch { return this.monthFilter }
+        const [yy, mm] = String(this.monthFilter).split("-");
+        const d = new Date(Number(yy), Number(mm) - 1, 1);
+        return d.toLocaleString("en-US", { month: "long", year: "numeric" });
+      } catch {
+        return this.monthFilter;
+      }
     },
     hasCurrentAgency() {
       const appStore = useAppStore();
       return !!appStore.currentAgency;
     },
     selectedAgencyDetails() {
-      return this.agencies.find(a => a.id === this.selectedAgency) || null;
+      return this.agencies.find((a) => a.id === this.selectedAgency) || null;
     },
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     isSuperAdmin() {
       const appStore = useAppStore();
       const userType = appStore.currentUser?.userType;
-      const isSuper = userType === 'Super Admin';
-      console.log('Maintenance - User Type:', userType, 'Is Super Admin:', isSuper);
+      const isSuper = userType === "Super Admin";
+      console.log(
+        "Maintenance - User Type:",
+        userType,
+        "Is Super Admin:",
+        isSuper
+      );
       return isSuper;
     },
     userType() {
@@ -298,37 +380,37 @@ export default {
       return appStore.currentUser?.userType;
     },
     propertyTypeFilterOptions() {
-      return [
-        { value: null, title: 'All Types' },
-        ...this.getOptions()
-      ];
-    }
+      return [{ value: null, title: "All Types" }, ...this.getOptions()];
+    },
   },
   methods: {
     onMonthMenuToggle(open) {
-      if (open) this.tempMonth = this.monthFilter || ''
+      if (open) this.tempMonth = this.monthFilter || "";
     },
     applyMonth() {
-      this.monthFilter = this.tempMonth || ''
-      this.filterEntries()
-      this.monthMenu = false
+      this.monthFilter = this.tempMonth || "";
+      this.filterEntries();
+      this.monthMenu = false;
     },
     clearMonth() {
-      this.tempMonth = ''
-      this.monthFilter = ''
-      this.filterEntries()
-      this.monthMenu = false
+      this.tempMonth = "";
+      this.monthFilter = "";
+      this.filterEntries();
+      this.monthMenu = false;
     },
     openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      const el = this.$refs.monthInput?.$el?.querySelector("input");
       if (el) {
-        if (typeof el.showPicker === 'function') el.showPicker();
+        if (typeof el.showPicker === "function") el.showPicker();
         else el.focus();
       }
     },
     getCurrentMonth() {
       const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`;
     },
     async refreshActiveUnitsCount(agencyId = null) {
       try {
@@ -336,10 +418,16 @@ export default {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
         let unitsQuery;
-        if (userType === 'Agency') {
-          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', currentUser.uid));
+        if (userType === "Agency") {
+          unitsQuery = query(
+            collection(db, "units"),
+            where("agencyId", "==", currentUser.uid)
+          );
         } else if (agencyId) {
-          unitsQuery = query(collection(db, 'units'), where('agencyId', '==', agencyId));
+          unitsQuery = query(
+            collection(db, "units"),
+            where("agencyId", "==", agencyId)
+          );
         } else {
           this.activeUnitsCount = 0;
           return;
@@ -347,36 +435,42 @@ export default {
         const snap = await getDocs(unitsQuery);
         this.activeUnitsCount = snap.size;
       } catch (error) {
-        console.error('Error counting active units:', error);
+        console.error("Error counting active units:", error);
         this.activeUnitsCount = 0;
       }
     },
     filterEntries() {
-      this.filteredEntries = this.entries.filter(entry => {
-        const q = (this.searchQuery || '').toLowerCase()
-        const textMatch = ((entry.unitName || '').toLowerCase().includes(q)
-          || (entry.unitNumber || '').toLowerCase().includes(q)
-          || (entry.contactPerson || '').toLowerCase().includes(q));
+      this.filteredEntries = this.entries.filter((entry) => {
+        const q = (this.searchQuery || "").toLowerCase();
+        const textMatch =
+          (entry.unitName || "").toLowerCase().includes(q) ||
+          (entry.unitNumber || "").toLowerCase().includes(q) ||
+          (entry.contactPerson || "").toLowerCase().includes(q);
         let agencyMatch = true;
         let monthMatch = true;
         let propertyTypeMatch = true;
-        
+
         // Apply agency filter if a specific agency is selected (any role)
         if (this.selectedAgency) {
           agencyMatch = entry.agencyId === this.selectedAgency;
         }
-        
+
         if (this.propertyTypeFilter) {
           propertyTypeMatch = entry.propertyType === this.propertyTypeFilter;
         }
-        
+
         if (this.monthFilter) {
           const rawDate = entry.createdAt;
-          const dateToFilter = rawDate && typeof rawDate.toDate === 'function' ? rawDate.toDate() : rawDate;
+          const dateToFilter =
+            rawDate && typeof rawDate.toDate === "function"
+              ? rawDate.toDate()
+              : rawDate;
           if (dateToFilter) {
             const entryDate = new Date(dateToFilter);
-            const filterDate = new Date(this.monthFilter+"-01");
-            monthMatch = entryDate.getMonth() === filterDate.getMonth() && entryDate.getFullYear() === filterDate.getFullYear();
+            const filterDate = new Date(this.monthFilter + "-01");
+            monthMatch =
+              entryDate.getMonth() === filterDate.getMonth() &&
+              entryDate.getFullYear() === filterDate.getFullYear();
           } else {
             // If no date available, include in results
             monthMatch = true;
@@ -385,35 +479,47 @@ export default {
         return textMatch && agencyMatch && monthMatch && propertyTypeMatch;
       });
     },
-    viewEntry(entry) { this.$router.push(`/view-maintenance-${entry.id}`); },
-    editEntry(entry) { this.$router.push(`/edit-maintenance-${entry.id}`); },
+    viewEntry(entry) {
+      this.$router.push(`/view-maintenance-${entry.id}`);
+    },
+    editEntry(entry) {
+      this.$router.push(`/edit-maintenance-${entry.id}`);
+    },
     async deleteEntry(entry) {
       try {
         await this.showConfirmDialog({
-          title: 'Delete maintenance entry?',
+          title: "Delete maintenance entry?",
           message: `Are you sure you want to delete entry for ${entry.unitName}?`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
       } catch (_) {
-        return
+        return;
       }
       try {
-        await deleteDoc(doc(db, 'maintenance', entry.id))
-        const index = this.entries.findIndex(e => e.id === entry.id);
-        if(index > -1) {
+        await deleteDoc(doc(db, "maintenance", entry.id));
+        const index = this.entries.findIndex((e) => e.id === entry.id);
+        if (index > -1) {
           this.entries.splice(index, 1);
           this.filterEntries();
-          this.showSuccessDialog(`Maintenance entry for ${entry.unitName} deleted successfully!`, 'Success!', 'Continue');
+          this.showSuccessDialog(
+            `Maintenance entry for ${entry.unitName} deleted successfully!`,
+            "Success!",
+            "Continue"
+          );
         }
       } catch (error) {
-        console.error('Error deleting maintenance entry:', error)
-        this.showErrorDialog('Failed to delete maintenance entry. Please try again.', 'Error', 'OK')
+        console.error("Error deleting maintenance entry:", error);
+        this.showErrorDialog(
+          "Failed to delete maintenance entry. Please try again.",
+          "Error",
+          "OK"
+        );
       }
     },
-    addMaintenance() { 
-      this.$router.push('/add-maintenance'); 
+    addMaintenance() {
+      this.$router.push("/add-maintenance");
     },
     async quickAddMaintenance() {
       try {
@@ -421,61 +527,81 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         let agencyId = currentUser.uid; // Default for Agency users
-        
-        if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
+
+        if (
+          currentUser?.userType === "Admin" &&
+          currentUser?.adminScope === "agency"
+        ) {
           agencyId = currentUser.managedAgencyId;
         }
 
         if (!agencyId) {
-          this.showErrorDialog('Unable to determine agency. Please try again.', 'Error', 'OK');
+          this.showErrorDialog(
+            "Unable to determine agency. Please try again.",
+            "Error",
+            "OK"
+          );
           return;
         }
 
         // Create a new maintenance entry with default values
         const maintenanceData = {
           agencyId: agencyId,
-          unitName: 'New Maintenance Entry',
-          unitNumber: '',
-          contactPerson: '',
-          contactPersonNumber: '',
+          unitName: "New Maintenance Entry",
+          unitNumber: "",
+          contactPerson: "",
+          contactPersonNumber: "",
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         };
 
         // Add to maintenance collection
-        const { addDoc, collection } = await import('firebase/firestore');
-        const { db } = await import('@/firebaseConfig');
-        const docRef = await addDoc(collection(db, 'maintenance'), maintenanceData);
-        
+        const { addDoc, collection } = await import("firebase/firestore");
+        const { db } = await import("@/firebaseConfig");
+        const docRef = await addDoc(
+          collection(db, "maintenance"),
+          maintenanceData
+        );
+
         // Navigate to edit page
-        this.$router.push({ path: `/edit-maintenance-${docRef.id}`, query: { from: 'maintenance' } });
+        this.$router.push({
+          path: `/edit-maintenance-${docRef.id}`,
+          query: { from: "maintenance" },
+        });
       } catch (error) {
-        console.error('Error creating quick maintenance entry:', error);
-        this.showErrorDialog('Failed to create maintenance entry. Please try again.', 'Error', 'OK');
+        console.error("Error creating quick maintenance entry:", error);
+        this.showErrorDialog(
+          "Failed to create maintenance entry. Please try again.",
+          "Error",
+          "OK"
+        );
       }
     },
     async fetchMaintenanceEntries(agencyId = null) {
-      this.loading = true
+      this.loading = true;
       try {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
+
         let maintenanceQuery;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only see their own maintenance entries
           let targetAgencyId = currentUser.uid; // Default for Agency users
-          
-          if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+
+          if (userType === "Admin" && currentUser.adminScope === "agency") {
             // For Agency Admin users, use their managed agency ID
             targetAgencyId = currentUser.managedAgencyId;
           }
-          
+
           if (targetAgencyId) {
             maintenanceQuery = query(
-              collection(db, 'maintenance'),
-              where('agencyId', '==', targetAgencyId)
+              collection(db, "maintenance"),
+              where("agencyId", "==", targetAgencyId)
             );
           } else {
             // No agency ID available, return empty results
@@ -486,82 +612,111 @@ export default {
         } else if (agencyId) {
           // Super Admin/Admin users query maintenance entries for specific agency
           maintenanceQuery = query(
-            collection(db, 'maintenance'),
-            where('agencyId', '==', agencyId)
+            collection(db, "maintenance"),
+            where("agencyId", "==", agencyId)
           );
         } else {
-          // Super Admin/Admin users query all maintenance entries when no agency selected
-          maintenanceQuery = collection(db, 'maintenance');
+          // Super Admin/Admin users: no agency selected, return empty results
+          this.entries = [];
+          this.filteredEntries = [];
+          this.loading = false;
+          return;
         }
-        
-        const querySnapshot = await getDocs(maintenanceQuery)
-        
+
+        const querySnapshot = await getDocs(maintenanceQuery);
+
         // First, get all maintenance entries
-        const entries = querySnapshot.docs.map(d => {
-          const data = d.data() || {}
-          const createdRaw = data.createdAt
-          const updatedRaw = data.updatedAt
-          const createdAt = createdRaw && typeof createdRaw.toDate === 'function' ? createdRaw.toDate() : (createdRaw ? new Date(createdRaw) : null)
-          const updatedAt = updatedRaw && typeof updatedRaw.toDate === 'function' ? updatedRaw.toDate() : (updatedRaw ? new Date(updatedRaw) : null)
+        const entries = querySnapshot.docs.map((d) => {
+          const data = d.data() || {};
+          const createdRaw = data.createdAt;
+          const updatedRaw = data.updatedAt;
+          const createdAt =
+            createdRaw && typeof createdRaw.toDate === "function"
+              ? createdRaw.toDate()
+              : createdRaw
+              ? new Date(createdRaw)
+              : null;
+          const updatedAt =
+            updatedRaw && typeof updatedRaw.toDate === "function"
+              ? updatedRaw.toDate()
+              : updatedRaw
+              ? new Date(updatedRaw)
+              : null;
           return {
             id: d.id,
             ...data,
             createdAt,
             updatedAt,
-          }
-        })
-        
+          };
+        });
+
         // Resolve property types for each entry
         const entriesWithPropertyTypes = await Promise.all(
           entries.map(async (entry) => {
             try {
               // Try to resolve property type from unitId if available
               if (entry.unitId) {
-                const propertyType = await this.resolvePropertyTypeFromUnit(entry.unitId);
+                const propertyType = await this.resolvePropertyTypeFromUnit(
+                  entry.unitId
+                );
                 return { ...entry, propertyType };
               }
               // If no unitId, try to resolve from unitName by finding the unit
               else if (entry.unitName) {
                 // Find the unit by name in the units collection
                 const unitsQuery = query(
-                  collection(db, 'units'),
-                  where('propertyName', '==', entry.unitName)
+                  collection(db, "units"),
+                  where("propertyName", "==", entry.unitName)
                 );
                 const unitsSnapshot = await getDocs(unitsQuery);
                 if (!unitsSnapshot.empty) {
                   const unitDoc = unitsSnapshot.docs[0];
                   const unitData = unitDoc.data();
-                  return { ...entry, propertyType: unitData.propertyType || 'residential' };
+                  return {
+                    ...entry,
+                    propertyType: unitData.propertyType || "residential",
+                  };
                 }
               }
               // Default to residential if we can't resolve
-              return { ...entry, propertyType: 'residential' };
+              return { ...entry, propertyType: "residential" };
             } catch (error) {
-              console.error('Error resolving property type for maintenance entry:', entry.id, error);
-              return { ...entry, propertyType: 'residential' };
+              console.error(
+                "Error resolving property type for maintenance entry:",
+                entry.id,
+                error
+              );
+              return { ...entry, propertyType: "residential" };
             }
           })
         );
-        
+
         this.entries = entriesWithPropertyTypes;
-        console.log('Maintenance entries loaded with property types:', this.entries.length)
-        console.log('User type:', userType, 'Agency ID filter:', agencyId)
-        this.filterEntries()
+        console.log(
+          "Maintenance entries loaded with property types:",
+          this.entries.length
+        );
+        console.log("User type:", userType, "Agency ID filter:", agencyId);
+        this.filterEntries();
       } catch (error) {
-        console.error('Error fetching maintenance entries:', error)
-        this.showErrorDialog('Failed to load maintenance entries. Please try again.', 'Error', 'OK')
+        console.error("Error fetching maintenance entries:", error);
+        this.showErrorDialog(
+          "Failed to load maintenance entries. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    
+
     onAgencyChange(agencyId) {
-      console.log('Agency changed to:', agencyId);
+      console.log("Agency changed to:", agencyId);
       if (this.isAgencyUser) {
         // Agency users can't change agency selection
         return;
       }
-      
+
       if (agencyId) {
         // Fetch maintenance entries for selected agency
         this.fetchMaintenanceEntries(agencyId);
@@ -573,38 +728,46 @@ export default {
       }
     },
     async fetchAgencies() {
-      this.agenciesLoading = true
+      this.agenciesLoading = true;
       try {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only see their own agency
           let agencyData = null;
-          
-          if (userType === 'Agency') {
+
+          if (userType === "Agency") {
             // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
                 id: agencyDoc.id,
-                ...agencyDoc.data()
+                ...agencyDoc.data(),
               };
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+          } else if (
+            userType === "Admin" &&
+            currentUser.adminScope === "agency"
+          ) {
             // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              const agencyDoc = await getDoc(
+                doc(db, "users", currentUser.managedAgencyId)
+              );
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
+                  ...agencyDoc.data(),
                 };
               }
             }
           }
-          
+
           if (agencyData) {
             this.agencies = [agencyData];
             // Pre-select the agency for agency users and agency admins
@@ -613,31 +776,38 @@ export default {
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
+          console.log("Agency user - own agency loaded:", this.agencies);
         } else {
           // Super Admin and Admin users can see all agencies
-          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
-          const querySnapshot = await getDocs(q)
-          this.agencies = querySnapshot.docs.map(doc => ({
+          const q = query(
+            collection(db, "users"),
+            where("userType", "==", "Agency")
+          );
+          const querySnapshot = await getDocs(q);
+          this.agencies = querySnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
-          }))
-          console.log('All agencies loaded:', this.agencies.length)
+            ...doc.data(),
+          }));
+          console.log("All agencies loaded:", this.agencies.length);
         }
       } catch (error) {
-        console.error('Error fetching agencies:', error)
-        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+        console.error("Error fetching agencies:", error);
+        this.showErrorDialog(
+          "Failed to load agencies. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.agenciesLoading = false
+        this.agenciesLoading = false;
       }
-    }
+    },
   },
-  async mounted() { 
+  async mounted() {
     document.title = "Maintenance - Depsure";
-    
+
     // Fetch agencies first
     await this.fetchAgencies();
-    
+
     // Fetch maintenance entries based on user role and selected agency
     if (this.isAgencyUser) {
       // Agency users will automatically get their own maintenance entries
@@ -647,66 +817,214 @@ export default {
       // Super Admin/Admin users: pre-select global agency if present; otherwise show all
       const appStore = useAppStore();
       const globalId = appStore.currentAgency?.id || null;
-      this.monthFilter = '';
-      this.tempMonth = '';
+      this.monthFilter = "";
+      this.tempMonth = "";
       if (globalId) {
         this.selectedAgency = globalId;
         await this.fetchMaintenanceEntries(globalId);
         await this.refreshActiveUnitsCount(globalId);
       } else {
-        await this.fetchMaintenanceEntries();
-        await this.refreshActiveUnitsCount();
+        // No agency selected, show empty state
+        this.entries = [];
+        this.filteredEntries = [];
       }
     }
-  }
+  },
 };
 </script>
 
 <style scoped>
-.view-maintenance-page { padding:20px; min-height:100vh; }
-.back-btn { font-weight:500; text-transform:none; border-radius:8px; transition:all 0.3s; background:black; color:white; border:2px solid black; width:160px; height:44px; }
-.back-btn:hover { background:#333; border-color:#333; transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.5); }
+.view-maintenance-page {
+  padding: 20px;
+  min-height: 100vh;
+}
+.back-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  transition: all 0.3s;
+  background: black;
+  color: white;
+  border: 2px solid black;
+  width: 160px;
+  height: 44px;
+}
+.back-btn:hover {
+  background: #333;
+  border-color: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
 
-.agency-info-card-black { background:linear-gradient(135deg,#000,#1a1a1a); border-radius:12px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.3); color:white; padding:0; position: relative; }
-.agency-card-bg { position:absolute; inset:0; z-index:0; }
-.agency-info-card-black { position: relative; }
-.agency-info-card-black::after { content:''; position:absolute; inset:0; background:linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); pointer-events:none; }
-.agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
-.agency-content-right { margin-left:auto; width:min(720px,55%); padding:16px 16px 24px; text-align:left; }
-.agency-logo-black { width:100%; height:100%; object-fit:cover; }
-.agency-details-black { margin-bottom:16px; }
-.detail-item-black { display:flex; align-items:center; margin-bottom:12px; color:#fff; }
-.agency-description-black { color:#e0e0e0; line-height:1.6; margin:0; }
+.agency-info-card-black {
+  background: linear-gradient(135deg, #000, #1a1a1a);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  color: white;
+  padding: 0;
+  position: relative;
+}
+.agency-card-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.agency-info-card-black {
+  position: relative;
+}
+.agency-info-card-black::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 0.85) 45%,
+    rgba(0, 0, 0, 0)
+  );
+  pointer-events: none;
+}
+.agency-info-card-black .no-gutters,
+.agency-info-card-black .v-row {
+  position: relative;
+  z-index: 1;
+}
+.agency-content-right {
+  margin-left: auto;
+  width: min(720px, 55%);
+  padding: 16px 16px 24px;
+  text-align: left;
+}
+.agency-logo-black {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.agency-details-black {
+  margin-bottom: 16px;
+}
+.detail-item-black {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #fff;
+}
+.agency-description-black {
+  color: #e0e0e0;
+  line-height: 1.6;
+  margin: 0;
+}
 
-.custom-input .v-field { border-radius:8px; }
+.custom-input .v-field {
+  border-radius: 8px;
+}
 
-.action-btn-container { display:flex; justify-content:center; align-items:center; gap:4px; }
-.action-btn { font-size:0.75rem; font-weight:500; text-transform:none; border-radius:6px; }
-.action-btn:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+.action-btn-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+.action-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 6px;
+}
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
 
-:deep(.custom-header .v-data-table-header) { background:#000; color:white; }
+:deep(.custom-header .v-data-table-header) {
+  background: #000;
+  color: white;
+}
 
 /* Month input usability */
-.month-input { min-width: 220px; }
-:deep(.month-input .v-field-label) { white-space: nowrap; }
+.month-input {
+  min-width: 220px;
+}
+:deep(.month-input .v-field-label) {
+  white-space: nowrap;
+}
 
 /* Custom month menu styling */
-.month-menu { background:#fff; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.15); padding:12px; min-width:260px; }
-.month-menu__title { font-weight:600; margin-bottom:8px; }
-.month-menu__input { width:100%; padding:8px 10px; border:1px solid #d0d0d0; border-radius:8px; }
-.month-menu__input:focus { outline:none; border-color:#000; box-shadow:0 0 0 2px rgba(0,0,0,0.08); }
-.month-menu__actions { display:flex; justify-content:space-between; gap:8px; margin-top:10px; }
+.month-menu {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  min-width: 260px;
+}
+.month-menu__title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.month-menu__input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+}
+.month-menu__input:focus {
+  outline: none;
+  border-color: #000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+.month-menu__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
 
 /* Clean agency name-only hero with image (no overlay) */
-.agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
-.agency-hero-bg { position: absolute; inset: 0; background: url('https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg') center/cover no-repeat; }
-.agency-hero-center { position: absolute; inset: 0; z-index: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+.agency-hero-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 180px;
+}
+.agency-hero-bg {
+  position: absolute;
+  inset: 0;
+  background: url("https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg")
+    center/cover no-repeat;
+}
+.agency-hero-center {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.6rem;
+  text-align: center;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
 
-@media(max-width:768px){
-  .back-btn { width:140px; height:40px; }
-  .action-btn { font-size:0.7rem; padding:6px 8px; }
-  .agency-info-card-black { text-align:center; }
-  .agency-content-right { width:100%; }
-  .agency-logo-black { height:220px; }
+@media (max-width: 768px) {
+  .back-btn {
+    width: 140px;
+    height: 40px;
+  }
+  .action-btn {
+    font-size: 0.7rem;
+    padding: 6px 8px;
+  }
+  .agency-info-card-black {
+    text-align: center;
+  }
+  .agency-content-right {
+    width: 100%;
+  }
+  .agency-logo-black {
+    height: 220px;
+  }
 }
 </style>

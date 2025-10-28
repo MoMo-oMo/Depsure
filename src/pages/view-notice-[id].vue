@@ -86,12 +86,75 @@
                     class="custom-input"
                   />
                 </v-col>
+
+                <!-- Paid Towards Fund (Super Admin only, editable) -->
+                <v-col v-if="isSuperAdmin" cols="12" md="6">
+                  <v-text-field
+                    v-model.number="paidTowardsFund"
+                    label="Paid Towards Fund (ZAR)"
+                    variant="outlined"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    :rules="[
+                      (v) =>
+                        v === '' ||
+                        v === 0 ||
+                        Number(v) >= 0 ||
+                        'Amount must be positive',
+                    ]"
+                    class="custom-input"
+                    prefix="R"
+                  />
+                </v-col>
+
+                <!-- Paid Out (Super Admin only, editable) -->
+                <v-col v-if="isSuperAdmin" cols="12" md="6">
+                  <v-select
+                    v-model="paidOut"
+                    label="Paid Out"
+                    variant="outlined"
+                    :items="['', 'Yes', 'No', 'Pending']"
+                    :rules="[
+                      (v) => v === '' || !!v || 'This field is required',
+                    ]"
+                    class="custom-input"
+                  />
+                </v-col>
+
+                <!-- Lease End Notes (at bottom) -->
+                <v-col cols="12" v-if="notice.leaseEndNotes">
+                  <v-textarea
+                    :model-value="notice.leaseEndNotes"
+                    label="Lease End Notes"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                    rows="3"
+                    hide-details
+                  />
+                </v-col>
               </v-row>
             </v-card-text>
 
             <!-- Action Buttons -->
             <v-card-actions class="pa-4">
               <v-spacer />
+              <v-btn
+                v-if="isSuperAdmin"
+                color="black"
+                variant="elevated"
+                class="edit-btn mr-2"
+                :disabled="
+                  !isFinancialsValid ||
+                  !hasFinancialsChanged ||
+                  savingFinancials
+                "
+                :loading="savingFinancials"
+                @click="saveNoticeFinancials"
+              >
+                Save Changes
+              </v-btn>
               <v-btn
                 v-if="isAgencyUser || userType === 'Admin'"
                 color="black"
@@ -120,22 +183,28 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAppStore } from '@/stores/app'
-import { db } from '@/firebaseConfig'
-import { doc, getDoc, deleteDoc } from 'firebase/firestore'
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { useAppStore } from "@/stores/app";
+import { db } from "@/firebaseConfig";
+import { doc, getDoc, deleteDoc } from "firebase/firestore";
 
 export default {
   name: "ViewNoticePage",
   data() {
     return {
       notice: {
-        id: '',
-        unitName: '',
-        leaseStartDate: '',
-        leaseEndDate: '',
-        monthsMissedRent: 0
+        id: "",
+        unitName: "",
+        leaseStartDate: "",
+        leaseEndDate: "",
+        leaseEndNotes: "",
+        monthsMissedRent: 0,
       },
+      paidTowardsFund: 0,
+      paidOut: "",
+      originalPaidTowardsFund: 0,
+      originalPaidOut: "",
+      savingFinancials: false,
       loading: true,
       error: null,
     };
@@ -144,12 +213,49 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
+    },
+    isSuperAdmin() {
+      const appStore = useAppStore();
+      const user = appStore.currentUser;
+      return (
+        user?.userType === "Super Admin" ||
+        (user?.userType === "Admin" && user?.adminScope === "depsure")
+      );
     },
     userType() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType;
-    }
+    },
+    isFinancialsValid() {
+      const amountOk =
+        this.paidTowardsFund === "" ||
+        (Number(this.paidTowardsFund) >= 0 &&
+          Number.isFinite(Number(this.paidTowardsFund)));
+      const status = String(this.paidOut || "")
+        .trim()
+        .toLowerCase();
+      const statusOk = ["", "yes", "no", "pending"].includes(status);
+      return amountOk && statusOk;
+    },
+    hasFinancialsChanged() {
+      const amountChanged =
+        String(this.paidTowardsFund ?? "").trim() !==
+        String(this.originalPaidTowardsFund ?? "").trim();
+      const statusChanged =
+        String(this.paidOut ?? "").trim() !==
+        String(this.originalPaidOut ?? "").trim();
+      return amountChanged || statusChanged;
+    },
+    canProcessNotice() {
+      return (
+        Number(this.paidTowardsFund) > 0 ||
+        String(this.paidOut || "").trim() !== ""
+      );
+    },
   },
   async mounted() {
     document.title = "Notice Details - Depsure";
@@ -157,76 +263,191 @@ export default {
     if (noticeId) {
       await this.loadNotice(noticeId);
     } else {
-      this.error = 'No notice ID provided';
+      this.error = "No notice ID provided";
       this.loading = false;
     }
   },
   methods: {
     formatDateField(value) {
-      if (!value) return 'N/A';
-      if (typeof value === 'string') return value;
+      if (!value) return "N/A";
+      if (typeof value === "string") return value;
       if (value instanceof Date) return value.toISOString().slice(0, 10);
       if (value?.toDate) {
         try {
           return value.toDate().toISOString().slice(0, 10);
         } catch (error) {
-          console.warn('Failed to convert Firestore timestamp:', error);
+          console.warn("Failed to convert Firestore timestamp:", error);
         }
       }
       return String(value);
     },
+    async saveNoticeFinancials() {
+      if (!this.isSuperAdmin || !this.notice?.id) return;
+      try {
+        if (!this.isFinancialsValid) return;
+        this.savingFinancials = true;
+        const { updateDoc } = await import("firebase/firestore");
+        await updateDoc(doc(db, "notices", this.notice.id), {
+          paidTowardsFund: Number(this.paidTowardsFund) || 0,
+          paidOut: this.paidOut || "",
+          financialsEdited: true,
+          updatedAt: new Date(),
+        });
+        const { showSuccessDialog } = useCustomDialogs();
+        showSuccessDialog?.("Notice financials saved.", "Success", "OK");
+
+        this.originalPaidTowardsFund = this.paidTowardsFund;
+        this.originalPaidOut = this.paidOut;
+
+        this.$router.push("/notices");
+      } catch (e) {
+        console.error("Failed updating notice financials", e);
+        const { showErrorDialog } = useCustomDialogs();
+        showErrorDialog?.("Failed to update financial fields.", "Error", "OK");
+      } finally {
+        this.savingFinancials = false;
+      }
+    },
     async loadNotice(noticeId) {
       this.loading = true;
       this.error = null;
-      
+
       try {
-        console.log('Loading notice data for ID:', noticeId);
-        
+        console.log("Loading notice data for ID:", noticeId);
+
         // Fetch notice from Firestore
-        const noticeDoc = await getDoc(doc(db, 'notices', noticeId));
-        
+        const noticeDoc = await getDoc(doc(db, "notices", noticeId));
+
         if (noticeDoc.exists()) {
           const noticeData = noticeDoc.data();
           this.notice = {
             id: noticeDoc.id,
-            unitName: noticeData.unitName || '',
-            leaseStartDate: noticeData.leaseStartDate || '',
-            leaseEndDate: noticeData.leaseEndDate || '',
-            monthsMissedRent: noticeData.monthsMissedRent || 0
+            unitName: noticeData.unitName || "",
+            leaseStartDate: noticeData.leaseStartDate || "",
+            leaseEndDate: noticeData.leaseEndDate || "",
+            leaseEndNotes: noticeData.leaseEndNotes || "",
+            monthsMissedRent: noticeData.monthsMissedRent || 0,
           };
-          console.log('Notice loaded successfully:', this.notice);
+          console.log("Notice loaded successfully:", this.notice);
+
+          // For Super Admins, attempt to resolve Paid Towards Fund and Paid Out
+          if (this.isSuperAdmin) {
+            try {
+              // Prefer values saved on notice
+              const paidTowards = Number(noticeData.paidTowardsFund ?? 0);
+              const paidOutVal = String(noticeData.paidOut ?? "").trim();
+              this.paidTowardsFund = Number.isFinite(paidTowards)
+                ? paidTowards
+                : 0;
+              this.paidOut = paidOutVal || "";
+              this.originalPaidTowardsFund = this.paidTowardsFund;
+              this.originalPaidOut = this.paidOut;
+
+              // If missing, try fetch from underlying unit
+              if (
+                !this.paidTowardsFund &&
+                !this.paidOut &&
+                (noticeData.unitId || noticeData.unitName)
+              ) {
+                try {
+                  if (noticeData.unitId) {
+                    const unitSnap = await getDoc(
+                      doc(db, "units", noticeData.unitId)
+                    );
+                    if (unitSnap.exists()) {
+                      const unit = unitSnap.data() || {};
+                      this.paidTowardsFund =
+                        Number(unit.paidTowardsFund || unit.paidTowards || 0) ||
+                        0;
+                      this.paidOut = String(unit.paidOut || "").trim();
+                      this.originalPaidTowardsFund = this.paidTowardsFund;
+                      this.originalPaidOut = this.paidOut;
+                    }
+                  } else if (noticeData.unitName) {
+                    // Fallback by name
+                    const { collection, query, where, getDocs } = await import(
+                      "firebase/firestore"
+                    );
+                    const q = query(
+                      collection(db, "units"),
+                      where("unitName", "==", noticeData.unitName)
+                    );
+                    const snap = await getDocs(q);
+                    if (!snap.empty) {
+                      const unit = snap.docs[0].data() || {};
+                      this.paidTowardsFund =
+                        Number(unit.paidTowardsFund || unit.paidTowards || 0) ||
+                        0;
+                      this.paidOut = String(unit.paidOut || "").trim();
+                      this.originalPaidTowardsFund = this.paidTowardsFund;
+                      this.originalPaidOut = this.paidOut;
+                    }
+                  }
+                } catch (e) {
+                  console.warn(
+                    "Failed to resolve unit financials for notice",
+                    e
+                  );
+                }
+              }
+            } catch (e) {
+              console.warn("Failed to compute financials for notice", e);
+            }
+          }
         } else {
-          this.error = 'Notice not found';
-          console.log('Notice not found in Firestore');
+          this.error = "Notice not found";
+          console.log("Notice not found in Firestore");
         }
       } catch (error) {
-        console.error('Error loading notice:', error);
+        console.error("Error loading notice:", error);
         this.error = `Failed to load notice details: ${error.message}`;
       } finally {
         this.loading = false;
       }
     },
+    formatCurrency(amount) {
+      const n = Number(amount || 0);
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: "currency",
+          currency: "ZAR",
+          minimumFractionDigits: 0,
+        }).format(n);
+      } catch {
+        return `R ${n.toLocaleString()}`;
+      }
+    },
     async deleteNotice() {
-      const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
+      const { showSuccessDialog, showErrorDialog, showConfirmDialog } =
+        useCustomDialogs();
       try {
         await showConfirmDialog({
-          title: 'Delete notice?',
+          title: "Delete notice?",
           message: `Are you sure you want to delete notice for ${this.notice.unitName}?`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
       } catch (_) {
-        return
+        return;
       }
       try {
-        await deleteDoc(doc(db, 'notices', this.notice.id))
-        showSuccessDialog('Notice deleted successfully!', 'Success!', 'Continue', '/notices')
+        await deleteDoc(doc(db, "notices", this.notice.id));
+        showSuccessDialog(
+          "Notice deleted successfully!",
+          "Success!",
+          "Continue",
+          "/notices"
+        );
       } catch (error) {
-        console.error('Error deleting notice:', error)
-        showErrorDialog(`Failed to delete notice: ${error.message}`, 'Error', 'OK')
+        console.error("Error deleting notice:", error);
+        showErrorDialog(
+          `Failed to delete notice: ${error.message}`,
+          "Error",
+          "OK"
+        );
       }
-    }
+    },
   },
 };
 </script>
@@ -288,8 +509,6 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;

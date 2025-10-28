@@ -112,7 +112,7 @@
                   <template v-if="isAgencyUser">
                     <v-select
                       v-model="entry.appointmentMade"
-                      :items="['Yes','No']"
+                      :items="['Yes', 'No']"
                       label="Appointment Made (Yes/No)"
                       variant="outlined"
                       class="custom-input"
@@ -139,7 +139,9 @@
                       variant="outlined"
                       class="custom-input"
                       :disabled="!appointmentMadeIsYes"
-                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
+                      :placeholder="
+                        appointmentMadeIsYes ? '' : 'Not applicable'
+                      "
                     />
                   </template>
                   <template v-else>
@@ -163,7 +165,9 @@
                       variant="outlined"
                       class="custom-input"
                       :disabled="!appointmentMadeIsYes"
-                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
+                      :placeholder="
+                        appointmentMadeIsYes ? '' : 'Not applicable'
+                      "
                     />
                   </template>
                   <template v-else>
@@ -182,7 +186,7 @@
                   <template v-if="isAgencyUser">
                     <v-select
                       v-model="entry.quotesNeeded"
-                      :items="['Yes','No']"
+                      :items="['Yes', 'No']"
                       label="Quotes Needed (Yes/No)"
                       variant="outlined"
                       class="custom-input"
@@ -215,100 +219,218 @@
                   :loading="uploading"
                   :rules="inspectionFileRules"
                 />
-                <v-btn class="save-btn mb-6" :disabled="!newInspectionFile || uploading" :loading="uploading" @click="uploadInspectionDocument">
+                <v-btn
+                  class="save-btn mb-6"
+                  :disabled="!newInspectionFile || uploading"
+                  :loading="uploading"
+                  @click="uploadInspectionDocument"
+                >
                   <v-icon start>mdi-upload</v-icon>
                   Upload
                 </v-btn>
               </div>
               <div class="uploaded-docs">
-                <div v-if="entry.inspectionFileName && entry.inspectionFileURL" class="doc-item d-flex align-center mb-2">
+                <div
+                  v-if="entry.inspectionFileName && entry.inspectionFileURL"
+                  class="doc-item d-flex align-center mb-2"
+                >
                   <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
                   <span class="mr-4">{{ entry.inspectionFileName }}</span>
-                  <v-btn size="small" color="black" variant="outlined" class="mr-2" :href="entry.inspectionFileURL" target="_blank" tag="a">View</v-btn>
-                  <v-btn size="small" color="black" variant="outlined" class="mr-2" :href="entry.inspectionFileURL" download>Download</v-btn>
+                  <v-btn
+                    size="small"
+                    color="black"
+                    variant="outlined"
+                    class="mr-2"
+                    :href="entry.inspectionFileURL"
+                    target="_blank"
+                    tag="a"
+                    >View</v-btn
+                  >
+                  <v-btn
+                    size="small"
+                    color="black"
+                    variant="outlined"
+                    class="mr-2"
+                    :href="entry.inspectionFileURL"
+                    download
+                    >Download</v-btn
+                  >
                 </div>
-                <div v-else class="text-medium-emphasis">No documents uploaded yet.</div>
+                <div v-else class="text-medium-emphasis">
+                  No documents uploaded yet.
+                </div>
               </div>
 
               <!-- Action Buttons -->
               <v-card-actions class="pa-4">
                 <v-spacer />
-                
+
                 <!-- For Agency and Agency Admin users: Only show Save Changes -->
                 <template v-if="isAgencyUser">
-                  <v-btn color="black" variant="elevated" @click="saveDetails" class="save-btn">
+                  <v-btn
+                    color="black"
+                    variant="elevated"
+                    @click="saveDetails"
+                    class="save-btn"
+                  >
                     Save Changes
                   </v-btn>
                 </template>
-                
+
                 <!-- For Super Admin and Depsure Admin: No action buttons -->
               </v-card-actions>
             </v-card-text>
-              <!-- Notes removed - using live chat -->
-              <div style="display:none;">
-                <v-card-text>
-                  <div class="notes-section">
-                    <h3 class="mb-2">Notes</h3>
-                    <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
-                      <div v-for="(n, idx) in sortedNotes" :key="noteKey(n)" class="chat-message" :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }">
-                        <div class="chat-avatar">
-                          <img v-if="n.authorAvatarUrl" :src="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" />
-                          <template v-else>{{ noteInitials(n.authorName) }}</template>
-                        </div>
-                        <div class="chat-bubble">
-                          <div class="chat-header">
-                            <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
-                            <div class="chat-header-right">
-                              <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
-                              <span v-if="n.isEdited && !n.isDeleted" class="chat-edited">(edited)</span>
-                              <v-menu v-if="n.authorId === currentUserId && !n.isDeleted" location="bottom end">
-                                <template #activator="{ props }">
-                                  <v-btn v-bind="props" icon="mdi-dots-vertical" size="x-small" variant="text" color="white" />
-                                </template>
-                                <v-list density="compact">
-                                  <v-list-item @click="startEdit(n)">
-                                    <v-list-item-title>
-                                      <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
-                                      Edit
-                                    </v-list-item-title>
-                                  </v-list-item>
-                                  <v-list-item @click="softDeleteNote(n)">
-                                    <v-list-item-title class="text-error">
-                                      <v-icon size="small" class="mr-1" color="error">mdi-delete</v-icon>
-                                      Delete
-                                    </v-list-item-title>
-                                  </v-list-item>
-                                </v-list>
-                              </v-menu>
-                            </div>
-                          </div>
-                          <div v-if="n.isDeleted" class="chat-text deleted">This message was deleted</div>
-                          <div v-else>
-                            <div v-if="editingKey && editingKey === noteKey(n)" class="edit-area">
-                              <v-textarea v-model="editingText" rows="2" auto-grow variant="outlined" class="custom-input" :counter="500" maxlength="500" />
-                              <div class="d-flex justify-end mt-2 gap-2">
-                                <v-btn size="small" variant="text" @click="cancelEdit">Cancel</v-btn>
-                                <v-btn size="small" color="black" variant="elevated" :loading="savingEdit" :disabled="!editingText.trim()" @click="saveEdit(n)">Save</v-btn>
-                              </div>
-                            </div>
-                            <div v-else class="chat-text">{{ n.text }}</div>
-                          </div>
-                        </div>
+            <!-- Notes removed - using live chat -->
+            <div style="display: none">
+              <v-card-text>
+                <div class="notes-section">
+                  <h3 class="mb-2">Notes</h3>
+                  <div
+                    v-if="entry.notesLog && entry.notesLog.length"
+                    class="chat-log"
+                    ref="chatLog"
+                  >
+                    <div
+                      v-for="(n, idx) in sortedNotes"
+                      :key="noteKey(n)"
+                      class="chat-message"
+                      :class="{
+                        mine: n.authorId === currentUserId,
+                        other: n.authorId !== currentUserId,
+                      }"
+                    >
+                      <div class="chat-avatar">
+                        <img
+                          v-if="n.authorAvatarUrl"
+                          :src="n.authorAvatarUrl"
+                          alt="avatar"
+                          class="chat-avatar-img"
+                        />
+                        <template v-else>{{
+                          noteInitials(n.authorName)
+                        }}</template>
                       </div>
-                    </div>
-                    <div v-else class="text-medium-emphasis">No notes yet.</div>
-                    <div class="chat-input mt-4">
-                      <v-textarea v-model="newNote" placeholder="Write a note..." variant="outlined" class="custom-input" :counter="500" maxlength="500" rows="2" auto-grow />
-                      <div class="d-flex justify-end mt-2">
-                        <v-btn color="black" variant="elevated" :disabled="!newNote || savingNote" :loading="savingNote" @click="appendNote">
-                          <v-icon start>mdi-send</v-icon>
-                          Send
-                        </v-btn>
+                      <div class="chat-bubble">
+                        <div class="chat-header">
+                          <span class="chat-author">{{
+                            n.authorName || "Unknown"
+                          }}</span>
+                          <div class="chat-header-right">
+                            <span class="chat-time">{{
+                              formatNoteDate(n.timestamp)
+                            }}</span>
+                            <span
+                              v-if="n.isEdited && !n.isDeleted"
+                              class="chat-edited"
+                              >(edited)</span
+                            >
+                            <v-menu
+                              v-if="
+                                n.authorId === currentUserId && !n.isDeleted
+                              "
+                              location="bottom end"
+                            >
+                              <template #activator="{ props }">
+                                <v-btn
+                                  v-bind="props"
+                                  icon="mdi-dots-vertical"
+                                  size="x-small"
+                                  variant="text"
+                                  color="white"
+                                />
+                              </template>
+                              <v-list density="compact">
+                                <v-list-item @click="startEdit(n)">
+                                  <v-list-item-title>
+                                    <v-icon size="small" class="mr-1"
+                                      >mdi-pencil</v-icon
+                                    >
+                                    Edit
+                                  </v-list-item-title>
+                                </v-list-item>
+                                <v-list-item @click="softDeleteNote(n)">
+                                  <v-list-item-title class="text-error">
+                                    <v-icon
+                                      size="small"
+                                      class="mr-1"
+                                      color="error"
+                                      >mdi-delete</v-icon
+                                    >
+                                    Delete
+                                  </v-list-item-title>
+                                </v-list-item>
+                              </v-list>
+                            </v-menu>
+                          </div>
+                        </div>
+                        <div v-if="n.isDeleted" class="chat-text deleted">
+                          This message was deleted
+                        </div>
+                        <div v-else>
+                          <div
+                            v-if="editingKey && editingKey === noteKey(n)"
+                            class="edit-area"
+                          >
+                            <v-textarea
+                              v-model="editingText"
+                              rows="2"
+                              auto-grow
+                              variant="outlined"
+                              class="custom-input"
+                              :counter="500"
+                              maxlength="500"
+                            />
+                            <div class="d-flex justify-end mt-2 gap-2">
+                              <v-btn
+                                size="small"
+                                variant="text"
+                                @click="cancelEdit"
+                                >Cancel</v-btn
+                              >
+                              <v-btn
+                                size="small"
+                                color="black"
+                                variant="elevated"
+                                :loading="savingEdit"
+                                :disabled="!editingText.trim()"
+                                @click="saveEdit(n)"
+                                >Save</v-btn
+                              >
+                            </div>
+                          </div>
+                          <div v-else class="chat-text">{{ n.text }}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </v-card-text>
-              </div>
+                  <div v-else class="text-medium-emphasis">No notes yet.</div>
+                  <div class="chat-input mt-4">
+                    <v-textarea
+                      v-model="newNote"
+                      placeholder="Write a note..."
+                      variant="outlined"
+                      class="custom-input"
+                      :counter="500"
+                      maxlength="500"
+                      rows="2"
+                      auto-grow
+                    />
+                    <div class="d-flex justify-end mt-2">
+                      <v-btn
+                        color="black"
+                        variant="elevated"
+                        :disabled="!newNote || savingNote"
+                        :loading="savingNote"
+                        @click="appendNote"
+                      >
+                        <v-icon start>mdi-send</v-icon>
+                        Send
+                      </v-btn>
+                    </div>
+                  </div>
+                </div>
+              </v-card-text>
+            </div>
           </div>
         </v-col>
       </v-row>
@@ -317,23 +439,41 @@
 </template>
 
 <script>
-import { db, storage } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore'
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAppStore } from '@/stores/app'
+import { db, storage } from "@/firebaseConfig";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import {
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { useAppStore } from "@/stores/app";
 
 export default {
   name: "ViewInspectionPage",
   setup() {
-    const { showConfirmDialog, showErrorDialog, showSuccessDialog } = useCustomDialogs()
-    return { showConfirmDialog, showErrorDialog, showSuccessDialog }
+    const { showConfirmDialog, showErrorDialog, showSuccessDialog } =
+      useCustomDialogs();
+    return { showConfirmDialog, showErrorDialog, showSuccessDialog };
   },
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     userType() {
       const appStore = useAppStore();
@@ -342,48 +482,59 @@ export default {
     canUploadDoc() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      const fromOnboard = this.$route?.query?.from === 'onboard';
-      const isSuperAdmin = user?.userType === 'Super Admin';
-      const isDepsureAdmin = user?.userType === 'Admin' && user?.adminScope === 'depsure';
+      const fromOnboard = this.$route?.query?.from === "onboard";
+      const isSuperAdmin = user?.userType === "Super Admin";
+      const isDepsureAdmin =
+        user?.userType === "Admin" && user?.adminScope === "depsure";
       // Hide upload for Super Admin and Depsure Admin; allow Agency roles when coming from onboard flow
       if (isSuperAdmin || isDepsureAdmin) return false;
       return fromOnboard && this.isAgencyUser;
     },
     appointmentMadeIsYes() {
-      const val = String(this.entry?.appointmentMade || '').toLowerCase();
-      return val === 'yes';
+      const val = String(this.entry?.appointmentMade || "").toLowerCase();
+      return val === "yes";
     },
     currentUserId() {
       const appStore = useAppStore();
       return appStore.userId;
     },
     sortedNotes() {
-      const notes = this.entry?.notesLog || []
-      return [...notes].sort((a,b) => {
-        const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
-        const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
-        return ad - bd
-      })
-    }
+      const notes = this.entry?.notesLog || [];
+      return [...notes].sort((a, b) => {
+        const ad = a.timestamp?.toDate
+          ? a.timestamp.toDate()
+          : new Date(a.timestamp || 0);
+        const bd = b.timestamp?.toDate
+          ? b.timestamp.toDate()
+          : new Date(b.timestamp || 0);
+        return ad - bd;
+      });
+    },
   },
   data() {
     return {
-      activeTab: 'details',
+      activeTab: "details",
       entry: {},
       loading: true,
       error: null,
-      newNote: '',
+      newNote: "",
       savingNote: false,
       editingKey: null,
-      editingText: '',
+      editingText: "",
       savingEdit: false,
       // Document upload state
       uploading: false,
       newInspectionFile: null,
       inspectionFileRules: [
-        v => !v || (v && (!v.size || v.size <= 50 * 1024 * 1024)) || 'File size must be less than 50MB',
-        v => !v || (v && (!v.type || v.type === 'application/pdf')) || 'Only PDF files are allowed'
-      ]
+        (v) =>
+          !v ||
+          (v && (!v.size || v.size <= 50 * 1024 * 1024)) ||
+          "File size must be less than 50MB",
+        (v) =>
+          !v ||
+          (v && (!v.type || v.type === "application/pdf")) ||
+          "Only PDF files are allowed",
+      ],
     };
   },
   mounted() {
@@ -394,323 +545,547 @@ export default {
   methods: {
     async openPropertyDetails() {
       try {
-        const name = this.entry?.unitName || ''
-        if (!name) return this.showErrorDialog?.('No unit name on this inspection.', 'Not found', 'OK')
-        const q = query(collection(db, 'units'), where('propertyName', '==', name))
-        const snap = await getDocs(q)
-        if (snap.empty) return this.showErrorDialog?.('Could not find a property matching this unit.', 'Not found', 'OK')
-        const unitId = snap.docs[0].id
-        this.$router.push(`/view-property-${unitId}`)
+        const name = this.entry?.unitName || "";
+        if (!name)
+          return this.showErrorDialog?.(
+            "No unit name on this inspection.",
+            "Not found",
+            "OK"
+          );
+        const q = query(
+          collection(db, "units"),
+          where("propertyName", "==", name)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty)
+          return this.showErrorDialog?.(
+            "Could not find a property matching this unit.",
+            "Not found",
+            "OK"
+          );
+        const unitId = snap.docs[0].id;
+        this.$router.push(`/view-property-${unitId}`);
       } catch (e) {
-        console.error('Open property details failed', e)
-        this.showErrorDialog?.('Failed to open property details.', 'Error', 'OK')
+        console.error("Open property details failed", e);
+        this.showErrorDialog?.(
+          "Failed to open property details.",
+          "Error",
+          "OK"
+        );
       }
     },
     async uploadInspectionDocument() {
       try {
-        if (!this.entry?.id) return this.showErrorDialog?.('Invalid inspection entry.', 'Error', 'OK')
-        if (!this.newInspectionFile) return
-        const file = this.newInspectionFile
+        if (!this.entry?.id)
+          return this.showErrorDialog?.(
+            "Invalid inspection entry.",
+            "Error",
+            "OK"
+          );
+        if (!this.newInspectionFile) return;
+        const file = this.newInspectionFile;
         // Basic validation (also covered by rules)
-        if (file.type !== 'application/pdf') {
-          return this.showErrorDialog?.('Only PDF files are allowed.', 'Invalid File', 'OK')
+        if (file.type !== "application/pdf") {
+          return this.showErrorDialog?.(
+            "Only PDF files are allowed.",
+            "Invalid File",
+            "OK"
+          );
         }
         if (file.size > 50 * 1024 * 1024) {
-          return this.showErrorDialog?.('File size must be under 50MB.', 'Invalid File', 'OK')
+          return this.showErrorDialog?.(
+            "File size must be under 50MB.",
+            "Invalid File",
+            "OK"
+          );
         }
-        this.uploading = true
-        const path = `inspection-documents/${this.entry.id}/${Date.now()}_${file.name}`
-        const fileRef = storageRef(storage, path)
-        const snap = await uploadBytes(fileRef, file)
-        const url = await getDownloadURL(snap.ref)
-        await updateDoc(doc(db, 'inspections', this.entry.id), {
+        this.uploading = true;
+        const path = `inspection-documents/${this.entry.id}/${Date.now()}_${
+          file.name
+        }`;
+        const fileRef = storageRef(storage, path);
+        const snap = await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(snap.ref);
+        await updateDoc(doc(db, "inspections", this.entry.id), {
           inspectionFileURL: url,
           inspectionFileName: file.name,
-          updatedAt: serverTimestamp()
-        })
-        this.entry.inspectionFileURL = url
-        this.entry.inspectionFileName = file.name
-        this.newInspectionFile = null
-        this.showSuccessDialog?.('Document uploaded successfully!', 'Success', 'OK')
+          updatedAt: serverTimestamp(),
+        });
+        this.entry.inspectionFileURL = url;
+        this.entry.inspectionFileName = file.name;
+        this.newInspectionFile = null;
+        this.showSuccessDialog?.(
+          "Document uploaded successfully!",
+          "Success",
+          "OK"
+        );
       } catch (e) {
-        console.error('Upload document failed', e)
-        this.showErrorDialog?.('Failed to upload document. Please try again.', 'Upload Error', 'OK')
+        console.error("Upload document failed", e);
+        this.showErrorDialog?.(
+          "Failed to upload document. Please try again.",
+          "Upload Error",
+          "OK"
+        );
       } finally {
-        this.uploading = false
+        this.uploading = false;
       }
     },
-        async saveDetails () {
+    async saveDetails() {
       try {
-        if (!this.entry?.id) return
+        if (!this.entry?.id) return;
         const payload = {
-          inspectionRequired: this.entry.inspectionRequired || 'Yes',
-          contactPerson: this.entry.contactPerson || '',
-          contactNumber: this.entry.contactNumber || '',
-          appointmentMade: this.entry.appointmentMade || '',
-          inspectionDate: this.entry.inspectionDate || '',
-          inspectionTime: this.entry.inspectionTime || '',
-          quotesNeeded: this.entry.quotesNeeded || '',
-          updatedAt: new Date()
-        }
-        await updateDoc(doc(db, 'inspections', this.entry.id), payload)
+          inspectionRequired: this.entry.inspectionRequired || "Yes",
+          contactPerson: this.entry.contactPerson || "",
+          contactNumber: this.entry.contactNumber || "",
+          appointmentMade: this.entry.appointmentMade || "",
+          inspectionDate: this.entry.inspectionDate || "",
+          inspectionTime: this.entry.inspectionTime || "",
+          quotesNeeded: this.entry.quotesNeeded || "",
+          updatedAt: new Date(),
+        };
+        await updateDoc(doc(db, "inspections", this.entry.id), payload);
         // Success pop and role-based redirect
-        const appStore = useAppStore()
-        const user = appStore.currentUser
-        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
-        const redirectTo = isAgency ? '/onboard-units' : '/inspections'
-        this.showSuccessDialog?.('Inspection changes saved successfully!', 'Success!', 'Continue', redirectTo)
+        const appStore = useAppStore();
+        const user = appStore.currentUser;
+        const isAgency =
+          user?.userType === "Agency" ||
+          (user?.userType === "Admin" && user?.adminScope === "agency");
+        const redirectTo = isAgency ? "/onboard-units" : "/inspections";
+        this.showSuccessDialog?.(
+          "Inspection changes saved successfully!",
+          "Success!",
+          "Continue",
+          redirectTo
+        );
       } catch (e) {
-        console.error('Save details failed', e)
-        this.showErrorDialog && this.showErrorDialog('Failed to save changes. Please try again.', 'Error', 'OK')
+        console.error("Save details failed", e);
+        this.showErrorDialog &&
+          this.showErrorDialog(
+            "Failed to save changes. Please try again.",
+            "Error",
+            "OK"
+          );
       }
-    },goBack() {
+    },
+    goBack() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
-      
+      const isAgency =
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency");
+
       // Agency users always go back to onboard-units
       if (isAgency) {
-        this.$router.push('/onboard-units');
+        this.$router.push("/onboard-units");
       } else {
         // Admin/Super Admin go to inspections
-        this.$router.push('/inspections');
+        this.$router.push("/inspections");
       }
     },
     scrollNotesToBottom() {
       this.$nextTick(() => {
-        const el = this.$refs.chatLog
-        if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight
-      })
+        const el = this.$refs.chatLog;
+        if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight;
+      });
     },
-    startEdit(note) { this.editingKey = this.noteKey(note); this.editingText = String(note.text || '') },
+    startEdit(note) {
+      this.editingKey = this.noteKey(note);
+      this.editingText = String(note.text || "");
+    },
     cancelEdit() {
-      this.editingKey = null
-      this.editingText = ''
+      this.editingKey = null;
+      this.editingText = "";
     },
     noteKey(n) {
       try {
-        if (n?.id) return `id:${n.id}`
-        const t = n?.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n?.timestamp || 0).getTime()
-        const aid = n?.authorId || ''
-        const txt = String(n?.text || '')
-        return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0,8)}`
-      } catch (_) { return `legacy:${Math.random().toString(36).slice(2,8)}` }
+        if (n?.id) return `id:${n.id}`;
+        const t = n?.timestamp?.toDate
+          ? n.timestamp.toDate().getTime()
+          : new Date(n?.timestamp || 0).getTime();
+        const aid = n?.authorId || "";
+        const txt = String(n?.text || "");
+        return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0, 8)}`;
+      } catch (_) {
+        return `legacy:${Math.random().toString(36).slice(2, 8)}`;
+      }
     },
     findNoteIndexByIdOrMatch(list, target) {
-      if (!Array.isArray(list)) return -1
+      if (!Array.isArray(list)) return -1;
       if (target.id) {
-        const i = list.findIndex(n => n && n.id === target.id)
-        if (i !== -1) return i
+        const i = list.findIndex((n) => n && n.id === target.id);
+        if (i !== -1) return i;
       }
-      const tA = target.timestamp?.toDate ? target.timestamp.toDate().getTime() : new Date(target.timestamp || 0).getTime()
-      const txt = String(target.text || '')
-      const aid = target.authorId || ''
+      const tA = target.timestamp?.toDate
+        ? target.timestamp.toDate().getTime()
+        : new Date(target.timestamp || 0).getTime();
+      const txt = String(target.text || "");
+      const aid = target.authorId || "";
       for (let i = list.length - 1; i >= 0; i--) {
-        const n = list[i] || {}
-        const nT = n.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n.timestamp || 0).getTime()
-        if ((n.id && !target.id) ? false : (String(n.text || '') === txt && (n.authorId || '') === aid && nT === tA)) return i
+        const n = list[i] || {};
+        const nT = n.timestamp?.toDate
+          ? n.timestamp.toDate().getTime()
+          : new Date(n.timestamp || 0).getTime();
+        if (
+          n.id && !target.id
+            ? false
+            : String(n.text || "") === txt &&
+              (n.authorId || "") === aid &&
+              nT === tA
+        )
+          return i;
       }
-      return -1
+      return -1;
     },
     async saveEdit(target) {
-      if (!this.entry?.id) return
-      const newText = this.editingText.trim()
-      if (!newText) return
+      if (!this.entry?.id) return;
+      const newText = this.editingText.trim();
+      if (!newText) return;
       try {
-        this.savingEdit = true
-        const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
-        const idx = this.findNoteIndexByIdOrMatch(list, target)
-        if (idx === -1) throw new Error('Note not found')
-        const old = list[idx] || {}
-        list[idx] = { ...old, text: newText, isEdited: true, editedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
-        await updateDoc(doc(db, 'inspections', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
-        this.entry.notesLog = list
-        this.cancelEdit()
+        this.savingEdit = true;
+        const list = Array.isArray(this.entry.notesLog)
+          ? [...this.entry.notesLog]
+          : [];
+        const idx = this.findNoteIndexByIdOrMatch(list, target);
+        if (idx === -1) throw new Error("Note not found");
+        const old = list[idx] || {};
+        list[idx] = {
+          ...old,
+          text: newText,
+          isEdited: true,
+          editedAt: new Date(),
+          id:
+            old.id || Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        };
+        await updateDoc(doc(db, "inspections", this.entry.id), {
+          notesLog: list,
+          updatedAt: serverTimestamp(),
+        });
+        this.entry.notesLog = list;
+        this.cancelEdit();
       } catch (e) {
-        console.error('Error editing note:', e)
-        this.showErrorDialog('Failed to edit note. Please try again.', 'Error', 'OK')
+        console.error("Error editing note:", e);
+        this.showErrorDialog(
+          "Failed to edit note. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.savingEdit = false
+        this.savingEdit = false;
       }
     },
     async softDeleteNote(target) {
-      if (!this.entry?.id) return
+      if (!this.entry?.id) return;
       try {
-        await this.showConfirmDialog({ title: 'Delete message?', message: 'This message will be shown as deleted.', confirmText: 'Delete', cancelText: 'Cancel', color: '#dc3545' })
-      } catch (_) { return }
+        await this.showConfirmDialog({
+          title: "Delete message?",
+          message: "This message will be shown as deleted.",
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
+      } catch (_) {
+        return;
+      }
       try {
-        const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
-        const idx = this.findNoteIndexByIdOrMatch(list, target)
-        if (idx === -1) throw new Error('Note not found')
-        const old = list[idx] || {}
-        list[idx] = { ...old, isDeleted: true, deletedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
-        await updateDoc(doc(db, 'inspections', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
-        this.entry.notesLog = list
+        const list = Array.isArray(this.entry.notesLog)
+          ? [...this.entry.notesLog]
+          : [];
+        const idx = this.findNoteIndexByIdOrMatch(list, target);
+        if (idx === -1) throw new Error("Note not found");
+        const old = list[idx] || {};
+        list[idx] = {
+          ...old,
+          isDeleted: true,
+          deletedAt: new Date(),
+          id:
+            old.id || Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        };
+        await updateDoc(doc(db, "inspections", this.entry.id), {
+          notesLog: list,
+          updatedAt: serverTimestamp(),
+        });
+        this.entry.notesLog = list;
       } catch (e) {
-        console.error('Error deleting note:', e)
-        this.showErrorDialog('Failed to delete note. Please try again.', 'Error', 'OK')
+        console.error("Error deleting note:", e);
+        this.showErrorDialog(
+          "Failed to delete note. Please try again.",
+          "Error",
+          "OK"
+        );
       }
     },
     noteInitials(name) {
-      const raw = String(name || '').trim()
-      if (!raw) return '?'
-      const words = raw.split(/\s+/).filter(Boolean)
+      const raw = String(name || "").trim();
+      if (!raw) return "?";
+      const words = raw.split(/\s+/).filter(Boolean);
       if (words.length === 1) {
-        const cleaned = words[0].replace(/[^A-Za-z0-9]/g, '')
-        if (!cleaned) return '?'
-        return cleaned.slice(0, 2).toUpperCase()
+        const cleaned = words[0].replace(/[^A-Za-z0-9]/g, "");
+        if (!cleaned) return "?";
+        return cleaned.slice(0, 2).toUpperCase();
       }
-      const first = (words[0] && words[0][0]) ? words[0][0] : ''
-      const second = (words[1] && words[1][0]) ? words[1][0] : ''
-      const res = (first + second).trim()
-      return res ? res.toUpperCase() : '?'
+      const first = words[0] && words[0][0] ? words[0][0] : "";
+      const second = words[1] && words[1][0] ? words[1][0] : "";
+      const res = (first + second).trim();
+      return res ? res.toUpperCase() : "?";
     },
     formatNoteDate(ts) {
       try {
-        if (!ts) return 'Just now'
-        const d = ts.toDate ? ts.toDate() : new Date(ts)
-        return d.toLocaleString()
-      } catch (_) { return String(ts) }
+        if (!ts) return "Just now";
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        return d.toLocaleString();
+      } catch (_) {
+        return String(ts);
+      }
     },
     async loadEntry(entryId) {
       try {
-        console.log('Loading inspection entry with ID:', entryId);
-        const docRef = doc(db, 'inspections', entryId);
+        console.log("Loading inspection entry with ID:", entryId);
+        const docRef = doc(db, "inspections", entryId);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
           this.entry = {
             id: docSnap.id,
             ...docSnap.data(),
             createdAt: docSnap.data().createdAt?.toDate(),
-            updatedAt: docSnap.data().updatedAt?.toDate()
+            updatedAt: docSnap.data().updatedAt?.toDate(),
           };
-          console.log('Inspection entry loaded:', this.entry);
-          this.scrollNotesToBottom()
+          console.log("Inspection entry loaded:", this.entry);
+          this.scrollNotesToBottom();
         } else {
           this.error = "Inspection entry not found";
-          console.log('Inspection entry not found with ID:', entryId);
+          console.log("Inspection entry not found with ID:", entryId);
         }
       } catch (error) {
-        console.error('Error loading inspection entry:', error);
+        console.error("Error loading inspection entry:", error);
         this.error = "Failed to load inspection entry";
       } finally {
         this.loading = false;
       }
     },
-    
+
     editEntry() {
       // Pass the 'from' parameter along to edit page
       const from = this.$route?.query?.from;
-      if (from === 'onboard') {
-        this.$router.push({ path: `/edit-inspection-${this.entry.id}`, query: { from: 'onboard' } });
+      if (from === "onboard") {
+        this.$router.push({
+          path: `/edit-inspection-${this.entry.id}`,
+          query: { from: "onboard" },
+        });
       } else {
         this.$router.push(`/edit-inspection-${this.entry.id}`);
       }
     },
     async appendNote() {
-      if (!this.newNote || !this.entry?.id) return
+      if (!this.newNote || !this.entry?.id) return;
       try {
-        this.savingNote = true
-        const appStore = useAppStore()
-        const currentUser = appStore.currentUser
-        const isAgency = currentUser?.userType === 'Agency' || (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency')
-        
+        this.savingNote = true;
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const isAgency =
+          currentUser?.userType === "Agency" ||
+          (currentUser?.userType === "Admin" &&
+            currentUser?.adminScope === "agency");
+
         // Get proper author name based on user type
-        let authorName = 'Unknown User'
+        let authorName = "Unknown User";
         if (isAgency) {
-          authorName = currentUser?.agencyName || this.entry?.unitName || this.entry?.propertyName || 'Property'
+          authorName =
+            currentUser?.agencyName ||
+            this.entry?.unitName ||
+            this.entry?.propertyName ||
+            "Property";
         } else {
           // For regular users, use firstName + lastName or fallback to email
           if (currentUser?.firstName && currentUser?.lastName) {
-            authorName = `${currentUser.firstName} ${currentUser.lastName}`
+            authorName = `${currentUser.firstName} ${currentUser.lastName}`;
           } else if (currentUser?.firstName) {
-            authorName = currentUser.firstName
+            authorName = currentUser.firstName;
           } else if (currentUser?.lastName) {
-            authorName = currentUser.lastName
+            authorName = currentUser.lastName;
           } else if (currentUser?.email) {
-            authorName = currentUser.email
+            authorName = currentUser.email;
           }
         }
-        
+
         const note = {
-          id: Date.now() + '_' + Math.random().toString(36).slice(2,8),
+          id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
           text: this.newNote,
-          authorId: appStore.userId || currentUser?.uid || '',
+          authorId: appStore.userId || currentUser?.uid || "",
           authorName: authorName,
-          authorType: appStore.userType || currentUser?.userType || '',
-          authorAvatarUrl: isAgency 
-            ? (this.entry?.agencyProfileImageUrl || this.entry?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
-            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
+          authorType: appStore.userType || currentUser?.userType || "",
+          authorAvatarUrl: isAgency
+            ? this.entry?.agencyProfileImageUrl ||
+              this.entry?.profileImageUrl ||
+              currentUser?.profileImageUrl ||
+              currentUser?.profileImage ||
+              ""
+            : currentUser?.profileImageUrl || currentUser?.profileImage || "",
           timestamp: new Date(),
           isEdited: false,
-          isDeleted: false
-        }
-        
-        await updateDoc(doc(db, 'inspections', this.entry.id), { 
-          notesLog: arrayUnion(note), 
-          updatedAt: serverTimestamp() 
-        })
-        
-        if (!this.entry.notesLog) this.entry.notesLog = []
-        this.entry.notesLog.push(note)
-        this.newNote = ''
-        this.scrollNotesToBottom()
+          isDeleted: false,
+        };
+
+        await updateDoc(doc(db, "inspections", this.entry.id), {
+          notesLog: arrayUnion(note),
+          updatedAt: serverTimestamp(),
+        });
+
+        if (!this.entry.notesLog) this.entry.notesLog = [];
+        this.entry.notesLog.push(note);
+        this.newNote = "";
+        this.scrollNotesToBottom();
       } catch (e) {
-        console.error('Error adding note:', e)
-        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
+        console.error("Error adding note:", e);
+        this.showErrorDialog(
+          "Failed to add note. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.savingNote = false
+        this.savingNote = false;
       }
     },
-    
+
     async deleteEntry() {
       try {
         await this.showConfirmDialog({
-          title: 'Delete inspection entry?',
+          title: "Delete inspection entry?",
           message: `Are you sure you want to delete inspection entry for ${this.entry.unitName}?`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
       } catch (_) {
-        return
+        return;
       }
       try {
-        const { deleteDoc } = await import('firebase/firestore');
-        await deleteDoc(doc(db, 'inspections', this.entry.id));
-        console.log('Inspection entry deleted successfully');
-        this.$router.push('/inspections');
+        const { deleteDoc } = await import("firebase/firestore");
+        await deleteDoc(doc(db, "inspections", this.entry.id));
+        this.showSuccessDialog?.(
+          "Inspection entry deleted successfully!",
+          "Success!",
+          "Continue",
+          "/inspections"
+        );
       } catch (error) {
-        console.error('Error deleting inspection entry:', error);
-        alert('Failed to delete inspection entry');
+        console.error("Error deleting inspection entry:", error);
+        this.showErrorDialog?.(
+          "Failed to delete inspection entry. Please try again.",
+          "Error",
+          "OK"
+        );
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style scoped>
-.notes-section{margin-top:8px}
-.chat-log{display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto;padding:8px 0}
-.chat-message{display:flex;align-items:flex-end;gap:8px}
-.chat-message.mine{flex-direction:row-reverse}
-.chat-avatar{width:28px;height:28px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;overflow:hidden}
-.chat-avatar-img{width:100%;height:100%;object-fit:cover;display:block}
-.chat-bubble{max-width:55%;min-width:0;overflow-wrap:anywhere;word-break:break-word;background:#f2f4f7;color:#111;border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-.chat-message.mine .chat-bubble{background:#000;color:#fff}
-.chat-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
-.chat-header-right{display:flex;align-items:center;gap:8px}
-.chat-author{font-weight:700;font-size:.8rem;opacity:.95}
-.chat-time{font-size:.7rem;opacity:.7;margin-left:8px}
-.chat-edited{font-size:.7rem;opacity:.7}
-.chat-text{white-space:pre-wrap;word-wrap:break-word;line-height:1.35;text-align:center}
-.chat-text.deleted{font-style:italic;opacity:.75}
-.edit-area{background:#000;border-radius:10px;padding:6px}
-.edit-area :deep(.v-field){}
-.edit-area :deep(.v-field__input){}
-.edit-area :deep(.v-field__outline){border-color:#444 !important}
-.chat-input :deep(.v-field__input){min-height:44px}
+.notes-section {
+  margin-top: 8px;
+}
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.chat-message {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.chat-message.mine {
+  flex-direction: row-reverse;
+}
+.chat-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #6b7280;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+}
+.chat-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.chat-bubble {
+  max-width: 55%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  background: #f2f4f7;
+  color: #111;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.chat-message.mine .chat-bubble {
+  background: #000;
+  color: #fff;
+}
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chat-author {
+  font-weight: 700;
+  font-size: 0.8rem;
+  opacity: 0.95;
+}
+.chat-time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-left: 8px;
+}
+.chat-edited {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+.chat-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.35;
+  text-align: center;
+}
+.chat-text.deleted {
+  font-style: italic;
+  opacity: 0.75;
+}
+.edit-area {
+  background: #000;
+  border-radius: 10px;
+  padding: 6px;
+}
+.edit-area :deep(.v-field) {
+}
+.edit-area :deep(.v-field__input) {
+}
+.edit-area :deep(.v-field__outline) {
+  border-color: #444 !important;
+}
+.chat-input :deep(.v-field__input) {
+  min-height: 44px;
+}
 .view-inspection-page {
   padding: 20px;
   min-height: 100vh;
@@ -768,14 +1143,14 @@ export default {
   border-radius: 8px;
 }
 
-
-
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
 
 /* Buttons */
-.cancel-btn, .edit-btn, .delete-btn {
+.cancel-btn,
+.edit-btn,
+.delete-btn {
   font-weight: 500;
   text-transform: none;
   border-radius: 8px;
@@ -792,7 +1167,7 @@ export default {
   border-radius: 8px;
   background-color: black !important;
   color: white !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 
@@ -800,12 +1175,24 @@ export default {
   background-color: #333 !important;
   transform: translateY(-1px);
 }
-.save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* Documents layout */
-.upload-row { display: flex; align-items: center; gap: 12px; }
-.upload-input { flex: 1; min-width: 0; }
-.uploaded-docs .doc-item { align-items: center; }
+.upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.upload-input {
+  flex: 1;
+  min-width: 0;
+}
+.uploaded-docs .doc-item {
+  align-items: center;
+}
 
 /* Slightly bigger Property Details button */
 .property-btn {
@@ -856,13 +1243,21 @@ export default {
     width: 140px;
     height: 40px;
   }
-  
-  .cancel-btn, .edit-btn, .delete-btn {
+
+  .cancel-btn,
+  .edit-btn,
+  .delete-btn {
     width: 100px;
     height: 40px;
   }
-  .save-btn { width: 140px; height: 44px; }
-  .property-btn { width: 140px; height: 44px; }
+  .save-btn {
+    width: 140px;
+    height: 44px;
+  }
+  .property-btn {
+    width: 140px;
+    height: 44px;
+  }
 }
 /* Tabs styling */
 .property-tabs {

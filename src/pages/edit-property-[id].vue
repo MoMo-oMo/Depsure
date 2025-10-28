@@ -1,7 +1,6 @@
 <template>
   <div class="edit-property-page">
     <v-container fluid>
-      
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
@@ -23,7 +22,7 @@
           <div class="title-section">
             <h1 class="page-title">Edit Property</h1>
           </div>
-          
+
           <!-- Property Information Card -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
@@ -42,8 +41,18 @@
           <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
             <v-tabs v-model="activeTab" class="property-tabs" color="primary">
-              <v-tab v-if="showDetailsTab" value="details" class="tab-label tab--details">Property Details</v-tab>
-              <v-tab v-if="showDocumentsTab" value="documents" class="tab-label tab--documents">Documents</v-tab>
+              <v-tab
+                v-if="showDetailsTab"
+                value="details"
+                class="tab-label tab--details"
+                >Property Details</v-tab
+              >
+              <v-tab
+                v-if="showDocumentsTab"
+                value="documents"
+                class="tab-label tab--documents"
+                >Documents</v-tab
+              >
             </v-tabs>
 
             <v-form ref="form" v-model="valid" lazy-validation>
@@ -143,29 +152,6 @@
                         />
                       </v-col>
 
-                      <!-- Lease End mode as dropdown + date field -->
-                      <v-col cols="12" md="6">
-                        <v-select
-                          v-model="leaseEndMode"
-                          :items="leaseEndModeOptions"
-                          item-title="title"
-                          item-value="value"
-                          label="Lease End"
-                          variant="outlined"
-                          class="custom-input"
-                          hide-details
-                        />
-                        <v-text-field
-                          v-model="property.leaseEndDate"
-                          label="Lease End Date"
-                          variant="outlined"
-                          type="date"
-                          class="custom-input mt-2"
-                          :disabled="leaseEndMode === 'na'"
-                          :rules="[]"
-                        />
-                      </v-col>
-
                       <!-- Months Missed Rent Payment -->
                       <v-col cols="12" md="6">
                         <v-text-field
@@ -190,56 +176,6 @@
                           :rules="[]"
                         />
                       </v-col>
-
-                      <!-- Contractor Requested -->
-                      <v-col cols="12" md="6">
-                        <v-select
-                          v-model="property.contractorRequested"
-                          label="Contractor Requested"
-                          variant="outlined"
-                          class="custom-input"
-                          :items="['Yes', 'No']"
-                          :rules="[]"
-                        />
-                      </v-col>
-
-                      <!-- Paid Towards Fund -->
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          v-model.number="property.paidTowardsFund"
-                          label="Paid Towards Fund"
-                          variant="outlined"
-                          type="number"
-                          class="custom-input"
-                          prefix="R"
-                          :rules="[]"
-                        />
-                      </v-col>
-
-                      <!-- Amount to be Paid Out -->
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          v-model.number="property.amountToBePaidOut"
-                          label="Amount to be Paid Out (Inc Interest)"
-                          variant="outlined"
-                          type="number"
-                          class="custom-input"
-                          prefix="R"
-                          :rules="[]"
-                        />
-                      </v-col>
-
-                      <!-- Paid Out -->
-                      <v-col cols="12" md="6">
-                        <v-select
-                          v-model="property.paidOut"
-                          label="Paid Out Yes/No"
-                          variant="outlined"
-                          class="custom-input"
-                          :items="['Yes', 'No']"
-                          :rules="[]"
-                        />
-                      </v-col>
                     </v-row>
                   </v-card-text>
                 </v-window-item>
@@ -247,7 +183,9 @@
                 <!-- Documents Tab -->
                 <v-window-item v-if="showDocumentsTab" value="documents">
                   <v-card-text>
-                    <h3 class="documents-title my-10">Upload Property Documents</h3>
+                    <h3 class="documents-title my-10">
+                      Upload Property Documents
+                    </h3>
                     <!-- Shared filters: search and month placed under header -->
                     <div class="doc-filters">
                       <v-text-field
@@ -272,11 +210,12 @@
                       />
                     </div>
                     <div class="documents-section">
-                      
                       <!-- Quotes Upload Section -->
                       <div class="document-category category-quotes">
                         <h4 class="category-title">
-                          <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                          <v-icon color="primary" class="mr-2"
+                            >mdi-file-pdf-box</v-icon
+                          >
                           Quotes
                         </h4>
                         <div class="upload-row">
@@ -299,24 +238,41 @@
                             color="black"
                             variant="elevated"
                             class="upload-doc-btn"
-                            :disabled="!newQuotes || newQuotes.length === 0 || uploadingQuotes"
+                            :disabled="
+                              !newQuotes ||
+                              newQuotes.length === 0 ||
+                              uploadingQuotes
+                            "
                             :loading="uploadingQuotes"
                             @click="uploadQuotesOnly"
                           >
                             Upload
                           </v-btn>
                         </div>
-                        <div v-if="editFilteredQuotes.length > 0" class="existing-documents">
+                        <div
+                          v-if="editFilteredQuotes.length > 0"
+                          class="existing-documents"
+                        >
                           <h5 class="existing-title">Existing Quotes:</h5>
                           <div class="document-list">
-                            <div v-for="(quote, index) in editFilteredQuotes" :key="`q-${quote.fileName}-${quote.fileURL}`" class="document-item">
-                              <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
-                              <span class="document-name">{{ quote.fileName }}</span>
+                            <div
+                              v-for="(quote, index) in editFilteredQuotes"
+                              :key="`q-${quote.fileName}-${quote.fileURL}`"
+                              class="document-item"
+                            >
+                              <v-icon color="primary" class="mr-2"
+                                >mdi-file-pdf-box</v-icon
+                              >
+                              <span class="document-name">{{
+                                quote.fileName
+                              }}</span>
                               <v-btn
                                 size="small"
                                 color="primary"
                                 variant="outlined"
-                                @click="viewDocument(quote.fileURL, quote.fileName)"
+                                @click="
+                                  viewDocument(quote.fileURL, quote.fileName)
+                                "
                                 class="view-btn"
                               >
                                 View
@@ -338,7 +294,9 @@
                       <!-- Inspections Upload Section -->
                       <div class="document-category category-inspections">
                         <h4 class="category-title">
-                          <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
+                          <v-icon color="warning" class="mr-2"
+                            >mdi-clipboard-check</v-icon
+                          >
                           Inspections
                         </h4>
                         <div class="upload-row">
@@ -361,24 +319,46 @@
                             color="black"
                             variant="elevated"
                             class="upload-doc-btn"
-                            :disabled="!newInspections || newInspections.length === 0 || uploadingInspections"
+                            :disabled="
+                              !newInspections ||
+                              newInspections.length === 0 ||
+                              uploadingInspections
+                            "
                             :loading="uploadingInspections"
                             @click="uploadInspectionsOnly"
                           >
                             Upload
                           </v-btn>
                         </div>
-                        <div v-if="editFilteredInspections.length > 0" class="existing-documents">
+                        <div
+                          v-if="editFilteredInspections.length > 0"
+                          class="existing-documents"
+                        >
                           <h5 class="existing-title">Existing Inspections:</h5>
                           <div class="document-list">
-                            <div v-for="(inspection, index) in editFilteredInspections" :key="`i-${inspection.fileName}-${inspection.fileURL}`" class="document-item">
-                              <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
-                              <span class="document-name">{{ inspection.fileName }}</span>
+                            <div
+                              v-for="(
+                                inspection, index
+                              ) in editFilteredInspections"
+                              :key="`i-${inspection.fileName}-${inspection.fileURL}`"
+                              class="document-item"
+                            >
+                              <v-icon color="warning" class="mr-2"
+                                >mdi-clipboard-check</v-icon
+                              >
+                              <span class="document-name">{{
+                                inspection.fileName
+                              }}</span>
                               <v-btn
                                 size="small"
                                 color="warning"
                                 variant="outlined"
-                                @click="viewDocument(inspection.fileURL, inspection.fileName)"
+                                @click="
+                                  viewDocument(
+                                    inspection.fileURL,
+                                    inspection.fileName
+                                  )
+                                "
                                 class="view-btn"
                               >
                                 View
@@ -387,7 +367,9 @@
                                 size="small"
                                 color="error"
                                 variant="outlined"
-                                @click="removeDocument('inspections', inspection)"
+                                @click="
+                                  removeDocument('inspections', inspection)
+                                "
                                 class="remove-btn"
                               >
                                 Delete
@@ -400,7 +382,9 @@
                       <!-- Invoices Upload Section -->
                       <div class="document-category category-invoices">
                         <h4 class="category-title">
-                          <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
+                          <v-icon color="success" class="mr-2"
+                            >mdi-receipt-text</v-icon
+                          >
                           Invoices
                         </h4>
                         <div class="upload-row">
@@ -423,24 +407,44 @@
                             color="black"
                             variant="elevated"
                             class="upload-doc-btn"
-                            :disabled="!newInvoices || newInvoices.length === 0 || uploadingInvoices"
+                            :disabled="
+                              !newInvoices ||
+                              newInvoices.length === 0 ||
+                              uploadingInvoices
+                            "
                             :loading="uploadingInvoices"
                             @click="uploadInvoicesOnly"
                           >
                             Upload
                           </v-btn>
                         </div>
-                        <div v-if="editFilteredInvoices.length > 0" class="existing-documents">
+                        <div
+                          v-if="editFilteredInvoices.length > 0"
+                          class="existing-documents"
+                        >
                           <h5 class="existing-title">Existing Invoices:</h5>
                           <div class="document-list">
-                            <div v-for="(invoice, index) in editFilteredInvoices" :key="`inv-${invoice.fileName}-${invoice.fileURL}`" class="document-item">
-                              <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
-                              <span class="document-name">{{ invoice.fileName }}</span>
+                            <div
+                              v-for="(invoice, index) in editFilteredInvoices"
+                              :key="`inv-${invoice.fileName}-${invoice.fileURL}`"
+                              class="document-item"
+                            >
+                              <v-icon color="success" class="mr-2"
+                                >mdi-receipt-text</v-icon
+                              >
+                              <span class="document-name">{{
+                                invoice.fileName
+                              }}</span>
                               <v-btn
                                 size="small"
                                 color="success"
                                 variant="outlined"
-                                @click="viewDocument(invoice.fileURL, invoice.fileName)"
+                                @click="
+                                  viewDocument(
+                                    invoice.fileURL,
+                                    invoice.fileName
+                                  )
+                                "
                                 class="view-btn"
                               >
                                 View
@@ -482,23 +486,29 @@
                   :loading="loading"
                   class="save-btn"
                 >
-                  {{ loading ? 'Saving...' : 'Save Changes' }}
+                  {{ loading ? "Saving..." : "Save Changes" }}
                 </v-btn>
               </v-card-actions>
             </v-form>
-        </div>
+          </div>
         </v-col>
       </v-row>
     </v-container>
 
     <!-- Document Viewer Dialog -->
-    <div v-if="showDocumentDialog" class="document-overlay" @click.self="showDocumentDialog = false">
+    <div
+      v-if="showDocumentDialog"
+      class="document-overlay"
+      @click.self="showDocumentDialog = false"
+    >
       <div class="document-dialog">
         <!-- colored card behind -->
         <div class="document-dialog-bg"></div>
         <!-- main white card -->
         <div class="document-dialog-inner">
-          <button class="document-close" @click="showDocumentDialog = false">&times;</button>
+          <button class="document-close" @click="showDocumentDialog = false">
+            &times;
+          </button>
 
           <div class="document-icon">
             <v-icon>mdi-file-pdf-box</v-icon>
@@ -506,14 +516,17 @@
 
           <h2 class="document-title">Document Viewer</h2>
           <p class="document-subtitle">{{ currentDocumentName }}</p>
-          
+
           <div v-if="currentDocumentURL" class="pdf-container">
             <div class="pdf-controls">
               <button class="zoom-btn" @click="zoomOut">-</button>
               <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
               <button class="zoom-btn" @click="zoomIn">+</button>
             </div>
-            <div class="pdf-wrapper" :style="{ transform: `scale(${zoomLevel})` }">
+            <div
+              class="pdf-wrapper"
+              :style="{ transform: `scale(${zoomLevel})` }"
+            >
               <iframe
                 :src="currentDocumentURL"
                 width="100%
@@ -530,12 +543,15 @@
           </div>
 
           <div class="document-actions">
-            <button class="document-button secondary" @click="showDocumentDialog = false">
+            <button
+              class="document-button secondary"
+              @click="showDocumentDialog = false"
+            >
               Close
             </button>
-            <button 
+            <button
               v-if="currentDocumentURL"
-              class="document-button primary" 
+              class="document-button primary"
               @click="openInNewTab"
             >
               Open in New Tab
@@ -548,56 +564,65 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db, storage } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { usePropertyType } from '@/composables/usePropertyType'
-import { useAppStore } from '@/stores/app'
-import { PROPERTY_TYPES } from '@/constants/propertyTypes'
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { db, storage } from "@/firebaseConfig";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { usePropertyType } from "@/composables/usePropertyType";
+import { useAppStore } from "@/stores/app";
+import { PROPERTY_TYPES } from "@/constants/propertyTypes";
 
-const COLLECTION = 'units' // <-- fix: use the same collection everywhere
-const SQUARE_METER_TYPES = [PROPERTY_TYPES.COMMERCIAL, PROPERTY_TYPES.INDUSTRIAL]
+const COLLECTION = "units"; // <-- fix: use the same collection everywhere
+const SQUARE_METER_TYPES = [
+  PROPERTY_TYPES.COMMERCIAL,
+  PROPERTY_TYPES.INDUSTRIAL,
+];
 
 export default {
-  name: 'EditPropertyPage',
+  name: "EditPropertyPage",
   setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getOptions } = usePropertyType()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getOptions }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    const { getOptions } = usePropertyType();
+    return {
+      showSuccessDialog,
+      showErrorDialog,
+      logAuditEvent,
+      auditActions,
+      resourceTypes,
+      getOptions,
+    };
   },
   data() {
     return {
       property: {
-        id: '',
-        tenantRef: '',
-        propertyName: '',
-        propertyType: '',
+        id: "",
+        tenantRef: "",
+        propertyName: "",
+        propertyType: "",
         squareMeterage: null,
-        newOccupation: '',
-        leaseStartDate: '',
-        leaseEndDate: '',
+        newOccupation: "",
+        leaseStartDate: "",
         isFlagged: false,
         monthsMissed: 0,
         maintenanceAmount: 0,
-        contractorRequested: '',
-        paidTowardsFund: 0,
-        amountToBePaidOut: 0,
-        paidOut: '',
         quotes: [],
         inspections: [],
-        invoices: []
+        invoices: [],
       },
       loading: true,
       error: null,
       valid: true,
-      activeTab: 'details',
-      leaseEndMode: 'date',
+      activeTab: "details",
       showDocumentDialog: false,
-      currentDocumentURL: '',
-      currentDocumentName: '',
+      currentDocumentURL: "",
+      currentDocumentName: "",
       zoomLevel: 1,
       newQuotes: [],
       newInspections: [],
@@ -607,214 +632,218 @@ export default {
       uploadingInvoices: false,
       fileInputKey: 0, // Key to force re-render of file inputs
       // Shared docs filters in edit
-      docFilterMonth: '',
-      docFilterSearch: '',
+      docFilterMonth: "",
+      docFilterSearch: "",
       // Flag dropdown options
       flagOptions: [
-        { title: 'No', value: false },
-        { title: 'Yes', value: true }
+        { title: "No", value: false },
+        { title: "Yes", value: true },
       ],
       // Validation rules
       tenantRefRules: [
-        v => !!v || 'Tenant Reference is required',
-        v => v.length >= 2 || 'Tenant Reference must be at least 2 characters'
+        (v) => !!v || "Tenant Reference is required",
+        (v) =>
+          v.length >= 2 || "Tenant Reference must be at least 2 characters",
       ],
       propertyNameRules: [
-        v => !!v || 'Property Name is required',
-        v => v.length >= 5 || 'Property Name must be at least 5 characters'
+        (v) => !!v || "Property Name is required",
+        (v) => v.length >= 5 || "Property Name must be at least 5 characters",
       ],
-      newOccupationRules: [
-        v => !!v || 'New Occupation is required'
-      ],
-      leaseStartDateRules: [
-        v => !!v || 'Lease Start Date is required'
-      ],
-      leaseEndDateRules: [
-        v => !!v || 'Lease End Date is required'
-      ],
+      newOccupationRules: [(v) => !!v || "New Occupation is required"],
+      leaseStartDateRules: [(v) => !!v || "Lease Start Date is required"],
+      leaseEndDateRules: [(v) => !!v || "Lease End Date is required"],
       monthsMissedRules: [
-        v => v >= 0 || 'Months Missed cannot be negative',
-        v => v <= 12 || 'Months Missed cannot exceed 12'
+        (v) => v >= 0 || "Months Missed cannot be negative",
+        (v) => v <= 12 || "Months Missed cannot exceed 12",
       ],
       maintenanceAmountRules: [
-        v => v >= 0 || 'Maintenance Amount cannot be negative'
+        (v) => v >= 0 || "Maintenance Amount cannot be negative",
       ],
-      contractorRequestedRules: [
-        v => !!v || 'Contractor Requested is required'
-      ],
-      paidTowardsFundRules: [
-        v => v >= 0 || 'Paid Towards Fund cannot be negative'
-      ],
-      amountToBePaidOutRules: [
-        v => v >= 0 || 'Amount to be Paid Out cannot be negative'
-      ],
-      paidOutRules: [
-        v => !!v || 'Paid Out is required'
-      ],
-      propertyTypeRules: [
-        v => !!v || 'Property Type is required'
-      ],
+      propertyTypeRules: [(v) => !!v || "Property Type is required"],
       quoteFileRules: [
-        v => !v || v.length === 0 || v.every(file => file.size <= 50 * 1024 * 1024) || "Each file must be less than 50MB",
-        v => !v || v.length === 0 || v.every(file => file.type === 'application/pdf') || "Only PDF files are allowed"
+        (v) =>
+          !v ||
+          v.length === 0 ||
+          v.every((file) => file.size <= 50 * 1024 * 1024) ||
+          "Each file must be less than 50MB",
+        (v) =>
+          !v ||
+          v.length === 0 ||
+          v.every((file) => file.type === "application/pdf") ||
+          "Only PDF files are allowed",
       ],
       inspectionFileRules: [
-        v => !v || v.length === 0 || v.every(file => file.size <= 50 * 1024 * 1024) || "Each file must be less than 50MB",
-        v => !v || v.length === 0 || v.every(file => file.type === 'application/pdf') || "Only PDF files are allowed"
+        (v) =>
+          !v ||
+          v.length === 0 ||
+          v.every((file) => file.size <= 50 * 1024 * 1024) ||
+          "Each file must be less than 50MB",
+        (v) =>
+          !v ||
+          v.length === 0 ||
+          v.every((file) => file.type === "application/pdf") ||
+          "Only PDF files are allowed",
       ],
       invoiceFileRules: [
-        v => !v || v.length === 0 || v.every(file => file.size <= 50 * 1024 * 1024) || "Each file must be less than 50MB",
-        v => !v || v.length === 0 || v.every(file => file.type === 'application/pdf') || "Only PDF files are allowed"
+        (v) =>
+          !v ||
+          v.length === 0 ||
+          v.every((file) => file.size <= 50 * 1024 * 1024) ||
+          "Each file must be less than 50MB",
+        (v) =>
+          !v ||
+          v.length === 0 ||
+          v.every((file) => file.type === "application/pdf") ||
+          "Only PDF files are allowed",
       ],
-      leaseEndModeOptions: [
-        { title: 'Date', value: 'date' },
-        { title: 'Not Applicable', value: 'na' }
-      ]
-    }
+    };
   },
   computed: {
     requiresSquareMeterage() {
-      return this.requiresSquareMeterageFor(this.property.propertyType)
+      return this.requiresSquareMeterageFor(this.property.propertyType);
     },
     showDetailsTab() {
-      const lock = this.$route?.query?.lock
-      return !lock || lock === 'details'
+      const lock = this.$route?.query?.lock;
+      return !lock || lock === "details";
     },
     showDocumentsTab() {
-      const lock = this.$route?.query?.lock
-      return !lock || lock === 'documents'
+      const lock = this.$route?.query?.lock;
+      return !lock || lock === "documents";
     },
     isLockedDetails() {
-      const lock = this.$route?.query?.lock
-      return lock === 'details'
+      const lock = this.$route?.query?.lock;
+      return lock === "details";
     },
     propertyTypeOptions() {
       return this.getOptions();
     },
-    leaseEndDateRulesComputed() {
-      // Allow empty when N/A is selected
-      if (this.leaseEndNotApplicable) return [];
-      return this.leaseEndDateRules;
-    },
     editFilteredQuotes() {
-      return this.filterDocs(this.property?.quotes || [])
+      return this.filterDocs(this.property?.quotes || []);
     },
     editFilteredInspections() {
-      return this.filterDocs(this.property?.inspections || [])
+      return this.filterDocs(this.property?.inspections || []);
     },
     editFilteredInvoices() {
-      return this.filterDocs(this.property?.invoices || [])
-    }
+      return this.filterDocs(this.property?.invoices || []);
+    },
   },
   async mounted() {
-    console.log('EditPropertyPage mounted');
-    document.title = 'Edit Property - Depsure';
+    console.log("EditPropertyPage mounted");
+    document.title = "Edit Property - Depsure";
     try {
-      const tab = this.$route?.query?.tab
-      if (tab === 'documents' || tab === 'details') this.activeTab = tab
-    } catch(_) {}
+      const tab = this.$route?.query?.tab;
+      if (tab === "documents" || tab === "details") this.activeTab = tab;
+    } catch (_) {}
     const propertyId = this.$route.params.id;
-    console.log('Property ID from route:', propertyId);
+    console.log("Property ID from route:", propertyId);
     if (propertyId) {
       await this.loadPropertyData(propertyId);
     } else {
-      console.log('No property ID found in route params');
-      this.error = 'No property ID provided';
+      console.log("No property ID found in route params");
+      this.error = "No property ID provided";
       this.loading = false;
     }
   },
   watch: {
-    leaseEndMode(newVal) {
-      if (newVal === 'na') this.property.leaseEndDate = '';
-    },
-    '$route.query.tab'(newTab) {
-      if (newTab === 'documents' || newTab === 'details') {
+    "$route.query.tab"(newTab) {
+      if (newTab === "documents" || newTab === "details") {
         this.activeTab = newTab;
       }
-    }
+    },
   },
   methods: {
     requiresSquareMeterageFor(type) {
-      return SQUARE_METER_TYPES.includes(type)
+      return SQUARE_METER_TYPES.includes(type);
     },
     parseSquareMeterage(value) {
-      if (value === null || value === undefined || value === '') return null
-      const numeric = typeof value === 'number' ? value : Number(value)
-      return Number.isFinite(numeric) && numeric > 0 ? numeric : null
+      if (value === null || value === undefined || value === "") return null;
+      const numeric = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
     },
     validateSquareMeterage(value) {
-      if (!this.requiresSquareMeterage) return true
-      if (value === null || value === undefined || value === '') {
-        return 'Square meterage is required'
+      if (!this.requiresSquareMeterage) return true;
+      if (value === null || value === undefined || value === "") {
+        return "Square meterage is required";
       }
-      const parsed = this.parseSquareMeterage(value)
-      if (parsed === null) return 'Enter a valid square meterage greater than 0'
-      return true
+      const parsed = this.parseSquareMeterage(value);
+      if (parsed === null)
+        return "Enter a valid square meterage greater than 0";
+      return true;
     },
     onPropertyTypeChange(value) {
       if (!this.requiresSquareMeterageFor(value)) {
-        this.property.squareMeterage = null
+        this.property.squareMeterage = null;
       }
     },
     goBack() {
       try {
         const appStore = useAppStore();
         const user = appStore.currentUser;
-        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
-        if (isAgency) { this.$router.push('/onboard-units'); return }
-      } catch(_) {}
-      this.$router.push('/active-units')
+        const isAgency =
+          user?.userType === "Agency" ||
+          (user?.userType === "Admin" && user?.adminScope === "agency");
+        if (isAgency) {
+          this.$router.push("/onboard-units");
+          return;
+        }
+      } catch (_) {}
+      this.$router.push("/active-units");
     },
     gotoDocumentsLock() {
       // Work exactly like the onboard units viewDocuments method
-      this.$router.push({ 
-        path: this.$route.path, 
-        query: { tab: 'documents', lock: 'documents', from: 'edit' } 
-      })
+      this.$router.push({
+        path: this.$route.path,
+        query: { tab: "documents", lock: "documents", from: "edit" },
+      });
     },
     // Reuse the same helpers used on view page
     resolveDocDate(entry) {
       if (!entry) return null;
-      const v = entry.uploadedAt || entry.createdAt || entry.date || entry.timestamp || null;
+      const v =
+        entry.uploadedAt ||
+        entry.createdAt ||
+        entry.date ||
+        entry.timestamp ||
+        null;
       if (!v) return null;
       try {
-        if (typeof v.toDate === 'function') return v.toDate();
-        if (typeof v === 'number') return new Date(v);
+        if (typeof v.toDate === "function") return v.toDate();
+        if (typeof v === "number") return new Date(v);
         return new Date(v);
       } catch {
         return null;
       }
     },
     monthKey(d) {
-      if (!d || isNaN(d.getTime())) return '';
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!d || isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     },
     latestMonthFrom(docs) {
       const keys = (docs || [])
-        .map(e => this.resolveDocDate(e))
+        .map((e) => this.resolveDocDate(e))
         .filter(Boolean)
-        .map(d => this.monthKey(d));
-      if (!keys.length) return '';
+        .map((d) => this.monthKey(d));
+      if (!keys.length) return "";
       return keys.sort().pop();
     },
     filterDocs(docs) {
       if (!Array.isArray(docs) || docs.length === 0) return [];
-      
+
       // If there's an active search or month filter, show all matching results
       const hasActiveFilter = this.docFilterMonth || this.docFilterSearch;
-      
+
       if (hasActiveFilter) {
-        const month = this.docFilterMonth || '';
-        const term = (this.docFilterSearch || '').toLowerCase();
-        return docs.filter(e => {
+        const month = this.docFilterMonth || "";
+        const term = (this.docFilterSearch || "").toLowerCase();
+        return docs.filter((e) => {
           const d = this.monthKey(this.resolveDocDate(e));
           const monthMatch = month ? d === month : true;
-          const name = (e.fileName || e.name || '').toLowerCase();
+          const name = (e.fileName || e.name || "").toLowerCase();
           const searchMatch = term ? name.includes(term) : true;
           return monthMatch && searchMatch;
         });
       }
-      
+
       // No active filter: limit to last 3 documents by upload date
       const sorted = [...docs].sort((a, b) => {
         const dateA = this.resolveDocDate(a);
@@ -824,14 +853,14 @@ export default {
         if (!dateB) return -1;
         return dateB.getTime() - dateA.getTime(); // Newest first
       });
-      
+
       return sorted.slice(0, 3);
     },
     async loadPropertyData(propertyId) {
       this.loading = true;
       this.error = null;
       try {
-        console.log('Loading property data for ID:', propertyId);
+        console.log("Loading property data for ID:", propertyId);
         const propertyDoc = await getDoc(doc(db, COLLECTION, propertyId));
         if (propertyDoc.exists()) {
           const propertyData = propertyDoc.data();
@@ -840,51 +869,62 @@ export default {
             quotes: [],
             inspections: [],
             invoices: [],
-            ...propertyData
+            ...propertyData,
           };
-          console.log('Property loaded successfully:', this.property);
+          console.log("Property loaded successfully:", this.property);
 
           // Defaults
-          this.property.tenantRef = this.property.tenantRef || '';
-          this.property.propertyName = this.property.propertyName || '';
-          this.property.propertyType = this.property.propertyType || '';
-          this.property.newOccupation = this.property.newOccupation || '';
-          this.property.leaseStartDate = this.property.leaseStartDate || '';
-          this.property.leaseEndDate = this.property.leaseEndDate || '';
+          this.property.tenantRef = this.property.tenantRef || "";
+          this.property.propertyName = this.property.propertyName || "";
+          this.property.propertyType = this.property.propertyType || "";
+          this.property.newOccupation = this.property.newOccupation || "";
+          this.property.leaseStartDate = this.property.leaseStartDate || "";
           this.property.monthsMissed = this.property.monthsMissed || 0;
-          this.property.maintenanceAmount = this.property.maintenanceAmount || 0;
-          this.property.contractorRequested = this.property.contractorRequested || '';
-          this.property.paidTowardsFund = this.property.paidTowardsFund || 0;
-          this.property.amountToBePaidOut = this.property.amountToBePaidOut || 0;
-          this.property.paidOut = this.property.paidOut || '';
-          this.property.isFlagged = (this.property.isFlagged === true || this.property.isFlagged === 'Yes') ? true : false;
-          const normalizedSquare = this.parseSquareMeterage(this.property.squareMeterage)
-          this.property.squareMeterage = this.requiresSquareMeterageFor(this.property.propertyType)
-            ? (normalizedSquare ?? this.property.squareMeterage ?? null)
+          this.property.maintenanceAmount =
+            this.property.maintenanceAmount || 0;
+          this.property.isFlagged =
+            this.property.isFlagged === true ||
+            this.property.isFlagged === "Yes"
+              ? true
+              : false;
+          const normalizedSquare = this.parseSquareMeterage(
+            this.property.squareMeterage
+          );
+          this.property.squareMeterage = this.requiresSquareMeterageFor(
+            this.property.propertyType
+          )
+            ? normalizedSquare ?? this.property.squareMeterage ?? null
             : null;
 
-          // Set lease end mode based on data
-          this.leaseEndMode = (this.property.leaseEndNotApplicable || !this.property.leaseEndDate) ? 'na' : 'date';
-
           // Normalize existing doc arrays to objects with storagePath if missing (best-effort)
-          ['quotes','inspections','invoices'].forEach(type => {
-            this.property[type] = (this.property[type] || []).map(item => {
-              if (!item) return null;
-              const normalized = { ...item };
-              if (!normalized.storagePath && normalized.fileURL) {
-                normalized.storagePath = this.safeParseStoragePathFromUrl(normalized.fileURL, this.property.id, type, normalized.fileName);
-              }
-              return normalized;
-            }).filter(Boolean);
+          ["quotes", "inspections", "invoices"].forEach((type) => {
+            this.property[type] = (this.property[type] || [])
+              .map((item) => {
+                if (!item) return null;
+                const normalized = { ...item };
+                if (!normalized.storagePath && normalized.fileURL) {
+                  normalized.storagePath = this.safeParseStoragePathFromUrl(
+                    normalized.fileURL,
+                    this.property.id,
+                    type,
+                    normalized.fileName
+                  );
+                }
+                return normalized;
+              })
+              .filter(Boolean);
           });
 
-          console.log('Property data after defaults/normalization:', this.property);
+          console.log(
+            "Property data after defaults/normalization:",
+            this.property
+          );
         } else {
-          this.error = 'Property not found';
-          console.log('Property not found in Firestore');
+          this.error = "Property not found";
+          console.log("Property not found in Firestore");
         }
       } catch (error) {
-        console.error('Error loading property:', error);
+        console.error("Error loading property:", error);
         this.error = `Failed to load property details: ${error.message}`;
       } finally {
         this.loading = false;
@@ -894,158 +934,174 @@ export default {
     // Robust URL → storage path decoder for older docs
     safeParseStoragePathFromUrl(fileURL, propertyId, type, fileName) {
       try {
-        if (!fileURL) return '';
+        if (!fileURL) return "";
         const u = new URL(fileURL);
         // Typical: https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<ENCODED_PATH>?alt=media&token=...
-        const parts = u.pathname.split('/');
-        const oIndex = parts.indexOf('o');
+        const parts = u.pathname.split("/");
+        const oIndex = parts.indexOf("o");
         if (oIndex !== -1 && parts[oIndex + 1]) {
           const encoded = parts[oIndex + 1];
           // strip query bits if present (rare in pathname)
-          const pure = encoded.split('?')[0];
+          const pure = encoded.split("?")[0];
           const decoded = decodeURIComponent(pure);
-          if (decoded && decoded.includes('/')) {
+          if (decoded && decoded.includes("/")) {
             return decoded; // full path like property-documents/<id>/<type>/<ts>_<name>.pdf
           }
         }
         // Fallback: last segment filename (lossy if you used a ts prefix in storage)
-        const last = u.pathname.split('/').pop() || '';
-        const clean = last.split('?')[0];
-        if (clean && clean !== '') {
+        const last = u.pathname.split("/").pop() || "";
+        const clean = last.split("?")[0];
+        if (clean && clean !== "") {
           return `property-documents/${propertyId}/${type}/${clean}`;
         }
       } catch (e) {
-        console.warn('safeParseStoragePathFromUrl failed, using fallback', e);
+        console.warn("safeParseStoragePathFromUrl failed, using fallback", e);
       }
       // ultimate fallback (very lossy)
-      return `property-documents/${propertyId}/${type}/${fileName || 'unknown.pdf'}`;
+      return `property-documents/${propertyId}/${type}/${
+        fileName || "unknown.pdf"
+      }`;
     },
 
     async saveProperty() {
       // Allow saving without mandatory field validation
       this.loading = true;
       try {
-          console.log('Saving property:', this.property);
-          if (!this.property.id) throw new Error('Property ID is missing');
+        console.log("Saving property:", this.property);
+        if (!this.property.id) throw new Error("Property ID is missing");
 
-          // Documents are uploaded individually now, so skip the uploadDocuments call
-          // Just save the property details and existing document arrays as-is
+        // Documents are uploaded individually now, so skip the uploadDocuments call
+        // Just save the property details and existing document arrays as-is
 
-          // Build payload without id
-          const { id, ...propertyDataBase } = this.property;
-          const updatedAt = new Date();
+        // Build payload without id
+        const { id, ...propertyDataBase } = this.property;
+        const updatedAt = new Date();
 
-          const propertyData = {
-            ...propertyDataBase,
-            updatedAt
-          };
-          const squareMeterageRequired = this.requiresSquareMeterageFor(propertyData.propertyType)
-          const normalizedSquareMeterage = squareMeterageRequired ? this.parseSquareMeterage(this.property.squareMeterage) : null
-          if (squareMeterageRequired && normalizedSquareMeterage === null) {
-            this.loading = false
-            this.showErrorDialog('Square meterage is required for commercial or industrial units.', 'Validation Error', 'OK')
-            return
-          }
-          propertyData.squareMeterage = squareMeterageRequired ? normalizedSquareMeterage : null
-          this.property.squareMeterage = propertyData.squareMeterage
-
-          // Apply Lease End union and flag values
-          propertyData.leaseEndNotApplicable = this.leaseEndMode === 'na';
-          if (this.leaseEndMode === 'na') {
-            propertyData.leaseEndDate = '';
-          }
-
-          // Handle flag status changes - sync with flaggedUnits collection
-          await this.syncFlagStatus(id, propertyData.isFlagged, propertyData);
-
-          // Log update
-          await this.logAuditEvent(
-            this.auditActions.UPDATE,
-            {
-              unitId: id,
-              unitName: propertyData.propertyName,
-              tenantRef: propertyData.tenantRef,
-              updatedFields: Object.keys(propertyData),
-              updatedData: propertyData
-            },
-            this.resourceTypes.UNIT,
-            id
-          );
-
-          // Update Firestore (CORRECT COLLECTION)
-          await updateDoc(doc(db, COLLECTION, id), propertyData);
-
-          console.log('Property updated successfully');
-          this.showSuccessDialog('Property saved successfully!', 'Success!', 'Continue', `/view-property-${id}`);
-        } catch (error) {
-          console.error('Error saving property:', error);
-          this.showErrorDialog(`Failed to save property: ${error.message}`, 'Error', 'OK');
-        } finally {
+        const propertyData = {
+          ...propertyDataBase,
+          updatedAt,
+        };
+        const squareMeterageRequired = this.requiresSquareMeterageFor(
+          propertyData.propertyType
+        );
+        const normalizedSquareMeterage = squareMeterageRequired
+          ? this.parseSquareMeterage(this.property.squareMeterage)
+          : null;
+        if (squareMeterageRequired && normalizedSquareMeterage === null) {
           this.loading = false;
+          this.showErrorDialog(
+            "Square meterage is required for commercial or industrial units.",
+            "Validation Error",
+            "OK"
+          );
+          return;
         }
+        propertyData.squareMeterage = squareMeterageRequired
+          ? normalizedSquareMeterage
+          : null;
+        this.property.squareMeterage = propertyData.squareMeterage;
+
+        // Handle flag status changes - sync with flaggedUnits collection
+        await this.syncFlagStatus(id, propertyData.isFlagged, propertyData);
+
+        // Log update
+        await this.logAuditEvent(
+          this.auditActions.UPDATE,
+          {
+            unitId: id,
+            unitName: propertyData.propertyName,
+            tenantRef: propertyData.tenantRef,
+            updatedFields: Object.keys(propertyData),
+            updatedData: propertyData,
+          },
+          this.resourceTypes.UNIT,
+          id
+        );
+
+        // Update Firestore (CORRECT COLLECTION)
+        await updateDoc(doc(db, COLLECTION, id), propertyData);
+
+        console.log("Property updated successfully");
+        this.showSuccessDialog(
+          "Property saved successfully!",
+          "Success!",
+          "Continue",
+          `/view-property-${id}`
+        );
+      } catch (error) {
+        console.error("Error saving property:", error);
+        this.showErrorDialog(
+          `Failed to save property: ${error.message}`,
+          "Error",
+          "OK"
+        );
+      } finally {
+        this.loading = false;
+      }
     },
 
     async syncFlagStatus(unitId, isFlagged, propertyData) {
       try {
         // Import required Firestore functions
-        const { collection, query, where, getDocs, addDoc, deleteDoc, doc } = await import('firebase/firestore');
-        
+        const { collection, query, where, getDocs, addDoc, deleteDoc, doc } =
+          await import("firebase/firestore");
+
         // Check if flagged unit entry exists
         const flaggedQuery = query(
-          collection(db, 'flaggedUnits'),
-          where('unitId', '==', unitId)
+          collection(db, "flaggedUnits"),
+          where("unitId", "==", unitId)
         );
         const flaggedSnapshot = await getDocs(flaggedQuery);
-        
+
         if (isFlagged && flaggedSnapshot.empty) {
           // Unit was flagged but no entry exists - create one
-          console.log('Creating flagged unit entry for:', unitId);
+          console.log("Creating flagged unit entry for:", unitId);
           const flaggedUnitData = {
-            agencyId: propertyData.agencyId || '',
+            agencyId: propertyData.agencyId || "",
             unitId: unitId,
-            unitName: propertyData.propertyName || '',
-            tenantRef: propertyData.tenantRef || '',
-            leaseStartDate: propertyData.leaseStartDate || '',
-            flagReason: 'Flagged via Edit Property',
+            unitName: propertyData.propertyName || "",
+            tenantRef: propertyData.tenantRef || "",
+            leaseStartDate: propertyData.leaseStartDate || "",
+            flagReason: "Flagged via Edit Property",
             dateFlagged: new Date().toISOString().slice(0, 10),
-            missedPaymentFlag: propertyData.monthsMissed > 0 ? 'Yes' : 'No',
-            noticeToVacateGiven: '',
-            actionTaken: '',
-            notes: '',
-            propertyType: propertyData.propertyType || 'residential',
+            missedPaymentFlag: propertyData.monthsMissed > 0 ? "Yes" : "No",
+            noticeToVacateGiven: "",
+            actionTaken: "",
+            notes: "",
+            propertyType: propertyData.propertyType || "residential",
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
           };
-          await addDoc(collection(db, 'flaggedUnits'), flaggedUnitData);
-          console.log('Flagged unit entry created successfully');
+          await addDoc(collection(db, "flaggedUnits"), flaggedUnitData);
+          console.log("Flagged unit entry created successfully");
         } else if (!isFlagged && !flaggedSnapshot.empty) {
           // Unit was unflagged and entry exists - remove it
-          console.log('Removing flagged unit entry for:', unitId);
+          console.log("Removing flagged unit entry for:", unitId);
           for (const flaggedDoc of flaggedSnapshot.docs) {
-            await deleteDoc(doc(db, 'flaggedUnits', flaggedDoc.id));
+            await deleteDoc(doc(db, "flaggedUnits", flaggedDoc.id));
           }
-          console.log('Flagged unit entry removed successfully');
+          console.log("Flagged unit entry removed successfully");
         } else if (isFlagged && !flaggedSnapshot.empty) {
           // Unit is flagged and entry exists - update it
-          console.log('Updating flagged unit entry for:', unitId);
+          console.log("Updating flagged unit entry for:", unitId);
           const flaggedDoc = flaggedSnapshot.docs[0];
-          const { updateDoc } = await import('firebase/firestore');
-          await updateDoc(doc(db, 'flaggedUnits', flaggedDoc.id), {
-            unitName: propertyData.propertyName || '',
-            tenantRef: propertyData.tenantRef || '',
-            leaseStartDate: propertyData.leaseStartDate || '',
-            missedPaymentFlag: propertyData.monthsMissed > 0 ? 'Yes' : 'No',
-            propertyType: propertyData.propertyType || 'residential',
-            updatedAt: new Date()
+          const { updateDoc } = await import("firebase/firestore");
+          await updateDoc(doc(db, "flaggedUnits", flaggedDoc.id), {
+            unitName: propertyData.propertyName || "",
+            tenantRef: propertyData.tenantRef || "",
+            leaseStartDate: propertyData.leaseStartDate || "",
+            missedPaymentFlag: propertyData.monthsMissed > 0 ? "Yes" : "No",
+            propertyType: propertyData.propertyType || "residential",
+            updatedAt: new Date(),
           });
-          console.log('Flagged unit entry updated successfully');
+          console.log("Flagged unit entry updated successfully");
         }
       } catch (error) {
-        console.error('Error syncing flag status:', error);
+        console.error("Error syncing flag status:", error);
         // Don't throw - allow the save to continue even if flag sync fails
       }
     },
-    
+
     async uploadDocuments() {
       const result = { quotes: [], inspections: [], invoices: [] };
 
@@ -1056,29 +1112,54 @@ export default {
         try {
           for (const file of files) {
             const ts = Date.now();
-            const fileRef = ref(storage, `property-documents/${this.property.id}/${type}/${ts}_${file.name}`);
+            const fileRef = ref(
+              storage,
+              `property-documents/${this.property.id}/${type}/${ts}_${file.name}`
+            );
             const snapshot = await uploadBytes(fileRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
             const storagePath = snapshot.ref.fullPath; // <- authoritative path
             result[type].push({
               fileName: file.name,
               fileURL: downloadURL,
-              storagePath,           // <- store this!
-              uploadedAt: new Date().toISOString()
+              storagePath, // <- store this!
+              uploadedAt: new Date().toISOString(),
             });
           }
         } catch (error) {
           console.error(`Error uploading ${type}:`, error);
-          this.showErrorDialog(`Failed to upload ${type} documents.`, 'Upload Error', 'OK');
+          this.showErrorDialog(
+            `Failed to upload ${type} documents.`,
+            "Upload Error",
+            "OK"
+          );
           return false;
         } finally {
           this[loadingKey] = false;
         }
       };
 
-      if (await uploadBatch(this.newQuotes, 'quotes', 'uploadingQuotes') === false) return false;
-      if (await uploadBatch(this.newInspections, 'inspections', 'uploadingInspections') === false) return false;
-      if (await uploadBatch(this.newInvoices, 'invoices', 'uploadingInvoices') === false) return false;
+      if (
+        (await uploadBatch(this.newQuotes, "quotes", "uploadingQuotes")) ===
+        false
+      )
+        return false;
+      if (
+        (await uploadBatch(
+          this.newInspections,
+          "inspections",
+          "uploadingInspections"
+        )) === false
+      )
+        return false;
+      if (
+        (await uploadBatch(
+          this.newInvoices,
+          "invoices",
+          "uploadingInvoices"
+        )) === false
+      )
+        return false;
 
       // clear the pickers after success and force re-render with key change
       this.$nextTick(() => {
@@ -1093,13 +1174,16 @@ export default {
 
     async uploadQuotesOnly() {
       if (!this.newQuotes || this.newQuotes.length === 0) return;
-      
+
       this.uploadingQuotes = true;
       try {
         const uploaded = [];
         for (const file of this.newQuotes) {
           const ts = Date.now();
-          const fileRef = ref(storage, `property-documents/${this.property.id}/quotes/${ts}_${file.name}`);
+          const fileRef = ref(
+            storage,
+            `property-documents/${this.property.id}/quotes/${ts}_${file.name}`
+          );
           const snapshot = await uploadBytes(fileRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
           const storagePath = snapshot.ref.fullPath;
@@ -1107,28 +1191,36 @@ export default {
             fileName: file.name,
             fileURL: downloadURL,
             storagePath,
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
           });
         }
-        
+
         // Merge with existing quotes
         const updatedQuotes = [...(this.property.quotes || []), ...uploaded];
         this.property.quotes = updatedQuotes;
-        
+
         // Update Firestore immediately
         await updateDoc(doc(db, COLLECTION, this.property.id), {
           quotes: updatedQuotes,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
-        
+
         // Reset file input immediately
         this.newQuotes = [];
         this.fileInputKey++;
-        
-        this.showSuccessDialog(`${uploaded.length} quote(s) uploaded successfully!`, 'Success', 'OK');
+
+        this.showSuccessDialog(
+          `${uploaded.length} quote(s) uploaded successfully!`,
+          "Success",
+          "OK"
+        );
       } catch (error) {
-        console.error('Error uploading quotes:', error);
-        this.showErrorDialog('Failed to upload quotes. Please try again.', 'Error', 'OK');
+        console.error("Error uploading quotes:", error);
+        this.showErrorDialog(
+          "Failed to upload quotes. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
         this.uploadingQuotes = false;
       }
@@ -1136,13 +1228,16 @@ export default {
 
     async uploadInspectionsOnly() {
       if (!this.newInspections || this.newInspections.length === 0) return;
-      
+
       this.uploadingInspections = true;
       try {
         const uploaded = [];
         for (const file of this.newInspections) {
           const ts = Date.now();
-          const fileRef = ref(storage, `property-documents/${this.property.id}/inspections/${ts}_${file.name}`);
+          const fileRef = ref(
+            storage,
+            `property-documents/${this.property.id}/inspections/${ts}_${file.name}`
+          );
           const snapshot = await uploadBytes(fileRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
           const storagePath = snapshot.ref.fullPath;
@@ -1150,28 +1245,39 @@ export default {
             fileName: file.name,
             fileURL: downloadURL,
             storagePath,
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
           });
         }
-        
+
         // Merge with existing inspections
-        const updatedInspections = [...(this.property.inspections || []), ...uploaded];
+        const updatedInspections = [
+          ...(this.property.inspections || []),
+          ...uploaded,
+        ];
         this.property.inspections = updatedInspections;
-        
+
         // Update Firestore immediately
         await updateDoc(doc(db, COLLECTION, this.property.id), {
           inspections: updatedInspections,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
-        
+
         // Reset file input immediately
         this.newInspections = [];
         this.fileInputKey++;
-        
-        this.showSuccessDialog(`${uploaded.length} inspection(s) uploaded successfully!`, 'Success', 'OK');
+
+        this.showSuccessDialog(
+          `${uploaded.length} inspection(s) uploaded successfully!`,
+          "Success",
+          "OK"
+        );
       } catch (error) {
-        console.error('Error uploading inspections:', error);
-        this.showErrorDialog('Failed to upload inspections. Please try again.', 'Error', 'OK');
+        console.error("Error uploading inspections:", error);
+        this.showErrorDialog(
+          "Failed to upload inspections. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
         this.uploadingInspections = false;
       }
@@ -1179,13 +1285,16 @@ export default {
 
     async uploadInvoicesOnly() {
       if (!this.newInvoices || this.newInvoices.length === 0) return;
-      
+
       this.uploadingInvoices = true;
       try {
         const uploaded = [];
         for (const file of this.newInvoices) {
           const ts = Date.now();
-          const fileRef = ref(storage, `property-documents/${this.property.id}/invoices/${ts}_${file.name}`);
+          const fileRef = ref(
+            storage,
+            `property-documents/${this.property.id}/invoices/${ts}_${file.name}`
+          );
           const snapshot = await uploadBytes(fileRef, file);
           const downloadURL = await getDownloadURL(snapshot.ref);
           const storagePath = snapshot.ref.fullPath;
@@ -1193,72 +1302,84 @@ export default {
             fileName: file.name,
             fileURL: downloadURL,
             storagePath,
-            uploadedAt: new Date().toISOString()
+            uploadedAt: new Date().toISOString(),
           });
         }
-        
+
         // Merge with existing invoices
-        const updatedInvoices = [...(this.property.invoices || []), ...uploaded];
+        const updatedInvoices = [
+          ...(this.property.invoices || []),
+          ...uploaded,
+        ];
         this.property.invoices = updatedInvoices;
-        
+
         // Update Firestore immediately
         await updateDoc(doc(db, COLLECTION, this.property.id), {
           invoices: updatedInvoices,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
-        
+
         // Reset file input immediately
         this.newInvoices = [];
         this.fileInputKey++;
-        
-        this.showSuccessDialog(`${uploaded.length} invoice(s) uploaded successfully!`, 'Success', 'OK');
+
+        this.showSuccessDialog(
+          `${uploaded.length} invoice(s) uploaded successfully!`,
+          "Success",
+          "OK"
+        );
       } catch (error) {
-        console.error('Error uploading invoices:', error);
-        this.showErrorDialog('Failed to upload invoices. Please try again.', 'Error', 'OK');
+        console.error("Error uploading invoices:", error);
+        this.showErrorDialog(
+          "Failed to upload invoices. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
         this.uploadingInvoices = false;
       }
     },
-    
+
     viewDocument(fileURL, fileName) {
       this.currentDocumentURL = fileURL;
       this.currentDocumentName = fileName;
       this.showDocumentDialog = true;
     },
-    
+
     openInNewTab() {
       if (this.currentDocumentURL) {
-        window.open(this.currentDocumentURL, '_blank');
+        window.open(this.currentDocumentURL, "_blank");
       }
     },
-    
+
     zoomIn() {
       if (this.zoomLevel < 2) {
         this.zoomLevel += 0.1;
       }
     },
-    
+
     zoomOut() {
       if (this.zoomLevel > 0.5) {
         this.zoomLevel -= 0.1;
       }
     },
-    
+
     async removeDocument(type, documentToRemove) {
       if (!this.property || !this.property.id) {
-        console.error('Property not loaded or invalid property ID');
+        console.error("Property not loaded or invalid property ID");
         return;
       }
-      
+
       // Find the actual index in the original array
       const originalArray = this.property[type] || [];
-      const index = originalArray.findIndex(doc => 
-        doc.fileName === documentToRemove.fileName && 
-        doc.fileURL === documentToRemove.fileURL
+      const index = originalArray.findIndex(
+        (doc) =>
+          doc.fileName === documentToRemove.fileName &&
+          doc.fileURL === documentToRemove.fileURL
       );
-      
+
       if (index === -1) {
-        console.error('Document not found in property data');
+        console.error("Document not found in property data");
         return;
       }
 
@@ -1268,30 +1389,43 @@ export default {
       // Show confirmation dialog
       const confirmed = await this.showConfirmDialog(
         `Are you sure you want to delete "${documentName}"?`,
-        'Delete Document',
-        'This action cannot be undone.'
+        "Delete Document",
+        "This action cannot be undone."
       );
       if (!confirmed) return;
 
       // Compute storagePath reliably
       let storagePath = document.storagePath;
       if (!storagePath && document.fileURL) {
-        storagePath = this.safeParseStoragePathFromUrl(document.fileURL, this.property.id, type, document.fileName);
+        storagePath = this.safeParseStoragePathFromUrl(
+          document.fileURL,
+          this.property.id,
+          type,
+          document.fileName
+        );
       }
 
       try {
         // Attempt Storage delete first (ok if it 404s)
         if (storagePath) {
           try {
-            console.log('Deleting from storage using storagePath:', storagePath);
+            console.log(
+              "Deleting from storage using storagePath:",
+              storagePath
+            );
             const fileRef = ref(storage, storagePath);
             await deleteObject(fileRef);
-            console.log('File deleted from storage:', storagePath);
+            console.log("File deleted from storage:", storagePath);
           } catch (deleteError) {
-            console.log('Storage delete failed or object missing, continuing:', deleteError?.code || deleteError?.message || deleteError);
+            console.log(
+              "Storage delete failed or object missing, continuing:",
+              deleteError?.code || deleteError?.message || deleteError
+            );
           }
         } else {
-          console.log('No storagePath available for this document; skipping storage delete.');
+          console.log(
+            "No storagePath available for this document; skipping storage delete."
+          );
         }
 
         // Always update Firestore (CORRECT COLLECTION)
@@ -1302,13 +1436,15 @@ export default {
           const updateData = {};
           updateData[type] = updatedArray;
           await updateDoc(docRef, updateData);
-          console.log('Firestore document updated successfully - array item removed');
+          console.log(
+            "Firestore document updated successfully - array item removed"
+          );
 
           // Update local state
           this.property[type] = updatedArray;
           this.$nextTick(() => this.$forceUpdate());
         } catch (firestoreError) {
-          console.error('Failed to update Firestore document:', firestoreError);
+          console.error("Failed to update Firestore document:", firestoreError);
           // Still update local array (UI consistency)
           const currentArray = this.property[type] || [];
           this.property[type] = currentArray.filter((_, i) => i !== index);
@@ -1323,7 +1459,7 @@ export default {
             documentType: type,
             documentName: documentName,
             documentURL: document.fileURL,
-            storagePath: storagePath || null
+            storagePath: storagePath || null,
           },
           this.resourceTypes.DOCUMENT,
           `${this.property.id}_${type}_${index}`
@@ -1331,25 +1467,25 @@ export default {
 
         this.showSuccessDialog(
           `Document "${documentName}" has been deleted successfully.`,
-          'Document Deleted',
-          'OK'
+          "Document Deleted",
+          "OK"
         );
       } catch (error) {
-        console.error('Error deleting document:', error);
-        console.error('Error details:', {
+        console.error("Error deleting document:", error);
+        console.error("Error details:", {
           code: error.code,
           message: error.message,
-          stack: error.stack
+          stack: error.stack,
         });
         // No error dialog - just log
       }
     },
 
-    async showConfirmDialog(message, title, subtitle = '') {
+    async showConfirmDialog(message, title, subtitle = "") {
       return new Promise((resolve) => {
         // Create a custom confirmation dialog with exact NotificationDialog styling
-        const dialog = document.createElement('div');
-        dialog.className = 'confirm-dialog-overlay';
+        const dialog = document.createElement("div");
+        dialog.className = "confirm-dialog-overlay";
         dialog.style.cssText = `
           position: fixed;
           top: 0;
@@ -1362,7 +1498,7 @@ export default {
           justify-content: center;
           z-index: 100000;
         `;
-        
+
         dialog.innerHTML = `
           <div style="
             position: relative;
@@ -1490,11 +1626,11 @@ export default {
             </div>
           </div>
         `;
-        
+
         document.body.appendChild(dialog);
-        
+
         const checkResult = () => {
-          if (typeof window.confirmResult !== 'undefined') {
+          if (typeof window.confirmResult !== "undefined") {
             const result = window.confirmResult;
             delete window.confirmResult;
             resolve(result);
@@ -1504,9 +1640,9 @@ export default {
         };
         checkResult();
       });
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -1566,8 +1702,6 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
@@ -1689,7 +1823,6 @@ export default {
 
 /* Colored left tab per document category (match icons) */
 .document-category {
-
   padding-left: 12px;
 }
 /* keep neutral left border for all categories */
@@ -1807,7 +1940,7 @@ export default {
 }
 
 .document-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 100px;
   height: 100px;
@@ -1834,14 +1967,14 @@ export default {
   width: 220px;
   max-width: 220px;
 }
-.doc-month-input :deep(input) { min-width: 120px; }
+.doc-month-input :deep(input) {
+  min-width: 120px;
+}
 
 /* Make the inputs look cleaner */
 .doc-filters .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .doc-filters .custom-input :deep(.v-field__outline) {
   border-color: #dee2e6 !important;
@@ -1864,7 +1997,7 @@ export default {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .doc-search,
   .doc-month-input {
     width: 100%;
@@ -1883,7 +2016,8 @@ export default {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
   }
   50% {
@@ -2051,7 +2185,7 @@ export default {
   .edit-property-page {
     padding: 10px;
   }
-  
+
   .page-title {
     font-size: 1.1rem;
   }
@@ -2156,11 +2290,11 @@ export default {
     width: 95%;
     margin: 20px;
   }
-  
+
   .confirm-dialog-actions {
     flex-direction: column;
   }
-  
+
   .confirm-btn {
     width: 100%;
   }

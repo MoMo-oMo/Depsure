@@ -1,7 +1,6 @@
 <template>
   <div class="add-notice-page">
     <v-container fluid>
-      
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
@@ -23,7 +22,7 @@
           <div class="title-section">
             <h1 class="page-title">Add New Notice</h1>
           </div>
-          
+
           <div class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
@@ -138,7 +137,7 @@
                   :loading="loading"
                   class="save-btn"
                 >
-                  {{ loading ? 'Adding...' : 'Add Notice' }}
+                  {{ loading ? "Adding..." : "Add Notice" }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -150,20 +149,37 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db } from '@/firebaseConfig'
-import { collection, addDoc, query, where, getDocs, doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { usePropertyType } from '@/composables/usePropertyType'
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { db } from "@/firebaseConfig";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { useAppStore } from "@/stores/app";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { usePropertyType } from "@/composables/usePropertyType";
 
 export default {
-  name: 'AddNoticePage',
+  name: "AddNoticePage",
   setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getLabel } = usePropertyType()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getLabel }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    const { getLabel } = usePropertyType();
+    return {
+      showSuccessDialog,
+      showErrorDialog,
+      logAuditEvent,
+      auditActions,
+      resourceTypes,
+      getLabel,
+    };
   },
   data() {
     return {
@@ -174,42 +190,49 @@ export default {
       units: [],
       unitsLoading: false,
       notice: {
-        agencyId: '',
-        unitName: '',
-        leaseStartDate: '',
-        leaseEndDate: '',
-        monthsMissedRent: 0
+        agencyId: "",
+        unitName: "",
+        leaseStartDate: "",
+        leaseEndDate: "",
+        monthsMissedRent: 0,
       },
-      agencyRules: [v => !!v || 'Agency selection is required'],
+      agencyRules: [(v) => !!v || "Agency selection is required"],
       unitNameRules: [
-        v => !!v || 'Unit Name is required',
-        v => v.length >= 2 || 'Unit Name must be at least 2 characters'
+        (v) => !!v || "Unit Name is required",
+        (v) => v.length >= 2 || "Unit Name must be at least 2 characters",
       ],
-      leaseStartDateRules: [v => !!v || 'Lease Start Date is required'],
-      leaseEndDateRules: [v => !!v || 'Lease End Date is required']
-    }
+      leaseStartDateRules: [(v) => !!v || "Lease Start Date is required"],
+      leaseEndDateRules: [(v) => !!v || "Lease End Date is required"],
+    };
   },
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     selectedUnitPropertyType() {
       if (!this.notice.unitName) return null;
-      const selectedUnit = this.units.find(unit => unit.propertyName === this.notice.unitName);
+      const selectedUnit = this.units.find(
+        (unit) => unit.propertyName === this.notice.unitName
+      );
       return selectedUnit?.propertyType || null;
     },
     propertyTypeLabel() {
-      return this.selectedUnitPropertyType ? this.getLabel(this.selectedUnitPropertyType) : '';
-    }
+      return this.selectedUnitPropertyType
+        ? this.getLabel(this.selectedUnitPropertyType)
+        : "";
+    },
   },
   async mounted() {
-    document.title = 'Add New Notice - Depsure';
-    
+    document.title = "Add New Notice - Depsure";
+
     // Fetch agencies first
     await this.fetchAgencies();
-    
+
     // For agency users, fetch their units automatically
     if (this.isAgencyUser) {
       await this.fetchUnits();
@@ -222,33 +245,41 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only add notices to their own agency
           let agencyData = null;
-          
-          if (userType === 'Agency') {
+
+          if (userType === "Agency") {
             // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
                 id: agencyDoc.id,
-                ...agencyDoc.data()
+                ...agencyDoc.data(),
               };
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+          } else if (
+            userType === "Admin" &&
+            currentUser.adminScope === "agency"
+          ) {
             // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              const agencyDoc = await getDoc(
+                doc(db, "users", currentUser.managedAgencyId)
+              );
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
+                  ...agencyDoc.data(),
                 };
               }
             }
           }
-          
+
           if (agencyData) {
             this.agencies = [agencyData];
             // Pre-select the agency for agency users and agency admins
@@ -256,75 +287,81 @@ export default {
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
+          console.log("Agency user - own agency loaded:", this.agencies);
         } else {
           // Super Admin and Admin users can see all agencies
-          console.log('Fetching agencies...');
-          const agenciesQuery = query(collection(db, 'users'), where('userType', '==', 'Agency'));
+          console.log("Fetching agencies...");
+          const agenciesQuery = query(
+            collection(db, "users"),
+            where("userType", "==", "Agency")
+          );
           const agenciesSnapshot = await getDocs(agenciesQuery);
-          
-          this.agencies = agenciesSnapshot.docs.map(doc => ({
+
+          this.agencies = agenciesSnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }));
-          console.log('All agencies loaded:', this.agencies);
+          console.log("All agencies loaded:", this.agencies);
         }
       } catch (error) {
-        console.error('Error fetching agencies:', error);
+        console.error("Error fetching agencies:", error);
       } finally {
         this.agenciesLoading = false;
       }
     },
-    
+
     async saveNotice() {
       if (this.$refs.form.validate()) {
         this.loading = true;
         try {
-          console.log('Saving notice:', this.notice);
-          
+          console.log("Saving notice:", this.notice);
+
           // Prepare notice data for Firestore
           const noticeData = {
             ...this.notice,
-            noticeGivenDate: new Date().toISOString().split('T')[0], // Auto-set to today
+            noticeGivenDate: new Date().toISOString().split("T")[0], // Auto-set to today
             vacateDate: this.notice.leaseEndDate, // Same as lease end date
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
           };
-          
-          console.log('Notice data to save:', noticeData);
-          
+
+          console.log("Notice data to save:", noticeData);
+
           // Add notice to Firestore
-          const docRef = await addDoc(collection(db, 'notices'), noticeData);
+          const docRef = await addDoc(collection(db, "notices"), noticeData);
 
           // NEW FLOW: Remove from Active Units, store in Notice (don't create vacancy yet)
           let unitId = null;
           try {
             // Find the unit by propertyName
-            const unitsCol = collection(db, 'units');
-            const q = query(unitsCol, where('propertyName', '==', this.notice.unitName));
+            const unitsCol = collection(db, "units");
+            const q = query(
+              unitsCol,
+              where("propertyName", "==", this.notice.unitName)
+            );
             const snap = await getDocs(q);
             if (!snap.empty) {
               const unitDoc = snap.docs[0];
               const unitData = unitDoc.data();
               unitId = unitDoc.id;
-              
+
               // Update the notice with unitId reference
-              await updateDoc(doc(db, 'notices', docRef.id), {
+              await updateDoc(doc(db, "notices", docRef.id), {
                 unitId: unitId,
-                propertyType: unitData.propertyType || 'residential'
+                propertyType: unitData.propertyType || "residential",
               });
-              
+
               // Mark unit as having a notice (add status field)
-              await updateDoc(doc(db, 'units', unitDoc.id), {
-                status: 'Notice Given',
+              await updateDoc(doc(db, "units", unitDoc.id), {
+                status: "Notice Given",
                 noticeId: docRef.id,
-                updatedAt: new Date()
+                updatedAt: new Date(),
               });
             }
           } catch (transitionErr) {
-            console.error('Error updating unit status:', transitionErr);
+            console.error("Error updating unit status:", transitionErr);
           }
-          
+
           // Log the audit event
           await this.logAuditEvent(
             this.auditActions.CREATE,
@@ -332,18 +369,26 @@ export default {
               unitName: this.notice.unitName,
               agencyId: this.notice.agencyId,
               leaseStartDate: this.notice.leaseStartDate,
-              leaseEndDate: this.notice.leaseEndDate
+              leaseEndDate: this.notice.leaseEndDate,
             },
             this.resourceTypes.NOTICE,
             docRef.id
-          )
-          
-          console.log('Notice added successfully with ID:', docRef.id);
-          this.showSuccessDialog('Notice added successfully!', 'Success!', 'Continue', '/notices');
-          
+          );
+
+          console.log("Notice added successfully with ID:", docRef.id);
+          this.showSuccessDialog(
+            "Notice added successfully!",
+            "Success!",
+            "Continue",
+            "/notices"
+          );
         } catch (error) {
-          console.error('Error adding notice:', error);
-          this.showErrorDialog(`Failed to add notice: ${error.message}`, 'Error', 'OK');
+          console.error("Error adding notice:", error);
+          this.showErrorDialog(
+            `Failed to add notice: ${error.message}`,
+            "Error",
+            "OK"
+          );
         } finally {
           this.loading = false;
         }
@@ -356,35 +401,35 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
+
         let unitsQuery;
-        
-        if (userType === 'Agency') {
+
+        if (userType === "Agency") {
           // Agency users can only see units from their own agency
           unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', currentUser.uid)
+            collection(db, "units"),
+            where("agencyId", "==", currentUser.uid)
           );
         } else if (agencyId) {
           // Super Admin/Admin users query units for specific agency
           unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', agencyId)
+            collection(db, "units"),
+            where("agencyId", "==", agencyId)
           );
         } else {
           // Super Admin/Admin users query all units when no agency selected
-          unitsQuery = collection(db, 'units');
+          unitsQuery = collection(db, "units");
         }
-        
+
         const querySnapshot = await getDocs(unitsQuery);
-        
+
         // Get all vacancies to filter out units that already have vacancies
-        const vacanciesQuery = collection(db, 'vacancies');
+        const vacanciesQuery = collection(db, "vacancies");
         const vacanciesSnapshot = await getDocs(vacanciesQuery);
         const vacantUnitIds = new Set();
         const vacantUnitNames = new Set();
-        
-        vacanciesSnapshot.docs.forEach(doc => {
+
+        vacanciesSnapshot.docs.forEach((doc) => {
           const vacancy = doc.data();
           if (vacancy.unitId) {
             vacantUnitIds.add(vacancy.unitId);
@@ -393,14 +438,14 @@ export default {
             vacantUnitNames.add(vacancy.unitName);
           }
         });
-        
+
         // Get all notices to filter out units that already have notices
-        const noticesQuery = collection(db, 'notices');
+        const noticesQuery = collection(db, "notices");
         const noticesSnapshot = await getDocs(noticesQuery);
         const noticeUnitIds = new Set();
         const noticeUnitNames = new Set();
-        
-        noticesSnapshot.docs.forEach(doc => {
+
+        noticesSnapshot.docs.forEach((doc) => {
           const notice = doc.data();
           if (notice.unitId) {
             noticeUnitIds.add(notice.unitId);
@@ -409,14 +454,14 @@ export default {
             noticeUnitNames.add(notice.unitName);
           }
         });
-        
+
         // Filter out units that have active vacancies or notices
         this.units = querySnapshot.docs
-          .map(doc => ({
+          .map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }))
-          .filter(unit => {
+          .filter((unit) => {
             // Exclude if unit ID is in vacancies
             if (vacantUnitIds.has(unit.id)) {
               return false;
@@ -441,19 +486,26 @@ export default {
             }
             return true;
           });
-        
-        console.log('Units fetched (excluding units with vacancies or notices):', this.units);
-        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+
+        console.log(
+          "Units fetched (excluding units with vacancies or notices):",
+          this.units
+        );
+        console.log("User type:", userType, "Agency ID filter:", agencyId);
       } catch (error) {
-        console.error('Error fetching units:', error);
-        this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK');
+        console.error("Error fetching units:", error);
+        this.showErrorDialog(
+          "Failed to load units. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
         this.unitsLoading = false;
       }
-    }
+    },
   },
   watch: {
-    'notice.agencyId': {
+    "notice.agencyId": {
       handler(newAgencyId) {
         if (this.isAgencyUser) {
           // Agency users automatically get their own units
@@ -463,26 +515,31 @@ export default {
           this.fetchUnits(newAgencyId);
         } else {
           this.units = [];
-          this.notice.unitName = '';
+          this.notice.unitName = "";
         }
       },
-      immediate: false
+      immediate: false,
     },
-    'notice.unitName'(unitName) {
+    "notice.unitName"(unitName) {
       if (!unitName) {
         return;
       }
-      const selectedUnit = this.units.find(unit => unit.propertyName === unitName || unit.unitName === unitName);
+      const selectedUnit = this.units.find(
+        (unit) => unit.propertyName === unitName || unit.unitName === unitName
+      );
       if (selectedUnit) {
-        this.notice.leaseStartDate = selectedUnit.leaseStartDate || '';
-        this.notice.leaseEndDate = selectedUnit.leaseEndDate || '';
+        this.notice.leaseStartDate = selectedUnit.leaseStartDate || "";
+        this.notice.leaseEndDate = selectedUnit.leaseEndDate || "";
         // Prefill months missed rent from the unit if available
-        const mm = typeof selectedUnit.monthsMissed === 'number' ? selectedUnit.monthsMissed : Number(selectedUnit.monthsMissed);
+        const mm =
+          typeof selectedUnit.monthsMissed === "number"
+            ? selectedUnit.monthsMissed
+            : Number(selectedUnit.monthsMissed);
         this.notice.monthsMissedRent = Number.isFinite(mm) ? mm : 0;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -543,8 +600,6 @@ export default {
   border-radius: 8px;
 }
 
-
-
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
@@ -574,9 +629,20 @@ export default {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .add-notice-page { padding: 10px; }
-  .page-title { font-size: 1.1rem; }
-  .back-btn { width: 140px; height: 40px; }
-  .cancel-btn, .save-btn { width: 100%; margin-bottom: 8px; }
+  .add-notice-page {
+    padding: 10px;
+  }
+  .page-title {
+    font-size: 1.1rem;
+  }
+  .back-btn {
+    width: 140px;
+    height: 40px;
+  }
+  .cancel-btn,
+  .save-btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
 }
 </style>

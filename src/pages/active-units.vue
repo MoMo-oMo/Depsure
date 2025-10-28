@@ -20,85 +20,103 @@
           />
         </v-col>
 
-        
-
-      <!-- Month filter -->
-      <v-col cols="12" md="2" lg="3" class="pa-4">
-        <v-menu
-          v-model="monthMenu"
-          :close-on-content-click="false"
-          transition="fade-transition"
-          location="bottom"
-          @update:model-value="onMonthMenuToggle"
-        >
-          <template #activator="{ props }">
-            <v-text-field
-              v-bind="props"
-              :model-value="monthFilterLabel"
-              label="Filter by month"
-              append-inner-icon="mdi-calendar-month"
-              flat="true"
-              density="comfortable"
-              variant="outlined"
-              hide-details
-              dense
-              class="custom-input top-filter month-input flex-grow-1"
-              readonly
-            />
-          </template>
-          <div class="month-menu">
-            <div class="month-menu__title">Pick month</div>
-            <input
-              type="month"
-              :value="tempMonth"
-              @input="(e) => { tempMonth = e.target.value }"
-              class="month-menu__input"
-            />
-            <div class="month-menu__actions">
-              <v-btn color="black" variant="elevated" size="small" @click="applyMonth">Apply</v-btn>
-              <v-btn color="grey" variant="text" size="small" @click="clearMonth">All</v-btn>
+        <!-- Month filter -->
+        <v-col cols="12" md="2" lg="3" class="pa-4">
+          <v-menu
+            v-model="monthMenu"
+            :close-on-content-click="false"
+            transition="fade-transition"
+            location="bottom"
+            @update:model-value="onMonthMenuToggle"
+          >
+            <template #activator="{ props }">
+              <v-text-field
+                v-bind="props"
+                :model-value="monthFilterLabel"
+                label="Filter by month"
+                append-inner-icon="mdi-calendar-month"
+                flat="true"
+                density="comfortable"
+                variant="outlined"
+                hide-details
+                dense
+                class="custom-input top-filter month-input flex-grow-1"
+                readonly
+              />
+            </template>
+            <div class="month-menu">
+              <div class="month-menu__title">Pick month</div>
+              <input
+                type="month"
+                :value="tempMonth"
+                @input="
+                  (e) => {
+                    tempMonth = e.target.value;
+                  }
+                "
+                class="month-menu__input"
+              />
+              <div class="month-menu__actions">
+                <v-btn
+                  color="black"
+                  variant="elevated"
+                  size="small"
+                  @click="applyMonth"
+                  >Apply</v-btn
+                >
+                <v-btn
+                  color="grey"
+                  variant="text"
+                  size="small"
+                  @click="clearMonth"
+                  >All</v-btn
+                >
+              </div>
             </div>
-          </div>
-        </v-menu>
-      </v-col>
+          </v-menu>
+        </v-col>
 
-      <!-- Property Type filter -->
-      <v-col cols="12" md="2" lg="2" class="pa-4">
-        <v-select
-          v-model="propertyTypeFilter"
-          :items="propertyTypeFilterOptions"
-          item-title="title"
-          item-value="value"
-          label="Property Type"
-          prepend-inner-icon="mdi-home"
-          density="comfortable"
-          variant="outlined"
-          hide-details
-          class="custom-input top-filter"
-          @update:model-value="filterProperties"
-        />
-      </v-col>
+        <!-- Property Type filter -->
+        <v-col cols="12" md="2" lg="2" class="pa-4">
+          <v-select
+            v-model="propertyTypeFilter"
+            :items="propertyTypeFilterOptions"
+            item-title="title"
+            item-value="value"
+            label="Property Type"
+            prepend-inner-icon="mdi-home"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            class="custom-input top-filter"
+            @update:model-value="filterProperties"
+          />
+        </v-col>
 
-      <!-- Flagged filter -->
-      <v-col cols="12" md="2" lg="2" class="pa-4">
-        <v-select
-          v-model="flaggedFilter"
-          :items="flaggedFilterOptions"
-          item-title="title"
-          item-value="value"
-          label="Flagged"
-          density="comfortable"
-          variant="outlined"
-          hide-details
-          class="custom-input top-filter"
-          @update:model-value="filterProperties"
-        />
-      </v-col>
-
-        
+        <!-- Flagged filter -->
+        <v-col cols="12" md="2" lg="2" class="pa-4">
+          <v-select
+            v-model="flaggedFilter"
+            :items="flaggedFilterOptions"
+            item-title="title"
+            item-value="value"
+            label="Flagged"
+            density="comfortable"
+            variant="outlined"
+            hide-details
+            class="custom-input top-filter"
+            @update:model-value="filterProperties"
+          />
+        </v-col>
 
         <!-- Add Unit Button - Only when Super Admin AND an agency exists and is selected -->
-        <v-col cols="12" md="2" lg="2" class="pa-4 d-flex align-center" v-if="isSuperAdmin && agencies.length > 0 && selectedAgency">
+        <v-col
+          cols="12"
+          md="2"
+          lg="2"
+          class="pa-4 d-flex align-center"
+          v-if="isSuperAdmin && agencies.length > 0 && selectedAgency"
+        >
           <v-btn
             icon="mdi-plus"
             variant="outlined"
@@ -143,46 +161,61 @@
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12">
                 <div class="agency-content-right">
-                <v-card-title class="text-white text-h4 mb-2">
-                  {{ selectedAgencyDetails.agencyName }}
-                </v-card-title>
-                <v-card-text class="text-white">
-                  <div class="agency-details-black">
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.address || 'Address not provided' }}</span>
+                  <v-card-title class="text-white text-h4 mb-2">
+                    {{ selectedAgencyDetails.agencyName }}
+                  </v-card-title>
+                  <v-card-text class="text-white">
+                    <div class="agency-details-black">
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
+                        <span>{{
+                          selectedAgencyDetails.address ||
+                          "Address not provided"
+                        }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon
+                          icon="mdi-card-account-details"
+                          class="mr-2 text-white"
+                        />
+                        <span
+                          >Reg No:
+                          {{ selectedAgencyDetails.regNo || "â€”" }}</span
+                        >
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-account" class="mr-2 text-white" />
+                        <span
+                          >Primary Contact:
+                          {{
+                            selectedAgencyDetails.primaryContactName || "N/A"
+                          }}</span
+                        >
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                        <span>{{
+                          selectedAgencyDetails.contactNumber || "N/A"
+                        }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-email" class="mr-2 text-white" />
+                        <span>{{ selectedAgencyDetails.email || "N/A" }}</span>
+                      </div>
+                      <div class="detail-item-black">
+                        <v-icon icon="mdi-home" class="mr-2 text-white" />
+                        <span>{{ activeUnitsCount }} Properties</span>
+                      </div>
                     </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-card-account-details" class="mr-2 text-white" />
-                      <span>Reg No: {{ selectedAgencyDetails.regNo || 'â€”' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-account" class="mr-2 text-white" />
-                      <span>Primary Contact: {{ selectedAgencyDetails.primaryContactName || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-phone" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.contactNumber || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-email" class="mr-2 text-white" />
-                      <span>{{ selectedAgencyDetails.email || 'N/A' }}</span>
-                    </div>
-                    <div class="detail-item-black">
-                      <v-icon icon="mdi-home" class="mr-2 text-white" />
-                      <span>{{ activeUnitsCount }} Properties</span>
-                    </div>
-                  </div>
-                  <!-- Description hidden to reduce visual noise over image -->
-                  <!-- <v-divider class="my-4 bg-white" /> -->
-                </v-card-text>
+                    <!-- Description hidden to reduce visual noise over image -->
+                    <!-- <v-divider class="my-4 bg-white" /> -->
+                  </v-card-text>
                 </div>
               </v-col>
             </v-row>
           </v-card>
         </v-col>
       </v-row>
-      
 
       <!-- Properties Table -->
       <v-row>
@@ -199,99 +232,116 @@
               :items-per-page="15"
               no-data-text="No data available"
             >
-            <!-- Super Admin: Flagged indicator column (click to view flagged entry) -->
-            <template v-slot:item.flag="{ item }" v-if="isSuperAdmin">
-              <v-btn
-                variant="text"
-                size="small"
-                :color="isUnitFlagged(item) ? 'error' : 'success'"
-                :icon="true"
-                :disabled="!isUnitFlagged(item)"
-                :title="isUnitFlagged(item) ? 'View flagged unit' : 'Not flagged'"
-                @click="gotoFlaggedUnit(item)"
-              >
-                <v-icon>
-                  {{ isUnitFlagged(item) ? 'mdi-flag' : 'mdi-flag-outline' }}
-                </v-icon>
-              </v-btn>
-            </template>
-            <!-- Missed Rent (Yes + months) column -->
-            <template v-slot:item.monthsMissed="{ item }">
-              <v-chip
-                :color="(item.monthsMissed || 0) > 0 ? 'error' : 'success'"
-                size="small"
-                variant="tonal"
-                :title="(item.monthsMissed || 0) > 0 
-                  ? `${item.monthsMissed} ${(item.monthsMissed === 1 ? 'month' : 'months')} missed` 
-                  : 'No missed rent'"
-              >
-                {{ (item.monthsMissed || 0) > 0 
-                  ? `Yes - ${item.monthsMissed} ${(item.monthsMissed === 1 ? 'month' : 'months')}` 
-                  : 'No' }}
-              </v-chip>
-            </template>
-            <template v-slot:item.propertyType="{ item }">
-              <v-chip 
-                :color="getColor(item.propertyType)" 
-                size="small"
-                variant="elevated"
-              >
-                {{ getLabel(item.propertyType) }}
-              </v-chip>
-            </template>
-            <!-- Truncate long property names for alignment -->
-            <template v-slot:item.propertyName="{ item }">
-              <span class="truncate-cell" :title="item.propertyName">{{ item.propertyName }}</span>
-            </template>
-            <template v-slot:item.unitNumber="{ item }">
-              <span class="truncate-cell" :title="item.unitNumber">{{ item.unitNumber }}</span>
-            </template>
+              <!-- Super Admin: Flagged indicator column (click to view flagged entry) -->
+              <template v-slot:item.flag="{ item }" v-if="isSuperAdmin">
+                <v-btn
+                  variant="text"
+                  size="small"
+                  :color="isUnitFlagged(item) ? 'error' : 'success'"
+                  :icon="true"
+                  :disabled="!isUnitFlagged(item)"
+                  :title="
+                    isUnitFlagged(item) ? 'View flagged unit' : 'Not flagged'
+                  "
+                  @click="gotoFlaggedUnit(item)"
+                >
+                  <v-icon>
+                    {{ isUnitFlagged(item) ? "mdi-flag" : "mdi-flag-outline" }}
+                  </v-icon>
+                </v-btn>
+              </template>
+              <!-- Missed Rent (Yes + months) column -->
+              <template v-slot:item.monthsMissed="{ item }">
+                <v-chip
+                  :color="(item.monthsMissed || 0) > 0 ? 'error' : 'success'"
+                  size="small"
+                  variant="tonal"
+                  :title="
+                    (item.monthsMissed || 0) > 0
+                      ? `${item.monthsMissed} ${
+                          item.monthsMissed === 1 ? 'month' : 'months'
+                        } missed`
+                      : 'No missed rent'
+                  "
+                >
+                  {{
+                    (item.monthsMissed || 0) > 0
+                      ? `Yes - ${item.monthsMissed} ${
+                          item.monthsMissed === 1 ? "month" : "months"
+                        }`
+                      : "No"
+                  }}
+                </v-chip>
+              </template>
+              <template v-slot:item.propertyType="{ item }">
+                <v-chip
+                  :color="getColor(item.propertyType)"
+                  size="small"
+                  variant="elevated"
+                >
+                  {{ getLabel(item.propertyType) }}
+                </v-chip>
+              </template>
+              <!-- Truncate long property names for alignment -->
+              <template v-slot:item.propertyName="{ item }">
+                <span class="truncate-cell" :title="item.propertyName">{{
+                  item.propertyName
+                }}</span>
+              </template>
+              <template v-slot:item.unitNumber="{ item }">
+                <span class="truncate-cell" :title="item.unitNumber">{{
+                  item.unitNumber
+                }}</span>
+              </template>
 
-            <template v-slot:item.paidOut="{ item }">
-              <v-chip :color="item.paidOut === 'Yes' ? 'success' : 'error'" size="small">
-                {{ item.paidOut }}
-              </v-chip>
-            </template>
-            <template v-slot:item.maintenanceAmount="{ item }">
-              <span class="font-weight-medium">
-                R{{ item.maintenanceAmount.toLocaleString() }}
-              </span>
-            </template>
-            <template v-slot:item.paidTowardsFund="{ item }">
-              <span class="font-weight-medium">
-                R{{ item.paidTowardsFund.toLocaleString() }}
-              </span>
-            </template>
-            <template v-slot:item.amountToBePaidOut="{ item }">
-              <span class="font-weight-medium">
-                R{{ item.amountToBePaidOut.toLocaleString() }}
-              </span>
-            </template>
-            <template v-slot:item.leaseStartDate="{ item }">
-              <span>{{ formatDate(item.leaseStartDate) }}</span>
-            </template>
-            <template v-slot:item.leaseEndDate="{ item }">
-              <span>{{ formatDate(item.leaseEndDate) }}</span>
-            </template>
-            <template v-slot:item.actions="{ item }">
-            <div class ="v-data-table_actions-cell">
-              <v-btn
-                icon="mdi-eye"
-                size="small"
-                variant="text"
-                color="black"
-                @click="viewProperty(item)"
-                class="action-btn"
-              />
-              <v-btn
-                icon="mdi-pencil"
-                size="small"
-                variant="text"
-                color="black"
-                @click="editProperty(item)"
-                class="action-btn"
-              />
-              <!-- <v-btn
+              <template v-slot:item.paidOut="{ item }">
+                <v-chip
+                  :color="item.paidOut === 'Yes' ? 'success' : 'error'"
+                  size="small"
+                >
+                  {{ item.paidOut }}
+                </v-chip>
+              </template>
+              <template v-slot:item.maintenanceAmount="{ item }">
+                <span class="font-weight-medium">
+                  R{{ item.maintenanceAmount.toLocaleString() }}
+                </span>
+              </template>
+              <template v-slot:item.paidTowardsFund="{ item }">
+                <span class="font-weight-medium">
+                  R{{ item.paidTowardsFund.toLocaleString() }}
+                </span>
+              </template>
+              <template v-slot:item.amountToBePaidOut="{ item }">
+                <span class="font-weight-medium">
+                  R{{ item.amountToBePaidOut.toLocaleString() }}
+                </span>
+              </template>
+              <template v-slot:item.leaseStartDate="{ item }">
+                <span>{{ formatDate(item.leaseStartDate) }}</span>
+              </template>
+              <template v-slot:item.leaseEndDate="{ item }">
+                <span>{{ formatDate(item.leaseEndDate) }}</span>
+              </template>
+              <template v-slot:item.actions="{ item }">
+                <div class="v-data-table_actions-cell">
+                  <v-btn
+                    icon="mdi-eye"
+                    size="small"
+                    variant="text"
+                    color="black"
+                    @click="viewProperty(item)"
+                    class="action-btn"
+                  />
+                  <v-btn
+                    icon="mdi-pencil"
+                    size="small"
+                    variant="text"
+                    color="black"
+                    @click="editProperty(item)"
+                    class="action-btn"
+                  />
+                  <!-- <v-btn
                 :title="'Move to Vacancies'"
                 icon="mdi-arrow-right-bold-box"
                 size="small"
@@ -300,16 +350,16 @@
                 @click="moveToVacancies(item)"
                 class="action-btn"
               /> -->
-              <v-btn
-                icon="mdi-delete"
-                size="small"
-                variant="text"
-                color="error"
-                @click="deleteProperty(item)"
-                class="action-btn"
-              />
-              </div>
-            </template>
+                  <v-btn
+                    icon="mdi-delete"
+                    size="small"
+                    variant="text"
+                    color="error"
+                    @click="deleteProperty(item)"
+                    class="action-btn"
+                  />
+                </div>
+              </template>
             </v-data-table>
           </div>
         </v-col>
@@ -319,34 +369,56 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-const heroBg = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
-import { collection, getDocs, query, where, doc, getDoc, addDoc, deleteDoc } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { usePropertyType } from '@/composables/usePropertyType'
-import { PROPERTY_TYPES } from '@/constants/propertyTypes'
+import { db } from "@/firebaseConfig";
+const heroBg =
+  "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+  addDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { useAppStore } from "@/stores/app";
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { usePropertyType } from "@/composables/usePropertyType";
+import { PROPERTY_TYPES } from "@/constants/propertyTypes";
 
-const SQUARE_METER_TYPES = [PROPERTY_TYPES.COMMERCIAL, PROPERTY_TYPES.INDUSTRIAL]
+const SQUARE_METER_TYPES = [
+  PROPERTY_TYPES.COMMERCIAL,
+  PROPERTY_TYPES.INDUSTRIAL,
+];
 
 export default {
   name: "ActiveUnitsPage",
   setup() {
-    const appStore = useAppStore()
-    const { showConfirmDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getOptions, getLabel, getColor } = usePropertyType()
-    return { appStore, showConfirmDialog, logAuditEvent, auditActions, resourceTypes, getOptions, getLabel, getColor }
+    const appStore = useAppStore();
+    const { showConfirmDialog } = useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    const { getOptions, getLabel, getColor } = usePropertyType();
+    return {
+      appStore,
+      showConfirmDialog,
+      logAuditEvent,
+      auditActions,
+      resourceTypes,
+      getOptions,
+      getLabel,
+      getColor,
+    };
   },
   data() {
     return {
       searchQuery: "",
-      monthFilter: '',
+      monthFilter: "",
       monthMenu: false,
-      tempMonth: '',
+      tempMonth: "",
       propertyTypeFilter: null,
-      flaggedFilter: 'all',
+      flaggedFilter: "all",
       filteredProperties: [],
       selectedAgency: null,
       agencies: [],
@@ -361,7 +433,12 @@ export default {
         { title: "UNIT NO.", key: "unitNumber", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
         { title: "TYPE", key: "propertyType", sortable: true, align: "center" },
-        { title: "LEASE STARTING DATE", key: "leaseStartDate", sortable: true, align: "center" },
+        {
+          title: "LEASE STARTING DATE",
+          key: "leaseStartDate",
+          sortable: true,
+          align: "center",
+        },
 
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ],
@@ -369,26 +446,29 @@ export default {
   },
   computed: {
     agencyHeroBgStyle() {
-      return { background: `url(${heroBg}) center/cover no-repeat` }
+      return { background: `url(${heroBg}) center/cover no-repeat` };
     },
     heroTitle() {
-      return 'Active Units'
+      return "Active Units";
     },
     monthFilterLabel() {
-      if (!this.monthFilter) return 'All Months'
+      if (!this.monthFilter) return "All Months";
       try {
-        const [yy, mm] = String(this.monthFilter).split('-')
-        const d = new Date(Number(yy), Number(mm) - 1, 1)
-        return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+        const [yy, mm] = String(this.monthFilter).split("-");
+        const d = new Date(Number(yy), Number(mm) - 1, 1);
+        return d.toLocaleString("en-US", { month: "long", year: "numeric" });
       } catch {
-        return this.monthFilter
+        return this.monthFilter;
       }
     },
     agencyCardBgStyle() {
-      const url = this.selectedAgencyDetails?.profileImageUrl || this.selectedAgencyDetails?.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+      const url =
+        this.selectedAgencyDetails?.profileImageUrl ||
+        this.selectedAgencyDetails?.profileImage ||
+        "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
       return {
-        background: `url(${url}) center/cover no-repeat`
-      }
+        background: `url(${url}) center/cover no-repeat`,
+      };
     },
     hasCurrentAgency() {
       const appStore = useAppStore();
@@ -408,11 +488,14 @@ export default {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     isSuperAdmin() {
       const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Super Admin';
+      return appStore.currentUser?.userType === "Super Admin";
     },
     // Build table headers dynamically to include Flag column for Super Admin
     tableHeaders() {
@@ -420,71 +503,68 @@ export default {
       if (this.isSuperAdmin) {
         // Insert the flagged column at the start
         return [
-          { title: 'FLAGGED', key: 'flag', sortable: false, align: 'center' },
-          ...base
+          { title: "FLAGGED", key: "flag", sortable: false, align: "center" },
+          ...base,
         ];
       }
       return base;
     },
     propertyTypeFilterOptions() {
-      return [
-        { value: null, title: 'All Types' },
-        ...this.getOptions()
-      ];
+      return [{ value: null, title: "All Types" }, ...this.getOptions()];
     },
     flaggedFilterOptions() {
       return [
-        { value: 'all', title: 'All' },
-        { value: 'only', title: 'Only Flagged' }
+        { value: "all", title: "All" },
+        { value: "only", title: "Only Flagged" },
       ];
     },
     showSquareMeterageSummary() {
-      return SQUARE_METER_TYPES.includes(this.propertyTypeFilter)
+      return SQUARE_METER_TYPES.includes(this.propertyTypeFilter);
     },
     squareMeterageTotal() {
-      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return 0
+      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return 0;
       return (this.filteredProperties || []).reduce((sum, property) => {
-        return sum + this.parseSquareMeterage(property?.squareMeterage)
-      }, 0)
+        return sum + this.parseSquareMeterage(property?.squareMeterage);
+      }, 0);
     },
     squareMeterageSummaryLabel() {
-      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return ''
-      return this.getLabel(this.propertyTypeFilter) || ''
+      if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return "";
+      return this.getLabel(this.propertyTypeFilter) || "";
     },
     squareMeterageTotalFormatted() {
-      if (!this.showSquareMeterageSummary) return ''
+      if (!this.showSquareMeterageSummary) return "";
       return this.squareMeterageTotal.toLocaleString(undefined, {
         minimumFractionDigits: 0,
-        maximumFractionDigits: 2
-      })
-    }
+        maximumFractionDigits: 2,
+      });
+    },
   },
   methods: {
     onMonthMenuToggle(open) {
       if (open) {
-        this.tempMonth = this.monthFilter || ''
+        this.tempMonth = this.monthFilter || "";
       }
     },
     applyMonth() {
-      this.monthFilter = this.tempMonth || ''
-      this.filterProperties()
-      this.monthMenu = false
+      this.monthFilter = this.tempMonth || "";
+      this.filterProperties();
+      this.monthMenu = false;
     },
     clearMonth() {
-      this.tempMonth = ''
-      this.monthFilter = ''
-      this.filterProperties()
-      this.monthMenu = false
+      this.tempMonth = "";
+      this.monthFilter = "";
+      this.filterProperties();
+      this.monthMenu = false;
     },
     parseSquareMeterage(value) {
-      if (value === null || value === undefined || value === '') return 0
-      const numeric = typeof value === 'number' ? value : Number(value)
-      return Number.isFinite(numeric) && numeric > 0 ? numeric : 0
+      if (value === null || value === undefined || value === "") return 0;
+      const numeric = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
     },
     openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      const el = this.$refs.monthInput?.$el?.querySelector("input");
       if (el) {
-        if (typeof el.showPicker === 'function') el.showPicker();
+        if (typeof el.showPicker === "function") el.showPicker();
         else el.focus();
       }
     },
@@ -495,15 +575,17 @@ export default {
       return `${year}-${month}`;
     },
     formatDate(v) {
-      if (!v) return ''
+      if (!v) return "";
       try {
-        const d = typeof v.toDate === 'function' ? v.toDate() : new Date(v)
-        if (isNaN(d.getTime())) return String(v)
-        const dd = String(d.getDate()).padStart(2, '0')
-        const mm = String(d.getMonth() + 1).padStart(2, '0')
-        const yy = d.getFullYear()
-        return `${dd}/${mm}/${yy}`
-      } catch { return String(v) }
+        const d = typeof v.toDate === "function" ? v.toDate() : new Date(v);
+        if (isNaN(d.getTime())) return String(v);
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yy = d.getFullYear();
+        return `${dd}/${mm}/${yy}`;
+      } catch {
+        return String(v);
+      }
     },
     filterProperties() {
       this.filteredProperties = this.properties.filter((property) => {
@@ -545,7 +627,7 @@ export default {
             // No createdAt date, skip this property
             return textMatch && propertyTypeMatch;
           }
-          
+
           const filterDate = new Date(this.monthFilter + "-01");
           const propertyMonth = `${propertyDate.getFullYear()}-${String(
             propertyDate.getMonth() + 1
@@ -559,30 +641,38 @@ export default {
 
         // Flagged filter
         let flaggedMatch = true;
-        if (this.flaggedFilter === 'only') {
+        if (this.flaggedFilter === "only") {
           flaggedMatch = this.isUnitFlagged(property);
         }
 
         // NEW FLOW: Exclude units with "Notice Given" status (they should appear in Notices page)
-        const notNoticeGiven = property.status !== 'Notice Given';
+        const notNoticeGiven = property.status !== "Notice Given";
 
-        return textMatch && propertyTypeMatch && monthMatch && flaggedMatch && notNoticeGiven;
+        return (
+          textMatch &&
+          propertyTypeMatch &&
+          monthMatch &&
+          flaggedMatch &&
+          notNoticeGiven
+        );
       });
     },
     isUnitFlagged(item) {
       // Prefer ID-based match; fallback to name-based
       if (item?.id && this.flaggedUnitMap[item.id]) return true;
       // Check boolean flag on unit, if present
-      if (item?.isFlagged === true || item?.isFlagged === 'Yes') return true;
-      const name = (item?.unitName || item?.propertyName || '').toLowerCase();
+      if (item?.isFlagged === true || item?.isFlagged === "Yes") return true;
+      const name = (item?.unitName || item?.propertyName || "").toLowerCase();
       if (name && this.flaggedUnitNamesMap[name]) return true;
       return false;
     },
     getFlaggedDocIdForUnit(item) {
       if (!item) return null;
-      if (item.id && this.flaggedUnitMap[item.id]) return this.flaggedUnitMap[item.id];
-      const name = (item.unitName || item.propertyName || '').toLowerCase();
-      if (name && this.flaggedUnitNamesMap[name]) return this.flaggedUnitNamesMap[name];
+      if (item.id && this.flaggedUnitMap[item.id])
+        return this.flaggedUnitMap[item.id];
+      const name = (item.unitName || item.propertyName || "").toLowerCase();
+      if (name && this.flaggedUnitNamesMap[name])
+        return this.flaggedUnitNamesMap[name];
       return null;
     },
     gotoFlaggedUnit(item) {
@@ -601,65 +691,82 @@ export default {
     async deleteProperty(item) {
       try {
         await this.showConfirmDialog({
-          title: 'Delete Unit?',
-          message: `Are you sure you want to delete ${item.propertyName || item.unitName || 'this unit'}? This action cannot be undone.`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
-        
+          title: "Delete Unit?",
+          message: `Are you sure you want to delete ${
+            item.propertyName || item.unitName || "this unit"
+          }? This action cannot be undone.`,
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
+
         // Create archived unit data
         const archivedUnitData = {
           ...item,
           originalId: item.id,
           archivedAt: new Date(),
-          archivedBy: this.appStore.currentUser?.uid || 'unknown',
-          archivedByUserType: this.appStore.currentUser?.userType || 'unknown'
-        }
-        
+          archivedBy: this.appStore.currentUser?.uid || "unknown",
+          archivedByUserType: this.appStore.currentUser?.userType || "unknown",
+        };
+
         // Remove the id field so Firestore generates a new one
-        delete archivedUnitData.id
-        
+        delete archivedUnitData.id;
+
         // Add to archivedUnits collection
-        const archivedRef = collection(db, 'archivedUnits')
-        await addDoc(archivedRef, archivedUnitData)
+        const archivedRef = collection(db, "archivedUnits");
+        await addDoc(archivedRef, archivedUnitData);
 
         // Cascade: remove related docs (flaggedUnits, maintenance, inspections)
-        const unitNameKey = item.propertyName || item.unitName || ''
-        const deletes = []
+        const unitNameKey = item.propertyName || item.unitName || "";
+        const deletes = [];
         try {
           // Flagged Units by unitName
           if (unitNameKey) {
-            const fq1 = query(collection(db, 'flaggedUnits'), where('unitName', '==', unitNameKey))
-            const fqs1 = await getDocs(fq1)
-            fqs1.forEach(d => deletes.push(deleteDoc(d.ref)))
+            const fq1 = query(
+              collection(db, "flaggedUnits"),
+              where("unitName", "==", unitNameKey)
+            );
+            const fqs1 = await getDocs(fq1);
+            fqs1.forEach((d) => deletes.push(deleteDoc(d.ref)));
           }
           // Flagged Units by unitId (if schema supports it)
           if (item.id) {
-            const fq2 = query(collection(db, 'flaggedUnits'), where('unitId', '==', item.id))
-            const fqs2 = await getDocs(fq2)
-            fqs2.forEach(d => deletes.push(deleteDoc(d.ref)))
+            const fq2 = query(
+              collection(db, "flaggedUnits"),
+              where("unitId", "==", item.id)
+            );
+            const fqs2 = await getDocs(fq2);
+            fqs2.forEach((d) => deletes.push(deleteDoc(d.ref)));
           }
           // Flagged Units by unitNumber (if captured)
           if (item.unitNumber) {
-            const fq3 = query(collection(db, 'flaggedUnits'), where('unitNumber', '==', item.unitNumber))
-            const fqs3 = await getDocs(fq3)
-            fqs3.forEach(d => deletes.push(deleteDoc(d.ref)))
+            const fq3 = query(
+              collection(db, "flaggedUnits"),
+              where("unitNumber", "==", item.unitNumber)
+            );
+            const fqs3 = await getDocs(fq3);
+            fqs3.forEach((d) => deletes.push(deleteDoc(d.ref)));
           }
           // Maintenance by unitName
           if (unitNameKey) {
-            const mq = query(collection(db, 'maintenance'), where('unitName', '==', unitNameKey))
-            const ms = await getDocs(mq)
-            ms.forEach(d => deletes.push(deleteDoc(d.ref)))
+            const mq = query(
+              collection(db, "maintenance"),
+              where("unitName", "==", unitNameKey)
+            );
+            const ms = await getDocs(mq);
+            ms.forEach((d) => deletes.push(deleteDoc(d.ref)));
           }
           // Inspections by unitName
           if (unitNameKey) {
-            const iq = query(collection(db, 'inspections'), where('unitName', '==', unitNameKey))
-            const is = await getDocs(iq)
-            is.forEach(d => deletes.push(deleteDoc(d.ref)))
+            const iq = query(
+              collection(db, "inspections"),
+              where("unitName", "==", unitNameKey)
+            );
+            const is = await getDocs(iq);
+            is.forEach((d) => deletes.push(deleteDoc(d.ref)));
           }
         } catch (cascadeErr) {
-          console.error('Error preparing cascade deletes:', cascadeErr)
+          console.error("Error preparing cascade deletes:", cascadeErr);
         }
 
         // Log archive action
@@ -669,122 +776,132 @@ export default {
             unitId: item.id,
             unitName: item.propertyName || item.unitName,
             tenantRef: item.tenantRef,
-            agencyId: item.agencyId
+            agencyId: item.agencyId,
           },
           this.resourceTypes.UNIT,
           item.id
-        )
-        
+        );
+
         // Delete from original units collection
-        const unitRef = doc(db, 'units', item.id)
-        await deleteDoc(unitRef)
+        const unitRef = doc(db, "units", item.id);
+        await deleteDoc(unitRef);
 
         // Execute related deletions
         if (deletes.length) {
           try {
-            await Promise.allSettled(deletes)
+            await Promise.allSettled(deletes);
           } catch (err) {
-            console.error('Some related records could not be deleted:', err)
+            console.error("Some related records could not be deleted:", err);
           }
         }
-        
+
         // Remove from local arrays
-        this.properties = this.properties.filter(prop => prop.id !== item.id)
-        this.filteredProperties = this.filteredProperties.filter(prop => prop.id !== item.id)
-        
+        this.properties = this.properties.filter((prop) => prop.id !== item.id);
+        this.filteredProperties = this.filteredProperties.filter(
+          (prop) => prop.id !== item.id
+        );
+
         // Show success message (archived in background, but user sees "deleted")
         this.$nextTick(() => {
-          console.log('Unit deleted successfully')
-        })
-        
+          console.log("Unit deleted successfully");
+        });
       } catch (error) {
-        if (error.message !== 'User cancelled') {
-          console.error('Error archiving unit:', error)
+        if (error.message !== "User cancelled") {
+          console.error("Error archiving unit:", error);
         }
       }
     },
     async moveToVacancies(item) {
       try {
         await this.showConfirmDialog({
-          title: 'Move to Vacancies?',
-          message: `Move ${item.propertyName || item.unitName || 'this unit'} to Vacancies and remove it from Active Units?`,
-          confirmText: 'Move',
-          cancelText: 'Cancel',
-          color: '#000000'
-        })
+          title: "Move to Vacancies?",
+          message: `Move ${
+            item.propertyName || item.unitName || "this unit"
+          } to Vacancies and remove it from Active Units?`,
+          confirmText: "Move",
+          cancelText: "Cancel",
+          color: "#000000",
+        });
 
         // Check if vacancy already exists
         const existingVacancyQuery = query(
-          collection(db, 'vacancies'),
-          where('unitName', '==', item.propertyName || item.unitName)
+          collection(db, "vacancies"),
+          where("unitName", "==", item.propertyName || item.unitName)
         );
         const existingVacancySnapshot = await getDocs(existingVacancyQuery);
-        
+
         if (!existingVacancySnapshot.empty) {
-          this.showErrorDialog('A vacancy already exists for this unit.', 'Already Exists', 'OK');
+          this.showErrorDialog(
+            "A vacancy already exists for this unit.",
+            "Already Exists",
+            "OK"
+          );
           return;
         }
-        
+
         // Create vacancy entry
         const normalizeDateValue = (value) => {
-          if (!value) return ''
-          if (typeof value === 'string') return value
-          if (value instanceof Date) return value.toISOString().slice(0, 10)
+          if (!value) return "";
+          if (typeof value === "string") return value;
+          if (value instanceof Date) return value.toISOString().slice(0, 10);
           if (value?.toDate) {
             try {
-              return value.toDate().toISOString().slice(0, 10)
+              return value.toDate().toISOString().slice(0, 10);
             } catch {
-              return ''
+              return "";
             }
           }
-          const parsed = new Date(value)
-          return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10)
-        }
+          const parsed = new Date(value);
+          return Number.isNaN(parsed.getTime())
+            ? ""
+            : parsed.toISOString().slice(0, 10);
+        };
         const normalizeCurrency = (value) => {
-          if (value === null || value === undefined || value === '') return 0
-          const num = typeof value === 'number' ? value : Number(value)
-          return Number.isFinite(num) ? num : 0
-        }
+          if (value === null || value === undefined || value === "") return 0;
+          const num = typeof value === "number" ? value : Number(value);
+          return Number.isFinite(num) ? num : 0;
+        };
         const normalizePaidOut = (value) => {
-          if (value === true || value === 'Yes' || value === 'yes') return 'Yes'
-          if (value === false || value === 'No' || value === 'no') return 'No'
-          return value || ''
-        }
+          if (value === true || value === "Yes" || value === "yes")
+            return "Yes";
+          if (value === false || value === "No" || value === "no") return "No";
+          return value || "";
+        };
 
         const vacancyData = {
-          agencyId: item.agencyId || this.appStore.currentAgency?.id || '',
+          agencyId: item.agencyId || this.appStore.currentAgency?.id || "",
           unitId: item.id,
-          unitName: item.propertyName || item.unitName || '',
+          unitName: item.propertyName || item.unitName || "",
           dateVacated: new Date().toISOString().slice(0, 10),
           leaseStartDate: normalizeDateValue(item.leaseStartDate),
           leaseEndDate: normalizeDateValue(item.leaseEndDate),
           moveInDate: null,
-          propertyManager: item.propertyManager || '',
-          contactNumber: item.contactNumber || '',
+          propertyManager: item.propertyManager || "",
+          contactNumber: item.contactNumber || "",
           paidTowardsFund: normalizeCurrency(item.paidTowardsFund),
           paidOut: normalizePaidOut(item.paidOut),
-          notes: '',
-          propertyType: item.propertyType || 'residential',
+          notes: "",
+          propertyType: item.propertyType || "residential",
           createdAt: new Date(),
-          updatedAt: new Date()
-        }
-        await addDoc(collection(db, 'vacancies'), vacancyData)
+          updatedAt: new Date(),
+        };
+        await addDoc(collection(db, "vacancies"), vacancyData);
 
         // Archive the unit (don't hard delete)
         const archivedUnitData = {
           ...item,
           originalId: item.id,
           archivedAt: new Date(),
-          archivedBy: this.appStore.currentUser?.uid || 'unknown',
-          archivedByUserType: this.appStore.currentUser?.userType || 'unknown',
-          archivedReason: 'Moved to vacancies'
-        }
-        delete archivedUnitData.id
-        await addDoc(collection(db, 'archivedUnits'), archivedUnitData)
-        
+          archivedBy: this.appStore.currentUser?.uid || "unknown",
+          archivedByUserType: this.appStore.currentUser?.userType || "unknown",
+          archivedReason: "Moved to vacancies",
+        };
+        delete archivedUnitData.id;
+        await addDoc(collection(db, "archivedUnits"), archivedUnitData);
+
         // Remove from active units
-        await deleteDoc(doc(db, 'units', item.id))
-        
+        await deleteDoc(doc(db, "units", item.id));
+
         // Log audit event
         await this.logAuditEvent(
           this.auditActions.UPDATE,
@@ -796,20 +913,26 @@ export default {
             archived: true,
             vacancy: {
               dateVacated: vacancyData.dateVacated,
-              newTenantFound: 'No'
-            }
+              newTenantFound: "No",
+            },
           },
           this.resourceTypes.UNIT,
           item.id
-        )
+        );
 
-        this.properties = this.properties.filter(prop => prop.id !== item.id)
-        this.filteredProperties = this.filteredProperties.filter(prop => prop.id !== item.id)
-        
-        this.showSuccessDialog(`${item.propertyName || item.unitName} has been moved to Vacancies!`, 'Success!', 'OK')
+        this.properties = this.properties.filter((prop) => prop.id !== item.id);
+        this.filteredProperties = this.filteredProperties.filter(
+          (prop) => prop.id !== item.id
+        );
+
+        this.showSuccessDialog(
+          `${item.propertyName || item.unitName} has been moved to Vacancies!`,
+          "Success!",
+          "OK"
+        );
       } catch (error) {
-        if (error.message !== 'User cancelled') {
-          console.error('Error moving unit to vacancies:', error)
+        if (error.message !== "User cancelled") {
+          console.error("Error moving unit to vacancies:", error);
         }
       }
     },
@@ -819,33 +942,41 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only see their own agency
           let agencyData = null;
-          
-          if (userType === 'Agency') {
+
+          if (userType === "Agency") {
             // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
                 id: agencyDoc.id,
-                ...agencyDoc.data()
+                ...agencyDoc.data(),
               };
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+          } else if (
+            userType === "Admin" &&
+            currentUser.adminScope === "agency"
+          ) {
             // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              const agencyDoc = await getDoc(
+                doc(db, "users", currentUser.managedAgencyId)
+              );
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
+                  ...agencyDoc.data(),
                 };
               }
             }
           }
-          
+
           if (agencyData) {
             this.agencies = [agencyData];
             // Pre-select the agency for agency users and agency admins
@@ -853,23 +984,23 @@ export default {
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
+          console.log("Agency user - own agency loaded:", this.agencies);
         } else {
           // Super Admin and Admin users can see all agencies
           const agenciesQuery = query(
-            collection(db, 'users'),
-            where('userType', '==', 'Agency')
+            collection(db, "users"),
+            where("userType", "==", "Agency")
           );
-          
+
           const querySnapshot = await getDocs(agenciesQuery);
-          this.agencies = querySnapshot.docs.map(doc => ({
+          this.agencies = querySnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }));
-          console.log('All agencies fetched:', this.agencies);
+          console.log("All agencies fetched:", this.agencies);
         }
       } catch (error) {
-        console.error('Error fetching agencies:', error);
+        console.error("Error fetching agencies:", error);
       } finally {
         this.agenciesLoading = false;
       }
@@ -881,22 +1012,25 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
+
         let unitsQuery;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only see their own units
           let targetAgencyId = currentUser.uid; // Default for Agency users
-          
-          if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+
+          if (userType === "Admin" && currentUser.adminScope === "agency") {
             // For Agency Admin users, use their managed agency ID
             targetAgencyId = currentUser.managedAgencyId;
           }
-          
+
           if (targetAgencyId) {
             unitsQuery = query(
-              collection(db, 'units'),
-              where('agencyId', '==', targetAgencyId)
+              collection(db, "units"),
+              where("agencyId", "==", targetAgencyId)
             );
           } else {
             // No agency ID available, return empty results
@@ -907,25 +1041,28 @@ export default {
         } else if (agencyId) {
           // Super Admin/Admin users query units for specific agency
           unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', agencyId)
+            collection(db, "units"),
+            where("agencyId", "==", agencyId)
           );
         } else {
-          // Super Admin/Admin users query all units when no agency selected
-          unitsQuery = collection(db, 'units');
+          // Super Admin/Admin users: no agency selected, return empty results
+          this.properties = [];
+          this.filteredProperties = [];
+          this.propertiesLoading = false;
+          return;
         }
-        
+
         const querySnapshot = await getDocs(unitsQuery);
-        
+
         // Fetch all vacancies to exclude units with active vacancies
-        const vacanciesQuery = collection(db, 'vacancies');
+        const vacanciesQuery = collection(db, "vacancies");
         const vacanciesSnapshot = await getDocs(vacanciesQuery);
-        
+
         // Create a Set of unit IDs and unit names that have active vacancies
         const vacantUnitIds = new Set();
         const vacantUnitNames = new Set();
-        
-        vacanciesSnapshot.docs.forEach(doc => {
+
+        vacanciesSnapshot.docs.forEach((doc) => {
           const vacancy = doc.data();
           if (vacancy.unitId) {
             vacantUnitIds.add(vacancy.unitId);
@@ -934,19 +1071,20 @@ export default {
             vacantUnitNames.add(vacancy.unitName);
           }
         });
-        
+
         // Filter out units that have active vacancies
         this.properties = querySnapshot.docs
-          .map(doc => {
-            const data = doc.data()
+          .map((doc) => {
+            const data = doc.data();
             return {
               ...data,
               id: doc.id,
-              unitNumber: data.unitNumber || '',
-              monthsMissed: (typeof data.monthsMissed === 'number' ? data.monthsMissed : 0)
-            }
+              unitNumber: data.unitNumber || "",
+              monthsMissed:
+                typeof data.monthsMissed === "number" ? data.monthsMissed : 0,
+            };
           })
-          .filter(unit => {
+          .filter((unit) => {
             // Exclude if unit ID is in vacancies
             if (vacantUnitIds.has(unit.id)) {
               return false;
@@ -960,7 +1098,7 @@ export default {
             }
             return true;
           });
-        
+
         // If Super Admin, also refresh flagged units map for the same scope
         if (this.isSuperAdmin) {
           await this.fetchFlaggedUnits(agencyId);
@@ -968,10 +1106,10 @@ export default {
 
         // Apply initial filtering
         this.filterProperties();
-        console.log('Properties fetched:', this.properties);
-        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+        console.log("Properties fetched:", this.properties);
+        console.log("User type:", userType, "Agency ID filter:", agencyId);
       } catch (error) {
-        console.error('Error fetching properties:', error);
+        console.error("Error fetching properties:", error);
       } finally {
         this.propertiesLoading = false;
       }
@@ -984,7 +1122,7 @@ export default {
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
 
-        if (userType === 'Agency') {
+        if (userType === "Agency") {
           // Agencies don't need flags here; return early
           this.flaggedUnitMap = {};
           this.flaggedUnitNamesMap = {};
@@ -993,53 +1131,53 @@ export default {
 
         if (agencyId) {
           flaggedQuery = query(
-            collection(db, 'flaggedUnits'),
-            where('agencyId', '==', agencyId)
+            collection(db, "flaggedUnits"),
+            where("agencyId", "==", agencyId)
           );
         } else {
-          flaggedQuery = collection(db, 'flaggedUnits');
+          flaggedQuery = collection(db, "flaggedUnits");
         }
 
         const snapshot = await getDocs(flaggedQuery);
         const byId = {};
         const byName = {};
-        snapshot.docs.forEach(d => {
+        snapshot.docs.forEach((d) => {
           const data = d.data();
           const flaggedDocId = d.id;
           if (data?.unitId) byId[data.unitId] = flaggedDocId;
-          const name = (data?.unitName || '').toLowerCase();
+          const name = (data?.unitName || "").toLowerCase();
           if (name) byName[name] = flaggedDocId;
         });
         this.flaggedUnitMap = byId;
         this.flaggedUnitNamesMap = byName;
       } catch (error) {
-        console.error('Error fetching flagged units map:', error);
+        console.error("Error fetching flagged units map:", error);
         this.flaggedUnitMap = {};
         this.flaggedUnitNamesMap = {};
       }
     },
-    
+
     onAgencyChange(agencyId) {
-      console.log('Agency changed to:', agencyId);
+      console.log("Agency changed to:", agencyId);
       if (this.isAgencyUser) {
         // Agency users can't change agency selection
         return;
       }
-      
+
       if (agencyId) {
         // Fetch properties for selected agency
         this.fetchProperties(agencyId);
         if (this.isSuperAdmin) this.fetchFlaggedUnits(agencyId);
       } else {
-        // Fetch all properties when no agency is selected
-        this.fetchProperties();
-        if (this.isSuperAdmin) this.fetchFlaggedUnits();
+        // No agency selected, show empty state
+        this.properties = [];
+        this.filteredProperties = [];
       }
     },
-    
+
     addUnit() {
       console.log("Adding new unit");
-      this.$router.push('/add-unit');
+      this.$router.push("/add-unit");
     },
   },
   watch: {
@@ -1056,15 +1194,15 @@ export default {
             if (this.isSuperAdmin) this.fetchFlaggedUnits(newId || undefined);
           }
         }
-      }
-    }
+      },
+    },
   },
   async mounted() {
     document.title = "Active Units - Depsure";
-    
+
     // Fetch agencies first
     await this.fetchAgencies();
-    
+
     // Fetch properties based on user role and selected agency
     if (this.isAgencyUser) {
       // Agency users will automatically get their own units
@@ -1074,11 +1212,12 @@ export default {
       if (this.globalAgencyId) {
         this.selectedAgency = this.globalAgencyId;
         await this.fetchProperties(this.globalAgencyId);
-        if (this.isSuperAdmin) await this.fetchFlaggedUnits(this.globalAgencyId);
+        if (this.isSuperAdmin)
+          await this.fetchFlaggedUnits(this.globalAgencyId);
       } else {
-        // Otherwise load all
-        await this.fetchProperties();
-        if (this.isSuperAdmin) await this.fetchFlaggedUnits(this.selectedAgency);
+        // No agency selected, show empty state
+        this.properties = [];
+        this.filteredProperties = [];
       }
     }
   },
@@ -1089,7 +1228,6 @@ export default {
 .view-agency-page {
   padding: 20px;
   min-height: 100vh;
- 
 }
 
 /* Back button styling to match system buttons */
@@ -1138,7 +1276,6 @@ export default {
   min-height: 400px;
 }
 
-
 /* Kill all internal padding on the card shell; v-card-title / v-card-text have their own spacing */
 .agency-info-card-black {
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
@@ -1179,10 +1316,14 @@ export default {
 
 /* Dark right-to-left gradient overlay behind info */
 .agency-info-card-black::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.0) 100%);
+  background: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 0.85) 45%,
+    rgba(0, 0, 0, 0) 100%
+  );
   pointer-events: none;
 }
 .agency-info-card-black .no-gutters,
@@ -1222,16 +1363,50 @@ export default {
   min-height: 220px;
 }
 
-.agency-hero-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-.agency-hero-gradient { position:absolute; inset:0; background: linear-gradient(to left, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0)); }
+.agency-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.agency-hero-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to left,
+    rgba(0, 0, 0, 0.85) 45%,
+    rgba(0, 0, 0, 0)
+  );
+}
 .agency-hero-content {
   position: relative;
   z-index: 1;
   padding: 16px;
 }
-.agency-hero-center { position: absolute; inset: 0; z-index: 2; display:flex; align-items:center; justify-content:center; padding:0 16px; color:#fff; font-weight:800; font-size:1.6rem; text-align:center; letter-spacing:.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-.agency-hero-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; }
-.agency-hero-details .detail-item-black { color: #ffffff; }
+.agency-hero-center {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.6rem;
+  text-align: center;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.agency-hero-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.agency-hero-details .detail-item-black {
+  color: #ffffff;
+}
 
 /* Search field styling to match agency page */
 .custom-input .v-field {
@@ -1284,7 +1459,7 @@ export default {
 .month-menu {
   background: #ffffff;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   padding: 12px;
   min-width: 260px;
 }
@@ -1301,7 +1476,7 @@ export default {
 .month-menu__input:focus {
   outline: none;
   border-color: #000000;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 .month-menu__actions {
   display: flex;
@@ -1347,13 +1522,48 @@ export default {
 }
 
 /* Clean agency name-only header */
-.agency-name-card { border-radius: 10px; border: 1px solid #e9e9e9; background: #fff; }
-.agency-name-text { text-align: center; font-weight: 700; font-size: 1.25rem; padding: 12px 16px; color: #111; }
+.agency-name-card {
+  border-radius: 10px;
+  border: 1px solid #e9e9e9;
+  background: #fff;
+}
+.agency-name-text {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  padding: 12px 16px;
+  color: #111;
+}
 
 /* Static hero with image, centered title (no overlay) */
-.agency-hero-card { position: relative; border-radius: 12px; overflow: hidden; min-height: 180px; }
-.agency-hero-bg { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
-.agency-hero-center { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: #fff; font-weight: 800; font-size: 1.6rem; text-align: center; letter-spacing: 0.3px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+.agency-hero-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 180px;
+}
+.agency-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.agency-hero-center {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.6rem;
+  text-align: center;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
 
 /* Custom table header styling - black headers */
 :deep(.custom-header .v-data-table-header) {
@@ -1416,21 +1626,21 @@ export default {
   .view-agency-page {
     padding: 10px;
   }
-  
+
   .search-field {
     max-width: 100%;
   }
-  
+
   .back-btn {
     width: 140px;
     height: 40px;
   }
-  
+
   .action-btn {
     font-size: 0.7rem;
     padding: 6px 8px;
   }
-  
+
   .agency-info-card-black {
     text-align: center;
   }

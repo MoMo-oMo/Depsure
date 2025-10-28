@@ -32,15 +32,19 @@
 
     <!-- Prompt Dialog -->
     <PromptDialog />
+
+    <!-- Date Notes Dialog -->
+    <DateNotesDialog />
   </div>
 </template>
 
 <script setup>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import SuccessDialog from '@/components/SuccessDialog.vue'
-import ErrorDialog from '@/components/ErrorDialog.vue'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import PromptDialog from '@/components/PromptDialog.vue'
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import SuccessDialog from "@/components/SuccessDialog.vue";
+import ErrorDialog from "@/components/ErrorDialog.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import PromptDialog from "@/components/PromptDialog.vue";
+import DateNotesDialog from "@/components/DateNotesDialog.vue";
 
 const {
   successDialog,
@@ -49,6 +53,6 @@ const {
   hideSuccessDialog,
   hideErrorDialog,
   confirm,
-  cancel
-} = useCustomDialogs()
+  cancel,
+} = useCustomDialogs();
 </script>

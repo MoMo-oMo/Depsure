@@ -41,13 +41,16 @@
               </v-col>
             </v-row>
           </div>
-          
+
           <!-- No agencies found -->
-          <div v-else-if="filteredAgencies.length === 0" class="text-center pa-8">
+          <div
+            v-else-if="filteredAgencies.length === 0"
+            class="text-center pa-8"
+          >
             <v-icon size="64" color="grey">mdi-domain-off</v-icon>
             <p class="mt-4 text-grey">No agencies found</p>
           </div>
-          
+
           <!-- Agencies grid -->
           <v-row v-else>
             <v-col
@@ -62,7 +65,11 @@
                 <!-- Image section with overlay title -->
                 <div class="image-section">
                   <v-img
-                    :src="agency.profileImageUrl || agency.profileImage || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'"
+                    :src="
+                      agency.profileImageUrl ||
+                      agency.profileImage ||
+                      'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+                    "
                     :alt="agency.agencyName"
                     class="card-image"
                     cover
@@ -82,29 +89,26 @@
                   </p>
 
                   <!-- Action Button -->
-                <div class="button-container">
-                  <v-btn
-                    color="white"
-                    variant="outlined"
-                    class="action-btn btn-view"
-
-                    @click="viewAgencyDetails(agency)"
-                  >
-                    View
-                  </v-btn>
-                  <v-btn
-                    color="white"
-
-                    class="action-btn btn-select"
-
-                    @click="selectAgency(agency)"
-                  >
-                    Select 
-                  </v-btn>
+                  <div class="button-container">
+                    <v-btn
+                      color="white"
+                      variant="outlined"
+                      class="action-btn btn-view"
+                      @click="viewAgencyDetails(agency)"
+                    >
+                      View
+                    </v-btn>
+                    <v-btn
+                      color="white"
+                      class="action-btn btn-select"
+                      @click="selectAgency(agency)"
+                    >
+                      Select
+                    </v-btn>
+                  </div>
                 </div>
               </div>
-            </div>
-          </v-col>
+            </v-col>
           </v-row>
         </v-col>
       </v-row>
@@ -113,33 +117,40 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
+import { db } from "@/firebaseConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { useAppStore } from "@/stores/app";
 
 export default {
-  name: 'AgencyPage',
+  name: "AgencyPage",
   data() {
     return {
       agencies: [],
-      searchQuery: '',
+      searchQuery: "",
       filteredAgencies: [],
       loading: false,
-      monthFilter: this.getCurrentMonth()
-    }
+      monthFilter: this.getCurrentMonth(),
+    };
   },
   methods: {
     getCurrentMonth() {
-      const now = new Date()
-      const year = now.getFullYear()
-      const month = String(now.getMonth() + 1).padStart(2, '0')
-      return `${year}-${month}`
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      return `${year}-${month}`;
     },
     openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector('input')
+      const el = this.$refs.monthInput?.$el?.querySelector("input");
       if (el) {
-        if (typeof el.showPicker === 'function') el.showPicker()
-        else el.focus()
+        if (typeof el.showPicker === "function") el.showPicker();
+        else el.focus();
       }
     },
     viewAgencyDetails(agency) {
@@ -153,52 +164,58 @@ export default {
         appStore.setCurrentAgency({
           id: agency.id,
           agencyName: agency.agencyName,
-          profileImageUrl: agency.profileImageUrl || agency.profileImage || null,
+          profileImageUrl:
+            agency.profileImageUrl || agency.profileImage || null,
           location: agency.location || null,
           establishedYear: agency.establishedYear || null,
-          agencyDescription: agency.agencyDescription || agency.agencyTagline || null,
+          agencyDescription:
+            agency.agencyDescription || agency.agencyTagline || null,
         });
         // Route to Active Units scoped to this agency
-        this.$router.push('/active-units');
+        this.$router.push("/active-units");
       } catch (e) {
-        console.error('Failed to select agency', e);
+        console.error("Failed to select agency", e);
       }
     },
     filterAgencies() {
-      const queryText = this.searchQuery.toLowerCase()
-      this.filteredAgencies = this.agencies.filter(agency => {
-        const textMatch = (
+      const queryText = this.searchQuery.toLowerCase();
+      this.filteredAgencies = this.agencies.filter((agency) => {
+        const textMatch =
           agency.agencyName?.toLowerCase().includes(queryText) ||
           agency.agencyTagline?.toLowerCase().includes(queryText) ||
           agency.agencyDescription?.toLowerCase().includes(queryText) ||
-          agency.location?.toLowerCase().includes(queryText)
-        )
+          agency.location?.toLowerCase().includes(queryText);
 
-        if (!this.monthFilter) return textMatch
+        if (!this.monthFilter) return textMatch;
 
         // Try to filter by createdAt month if available (Firestore Timestamp or Date/string)
-        let createdAt = agency.createdAt || agency.creationDate || agency.created_on || null
-        if (!createdAt) return textMatch
+        let createdAt =
+          agency.createdAt || agency.creationDate || agency.created_on || null;
+        if (!createdAt) return textMatch;
 
-        let createdDate
+        let createdDate;
         try {
-          if (createdAt && typeof createdAt.toDate === 'function') {
-            createdDate = createdAt.toDate()
+          if (createdAt && typeof createdAt.toDate === "function") {
+            createdDate = createdAt.toDate();
           } else {
-            createdDate = new Date(createdAt)
+            createdDate = new Date(createdAt);
           }
-          const filterDate = new Date(this.monthFilter + '-01')
-          const agencyMonth = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}`
-          const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, '0')}`
-          return textMatch && agencyMonth === filterMonth
+          const filterDate = new Date(this.monthFilter + "-01");
+          const agencyMonth = `${createdDate.getFullYear()}-${String(
+            createdDate.getMonth() + 1
+          ).padStart(2, "0")}`;
+          const filterMonth = `${filterDate.getFullYear()}-${String(
+            filterDate.getMonth() + 1
+          ).padStart(2, "0")}`;
+          return textMatch && agencyMonth === filterMonth;
         } catch (_) {
-          return textMatch
+          return textMatch;
         }
-      })
+      });
     },
     addNewAgency() {
       // Navigate to the add agency page
-      this.$router.push('/add-agency');
+      this.$router.push("/add-agency");
     },
     async fetchAgencies() {
       this.loading = true;
@@ -206,97 +223,113 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        console.log('Current user data:', currentUser);
-        console.log('User type:', userType);
-        console.log('User UID:', currentUser?.uid);
-        
+
+        console.log("Current user data:", currentUser);
+        console.log("User type:", userType);
+        console.log("User UID:", currentUser?.uid);
+
         let agenciesQuery;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only see their own agency
           let agencyData = null;
-          
-          if (userType === 'Agency') {
+
+          if (userType === "Agency") {
             // For Agency users, use their own document
             try {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+              const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
+                  ...agencyDoc.data(),
                 };
               }
             } catch (error) {
-              console.log('Could not fetch agency by UID:', error);
+              console.log("Could not fetch agency by UID:", error);
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+          } else if (
+            userType === "Admin" &&
+            currentUser.adminScope === "agency"
+          ) {
             // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
               try {
-                const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+                const agencyDoc = await getDoc(
+                  doc(db, "users", currentUser.managedAgencyId)
+                );
                 if (agencyDoc.exists()) {
                   agencyData = {
                     id: agencyDoc.id,
-                    ...agencyDoc.data()
+                    ...agencyDoc.data(),
                   };
                 }
               } catch (error) {
-                console.log('Could not fetch managed agency:', error);
+                console.log("Could not fetch managed agency:", error);
               }
             }
           }
-          
+
           // Fallback: If still no data, use the current user data directly
           if (!agencyData && currentUser) {
             agencyData = {
-              id: currentUser.uid || 'unknown',
-              agencyName: currentUser.agencyName || currentUser.managedAgencyName || currentUser.firstName || 'My Agency',
-              agencyDescription: currentUser.agencyDescription || currentUser.agencyTagline || 'Agency Description',
-              location: currentUser.location || 'Location not specified',
-              profileImageUrl: currentUser.profileImageUrl || currentUser.profileImage,
-              ...currentUser
+              id: currentUser.uid || "unknown",
+              agencyName:
+                currentUser.agencyName ||
+                currentUser.managedAgencyName ||
+                currentUser.firstName ||
+                "My Agency",
+              agencyDescription:
+                currentUser.agencyDescription ||
+                currentUser.agencyTagline ||
+                "Agency Description",
+              location: currentUser.location || "Location not specified",
+              profileImageUrl:
+                currentUser.profileImageUrl || currentUser.profileImage,
+              ...currentUser,
             };
           }
-          
+
           if (agencyData) {
             this.agencies = [agencyData];
             this.filteredAgencies = this.agencies;
-            console.log('Agency user data found:', this.agencies);
+            console.log("Agency user data found:", this.agencies);
           } else {
             this.agencies = [];
             this.filteredAgencies = [];
-            console.log('No agency data found for current user');
+            console.log("No agency data found for current user");
           }
           return; // Exit early for agency users and agency admins
         } else {
           // Super Admin and Admin users can see all agencies
           agenciesQuery = query(
-            collection(db, 'users'),
-            where('userType', '==', 'Agency')
+            collection(db, "users"),
+            where("userType", "==", "Agency")
           );
-          
+
           const querySnapshot = await getDocs(agenciesQuery);
-          this.agencies = querySnapshot.docs.map(doc => ({
+          this.agencies = querySnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }));
           this.filteredAgencies = this.agencies;
-          console.log('Agencies fetched:', this.agencies);
+          console.log("Agencies fetched:", this.agencies);
         }
-        
-        console.log('User type:', userType, 'Current user:', currentUser);
+
+        console.log("User type:", userType, "Current user:", currentUser);
       } catch (error) {
-        console.error('Error fetching agencies:', error);
+        console.error("Error fetching agencies:", error);
       } finally {
         this.loading = false;
       }
-    }
+    },
   },
   async mounted() {
     await this.fetchAgencies();
-  }
-}
+  },
+};
 </script>
 
 <style scoped>
@@ -307,7 +340,7 @@ export default {
 }
 
 .agency-page::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -386,7 +419,7 @@ export default {
     rgba(0, 0, 0, 0.82) 22%,
     rgba(0, 0, 0, 0.64) 48%,
     rgba(0, 0, 0, 0.36) 74%,
-    rgba(0, 0, 0, 0.0) 100%
+    rgba(0, 0, 0, 0) 100%
   );
   /* Reduced height while keeping smooth fade */
   height: 36%;
@@ -450,7 +483,8 @@ export default {
   text-transform: none;
   padding: 10px 16px;
   border-radius: 10px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease, border-color 0.2s ease;
 }
 
 /* View button: subtle outline on dark card */

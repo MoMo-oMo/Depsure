@@ -1,7 +1,6 @@
 <template>
   <div class="view-property-page">
     <v-container fluid>
-      
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
@@ -21,7 +20,9 @@
       <v-row class="mb-6">
         <v-col cols="12">
           <h1 class="page-title">Property Details</h1>
-          <p class="page-subtitle">View complete property and tenant information</p>
+          <p class="page-subtitle">
+            View complete property and tenant information
+          </p>
         </v-col>
       </v-row>
 
@@ -33,7 +34,7 @@
               <v-icon icon="mdi-home" class="mr-2" />
               Property Information
             </v-card-title>
-            
+
             <v-card-text>
               <v-row>
                 <!-- Tenant Reference -->
@@ -135,7 +136,7 @@
                   />
                 </v-col>
 
-                <!-- Amount to be Paid Out -->
+                <!-- Amount to be Paid Out
                 <v-col cols="12" md="6">
                   <v-text-field
                     :model-value="`R${property.amountToBePaidOut.toLocaleString()}`"
@@ -144,7 +145,7 @@
                     readonly
                     class="custom-input"
                   />
-                </v-col>
+                </v-col> -->
 
                 <!-- Paid Out -->
                 <v-col cols="12" md="6">
@@ -167,36 +168,36 @@
 
 <script>
 export default {
-  name: 'ViewPropertyPage',
+  name: "ViewPropertyPage",
   data() {
     return {
       property: {
         id: 1,
-        tenantRef: 'T001',
-        propertyName: '123 Main Street, Cape Town',
-        newOccupation: 'Yes',
-        leaseStartDate: '2024-01-15',
-        leaseEndDate: '2025-01-15',
+        tenantRef: "T001",
+        propertyName: "123 Main Street, Cape Town",
+        newOccupation: "Yes",
+        leaseStartDate: "2024-01-15",
+        leaseEndDate: "2025-01-15",
         monthsMissed: 2,
         maintenanceAmount: 15000,
-        contractorRequested: 'Yes',
+        contractorRequested: "Yes",
         paidTowardsFund: 5000,
         amountToBePaidOut: 25000,
-        paidOut: 'No'
-      }
-    }
+        paidOut: "No",
+      },
+    };
   },
   mounted() {
-    console.log('ViewPropertyPage mounted');
+    console.log("ViewPropertyPage mounted");
     // Set the page title for the app bar
-    document.title = 'Property Details - Depsure';
-    
+    document.title = "Property Details - Depsure";
+
     // Get property ID from route params
     const propertyId = this.$route.params.id;
-    console.log('Property ID from route:', propertyId);
+    console.log("Property ID from route:", propertyId);
     if (propertyId) {
       // Load property data based on ID
-      console.log('Loading property with ID:', propertyId);
+      console.log("Loading property with ID:", propertyId);
       // In a real app, you would fetch the property data here
       this.loadPropertyData(propertyId);
     }
@@ -207,83 +208,83 @@ export default {
       const mockProperties = [
         {
           id: 1,
-          tenantRef: 'T001',
-          propertyName: '123 Main Street, Cape Town',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-01-15',
-          leaseEndDate: '2025-01-15',
+          tenantRef: "T001",
+          propertyName: "123 Main Street, Cape Town",
+          newOccupation: "Yes",
+          leaseStartDate: "2024-01-15",
+          leaseEndDate: "2025-01-15",
           monthsMissed: 2,
           maintenanceAmount: 15000,
-          contractorRequested: 'Yes',
+          contractorRequested: "Yes",
           paidTowardsFund: 5000,
           amountToBePaidOut: 25000,
-          paidOut: 'No'
+          paidOut: "No",
         },
         {
           id: 2,
-          tenantRef: 'T002',
-          propertyName: '456 Ocean Drive, Camps Bay',
-          newOccupation: 'No',
-          leaseStartDate: '2023-06-01',
-          leaseEndDate: '2024-06-01',
+          tenantRef: "T002",
+          propertyName: "456 Ocean Drive, Camps Bay",
+          newOccupation: "No",
+          leaseStartDate: "2023-06-01",
+          leaseEndDate: "2024-06-01",
           monthsMissed: 0,
           maintenanceAmount: 8000,
-          contractorRequested: 'No',
+          contractorRequested: "No",
           paidTowardsFund: 12000,
           amountToBePaidOut: 0,
-          paidOut: 'Yes'
+          paidOut: "Yes",
         },
         {
           id: 3,
-          tenantRef: 'T003',
-          propertyName: '789 Mountain View, Constantia',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-02-01',
-          leaseEndDate: '2025-02-01',
+          tenantRef: "T003",
+          propertyName: "789 Mountain View, Constantia",
+          newOccupation: "Yes",
+          leaseStartDate: "2024-02-01",
+          leaseEndDate: "2025-02-01",
           monthsMissed: 1,
           maintenanceAmount: 22000,
-          contractorRequested: 'Yes',
+          contractorRequested: "Yes",
           paidTowardsFund: 8000,
           amountToBePaidOut: 18000,
-          paidOut: 'No'
+          paidOut: "No",
         },
         {
           id: 4,
-          tenantRef: 'T004',
-          propertyName: '321 Beach Road, Clifton',
-          newOccupation: 'No',
-          leaseStartDate: '2023-09-15',
-          leaseEndDate: '2024-09-15',
+          tenantRef: "T004",
+          propertyName: "321 Beach Road, Clifton",
+          newOccupation: "No",
+          leaseStartDate: "2023-09-15",
+          leaseEndDate: "2024-09-15",
           monthsMissed: 3,
           maintenanceAmount: 30000,
-          contractorRequested: 'Yes',
+          contractorRequested: "Yes",
           paidTowardsFund: 15000,
           amountToBePaidOut: 35000,
-          paidOut: 'No'
+          paidOut: "No",
         },
         {
           id: 5,
-          tenantRef: 'T005',
-          propertyName: '654 Garden Street, Newlands',
-          newOccupation: 'Yes',
-          leaseStartDate: '2024-03-01',
-          leaseEndDate: '2025-03-01',
+          tenantRef: "T005",
+          propertyName: "654 Garden Street, Newlands",
+          newOccupation: "Yes",
+          leaseStartDate: "2024-03-01",
+          leaseEndDate: "2025-03-01",
           monthsMissed: 0,
           maintenanceAmount: 12000,
-          contractorRequested: 'No',
+          contractorRequested: "No",
           paidTowardsFund: 10000,
           amountToBePaidOut: 0,
-          paidOut: 'Yes'
-        }
+          paidOut: "Yes",
+        },
       ];
-      
-      const foundProperty = mockProperties.find(p => p.id == propertyId);
+
+      const foundProperty = mockProperties.find((p) => p.id == propertyId);
       if (foundProperty) {
         this.property = foundProperty;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -346,8 +347,6 @@ export default {
   border-radius: 8px;
 }
 
-
-
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
 }
@@ -357,11 +356,11 @@ export default {
   .view-property-page {
     padding: 10px;
   }
-  
+
   .page-title {
     font-size: 1.5rem;
   }
-  
+
   .back-btn {
     width: 140px;
     height: 40px;
