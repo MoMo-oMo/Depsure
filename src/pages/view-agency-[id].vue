@@ -1,7 +1,6 @@
 <template>
   <div class="view-agency-page">
     <v-container fluid>
-      
       <!-- Back Button only -->
       <v-row class="mb-4">
         <v-col cols="12" md="3">
@@ -32,10 +31,7 @@
                   />
                 </v-col>
                 <v-col cols="12" md="9" class="pa-4">
-                  <v-skeleton-loader
-                    type="heading"
-                    class="mb-4"
-                  />
+                  <v-skeleton-loader type="heading" class="mb-4" />
                   <div class="agency-details-black">
                     <v-skeleton-loader
                       v-for="i in 4"
@@ -45,24 +41,18 @@
                     />
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <v-skeleton-loader
-                    type="paragraph"
-                    class="mt-4"
-                  />
+                  <v-skeleton-loader type="paragraph" class="mt-4" />
                 </v-col>
               </v-row>
             </v-card>
           </v-col>
         </v-row>
-        
+
         <!-- Skeleton for Properties Table -->
         <v-row>
           <v-col cols="12" class="pa-4">
             <v-card class="table-card">
-              <v-skeleton-loader
-                type="table-heading"
-                class="mb-4"
-              />
+              <v-skeleton-loader type="table-heading" class="mb-4" />
               <v-skeleton-loader
                 v-for="i in 5"
                 :key="i"
@@ -74,44 +64,124 @@
         </v-row>
       </div>
 
-      <!-- Agency Information Card - Black Rectangle -->
+      <!-- Agency Information Card - Animated -->
       <v-row v-else class="mb-6">
         <v-col cols="12">
-          <v-card class="agency-info-card-black">
-            <div class="agency-card-bg"></div>
-            <!-- Content overlay on the background image -->
+          <v-card
+            class="agency-info-card-black"
+            :class="{ 'card-loaded': animationReady }"
+          >
+            <!-- Black background base -->
+            <div class="agency-unified-bg"></div>
+            <!-- Logo positioned on the right -->
+            <div class="agency-logo-right" :style="agencyLogoStyle"></div>
+            <!-- Black to transparent gradient overlay -->
+            <div class="agency-gradient-overlay"></div>
+            <!-- Content overlay -->
             <div class="agency-content-overlay">
-              <v-row>
-                <v-col cols="12" md="8">
-                  <div class="agency-content-right">
-                    <v-card-title class="agency-title text-white text-h3 mb-4">{{ agency.agencyName }}</v-card-title>
+              <v-row class="no-gutters">
+                <!-- Left content area -->
+                <v-col cols="12" md="6" class="agency-content-left">
+                  <div class="agency-content-wrapper">
+                    <v-card-title
+                      class="agency-title text-white text-h3 mb-4"
+                      :class="{ 'title-animated': animationReady }"
+                      >{{ agency.agencyName }}</v-card-title
+                    >
                     <v-card-text class="text-white">
                       <div class="agency-details-black">
-                        <div class="detail-item-black">
-                          <v-icon icon="mdi-map-marker" class="mr-3 text-white" size="20" />
-                          <span class="detail-text">{{ agency.address || 'Address not provided' }}</span>
+                        <div
+                          class="detail-item-black"
+                          :class="{ 'detail-animated': animationReady }"
+                          style="animation-delay: 0.2s"
+                        >
+                          <v-icon
+                            icon="mdi-map-marker"
+                            class="mr-3 text-white"
+                            size="20"
+                          />
+                          <span class="detail-text">{{
+                            agency.address || "Address not provided"
+                          }}</span>
                         </div>
-                        <div class="detail-item-black">
-                          <v-icon icon="mdi-card-account-details" class="mr-3 text-white" size="20" />
-                          <span class="detail-text">Reg No: {{ agency.regNo || '—' }}</span>
+                        <div
+                          class="detail-item-black"
+                          :class="{ 'detail-animated': animationReady }"
+                          style="animation-delay: 0.4s"
+                        >
+                          <v-icon
+                            icon="mdi-card-account-details"
+                            class="mr-3 text-white"
+                            size="20"
+                          />
+                          <span class="detail-text"
+                            >Reg No: {{ agency.regNo || "—" }}</span
+                          >
                         </div>
-                        <div class="detail-item-black">
-                          <v-icon icon="mdi-account" class="mr-3 text-white" size="20" />
-                          <span class="detail-text">Primary Contact: {{ agency.primaryContactName || 'N/A' }}</span>
+                        <div
+                          class="detail-item-black"
+                          :class="{ 'detail-animated': animationReady }"
+                          style="animation-delay: 0.6s"
+                        >
+                          <v-icon
+                            icon="mdi-account"
+                            class="mr-3 text-white"
+                            size="20"
+                          />
+                          <span class="detail-text"
+                            >Primary Contact:
+                            {{ agency.primaryContactName || "N/A" }}</span
+                          >
                         </div>
-                        <div class="detail-item-black">
-                          <v-icon icon="mdi-phone" class="mr-3 text-white" size="20" />
-                          <span class="detail-text">{{ agency.contactNumber || 'N/A' }}</span>
+                        <div
+                          class="detail-item-black"
+                          :class="{ 'detail-animated': animationReady }"
+                          style="animation-delay: 0.8s"
+                        >
+                          <v-icon
+                            icon="mdi-phone"
+                            class="mr-3 text-white"
+                            size="20"
+                          />
+                          <span class="detail-text">{{
+                            agency.contactNumber || "N/A"
+                          }}</span>
                         </div>
-                        <div class="detail-item-black">
-                          <v-icon icon="mdi-email" class="mr-3 text-white" size="20" />
-                          <span class="detail-text">{{ agency.email || 'N/A' }}</span>
+                        <div
+                          class="detail-item-black"
+                          :class="{ 'detail-animated': animationReady }"
+                          style="animation-delay: 1s"
+                        >
+                          <v-icon
+                            icon="mdi-email"
+                            class="mr-3 text-white"
+                            size="20"
+                          />
+                          <span class="detail-text">{{
+                            agency.email || "N/A"
+                          }}</span>
                         </div>
                       </div>
-                      <v-divider v-if="agency.notes" class="my-4 bg-white" />
-                      <p v-if="agency.notes" class="agency-description-black">{{ agency.notes }}</p>
+                      <v-divider
+                        v-if="agency.notes"
+                        class="my-4 bg-white"
+                        :class="{ 'divider-animated': animationReady }"
+                        style="animation-delay: 1.2s"
+                      />
+                      <p
+                        v-if="agency.notes"
+                        class="agency-description-black"
+                        :class="{ 'description-animated': animationReady }"
+                        style="animation-delay: 1.4s"
+                      >
+                        {{ agency.notes }}
+                      </p>
                     </v-card-text>
                   </div>
+                </v-col>
+                <!-- Right side - Logo area (empty, just for layout) -->
+                <v-col cols="12" md="6" class="agency-logo-section">
+                  <!-- Logo will be displayed via background image -->
                 </v-col>
               </v-row>
             </div>
@@ -120,7 +190,6 @@
       </v-row>
 
       <!-- Search Section -->
- 
 
       <!-- Info-only: no table or actions below -->
     </v-container>
@@ -128,48 +197,140 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAppStore } from '@/stores/app'
+import { db } from "@/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { useAppStore } from "@/stores/app";
 
 export default {
-  name: 'ViewAgencyPage',
+  name: "ViewAgencyPage",
   setup() {
-    const { showConfirmDialog } = useCustomDialogs()
-    return { showConfirmDialog }
+    const { showConfirmDialog } = useCustomDialogs();
+    return { showConfirmDialog };
   },
   data() {
     return {
       agency: {},
-      loading: false
-    }
+      loading: false,
+      animationReady: false,
+    };
   },
   computed: {
+    agencyCardBgStyle() {
+      const profileImageUrl =
+        this.agency?.profileImageUrl || this.agency?.profileImage;
+      if (profileImageUrl) {
+        return {
+          backgroundImage: `url(${profileImageUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        };
+      }
+      // Fallback to a default background if no profile image
+      return {
+        backgroundImage:
+          "url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      };
+    },
+
+    agencyLogoStyle() {
+      const profileImageUrl =
+        this.agency?.profileImageUrl || this.agency?.profileImage;
+      if (profileImageUrl) {
+        return {
+          backgroundImage: `url(${profileImageUrl})`,
+          backgroundSize: this.getOptimalBackgroundSize(),
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        };
+      }
+      // Fallback to a default background if no profile image
+      return {
+        backgroundImage:
+          "url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)",
+        backgroundSize: "contain",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      };
+    },
   },
   methods: {
+    getOptimalBackgroundSize() {
+      // This function determines the best background size for the logo
+      // based on common logo aspect ratios and container dimensions
+      const profileImageUrl =
+        this.agency?.profileImageUrl || this.agency?.profileImage;
+
+      if (!profileImageUrl) return "contain";
+
+      // For logos, we typically want to:
+      // 1. Use 'contain' for square logos to show the full logo
+      // 2. Use 'cover' for wide logos to fill the space
+      // 3. Use 'contain' for tall logos to prevent cropping
+
+      // Since we can't easily detect image dimensions without loading the image,
+      // we'll use a smart approach based on common logo patterns
+
+      // Check if the URL suggests it's a logo (common logo file patterns)
+      const logoPatterns = [
+        "logo",
+        "brand",
+        "icon",
+        "symbol",
+        "mark",
+        "emblem",
+      ];
+
+      const isLikelyLogo = logoPatterns.some((pattern) =>
+        profileImageUrl.toLowerCase().includes(pattern)
+      );
+
+      if (isLikelyLogo) {
+        // For likely logos, use contain to show the full logo
+        return "contain";
+      }
+
+      // For other images, use cover to fill the space nicely
+      return "cover";
+    },
+
     openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector('input');
+      const el = this.$refs.monthInput?.$el?.querySelector("input");
       if (el) {
-        if (typeof el.showPicker === 'function') el.showPicker();
+        if (typeof el.showPicker === "function") el.showPicker();
         else el.focus();
       }
     },
     getCurrentMonth() {
       const now = new Date();
       const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, "0");
       return `${year}-${month}`;
     },
     filterProperties() {
-      this.filteredProperties = this.properties.filter(property => {
+      this.filteredProperties = this.properties.filter((property) => {
         // Text search filter
-        const textMatch = property.tenantRef.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          property.propertyName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          property.newOccupation.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          property.contractorRequested.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          property.paidOut.toLowerCase().includes(this.searchQuery.toLowerCase());
-        
+        const textMatch =
+          property.tenantRef
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase()) ||
+          property.propertyName
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase()) ||
+          property.newOccupation
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase()) ||
+          property.contractorRequested
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase()) ||
+          property.paidOut
+            .toLowerCase()
+            .includes(this.searchQuery.toLowerCase());
+
         // Month filter - now filtering by createdAt date
         if (this.monthFilter) {
           // Handle Firestore Timestamp objects
@@ -184,176 +345,241 @@ export default {
             // No createdAt date, skip this property
             return textMatch;
           }
-          
-          const filterDate = new Date(this.monthFilter + '-01');
-          const propertyMonth = `${propertyDate.getFullYear()}-${String(propertyDate.getMonth() + 1).padStart(2, '0')}`;
-          const filterMonth = `${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, '0')}`;
-          
+
+          const filterDate = new Date(this.monthFilter + "-01");
+          const propertyMonth = `${propertyDate.getFullYear()}-${String(
+            propertyDate.getMonth() + 1
+          ).padStart(2, "0")}`;
+          const filterMonth = `${filterDate.getFullYear()}-${String(
+            filterDate.getMonth() + 1
+          ).padStart(2, "0")}`;
+
           return textMatch && propertyMonth === filterMonth;
         }
-        
+
         return textMatch;
       });
     },
     viewProperty(property) {
-      console.log('Viewing property:', property);
+      console.log("Viewing property:", property);
       // Navigate to property details page
       this.$router.push(`/view-property-${property.id}`);
     },
     editProperty(property) {
-      console.log('Editing property:', property);
+      console.log("Editing property:", property);
       // Navigate to edit property page
       this.$router.push(`/edit-property-${property.id}`);
     },
     async deleteProperty(property) {
-      console.log('Deleting property:', property);
+      console.log("Deleting property:", property);
       try {
         await this.showConfirmDialog({
-          title: 'Delete property?',
+          title: "Delete property?",
           message: `Are you sure you want to delete property ${property.tenantRef}?`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
       } catch (_) {
-        return
+        return;
       }
-      const index = this.properties.findIndex(p => p.id === property.id);
+      const index = this.properties.findIndex((p) => p.id === property.id);
       if (index > -1) {
         this.properties.splice(index, 1);
         this.filterProperties(); // Refresh filtered list
       }
     },
     addUnit() {
-      console.log('Adding new unit');
+      console.log("Adding new unit");
       // Navigate to add unit page with agency ID
       this.$router.push(`/add-unit?agencyId=${this.agency.id}`);
     },
-    
+
     async fetchProperties(agencyId) {
       this.propertiesLoading = true;
       try {
         // Query units collection for properties belonging to this agency
         const unitsQuery = query(
-          collection(db, 'units'),
-          where('agencyId', '==', agencyId)
+          collection(db, "units"),
+          where("agencyId", "==", agencyId)
         );
-        
+
         const querySnapshot = await getDocs(unitsQuery);
-        this.properties = querySnapshot.docs.map(doc => ({
+        this.properties = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
         // Apply initial filtering
         this.filterProperties();
-        console.log('Properties fetched for agency:', this.properties);
+        console.log("Properties fetched for agency:", this.properties);
       } catch (error) {
-        console.error('Error fetching properties:', error);
+        console.error("Error fetching properties:", error);
       } finally {
         this.propertiesLoading = false;
       }
     },
-    
+
     async fetchAgencyData(agencyId) {
       this.loading = true;
       try {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
+
         // Check if user has permission to view this agency
-        if (userType === 'Agency' && currentUser.uid !== agencyId) {
-          console.error('Agency user can only view their own agency');
-          this.$router.push('/active-units');
+        if (userType === "Agency" && currentUser.uid !== agencyId) {
+          console.error("Agency user can only view their own agency");
+          this.$router.push("/active-units");
           return;
         }
-        
-        const agencyDoc = await getDoc(doc(db, 'users', agencyId));
-        
+
+        const agencyDoc = await getDoc(doc(db, "users", agencyId));
+
         if (agencyDoc.exists()) {
           const agencyData = agencyDoc.data();
           this.agency = {
             id: agencyDoc.id,
-            ...agencyData
+            ...agencyData,
           };
-          console.log('Agency data loaded:', this.agency);
-          
+          console.log("Agency data loaded:", this.agency);
+
           // Fetch properties for this agency
           await this.fetchProperties(agencyId);
         } else {
-          console.error('Agency not found');
+          console.error("Agency not found");
           // Handle agency not found - could redirect to 404 or show error
         }
       } catch (error) {
-        console.error('Error fetching agency data:', error);
+        console.error("Error fetching agency data:", error);
       } finally {
         this.loading = false;
+        // Trigger animation after a short delay to ensure DOM is ready
+        setTimeout(() => {
+          this.animationReady = true;
+        }, 200);
       }
-    }
+    },
   },
   async mounted() {
     // Set the page title for the app bar
-    document.title = 'Agency Details - Depsure';
-    
+    document.title = "Agency Details - Depsure";
+
     // Get agency ID from route params
     const agencyId = this.$route.params.id;
     if (agencyId) {
-      console.log('Loading agency with ID:', agencyId);
+      console.log("Loading agency with ID:", agencyId);
       await this.fetchAgencyData(agencyId);
     } else {
-      console.error('No agency ID provided in route');
+      console.error("No agency ID provided in route");
     }
-  }
-}
+  },
+};
 </script>
 
 <style scoped>
-.agency-card-bg { 
-  position: absolute; 
-  inset: 0; 
-  z-index: 0; 
-  background-image: url('https://i.pinimg.com/736x/4a/e1/03/4ae1030bfab9ca4b172a312e87982f35.jpg');
+/* Black background base */
+.agency-unified-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+  z-index: 0;
+}
+
+/* Logo positioned on the right */
+.agency-logo-right {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  z-index: 1;
 }
-.agency-info-card-black::after {
-  content: '';
+
+/* Black to transparent gradient overlay */
+.agency-gradient-overlay {
   position: absolute;
-  inset: 0;
-  z-index: 1; /* sits above image, below content */
-  background: rgba(0, 0, 0, 0.55);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.95) 0%,
+    rgba(0, 0, 0, 0.9) 15%,
+    rgba(0, 0, 0, 0.8) 30%,
+    rgba(0, 0, 0, 0.6) 45%,
+    rgba(0, 0, 0, 0.4) 60%,
+    rgba(0, 0, 0, 0.2) 75%,
+    rgba(0, 0, 0, 0.05) 90%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  z-index: 2;
   pointer-events: none;
 }
-.agency-info-card-black { position: relative; }
-.agency-content-overlay { 
-  position: absolute; 
-  inset: 0; 
-  z-index: 2; 
-  display: flex; 
-  align-items: center; 
-  padding: 24px; 
+
+.agency-info-card-black {
+  position: relative;
+  overflow: hidden;
 }
-.agency-info-card-black .no-gutters, .agency-info-card-black .v-row { position:relative; z-index:1; }
-.agency-content-right { 
-  margin-left: auto; 
-  width: min(1100px, 80%); 
-  padding: 24px; 
-  text-align: left; 
-  background: transparent;
-  backdrop-filter: none;
-  border-radius: 0;
-  margin: 16px;
+
+.agency-content-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.agency-info-card-black .no-gutters,
+.agency-info-card-black .v-row {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+}
+
+/* Left content area */
+.agency-content-left {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  height: 100%;
+}
+
+.agency-content-wrapper {
+  padding: 40px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Right logo area */
+.agency-logo-section {
+  padding: 0;
+  height: 100%;
+  position: relative;
 }
 .agency-title {
   display: block;
-  margin: 0 0 8px;
+  margin: 0 0 16px;
   white-space: nowrap !important;
   overflow: visible;
   text-overflow: unset;
   line-height: 1.2;
   width: 100%;
   max-width: 100%;
+  font-weight: 700;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  color: #ffd700; /* Gold color like in the image */
 }
 .view-agency-page {
   padding: 20px;
@@ -385,15 +611,16 @@ export default {
   border-radius: 6px !important;
 }
 
-/* Kill all internal padding on the card shell; v-card-title / v-card-text have their own spacing */
+/* Main card styling */
 .agency-info-card-black {
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   color: white;
   padding: 0;
-  min-height: 400px;
+  min-height: 450px;
+  position: relative;
 }
 
 /* Remove row/column gutters so the image sits flush with the top/edges */
@@ -419,15 +646,18 @@ export default {
 .detail-item-black {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
-  font-size: 1.1rem;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
   color: #ffffff;
-  min-height: 32px;
+  min-height: 36px;
+  padding: 8px 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .detail-text {
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.4;
+  color: #f0f0f0;
 }
 
 .agency-description-black {
@@ -488,7 +718,12 @@ export default {
 }
 
 :deep(.v-skeleton-loader__bone) {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.1) 75%) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  ) !important;
   animation: skeleton-loading 1.5s infinite !important;
 }
 
@@ -501,26 +736,47 @@ export default {
   }
 }
 
+/* Responsive design */
+@media (max-width: 768px) {
+  .agency-logo-right {
+    width: 100%;
+    height: 40%;
+    top: 60%;
+  }
+
+  .agency-content-left {
+    height: 60%;
+  }
+
+  .agency-logo-section {
+    height: 40%;
+  }
+
+  .agency-content-wrapper {
+    padding: 20px;
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .view-agency-page {
     padding: 10px;
   }
-  
+
   .search-field {
     max-width: 100%;
   }
-  
+
   .back-btn {
     width: 140px;
     height: 40px;
   }
-  
+
   .action-btn {
     font-size: 0.7rem;
     padding: 6px 8px;
   }
-  
+
   .agency-info-card-black {
     text-align: center;
   }
@@ -535,5 +791,85 @@ export default {
   .agency-content-right {
     width: 100%;
   }
+}
+
+/* Animation Styles */
+.agency-info-card-black {
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.agency-info-card-black.card-loaded {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.agency-title {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.agency-title.title-animated {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.detail-item-black {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.detail-item-black.detail-animated {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.v-divider.divider-animated {
+  opacity: 0;
+  transform: scaleX(0);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.v-divider.divider-animated {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.agency-description-black {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.agency-description-black.description-animated {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Logo animation */
+.agency-logo-right {
+  opacity: 0;
+  transform: translateX(50px) scale(0.8);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition-delay: 0.3s;
+}
+
+.card-loaded .agency-logo-right {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/* Gradient overlay animation */
+.agency-gradient-overlay {
+  opacity: 0;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition-delay: 0.2s;
+}
+
+.card-loaded .agency-gradient-overlay {
+  opacity: 1;
 }
 </style>
