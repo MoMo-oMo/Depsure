@@ -65,7 +65,7 @@
           @click="navigateTo('onboard-units')"
         />
         <v-list-item
-          v-if="!(isAgencyUser || isAgencyAdmin)"
+          v-if="!(isAgencyUser || isAgencyAdmin) && hasSelectedAgency"
           prepend-icon="mdi-home"
           title="ACTIVE UNITS"
           value="active-units"
@@ -73,40 +73,115 @@
         />
 
         <v-list-item
-          v-if="!(isAgencyUser || isAgencyAdmin)"
+          v-if="!(isAgencyUser || isAgencyAdmin) && hasSelectedAgency"
           prepend-icon="mdi-bell"
           title="NOTICES"
           value="notices"
           @click="navigateTo('notices')"
-        />
+        >
+          <template #append>
+            <v-avatar
+              v-if="noticesUnread > 0"
+              color="red"
+              size="20"
+              class="ml-2 unread-badge"
+            >
+              <span
+                class="text-white"
+                style="font-size: 11px; font-weight: 700; line-height: 1"
+                >{{ noticesUnreadDisplay }}</span
+              >
+            </v-avatar>
+          </template>
+        </v-list-item>
         <v-list-item
-          v-if="!(isAgencyUser || isAgencyAdmin)"
+          v-if="!(isAgencyUser || isAgencyAdmin) && hasSelectedAgency"
           prepend-icon="mdi-home-outline"
           title="VACANCIES"
           value="vacancies"
           @click="navigateTo('vacancies')"
-        />
+        >
+          <template #append>
+            <v-avatar
+              v-if="vacanciesUnread > 0"
+              color="red"
+              size="20"
+              class="ml-2 unread-badge"
+            >
+              <span
+                class="text-white"
+                style="font-size: 11px; font-weight: 700; line-height: 1"
+                >{{ vacanciesUnreadDisplay }}</span
+              >
+            </v-avatar>
+          </template>
+        </v-list-item>
         <v-list-item
-          v-if="!(isAgencyUser || isAgencyAdmin)"
+          v-if="!(isAgencyUser || isAgencyAdmin) && hasSelectedAgency"
           prepend-icon="mdi-flag"
           title="FLAGGED UNITS"
           value="flagged-units"
           @click="navigateTo('flagged-units')"
-        />
+        >
+          <template #append>
+            <v-avatar
+              v-if="flaggedUnread > 0"
+              color="red"
+              size="20"
+              class="ml-2 unread-badge"
+            >
+              <span
+                class="text-white"
+                style="font-size: 11px; font-weight: 700; line-height: 1"
+                >{{ flaggedUnreadDisplay }}</span
+              >
+            </v-avatar>
+          </template>
+        </v-list-item>
         <v-list-item
-          v-if="!(isAgencyUser || isAgencyAdmin)"
+          v-if="!(isAgencyUser || isAgencyAdmin) && hasSelectedAgency"
           prepend-icon="mdi-wrench"
           title="MAINTENANCE"
           value="maintenance"
           @click="navigateTo('maintenance')"
-        />
+        >
+          <template #append>
+            <v-avatar
+              v-if="maintenanceUnread > 0"
+              color="red"
+              size="20"
+              class="ml-2 unread-badge"
+            >
+              <span
+                class="text-white"
+                style="font-size: 11px; font-weight: 700; line-height: 1"
+                >{{ maintenanceUnreadDisplay }}</span
+              >
+            </v-avatar>
+          </template>
+        </v-list-item>
         <v-list-item
-          v-if="!(isAgencyUser || isAgencyAdmin)"
+          v-if="!(isAgencyUser || isAgencyAdmin) && hasSelectedAgency"
           prepend-icon="mdi-clipboard-check"
           title="INSPECTIONS"
           value="inspections"
           @click="navigateTo('inspections')"
-        />
+        >
+          <template #append>
+            <v-avatar
+              v-if="inspectionsUnread > 0"
+              color="red"
+              size="20"
+              class="ml-2 unread-badge"
+            >
+              <span
+                class="text-white"
+                style="font-size: 11px; font-weight: 700; line-height: 1"
+                >{{ inspectionsUnreadDisplay }}</span
+              >
+            </v-avatar>
+          </template>
+        </v-list-item>
 
         <v-list-item
           v-if="isAgencyUser || isAgencyAdmin || hasSelectedAgency"
@@ -295,6 +370,8 @@ export default {
         if (route === "notices") resetSection("notices");
         if (route === "maintenance") resetSection("maintenance");
         if (route === "inspections") resetSection("inspections");
+        if (route === "vacancies") resetSection("vacancies");
+        if (route === "flagged-units") resetSection("flagged");
       } catch {}
       router.push(`/${route}`);
     }
@@ -443,10 +520,12 @@ export default {
       combinedUnread.value > 99 ? "99+" : String(combinedUnread.value)
     );
 
-    // ===== Unseen indicators for Notices, Maintenance, Inspections =====
+    // ===== Unseen indicators for Notices, Maintenance, Inspections, Vacancies, Flagged Units =====
     const noticesUnread = ref(0);
     const maintenanceUnread = ref(0);
     const inspectionsUnread = ref(0);
+    const vacanciesUnread = ref(0);
+    const flaggedUnread = ref(0);
     const noticesUnreadDisplay = computed(() =>
       noticesUnread.value > 0
         ? noticesUnread.value > 99
@@ -468,10 +547,26 @@ export default {
           : String(inspectionsUnread.value)
         : ""
     );
+    const vacanciesUnreadDisplay = computed(() =>
+      vacanciesUnread.value > 0
+        ? vacanciesUnread.value > 99
+          ? "99+"
+          : String(vacanciesUnread.value)
+        : ""
+    );
+    const flaggedUnreadDisplay = computed(() =>
+      flaggedUnread.value > 0
+        ? flaggedUnread.value > 99
+          ? "99+"
+          : String(flaggedUnread.value)
+        : ""
+    );
 
     let unsubNotices = null;
     let unsubMaintenance = null;
     let unsubInspections = null;
+    let unsubVacancies = null;
+    let unsubFlagged = null;
 
     function getLastSeen(key) {
       try {
@@ -510,27 +605,40 @@ export default {
         } catch {}
         unsubInspections = null;
       }
+      if (section === "vacancies" && unsubVacancies) {
+        try {
+          unsubVacancies();
+        } catch {}
+        unsubVacancies = null;
+      }
+      if (section === "flagged" && unsubFlagged) {
+        try {
+          unsubFlagged();
+        } catch {}
+        unsubFlagged = null;
+      }
 
       const user = appStore.currentUser;
       if (!user) return;
-      // Only for Super Admin and Depsure Admin views
-      const type = user?.userType;
-      const scope = user?.adminScope;
-      const isStaffView =
-        type === "Super Admin" || (type === "Admin" && scope === "depsure");
-      if (!isStaffView) return;
 
-      const agencyId = appStore.currentAgency?.id || null;
+      // Determine agency context like chat does
+      let agencyId = null;
+      if (user.userType === "Agency") agencyId = user.uid;
+      else if (user.userType === "Admin" && user.adminScope === "agency")
+        agencyId = user.managedAgencyId || null;
+      else agencyId = appStore.currentAgency?.id || null;
+
       if (!agencyId) {
         setCountRef.value = 0;
         return;
       }
 
       const key = lastSeenKey(section, agencyId, appStore.userId);
+
+      // Simple query without orderBy to avoid index requirements
       const qRef = query(
         collection(db, colName),
         where("agencyId", "==", agencyId),
-        orderBy("updatedAt", "desc"),
         limit(30)
       );
 
@@ -554,7 +662,8 @@ export default {
             if (ts && ts > lastSeenMs) count++;
           });
           setCountRef.value = count;
-        } catch {
+        } catch (e) {
+          console.error(`[${section}] Subscription error:`, e);
           setCountRef.value = 0;
         }
       });
@@ -562,15 +671,26 @@ export default {
       if (section === "notices") unsubNotices = handler;
       if (section === "maintenance") unsubMaintenance = handler;
       if (section === "inspections") unsubInspections = handler;
+      if (section === "vacancies") unsubVacancies = handler;
+      if (section === "flagged") unsubFlagged = handler;
     }
 
     function resetSection(section) {
-      const agencyId = appStore.currentAgency?.id || null;
+      // Use same agency context logic as subscription
+      const user = appStore.currentUser;
+      let agencyId = null;
+      if (user?.userType === "Agency") agencyId = user.uid;
+      else if (user?.userType === "Admin" && user.adminScope === "agency")
+        agencyId = user.managedAgencyId || null;
+      else agencyId = appStore.currentAgency?.id || null;
+
       const key = lastSeenKey(section, agencyId, appStore.userId);
       setLastSeen(key);
       if (section === "notices") noticesUnread.value = 0;
       if (section === "maintenance") maintenanceUnread.value = 0;
       if (section === "inspections") inspectionsUnread.value = 0;
+      if (section === "vacancies") vacanciesUnread.value = 0;
+      if (section === "flagged") flaggedUnread.value = 0;
     }
 
     async function subscribeToUnread() {
@@ -684,6 +804,8 @@ export default {
       subscribeSection("notices", "notices", noticesUnread);
       subscribeSection("maintenance", "maintenance", maintenanceUnread);
       subscribeSection("inspections", "inspections", inspectionsUnread);
+      subscribeSection("vacancies", "vacancies", vacanciesUnread);
+      subscribeSection("flagged", "flaggedUnits", flaggedUnread);
       // Presence across the whole app (low-cost: write on mount/visibility/unload)
       try {
         const uid = appStore.userId;
@@ -778,6 +900,18 @@ export default {
         } catch {}
         unsubInspections = null;
       }
+      if (unsubVacancies) {
+        try {
+          unsubVacancies();
+        } catch {}
+        unsubVacancies = null;
+      }
+      if (unsubFlagged) {
+        try {
+          unsubFlagged();
+        } catch {}
+        unsubFlagged = null;
+      }
       if (presenceCleanup) {
         try {
           presenceCleanup();
@@ -795,6 +929,8 @@ export default {
         subscribeSection("notices", "notices", noticesUnread);
         subscribeSection("maintenance", "maintenance", maintenanceUnread);
         subscribeSection("inspections", "inspections", inspectionsUnread);
+        subscribeSection("vacancies", "vacancies", vacanciesUnread);
+        subscribeSection("flagged", "flaggedUnits", flaggedUnread);
       }
     );
 
@@ -819,9 +955,16 @@ export default {
       unreadCount,
       combinedUnread,
       displayUnread,
+      noticesUnread,
+      maintenanceUnread,
+      inspectionsUnread,
+      vacanciesUnread,
+      flaggedUnread,
       noticesUnreadDisplay,
       maintenanceUnreadDisplay,
       inspectionsUnreadDisplay,
+      vacanciesUnreadDisplay,
+      flaggedUnreadDisplay,
     };
   },
 };

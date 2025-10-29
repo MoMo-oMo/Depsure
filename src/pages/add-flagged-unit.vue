@@ -193,7 +193,7 @@
                   :loading="loading"
                   @click="submitForm"
                 >
-                  {{ loading ? 'Adding...' : 'Add Flagged Unit' }}
+                  {{ loading ? "Adding..." : "Add Flagged Unit" }}
                 </v-btn>
               </div>
             </v-form>
@@ -205,28 +205,36 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAppStore } from '@/stores/app'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { usePropertyType } from '@/composables/usePropertyType'
+import { db } from "@/firebaseConfig";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { useAppStore } from "@/stores/app";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { usePropertyType } from "@/composables/usePropertyType";
 
 export default {
   name: "AddFlaggedUnitPage",
   setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getLabel, resolvePropertyTypeFromUnit } = usePropertyType()
-    return { 
-      showSuccessDialog, 
-      showErrorDialog, 
-      logAuditEvent, 
-      auditActions, 
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    const { getLabel, resolvePropertyTypeFromUnit } = usePropertyType();
+    return {
+      showSuccessDialog,
+      showErrorDialog,
+      logAuditEvent,
+      auditActions,
       resourceTypes,
       getPropertyTypeLabel: getLabel,
-      resolvePropertyTypeFromUnit
-    }
+      resolvePropertyTypeFromUnit,
+    };
   },
   data() {
     return {
@@ -237,56 +245,67 @@ export default {
       units: [],
       unitsLoading: false,
       unit: {
-        agencyId: '',
-        unitName: '',
-        tenantRef: '',
-        leaseStartDate: '',
-        flagReason: '',
-        dateFlagged: '',
-        missedPaymentFlag: '',
-        noticeToVacateGiven: '',
-        actionTaken: '',
-        notes: ''
+        agencyId: "",
+        unitName: "",
+        tenantRef: "",
+        leaseStartDate: "",
+        flagReason: "",
+        dateFlagged: "",
+        missedPaymentFlag: "",
+        noticeToVacateGiven: "",
+        actionTaken: "",
+        notes: "",
       },
-      agencyRules: [v => !!v || "Agency selection is required"],
+      agencyRules: [(v) => !!v || "Agency selection is required"],
       unitNameRules: [
-        v => !!v || "Unit Name is required",
-        v => v.length >= 3 || "Unit Name must be at least 3 characters"
+        (v) => !!v || "Unit Name is required",
+        (v) => v.length >= 3 || "Unit Name must be at least 3 characters",
       ],
-      tenantRefRules: [v => !!v || "Tenant Reference is required"],
-      leaseStartDateRules: [v => !!v || "Lease Start Date is required"],
-      flagReasonRules: [v => !!v || "Reason Flagged is required"],
-      dateFlaggedRules: [v => !!v || "Date Flagged is required"],
-      missedPaymentFlagRules: [v => !!v || "Missed Payment Flag is required"],
-      noticeToVacateGivenRules: [v => !!v || "Notice To Vacate Given is required"],
+      tenantRefRules: [(v) => !!v || "Tenant Reference is required"],
+      leaseStartDateRules: [(v) => !!v || "Lease Start Date is required"],
+      flagReasonRules: [(v) => !!v || "Reason Flagged is required"],
+      dateFlaggedRules: [(v) => !!v || "Date Flagged is required"],
+      missedPaymentFlagRules: [(v) => !!v || "Missed Payment Flag is required"],
+      noticeToVacateGivenRules: [
+        (v) => !!v || "Notice To Vacate Given is required",
+      ],
       actionTakenRules: [
-        v => !!v || "Action Taken is required",
-        v => (v ? v.length <= 500 : true) || 'Action Taken cannot exceed 500 characters'
+        (v) => !!v || "Action Taken is required",
+        (v) =>
+          (v ? v.length <= 500 : true) ||
+          "Action Taken cannot exceed 500 characters",
       ],
       notesRules: [
-        v => (v ? v.length <= 500 : true) || 'Additional Notes cannot exceed 500 characters'
-      ]
+        (v) =>
+          (v ? v.length <= 500 : true) ||
+          "Additional Notes cannot exceed 500 characters",
+      ],
     };
   },
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     selectedUnitPropertyType() {
       if (!this.unit.unitName) return null;
-      
+
       // Find the selected unit to get its propertyId
-      const selectedUnit = this.units.find(u => u.propertyName === this.unit.unitName);
+      const selectedUnit = this.units.find(
+        (u) => u.propertyName === this.unit.unitName
+      );
       if (!selectedUnit) return null;
-      
-              return selectedUnit.propertyType || 'residential';
+
+      return selectedUnit.propertyType || "residential";
     },
     propertyTypeLabel() {
-      if (!this.selectedUnitPropertyType) return '';
+      if (!this.selectedUnitPropertyType) return "";
       return this.getPropertyTypeLabel(this.selectedUnitPropertyType);
-    }
+    },
   },
   methods: {
     async fetchAgencies() {
@@ -295,33 +314,41 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only add flagged units to their own agency
           let agencyData = null;
-          
-          if (userType === 'Agency') {
+
+          if (userType === "Agency") {
             // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
                 id: agencyDoc.id,
-                ...agencyDoc.data()
+                ...agencyDoc.data(),
               };
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+          } else if (
+            userType === "Admin" &&
+            currentUser.adminScope === "agency"
+          ) {
             // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              const agencyDoc = await getDoc(
+                doc(db, "users", currentUser.managedAgencyId)
+              );
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
+                  ...agencyDoc.data(),
                 };
               }
             }
           }
-          
+
           if (agencyData) {
             this.agencies = [agencyData];
             // Pre-select the agency for agency users and agency admins
@@ -329,24 +356,24 @@ export default {
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
+          console.log("Agency user - own agency loaded:", this.agencies);
         } else {
           // Super Admin and Admin users can see all agencies
           const agenciesQuery = query(
-            collection(db, 'users'),
-            where('userType', '==', 'Agency')
+            collection(db, "users"),
+            where("userType", "==", "Agency")
           );
-          
+
           const querySnapshot = await getDocs(agenciesQuery);
-          this.agencies = querySnapshot.docs.map(doc => ({
+          this.agencies = querySnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }));
-          console.log('All agencies fetched:', this.agencies);
+          console.log("All agencies fetched:", this.agencies);
         }
       } catch (error) {
-        console.error('Error fetching agencies:', error);
-        this.showErrorDialog('Failed to load agencies. Please try again.');
+        console.error("Error fetching agencies:", error);
+        this.showErrorDialog("Failed to load agencies. Please try again.");
       } finally {
         this.agenciesLoading = false;
       }
@@ -357,37 +384,48 @@ export default {
         this.loading = true;
         try {
           // Find the selected unit to get unit number if available
-          const selectedUnit = this.units.find(u => u.propertyName === this.unit.unitName);
-          
+          const selectedUnit = this.units.find(
+            (u) => u.propertyName === this.unit.unitName
+          );
+
           // Prepare the flagged unit data - only save unit name, unit number, and flagged date
           const flaggedUnitData = {
             unitName: this.unit.unitName,
-            unitNumber: selectedUnit?.unitNumber || selectedUnit?.propertyNumber || '',
+            unitNumber:
+              selectedUnit?.unitNumber || selectedUnit?.propertyNumber || "",
             dateFlagged: this.unit.dateFlagged,
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
           };
 
           // Add to flaggedUnits collection
-          const docRef = await addDoc(collection(db, 'flaggedUnits'), flaggedUnitData);
-          
+          const docRef = await addDoc(
+            collection(db, "flaggedUnits"),
+            flaggedUnitData
+          );
+
           // Log the audit event
           await this.logAuditEvent(
             this.auditActions.CREATE,
             {
               unitName: flaggedUnitData.unitName,
               unitNumber: flaggedUnitData.unitNumber,
-              dateFlagged: flaggedUnitData.dateFlagged
+              dateFlagged: flaggedUnitData.dateFlagged,
             },
             this.resourceTypes.UNIT,
             docRef.id
-          )
-          
+          );
+
           console.log("Flagged unit added successfully with ID:", docRef.id);
-          this.showSuccessDialog("Flagged unit added successfully!", "Success!", "Continue", "/flagged-units");
+          this.showSuccessDialog(
+            "Flagged unit added successfully!",
+            "Success!",
+            "Continue",
+            "/flagged-units"
+          );
         } catch (error) {
-          console.error('Error adding flagged unit:', error);
-          this.showErrorDialog('Failed to add flagged unit. Please try again.');
+          console.error("Error adding flagged unit:", error);
+          this.showErrorDialog("Failed to add flagged unit. Please try again.");
         } finally {
           this.loading = false;
         }
@@ -400,22 +438,25 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
+
         let unitsQuery;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only see units from their own agency
           let targetAgencyId = currentUser.uid; // Default for Agency users
-          
-          if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+
+          if (userType === "Admin" && currentUser.adminScope === "agency") {
             // For Agency Admin users, use their managed agency ID
             targetAgencyId = currentUser.managedAgencyId;
           }
-          
+
           if (targetAgencyId) {
             unitsQuery = query(
-              collection(db, 'units'),
-              where('agencyId', '==', targetAgencyId)
+              collection(db, "units"),
+              where("agencyId", "==", targetAgencyId)
             );
           } else {
             // No agency ID available, return empty results
@@ -425,25 +466,29 @@ export default {
         } else if (agencyId) {
           // Super Admin/Admin users query units for specific agency
           unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', agencyId)
+            collection(db, "units"),
+            where("agencyId", "==", agencyId)
           );
         } else {
           // Super Admin/Admin users query all units when no agency selected
-          unitsQuery = collection(db, 'units');
+          unitsQuery = collection(db, "units");
         }
-        
+
         const querySnapshot = await getDocs(unitsQuery);
-        this.units = querySnapshot.docs.map(doc => ({
+        this.units = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
-        
-        console.log('Units fetched:', this.units);
-        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+
+        console.log("Units fetched:", this.units);
+        console.log("User type:", userType, "Agency ID filter:", agencyId);
       } catch (error) {
-        console.error('Error fetching units:', error);
-        this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK');
+        console.error("Error fetching units:", error);
+        this.showErrorDialog(
+          "Failed to load units. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
         this.unitsLoading = false;
       }
@@ -451,32 +496,35 @@ export default {
 
     goBack() {
       this.$router.push("/flagged-units");
-    }
+    },
   },
   async mounted() {
     document.title = "Add Flagged Unit - Depsure";
-    
+
     // Fetch agencies first
     await this.fetchAgencies();
-    
+
     // For agency users and agency admins, fetch their units automatically
     if (this.isAgencyUser) {
       // Ensure agencyId defaults to the correct value
       try {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
-        
-        if (currentUser?.userType === 'Agency') {
-          this.unit.agencyId = currentUser.uid || '';
-        } else if (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency') {
-          this.unit.agencyId = currentUser.managedAgencyId || '';
+
+        if (currentUser?.userType === "Agency") {
+          this.unit.agencyId = currentUser.uid || "";
+        } else if (
+          currentUser?.userType === "Admin" &&
+          currentUser?.adminScope === "agency"
+        ) {
+          this.unit.agencyId = currentUser.managedAgencyId || "";
         }
       } catch (_) {}
       await this.fetchUnits();
     }
   },
   watch: {
-    'unit.agencyId': {
+    "unit.agencyId": {
       handler(newAgencyId) {
         if (this.isAgencyUser) {
           // Agency users automatically get their own units
@@ -486,12 +534,12 @@ export default {
           this.fetchUnits(newAgencyId);
         } else {
           this.units = [];
-          this.unit.unitName = '';
+          this.unit.unitName = "";
         }
       },
-      immediate: false
-    }
-  }
+      immediate: false,
+    },
+  },
 };
 </script>
 
@@ -566,7 +614,7 @@ export default {
   border-radius: 8px;
   background-color: black !important;
   color: white !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 

@@ -158,16 +158,16 @@
                     </v-col>
 
                     <!-- Amount to be Paid Out
-                    <v-col cols="12" md="6">
-                      <v-text-field
+                <v-col cols="12" md="6">
+                  <v-text-field
                         :model-value="
                           formatCurrency(property.amountToBePaidOut)
                         "
-                        label="Amount to be Paid Out (Inc Interest)"
-                        variant="outlined"
-                        readonly
-                        class="custom-input"
-                      />
+                    label="Amount to be Paid Out (Inc Interest)"
+                    variant="outlined"
+                    readonly
+                    class="custom-input"
+                  />
                     </v-col> -->
                   </v-row>
                 </v-card-text>

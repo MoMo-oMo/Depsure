@@ -164,23 +164,23 @@
                   title="View Vacancy"
                 />
                 <!-- Move to Active Units -->
-                <v-btn
-                  icon="mdi-arrow-left-bold-box"
-                  size="small"
-                  variant="text"
-                  color="black"
-                  @click="openMoveToActive(item)"
-                  class="action-btn"
-                  title="Move to Active Units"
+                <v-btn 
+                  icon="mdi-arrow-left-bold-box" 
+                  size="small" 
+                  variant="text" 
+                  color="black" 
+                  @click="openMoveToActive(item)" 
+                  class="action-btn" 
+                  title="Move to Active Units" 
                 />
-                <v-btn
+                <v-btn 
                   v-if="userType === 'Admin' || userType === 'Super Admin'"
-                  icon="mdi-delete"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  @click="deleteVacancy(item)"
-                  class="action-btn"
+                  icon="mdi-delete" 
+                  size="small" 
+                  variant="text" 
+                  color="error" 
+                  @click="deleteVacancy(item)" 
+                  class="action-btn" 
                   title="Delete Vacancy"
                 />
               </div>
@@ -583,7 +583,7 @@ export default {
 
         // Note: Units now stay in active units when vacancy is created (not archived)
         // So we're updating the existing unit with new tenant information
-
+        
         // Get existing unit data from active units
         let existingUnitData = {};
         if (originalId) {
@@ -596,7 +596,7 @@ export default {
             console.log("Could not fetch existing unit data:", e);
           }
         }
-
+        
         // Fallback: check archived units for legacy data (old workflow)
         let archivedDoc = null;
         if (!Object.keys(existingUnitData).length) {
@@ -698,14 +698,14 @@ export default {
         });
         // Simply delete the vacancy; keep the unit in archivedUnits for document retention
         await deleteDoc(doc(db, "vacancies", item.id));
-
+        
         // Remove from local array
         const index = this.vacancies.findIndex((v) => v.id === item.id);
         if (index > -1) {
           this.vacancies.splice(index, 1);
           this.filterVacancies();
         }
-
+        
         // Show success message
         this.showSuccessMessage?.(
           "Vacancy deleted. Unit remains in Deleted Units (Archive)."
@@ -740,7 +740,7 @@ export default {
           if (agencyData) {
             this.agencies = [agencyData];
             this.selectedAgency = agencyData.id;
-          } else {
+        } else {
             this.agencies = [];
           }
         } else {
@@ -806,9 +806,9 @@ export default {
         // Resolve property types if missing
         this.vacancies = await Promise.all(
           list.map(async (v) => {
-            try {
+          try {
               if (v.propertyType) return v;
-              if (v.unitId) {
+            if (v.unitId) {
                 const pt = await this.resolvePropertyTypeFromUnit(v.unitId);
                 return { ...v, propertyType: pt };
               }

@@ -9,7 +9,7 @@
             v-model="searchQuery"
             label="Search properties..."
             prepend-inner-icon="mdi-magnify"
-            flat="true"
+            :flat="true"
             density="comfortable"
             variant="outlined"
             clearable
@@ -35,7 +35,7 @@
                 :model-value="monthFilterLabel"
                 label="Filter by month"
                 append-inner-icon="mdi-calendar-month"
-                flat="true"
+                :flat="true"
                 density="comfortable"
                 variant="outlined"
                 hide-details
@@ -513,10 +513,17 @@ export default {
       return [{ value: null, title: "All Types" }, ...this.getOptions()];
     },
     flaggedFilterOptions() {
-      return [
+      const options = [
         { value: "all", title: "All" },
         { value: "only", title: "Only Flagged" },
       ];
+
+      // Add "Unflagged" option for Super Admin
+      if (this.isSuperAdmin) {
+        options.push({ value: "unflagged", title: "Unflagged" });
+      }
+
+      return options;
     },
     showSquareMeterageSummary() {
       return SQUARE_METER_TYPES.includes(this.propertyTypeFilter);
@@ -643,6 +650,8 @@ export default {
         let flaggedMatch = true;
         if (this.flaggedFilter === "only") {
           flaggedMatch = this.isUnitFlagged(property);
+        } else if (this.flaggedFilter === "unflagged") {
+          flaggedMatch = !this.isUnitFlagged(property);
         }
 
         // NEW FLOW: Exclude units with "Notice Given" status (they should appear in Notices page)

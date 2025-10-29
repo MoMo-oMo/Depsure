@@ -189,14 +189,39 @@
                   />
                 </template>
                 <!-- View-only actions for Admin/Super Admin -->
-                <v-btn
-                  icon="mdi-file-document"
-                  color="black"
-                  variant="text"
-                  size="small"
-                  title="Unit Documents"
-                  @click="viewDocuments(item)"
-                />
+                <div
+                  class="document-btn-wrapper"
+                  style="position: relative; display: inline-block"
+                >
+                  <v-btn
+                    icon="mdi-file-document"
+                    color="black"
+                    variant="text"
+                    size="small"
+                    title="Unit Documents"
+                    @click="viewDocuments(item)"
+                  />
+                  <v-avatar
+                    v-if="item.documentsUnread > 0"
+                    color="red"
+                    size="16"
+                    class="unread-badge"
+                    style="
+                      position: absolute;
+                      top: -2px;
+                      right: -2px;
+                      z-index: 1;
+                    "
+                  >
+                    <span
+                      class="text-white"
+                      style="font-size: 9px; font-weight: 700; line-height: 1"
+                      >{{
+                        item.documentsUnread > 99 ? "99+" : item.documentsUnread
+                      }}</span
+                    >
+                  </v-avatar>
+                </div>
                 <v-btn
                   icon="mdi-clipboard-check"
                   color="black"
@@ -228,6 +253,7 @@ import {
   addDoc,
   deleteDoc,
   serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { useAppStore } from "@/stores/app";
 import { usePropertyType } from "@/composables/usePropertyType";
@@ -274,6 +300,9 @@ export default {
       noticeUnitNames: new Set(),
       vacancyUnitIds: new Set(),
       vacancyUnitNames: new Set(),
+      // Document tracking
+      documentLastSeen: {},
+      documentUnsubscriber: null,
       headers: [
         { title: "UNIT NAME", key: "propertyName", sortable: true },
         { title: "UNIT NUMBER", key: "unitNumber", sortable: true },
@@ -520,6 +549,7 @@ export default {
         // Show all units for the agency (not just those with newOccupation='yes')
         // The newOccupation filter is now handled in the UI filter, not here
         this.units = all;
+        this.calculateDocumentUnreadCounts();
         this.filterUnits();
       } catch (e) {
         console.error("Error fetching onboard units:", e);
@@ -676,6 +706,25 @@ export default {
       try {
         const { showDateNotesDialog, showSuccessDialog, showErrorDialog } =
           useCustomDialogs();
+
+        // Block if unit is flagged
+        const isFlaggedLocal =
+          item.isFlagged === true || item.isFlagged === "Yes";
+        let isFlaggedRecorded = false;
+        try {
+          const existingFlagId = await this.findExistingFlagged(item);
+          isFlaggedRecorded = Boolean(existingFlagId);
+        } catch (_) {
+          // If lookup fails, default to local flag only
+        }
+        if (isFlaggedLocal || isFlaggedRecorded) {
+          showErrorDialog(
+            "Can't move flagged units to notices. Please remove the flag first.",
+            "Action Blocked",
+            "OK"
+          );
+          return;
+        }
 
         // Check if unit already has a notice using cached data (instant!)
         const unitName = item.propertyName || item.unitName || "";
@@ -1018,10 +1067,121 @@ export default {
         return null;
       }
     },
+    calculateDocumentUnreadCounts() {
+      // Calculate unread document counts for each unit
+      this.units.forEach((unit) => {
+        const lastSeenKey = `documents:${unit.id}:${this.appStore.userId}`;
+        const lastSeenMs = this.getDocumentLastSeen(lastSeenKey);
+
+        let unreadCount = 0;
+
+        // Check all document arrays for new uploads
+        const documentArrays = ["quotes", "inspections", "invoices"];
+        documentArrays.forEach((arrayName) => {
+          const docs = unit[arrayName] || [];
+          docs.forEach((doc) => {
+            const uploadTime = this.extractDocumentTimestamp(doc);
+            if (uploadTime > lastSeenMs) {
+              unreadCount++;
+            }
+          });
+        });
+
+        // Add the unread count to the unit object
+        unit.documentsUnread = unreadCount;
+      });
+    },
+    getDocumentLastSeen(key) {
+      try {
+        return Number(localStorage.getItem(key) || "0");
+      } catch {
+        return 0;
+      }
+    },
+    setDocumentLastSeen(key) {
+      try {
+        localStorage.setItem(key, Date.now().toString());
+      } catch (e) {
+        console.warn("Failed to set document last seen:", e);
+      }
+    },
+    extractDocumentTimestamp(doc) {
+      try {
+        const raw =
+          doc?.uploadedAt ||
+          doc?.createdAt ||
+          doc?.date ||
+          doc?.timestamp ||
+          null;
+        if (!raw) return 0;
+        if (raw?.toDate) {
+          return raw.toDate().getTime();
+        }
+        const t = new Date(raw).getTime();
+        return Number.isFinite(t) ? t : 0;
+      } catch {
+        return 0;
+      }
+    },
+    async viewDocuments(item) {
+      // Clear the unread count for this unit
+      const lastSeenKey = `documents:${item.id}:${this.appStore.userId}`;
+      this.setDocumentLastSeen(lastSeenKey);
+
+      // Update the unit's unread count to 0
+      item.documentsUnread = 0;
+
+      // Navigate to the documents page
+      this.$router.push({
+        path: `/property-documents-${item.id}`,
+        query: { from: "onboard" },
+      });
+    },
+    setupDocumentListener() {
+      // Listen for changes to units to detect new document uploads
+      const user = this.appStore.currentUser;
+      if (!user) return;
+
+      // Determine agency context
+      let agencyId = null;
+      if (user.userType === "Agency") agencyId = user.uid;
+      else if (user.userType === "Admin" && user.adminScope === "agency")
+        agencyId = user.managedAgencyId || null;
+      else agencyId = this.appStore.currentAgency?.id || null;
+
+      if (!agencyId) return;
+
+      // Listen to units collection for this agency
+      const unitsQuery = query(
+        collection(db, "units"),
+        where("agencyId", "==", agencyId)
+      );
+
+      this.documentUnsubscriber = onSnapshot(unitsQuery, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "modified") {
+            const unitData = change.doc.data();
+            const unitId = change.doc.id;
+
+            // Find the unit in our local array and update its document count
+            const localUnit = this.units.find((u) => u.id === unitId);
+            if (localUnit) {
+              this.calculateDocumentUnreadCounts();
+            }
+          }
+        });
+      });
+    },
   },
   async mounted() {
     document.title = "Onboard Units - Depsure";
     await this.fetchUnits();
+    this.setupDocumentListener();
+  },
+  beforeUnmount() {
+    if (this.documentUnsubscriber) {
+      this.documentUnsubscriber();
+    }
   },
 };
 </script>
@@ -1109,6 +1269,14 @@ export default {
   font-weight: 700;
   font-size: 1.25rem;
   color: #0a2f3d;
+}
+
+/* Document notification badge */
+.unread-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  z-index: 1;
 }
 
 .actions {

@@ -239,6 +239,22 @@ export default {
     }
   },
   methods: {
+    async isUnitFlagged(unitName) {
+      try {
+        if (!unitName) return false;
+        // Check flaggedUnits collection for a matching unit by name
+        const flaggedQuery = query(
+          collection(db, "flaggedUnits"),
+          where("unitName", "==", unitName)
+        );
+        const flaggedSnapshot = await getDocs(flaggedQuery);
+        return !flaggedSnapshot.empty;
+      } catch (e) {
+        console.error("Failed to check flagged unit status:", e);
+        // Fail-safe: don't allow proceeding when we can't verify
+        return true;
+      }
+    },
     async fetchAgencies() {
       this.agenciesLoading = true;
       try {
@@ -315,6 +331,17 @@ export default {
         this.loading = true;
         try {
           console.log("Saving notice:", this.notice);
+
+          // Block if unit is flagged
+          const flagged = await this.isUnitFlagged(this.notice.unitName);
+          if (flagged) {
+            this.showErrorDialog(
+              "Can't move flagged units to notices. Please remove the flag first.",
+              "Action Blocked",
+              "OK"
+            );
+            return;
+          }
 
           // Prepare notice data for Firestore
           const noticeData = {

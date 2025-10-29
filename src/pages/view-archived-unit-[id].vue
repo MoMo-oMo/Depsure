@@ -1,7 +1,6 @@
 <template>
   <div class="view-property-page">
     <v-container fluid>
-      
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
@@ -23,7 +22,7 @@
           <div class="title-section">
             <h1 class="page-title">Archived Property Details</h1>
           </div>
-          
+
           <!-- Property Information Card -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
@@ -42,9 +41,15 @@
           <div v-else class="form-card" elevation="0">
             <!-- Tabs -->
             <v-tabs v-model="activeTab" class="property-tabs" color="primary">
-              <v-tab value="details" class="tab-label tab--details">Property Details</v-tab>
-              <v-tab value="archive" class="tab-label tab--archive">Archive Information</v-tab>
-              <v-tab value="documents" class="tab-label tab--documents">Documents</v-tab>
+              <v-tab value="details" class="tab-label tab--details"
+                >Property Details</v-tab
+              >
+              <v-tab value="archive" class="tab-label tab--archive"
+                >Archive Information</v-tab
+              >
+              <v-tab value="documents" class="tab-label tab--documents"
+                >Documents</v-tab
+              >
             </v-tabs>
 
             <!-- Property Details Tab -->
@@ -238,28 +243,57 @@
                 <v-card-text>
                   <div class="documents-section">
                     <h3 class="documents-title">Property Documents</h3>
-                    
+
                     <!-- Quotes Section -->
                     <div class="document-category">
                       <h4 class="category-title">
-                        <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                        <v-icon color="primary" class="mr-2"
+                          >mdi-file-pdf-box</v-icon
+                        >
                         Quotes
                       </h4>
-                      <div class="doc-filter-row" v-if="quoteMonthOptions.length > 0">
-                        <v-select
-                          v-model="selectedQuotesMonth"
-                          :items="['Latest', ...quoteMonthOptions]"
-                          label="Month"
-                          hide-details
-                          density="compact"
-                          variant="outlined"
-                          class="doc-month-select"
-                        />
+                      <div class="doc-filter-row">
+                        <v-row>
+                          <v-col cols="12" md="6">
+                            <v-text-field
+                              v-model="quotesSearchQuery"
+                              label="Search quotes..."
+                              prepend-inner-icon="mdi-magnify"
+                              density="compact"
+                              variant="outlined"
+                              clearable
+                              hide-details
+                              class="search-input"
+                            />
+                          </v-col>
+                          <v-col cols="12" md="6">
+                            <v-select
+                              v-model="selectedQuotesMonth"
+                              :items="['Latest', ...quoteMonthOptions]"
+                              label="Month"
+                              hide-details
+                              density="compact"
+                              variant="outlined"
+                              class="doc-month-select"
+                            />
+                          </v-col>
+                        </v-row>
                       </div>
-                      <div v-if="filteredQuotes.length > 0" class="document-list">
-                        <div v-for="(quote, index) in filteredQuotes" :key="index" class="document-item">
-                          <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
-                          <span class="document-name">{{ quote.fileName }}</span>
+                      <div
+                        v-if="filteredQuotes.length > 0"
+                        class="document-list"
+                      >
+                        <div
+                          v-for="(quote, index) in filteredQuotes"
+                          :key="index"
+                          class="document-item"
+                        >
+                          <v-icon color="primary" class="mr-2"
+                            >mdi-file-pdf-box</v-icon
+                          >
+                          <span class="document-name">{{
+                            quote.fileName
+                          }}</span>
                           <v-btn
                             size="small"
                             color="primary"
@@ -272,7 +306,9 @@
                         </div>
                       </div>
                       <div v-else class="no-documents">
-                        <v-icon color="grey" class="mr-2">mdi-file-pdf-box</v-icon>
+                        <v-icon color="grey" class="mr-2"
+                          >mdi-file-pdf-box</v-icon
+                        >
                         No quotes uploaded
                       </div>
                     </div>
@@ -280,29 +316,63 @@
                     <!-- Inspections Section -->
                     <div class="document-category">
                       <h4 class="category-title">
-                        <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
+                        <v-icon color="warning" class="mr-2"
+                          >mdi-clipboard-check</v-icon
+                        >
                         Inspections
                       </h4>
-                      <div class="doc-filter-row" v-if="inspectionMonthOptions.length > 0">
-                        <v-select
-                          v-model="selectedInspectionsMonth"
-                          :items="['Latest', ...inspectionMonthOptions]"
-                          label="Month"
-                          hide-details
-                          density="compact"
-                          variant="outlined"
-                          class="doc-month-select"
-                        />
+                      <div class="doc-filter-row">
+                        <v-row>
+                          <v-col cols="12" md="6">
+                            <v-text-field
+                              v-model="inspectionsSearchQuery"
+                              label="Search inspections..."
+                              prepend-inner-icon="mdi-magnify"
+                              density="compact"
+                              variant="outlined"
+                              clearable
+                              hide-details
+                              class="search-input"
+                            />
+                          </v-col>
+                          <v-col cols="12" md="6">
+                            <v-select
+                              v-model="selectedInspectionsMonth"
+                              :items="['Latest', ...inspectionMonthOptions]"
+                              label="Month"
+                              hide-details
+                              density="compact"
+                              variant="outlined"
+                              class="doc-month-select"
+                            />
+                          </v-col>
+                        </v-row>
                       </div>
-                      <div v-if="filteredInspections.length > 0" class="document-list">
-                        <div v-for="(inspection, index) in filteredInspections" :key="index" class="document-item">
-                          <v-icon color="warning" class="mr-2">mdi-clipboard-check</v-icon>
-                          <span class="document-name">{{ inspection.fileName }}</span>
+                      <div
+                        v-if="filteredInspections.length > 0"
+                        class="document-list"
+                      >
+                        <div
+                          v-for="(inspection, index) in filteredInspections"
+                          :key="index"
+                          class="document-item"
+                        >
+                          <v-icon color="warning" class="mr-2"
+                            >mdi-clipboard-check</v-icon
+                          >
+                          <span class="document-name">{{
+                            inspection.fileName
+                          }}</span>
                           <v-btn
                             size="small"
                             color="warning"
                             variant="outlined"
-                            @click="viewDocument(inspection.fileURL, inspection.fileName)"
+                            @click="
+                              viewDocument(
+                                inspection.fileURL,
+                                inspection.fileName
+                              )
+                            "
                             class="view-btn"
                           >
                             View
@@ -310,7 +380,9 @@
                         </div>
                       </div>
                       <div v-else class="no-documents">
-                        <v-icon color="grey" class="mr-2">mdi-clipboard-check</v-icon>
+                        <v-icon color="grey" class="mr-2"
+                          >mdi-clipboard-check</v-icon
+                        >
                         No inspections uploaded
                       </div>
                     </div>
@@ -318,29 +390,60 @@
                     <!-- Invoices Section -->
                     <div class="document-category">
                       <h4 class="category-title">
-                        <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
+                        <v-icon color="success" class="mr-2"
+                          >mdi-receipt</v-icon
+                        >
                         Invoices
                       </h4>
-                      <div class="doc-filter-row" v-if="invoiceMonthOptions.length > 0">
-                        <v-select
-                          v-model="selectedInvoicesMonth"
-                          :items="['Latest', ...invoiceMonthOptions]"
-                          label="Month"
-                          hide-details
-                          density="compact"
-                          variant="outlined"
-                          class="doc-month-select"
-                        />
+                      <div class="doc-filter-row">
+                        <v-row>
+                          <v-col cols="12" md="6">
+                            <v-text-field
+                              v-model="invoicesSearchQuery"
+                              label="Search invoices..."
+                              prepend-inner-icon="mdi-magnify"
+                              density="compact"
+                              variant="outlined"
+                              clearable
+                              hide-details
+                              class="search-input"
+                            />
+                          </v-col>
+                          <v-col cols="12" md="6">
+                            <v-select
+                              v-model="selectedInvoicesMonth"
+                              :items="['Latest', ...invoiceMonthOptions]"
+                              label="Month"
+                              hide-details
+                              density="compact"
+                              variant="outlined"
+                              class="doc-month-select"
+                            />
+                          </v-col>
+                        </v-row>
                       </div>
-                      <div v-if="filteredInvoices.length > 0" class="document-list">
-                        <div v-for="(invoice, index) in filteredInvoices" :key="index" class="document-item">
-                          <v-icon color="success" class="mr-2">mdi-receipt</v-icon>
-                          <span class="document-name">{{ invoice.fileName }}</span>
+                      <div
+                        v-if="filteredInvoices.length > 0"
+                        class="document-list"
+                      >
+                        <div
+                          v-for="(invoice, index) in filteredInvoices"
+                          :key="index"
+                          class="document-item"
+                        >
+                          <v-icon color="success" class="mr-2"
+                            >mdi-receipt</v-icon
+                          >
+                          <span class="document-name">{{
+                            invoice.fileName
+                          }}</span>
                           <v-btn
                             size="small"
                             color="success"
                             variant="outlined"
-                            @click="viewDocument(invoice.fileURL, invoice.fileName)"
+                            @click="
+                              viewDocument(invoice.fileURL, invoice.fileName)
+                            "
                             class="view-btn"
                           >
                             View
@@ -362,13 +465,19 @@
     </v-container>
 
     <!-- Document Viewer Dialog -->
-    <div v-if="showDocumentDialog" class="document-overlay" @click.self="showDocumentDialog = false">
+    <div
+      v-if="showDocumentDialog"
+      class="document-overlay"
+      @click.self="showDocumentDialog = false"
+    >
       <div class="document-dialog">
         <!-- colored card behind -->
         <div class="document-dialog-bg"></div>
         <!-- main white card -->
         <div class="document-dialog-inner">
-          <button class="document-close" @click="showDocumentDialog = false">&times;</button>
+          <button class="document-close" @click="showDocumentDialog = false">
+            &times;
+          </button>
 
           <div class="document-icon">
             <v-icon>mdi-file-pdf-box</v-icon>
@@ -376,14 +485,17 @@
 
           <h2 class="document-title">Document Viewer</h2>
           <p class="document-subtitle">{{ currentDocumentName }}</p>
-          
+
           <div v-if="currentDocumentURL" class="pdf-container">
             <div class="pdf-controls">
               <button class="zoom-btn" @click="zoomOut">-</button>
               <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
               <button class="zoom-btn" @click="zoomIn">+</button>
             </div>
-            <div class="pdf-wrapper" :style="{ transform: `scale(${zoomLevel})` }">
+            <div
+              class="pdf-wrapper"
+              :style="{ transform: `scale(${zoomLevel})` }"
+            >
               <iframe
                 :src="currentDocumentURL"
                 width="100%"
@@ -399,12 +511,15 @@
           </div>
 
           <div class="document-actions">
-            <button class="document-button secondary" @click="showDocumentDialog = false">
+            <button
+              class="document-button secondary"
+              @click="showDocumentDialog = false"
+            >
               Close
             </button>
-            <button 
+            <button
               v-if="currentDocumentURL"
-              class="document-button primary" 
+              class="document-button primary"
               @click="openInNewTab"
             >
               Open in New Tab
@@ -417,260 +532,383 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { doc, getDoc, deleteDoc, addDoc, collection } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { usePropertyType } from '@/composables/usePropertyType'
-import { useNotification } from '@/composables/useNotification'
+import { db } from "@/firebaseConfig";
+import {
+  doc,
+  getDoc,
+  deleteDoc,
+  addDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { useAppStore } from "@/stores/app";
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { usePropertyType } from "@/composables/usePropertyType";
+import { useNotification } from "@/composables/useNotification";
 
 export default {
-  name: 'ViewArchivedPropertyPage',
+  name: "ViewArchivedPropertyPage",
   setup() {
-    const appStore = useAppStore()
-    const { showConfirmDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getLabel } = usePropertyType()
-    const { showSuccess, showError } = useNotification()
-    return { appStore, showConfirmDialog, logAuditEvent, auditActions, resourceTypes, getLabel, showSuccess, showError }
+    const appStore = useAppStore();
+    const { showConfirmDialog } = useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    const { getLabel } = usePropertyType();
+    const { showSuccess, showError } = useNotification();
+    return {
+      appStore,
+      showConfirmDialog,
+      logAuditEvent,
+      auditActions,
+      resourceTypes,
+      getLabel,
+      showSuccess,
+      showError,
+    };
   },
   data() {
     return {
       property: {
         id: 1,
-        tenantRef: 'T001',
-        propertyName: '123 Main Street, Cape Town',
-        propertyType: '',
-        newOccupation: 'Yes',
-        leaseStartDate: '2024-01-15',
-        leaseEndDate: '2025-01-15',
+        tenantRef: "T001",
+        propertyName: "123 Main Street, Cape Town",
+        propertyType: "",
+        newOccupation: "Yes",
+        leaseStartDate: "2024-01-15",
+        leaseEndDate: "2025-01-15",
         monthsMissed: 2,
         maintenanceAmount: 15000,
-        contractorRequested: 'Yes',
+        contractorRequested: "Yes",
         paidTowardsFund: 5000,
         amountToBePaidOut: 25000,
-        paidOut: 'No',
+        paidOut: "No",
         quotes: [],
         inspections: [],
-        invoices: []
+        invoices: [],
       },
       loading: true,
       error: null,
-      activeTab: 'details',
+      activeTab: "details",
       showDocumentDialog: false,
-      currentDocumentURL: '',
-      currentDocumentName: '',
+      currentDocumentURL: "",
+      currentDocumentName: "",
       zoomLevel: 1,
+      // Document search queries for each section
+      quotesSearchQuery: "",
+      inspectionsSearchQuery: "",
+      invoicesSearchQuery: "",
       // Document month filters
-      selectedQuotesMonth: 'Latest',
-      selectedInspectionsMonth: 'Latest',
-      selectedInvoicesMonth: 'Latest',
-      restoring: false
-    }
+      selectedQuotesMonth: "Latest",
+      selectedInspectionsMonth: "Latest",
+      selectedInvoicesMonth: "Latest",
+      restoring: false,
+    };
   },
   computed: {
     propertyTypeLabel() {
-      return this.getLabel(this.property.propertyType) || 'Unknown'
+      return this.getLabel(this.property.propertyType) || "Unknown";
     },
     // Month option lists per doc type (YYYY-MM strings, newest first)
     quoteMonthOptions() {
-      return this.buildMonthOptions(this.property?.quotes)
+      return this.buildMonthOptions(this.property?.quotes);
     },
     inspectionMonthOptions() {
-      return this.buildMonthOptions(this.property?.inspections)
+      return this.buildMonthOptions(this.property?.inspections);
     },
     invoiceMonthOptions() {
-      return this.buildMonthOptions(this.property?.invoices)
+      return this.buildMonthOptions(this.property?.invoices);
     },
-    // Filtered docs based on selected month or latest
+    // Filtered docs based on individual search query and month filter, limited to 3 most recent
     filteredQuotes() {
-      return this.filterDocsByMonth(this.property?.quotes, this.selectedQuotesMonth)
+      let filtered = this.filterDocsByMonth(
+        this.property?.quotes,
+        this.selectedQuotesMonth
+      );
+
+      // Apply search filter
+      if (this.quotesSearchQuery) {
+        const query = this.quotesSearchQuery.toLowerCase();
+        filtered = filtered.filter((doc) =>
+          String(doc?.fileName || "")
+            .toLowerCase()
+            .includes(query)
+        );
+      }
+
+      return this.getMostRecentDocuments(filtered, 3);
     },
     filteredInspections() {
-      return this.filterDocsByMonth(this.property?.inspections, this.selectedInspectionsMonth)
+      let filtered = this.filterDocsByMonth(
+        this.property?.inspections,
+        this.selectedInspectionsMonth
+      );
+
+      // Apply search filter
+      if (this.inspectionsSearchQuery) {
+        const query = this.inspectionsSearchQuery.toLowerCase();
+        filtered = filtered.filter((doc) =>
+          String(doc?.fileName || "")
+            .toLowerCase()
+            .includes(query)
+        );
+      }
+
+      return this.getMostRecentDocuments(filtered, 3);
     },
     filteredInvoices() {
-      return this.filterDocsByMonth(this.property?.invoices, this.selectedInvoicesMonth)
+      let filtered = this.filterDocsByMonth(
+        this.property?.invoices,
+        this.selectedInvoicesMonth
+      );
+
+      // Apply search filter
+      if (this.invoicesSearchQuery) {
+        const query = this.invoicesSearchQuery.toLowerCase();
+        filtered = filtered.filter((doc) =>
+          String(doc?.fileName || "")
+            .toLowerCase()
+            .includes(query)
+        );
+      }
+
+      return this.getMostRecentDocuments(filtered, 3);
     },
     unitId() {
-      return this.$route.params.id
-    }
+      return this.$route.params.id;
+    },
   },
   mounted() {
-    console.log('ViewArchivedPropertyPage mounted');
+    console.log("ViewArchivedPropertyPage mounted");
     // Set the page title for the app bar
-    document.title = 'Archived Property Details - Depsure';
-    
+    document.title = "Archived Property Details - Depsure";
+
     // Get property ID from route params
     const propertyId = this.$route.params.id;
-    console.log('Property ID from route:', propertyId);
+    console.log("Property ID from route:", propertyId);
     if (propertyId) {
       // Load property data based on ID
-      console.log('Loading archived property with ID:', propertyId);
+      console.log("Loading archived property with ID:", propertyId);
       this.loadPropertyData(propertyId);
     } else {
-      console.log('No property ID found in route params');
+      console.log("No property ID found in route params");
     }
   },
   methods: {
     // Build a descending list of distinct YYYY-MM keys from uploadedAt
     buildMonthOptions(list) {
-      if (!Array.isArray(list)) return []
-      const keys = new Set()
+      if (!Array.isArray(list)) return [];
+      const keys = new Set();
       for (const doc of list) {
-        const key = this.getMonthKey(doc?.uploadedAt)
-        if (key) keys.add(key)
+        const key = this.getMonthKey(doc?.uploadedAt);
+        if (key) keys.add(key);
       }
-      return Array.from(keys).sort().reverse()
+      return Array.from(keys).sort().reverse();
     },
     getMonthKey(ts) {
-      if (!ts) return null
+      if (!ts) return null;
       try {
-        const d = new Date(ts)
-        if (isNaN(d)) return null
-        const y = d.getFullYear()
-        const m = String(d.getMonth() + 1).padStart(2, '0')
-        return `${y}-${m}`
+        const d = new Date(ts);
+        if (isNaN(d)) return null;
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        return `${y}-${m}`;
       } catch (e) {
-        return null
+        return null;
       }
     },
     latestMonthFor(list) {
-      const opts = this.buildMonthOptions(list)
-      return opts.length ? opts[0] : null
+      const opts = this.buildMonthOptions(list);
+      return opts.length ? opts[0] : null;
     },
     filterDocsByMonth(list, sel) {
-      if (!Array.isArray(list) || list.length === 0) return []
+      if (!Array.isArray(list) || list.length === 0) return [];
       // If Latest, find the newest month among items; if none have uploadedAt, return all
-      let target = sel
-      if (!target || target === 'Latest') {
-        const lm = this.latestMonthFor(list)
-        if (lm) target = lm
-        else return list // no dates available; show all
+      let target = sel;
+      if (!target || target === "Latest") {
+        const lm = this.latestMonthFor(list);
+        if (lm) target = lm;
+        else return list; // no dates available; show all
       }
-      return list.filter(d => this.getMonthKey(d?.uploadedAt) === target)
+      return list.filter((d) => this.getMonthKey(d?.uploadedAt) === target);
+    },
+    getMostRecentDocuments(documents, limit = 3) {
+      if (!Array.isArray(documents) || documents.length === 0) return [];
+
+      // Sort documents by upload date (most recent first)
+      const sorted = [...documents].sort((a, b) => {
+        const dateA = this.extractDocumentTimestamp(a);
+        const dateB = this.extractDocumentTimestamp(b);
+        return dateB - dateA; // Descending order (newest first)
+      });
+
+      // Return only the specified number of most recent documents
+      return sorted.slice(0, limit);
+    },
+    extractDocumentTimestamp(doc) {
+      try {
+        const raw =
+          doc?.uploadedAt ||
+          doc?.createdAt ||
+          doc?.date ||
+          doc?.timestamp ||
+          null;
+        if (!raw) return 0;
+        if (raw?.toDate) {
+          return raw.toDate().getTime();
+        }
+        const t = new Date(raw).getTime();
+        return Number.isFinite(t) ? t : 0;
+      } catch {
+        return 0;
+      }
     },
     async loadPropertyData(propertyId) {
       this.loading = true;
       this.error = null;
-      
+
       try {
-        console.log('Loading archived property data for ID:', propertyId);
-        
+        console.log("Loading archived property data for ID:", propertyId);
+
         // Fetch property from archivedUnits collection
-        const propertyDoc = await getDoc(doc(db, 'archivedUnits', propertyId));
-        
+        const propertyDoc = await getDoc(doc(db, "archivedUnits", propertyId));
+
         if (propertyDoc.exists()) {
           const propertyData = propertyDoc.data();
           this.property = {
             id: propertyDoc.id,
-            ...propertyData
+            ...propertyData,
           };
-          console.log('Archived property loaded successfully:', this.property);
+          console.log("Archived property loaded successfully:", this.property);
         } else {
-          this.error = 'Archived property not found';
-          console.log('Archived property not found in Firestore');
+          this.error = "Archived property not found";
+          console.log("Archived property not found in Firestore");
         }
       } catch (error) {
-        console.error('Error loading archived property:', error);
-        this.error = 'Failed to load archived property details';
+        console.error("Error loading archived property:", error);
+        this.error = "Failed to load archived property details";
       } finally {
         this.loading = false;
       }
     },
 
     formatDate(date) {
-      if (!date) return 'N/A'
+      if (!date) return "N/A";
       // Handle both Firestore Timestamp and regular Date objects
       if (date.toDate) {
-        return new Date(date.toDate()).toLocaleDateString()
+        return new Date(date.toDate()).toLocaleDateString();
       } else {
-        return new Date(date).toLocaleDateString()
+        return new Date(date).toLocaleDateString();
       }
     },
 
     async restoreUnit() {
       const confirmed = await this.showConfirmDialog({
-        title: 'Restore Unit',
+        title: "Restore Unit",
         message: `Are you sure you want to restore "${this.property.propertyName}"? This will move it back to active units.`,
-        confirmText: 'Restore',
-        color: '#28a745'
-      })
+        confirmText: "Restore",
+        color: "#28a745",
+      });
 
       if (confirmed) {
-        this.restoring = true
+        this.restoring = true;
         try {
           // Create exact duplicate in units collection
           const restoredUnitData = {
             ...this.property,
             restoredAt: new Date(),
-            restoredBy: this.appStore.currentUser?.uid || 'unknown',
-            restoredByUserType: this.appStore.currentUser?.userType || 'unknown'
-          }
-          
+            restoredBy: this.appStore.currentUser?.uid || "unknown",
+            restoredByUserType:
+              this.appStore.currentUser?.userType || "unknown",
+            // Ensure the restored unit is unflagged
+            isFlagged: false,
+          };
+
           // Remove fields that shouldn't be in active units
-          delete restoredUnitData.id
-          delete restoredUnitData.originalId
-          delete restoredUnitData.archivedAt
-          delete restoredUnitData.archivedBy
-          delete restoredUnitData.archivedByUserType
-          
+          delete restoredUnitData.id;
+          delete restoredUnitData.originalId;
+          delete restoredUnitData.archivedAt;
+          delete restoredUnitData.archivedBy;
+          delete restoredUnitData.archivedByUserType;
+
           // Add to units collection
-          const unitsRef = collection(db, 'units')
-          await addDoc(unitsRef, restoredUnitData)
-          
+          const unitsRef = collection(db, "units");
+          await addDoc(unitsRef, restoredUnitData);
+
+          // Remove from flaggedUnits collection if it exists there
+          // This ensures the restored unit is truly unflagged
+          try {
+            const flaggedQuery = query(
+              collection(db, "flaggedUnits"),
+              where(
+                "unitName",
+                "==",
+                this.property.propertyName || this.property.unitName
+              )
+            );
+            const flaggedSnapshot = await getDocs(flaggedQuery);
+            if (!flaggedSnapshot.empty) {
+              const flaggedDoc = flaggedSnapshot.docs[0];
+              await deleteDoc(doc(db, "flaggedUnits", flaggedDoc.id));
+              console.log("Removed flagged unit entry for restored unit");
+            }
+          } catch (error) {
+            console.warn("Could not remove flagged unit entry:", error);
+            // Don't fail the restore if we can't remove the flagged entry
+          }
+
           // Log audit event
           await this.logAuditEvent(
             this.auditActions.RESTORE,
             {
               propertyName: this.property.propertyName,
               tenantRef: this.property.tenantRef,
-              originalId: this.property.originalId
+              originalId: this.property.originalId,
             },
             this.resourceTypes.PROPERTY,
             this.property.id
-          )
-          
+          );
+
           // Delete from archivedUnits collection
-          const archivedUnitRef = doc(db, 'archivedUnits', this.property.id)
-          await deleteDoc(archivedUnitRef)
-          
-          this.showSuccess('Unit restored successfully')
-          this.$router.push('/archived-units')
+          const archivedUnitRef = doc(db, "archivedUnits", this.property.id);
+          await deleteDoc(archivedUnitRef);
+
+          this.showSuccess("Unit restored successfully");
+          this.$router.push("/archived-units");
         } catch (error) {
-          console.error('Error restoring unit:', error)
-          this.showError('Failed to restore unit')
+          console.error("Error restoring unit:", error);
+          this.showError("Failed to restore unit");
         } finally {
-          this.restoring = false
+          this.restoring = false;
         }
       }
     },
-    
+
     viewDocument(fileURL, fileName) {
       this.currentDocumentURL = fileURL;
       this.currentDocumentName = fileName;
       this.showDocumentDialog = true;
     },
-    
+
     openInNewTab() {
       if (this.currentDocumentURL) {
-        window.open(this.currentDocumentURL, '_blank');
+        window.open(this.currentDocumentURL, "_blank");
       }
     },
-    
+
     zoomIn() {
       if (this.zoomLevel < 2) {
         this.zoomLevel += 0.1;
       }
     },
-    
+
     zoomOut() {
       if (this.zoomLevel > 0.5) {
         this.zoomLevel -= 0.1;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -738,8 +976,6 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
@@ -982,7 +1218,7 @@ export default {
 }
 
 .document-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 100px;
   height: 100px;
@@ -1007,7 +1243,8 @@ export default {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
   }
   50% {
@@ -1132,16 +1369,34 @@ export default {
   opacity: 0.9;
 }
 
+/* Search and month filter styling */
+.doc-search {
+  margin: 14px 0 24px 0;
+}
+.search-input,
+.month-input {
+  width: 100%;
+}
+.search-input .v-field,
+.month-input .v-field {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+.search-input .v-field:focus-within,
+.month-input .v-field:focus-within {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .view-property-page {
     padding: 10px;
   }
-  
+
   .page-title {
     font-size: 1.1rem;
   }
-  
+
   .back-btn {
     width: 140px;
     height: 40px;

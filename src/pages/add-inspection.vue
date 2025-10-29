@@ -1,7 +1,6 @@
 <template>
   <div class="add-inspection-page">
     <v-container fluid>
-
       <!-- Title Section -->
       <v-row justify="center">
         <v-col cols="12" lg="10" xl="8">
@@ -61,8 +60,6 @@
                     />
                   </v-col>
 
-                  
-
                   <!-- Contact Person -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -110,7 +107,9 @@
                       class="custom-input"
                       :rules="appointmentMadeIsYes ? requiredRule : []"
                       :disabled="!appointmentMadeIsYes"
-                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
+                      :placeholder="
+                        appointmentMadeIsYes ? '' : 'Not applicable'
+                      "
                     />
                   </v-col>
 
@@ -124,7 +123,9 @@
                       class="custom-input"
                       :rules="appointmentMadeIsYes ? requiredRule : []"
                       :disabled="!appointmentMadeIsYes"
-                      :placeholder="appointmentMadeIsYes ? '' : 'Not applicable'"
+                      :placeholder="
+                        appointmentMadeIsYes ? '' : 'Not applicable'
+                      "
                     />
                   </v-col>
 
@@ -194,8 +195,6 @@
                       persistent-hint
                     />
                   </v-col>
-
-                  
                 </v-row>
               </v-card-text>
 
@@ -219,7 +218,7 @@
                   :loading="loading"
                   @click="submitForm"
                 >
-                  {{ loading ? 'Adding...' : 'Upload Request' }}
+                  {{ loading ? "Adding..." : "Upload Request" }}
                 </v-btn>
               </v-card-actions>
             </v-form>
@@ -231,21 +230,36 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db, storage } from '@/firebaseConfig'
-import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { useAppStore } from '@/stores/app'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { usePropertyType } from '@/composables/usePropertyType'
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { db, storage } from "@/firebaseConfig";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useAppStore } from "@/stores/app";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { usePropertyType } from "@/composables/usePropertyType";
 
 export default {
   name: "AddInspectionPage",
   setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getLabel } = usePropertyType()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getLabel }
+    const { showSuccessDialog, showErrorDialog } = useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    const { getLabel } = usePropertyType();
+    return {
+      showSuccessDialog,
+      showErrorDialog,
+      logAuditEvent,
+      auditActions,
+      resourceTypes,
+      getLabel,
+    };
   },
   data() {
     return {
@@ -269,29 +283,36 @@ export default {
         priority: "Medium",
         inspectionFile: null,
         inspectionFileName: "",
-        inspectionFileURL: ""
+        inspectionFileURL: "",
       },
-      agencyRules: [v => !!v || "Agency selection is required"],
-      unitNameRules: [v => !!v || "Unit Name is required"],
-      contactPersonRules: [v => !!v || "Contact Person is required"],
-      contactNumberRules: [v => !!v || "Contact Number is required"],
-      appointmentMadeRules: [v => !!v || "Appointment Made is required"],
+      agencyRules: [(v) => !!v || "Agency selection is required"],
+      unitNameRules: [(v) => !!v || "Unit Name is required"],
+      contactPersonRules: [(v) => !!v || "Contact Person is required"],
+      contactNumberRules: [(v) => !!v || "Contact Number is required"],
+      appointmentMadeRules: [(v) => !!v || "Appointment Made is required"],
       inspectionDateRules: [],
-      requiredRule: [v => !!v || "This field is required"],
-      quotesNeededRules: [v => !!v || "Quotes Needed is required"],
-      statusRules: [v => !!v || "Status is required"],
-      priorityRules: [v => !!v || "Priority is required"],
+      requiredRule: [(v) => !!v || "This field is required"],
+      quotesNeededRules: [(v) => !!v || "Quotes Needed is required"],
+      statusRules: [(v) => !!v || "Status is required"],
+      priorityRules: [(v) => !!v || "Priority is required"],
       inspectionFileRules: [
-        v => !v || v.size <= 50 * 1024 * 1024 || "File size must be less than 50MB",
-        v => !v || v.type === 'application/pdf' || "Only PDF files are allowed"
-      ]
+        (v) =>
+          !v ||
+          v.size <= 50 * 1024 * 1024 ||
+          "File size must be less than 50MB",
+        (v) =>
+          !v || v.type === "application/pdf" || "Only PDF files are allowed",
+      ],
     };
   },
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     userType() {
       const appStore = useAppStore();
@@ -299,132 +320,170 @@ export default {
     },
     selectedUnitPropertyType() {
       if (!this.entry.unitName) return null;
-      const selectedUnit = this.units.find(unit => unit.propertyName === this.entry.unitName);
+      const selectedUnit = this.units.find(
+        (unit) => unit.propertyName === this.entry.unitName
+      );
       return selectedUnit?.propertyType || null;
     },
     propertyTypeLabel() {
-      return this.selectedUnitPropertyType ? this.getLabel(this.selectedUnitPropertyType) : '';
+      return this.selectedUnitPropertyType
+        ? this.getLabel(this.selectedUnitPropertyType)
+        : "";
     },
     appointmentMadeIsYes() {
-      return String(this.entry.appointmentMade).toLowerCase() === 'yes';
-    }
+      return String(this.entry.appointmentMade).toLowerCase() === "yes";
+    },
   },
   methods: {
     async submitForm() {
       if (this.$refs.form.validate()) {
-        this.loading = true
+        this.loading = true;
         try {
           console.log("Adding inspection entry:", this.entry);
-          
+
           // Get agency name from selected agency
-          const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
-          console.log('Selected agency ID:', this.entry.agencyId)
-          console.log('Selected agency object:', selectedAgency)
-          console.log('Available agencies:', this.agencies)
-          
+          const selectedAgency = this.agencies.find(
+            (agency) => agency.id === this.entry.agencyId
+          );
+          console.log("Selected agency ID:", this.entry.agencyId);
+          console.log("Selected agency object:", selectedAgency);
+          console.log("Available agencies:", this.agencies);
+
           // Prepare inspection data for Firestore
           const inspectionData = {
             agencyId: this.entry.agencyId,
-            agencyName: selectedAgency ? selectedAgency.agencyName : '',
+            agencyName: selectedAgency ? selectedAgency.agencyName : "",
             unitName: this.entry.unitName,
-            inspectionRequired: 'Yes',
+            inspectionRequired: "Yes",
             contactPerson: this.entry.contactPerson,
             contactNumber: this.entry.contactNumber,
             appointmentMade: this.entry.appointmentMade,
             inspectionDate: this.entry.inspectionDate,
-            inspectionTime: this.entry.inspectionTime || '',
+            inspectionTime: this.entry.inspectionTime || "",
             quotesNeeded: this.entry.quotesNeeded,
             status: this.entry.status,
             priority: this.entry.priority,
             createdAt: new Date(),
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          };
 
           // Upload file if provided
           if (this.entry.inspectionFile) {
-            this.uploading = true
+            this.uploading = true;
             try {
-              const fileRef = ref(storage, `inspection-documents/${Date.now()}_${this.entry.inspectionFile.name}`)
-              const snapshot = await uploadBytes(fileRef, this.entry.inspectionFile)
-              const downloadURL = await getDownloadURL(snapshot.ref)
-              inspectionData.inspectionFileURL = downloadURL
-              inspectionData.inspectionFileName = this.entry.inspectionFile.name
-              console.log('File uploaded successfully:', downloadURL)
+              const fileRef = ref(
+                storage,
+                `inspection-documents/${Date.now()}_${
+                  this.entry.inspectionFile.name
+                }`
+              );
+              const snapshot = await uploadBytes(
+                fileRef,
+                this.entry.inspectionFile
+              );
+              const downloadURL = await getDownloadURL(snapshot.ref);
+              inspectionData.inspectionFileURL = downloadURL;
+              inspectionData.inspectionFileName =
+                this.entry.inspectionFile.name;
+              console.log("File uploaded successfully:", downloadURL);
             } catch (uploadError) {
-              console.error('Error uploading file:', uploadError)
-              this.showErrorDialog('Failed to upload file. Please try again.', 'Upload Error', 'OK')
-              return
+              console.error("Error uploading file:", uploadError);
+              this.showErrorDialog(
+                "Failed to upload file. Please try again.",
+                "Upload Error",
+                "OK"
+              );
+              return;
             } finally {
-              this.uploading = false
+              this.uploading = false;
             }
           }
-          
+
           // Store inspection data in Firestore
-          const docRef = await addDoc(collection(db, 'inspections'), inspectionData)
-          
+          const docRef = await addDoc(
+            collection(db, "inspections"),
+            inspectionData
+          );
+
           // Log the audit event
           await this.logAuditEvent(
             this.auditActions.CREATE,
             {
               unitName: this.entry.unitName,
               agencyId: this.entry.agencyId,
-              agencyName: selectedAgency ? selectedAgency.agencyName : '',
-              inspectionRequired: 'Yes',
+              agencyName: selectedAgency ? selectedAgency.agencyName : "",
+              inspectionRequired: "Yes",
               appointmentMade: this.entry.appointmentMade,
               inspectionDate: this.entry.inspectionDate,
-              inspectionTime: this.entry.inspectionTime || '',
+              inspectionTime: this.entry.inspectionTime || "",
               status: this.entry.status,
-              priority: this.entry.priority
+              priority: this.entry.priority,
             },
             this.resourceTypes.INSPECTION,
             docRef.id
-          )
-          
-          console.log('Inspection data stored in Firestore')
-          this.showSuccessDialog('Inspection entry added successfully!', 'Success!', 'Continue', '/inspections')
-          
+          );
+
+          console.log("Inspection data stored in Firestore");
+          this.showSuccessDialog(
+            "Inspection entry added successfully!",
+            "Success!",
+            "Continue",
+            "/inspections"
+          );
         } catch (error) {
-          console.error('Error creating inspection entry:', error)
-          this.showErrorDialog('Failed to create inspection entry. Please try again.', 'Error', 'OK')
+          console.error("Error creating inspection entry:", error);
+          this.showErrorDialog(
+            "Failed to create inspection entry. Please try again.",
+            "Error",
+            "OK"
+          );
         } finally {
-          this.loading = false
+          this.loading = false;
         }
       }
     },
 
     async fetchAgencies() {
-      this.agenciesLoading = true
+      this.agenciesLoading = true;
       try {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+
+        if (
+          userType === "Agency" ||
+          (userType === "Admin" && currentUser.adminScope === "agency")
+        ) {
           // Agency users and Agency Admin users can only add inspection entries to their own agency
           let agencyData = null;
-          
-          if (userType === 'Agency') {
+
+          if (userType === "Agency") {
             // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
             if (agencyDoc.exists()) {
               agencyData = {
                 id: agencyDoc.id,
-                ...agencyDoc.data()
+                ...agencyDoc.data(),
               };
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
+          } else if (
+            userType === "Admin" &&
+            currentUser.adminScope === "agency"
+          ) {
             // For Agency Admin users, fetch their managed agency
             if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+              const agencyDoc = await getDoc(
+                doc(db, "users", currentUser.managedAgencyId)
+              );
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
+                  ...agencyDoc.data(),
                 };
               }
             }
           }
-          
+
           if (agencyData) {
             this.agencies = [agencyData];
             // Pre-select the agency for agency users and agency admins
@@ -432,31 +491,41 @@ export default {
           } else {
             this.agencies = [];
           }
-          console.log('Agency user - own agency loaded:', this.agencies);
+          console.log("Agency user - own agency loaded:", this.agencies);
         } else {
           // Super Admin and Admin users can see all agencies
-          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
-          const querySnapshot = await getDocs(q)
-          this.agencies = querySnapshot.docs.map(doc => ({
+          const q = query(
+            collection(db, "users"),
+            where("userType", "==", "Agency")
+          );
+          const querySnapshot = await getDocs(q);
+          this.agencies = querySnapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
-          }))
-          console.log('All agencies loaded:', this.agencies.length)
-          console.log('Agencies data:', this.agencies)
+            ...doc.data(),
+          }));
+          console.log("All agencies loaded:", this.agencies.length);
+          console.log("Agencies data:", this.agencies);
           // Check if agencies have the correct field names
           if (this.agencies.length > 0) {
-            console.log('First agency structure:', this.agencies[0])
-            console.log('First agency agencyName:', this.agencies[0].agencyName)
+            console.log("First agency structure:", this.agencies[0]);
+            console.log(
+              "First agency agencyName:",
+              this.agencies[0].agencyName
+            );
           } else {
-            console.log('No agencies found in database')
+            console.log("No agencies found in database");
             // Avoid auto-creating test agencies from this page
           }
         }
       } catch (error) {
-        console.error('Error fetching agencies:', error)
-        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+        console.error("Error fetching agencies:", error);
+        this.showErrorDialog(
+          "Failed to load agencies. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.agenciesLoading = false
+        this.agenciesLoading = false;
       }
     },
 
@@ -466,63 +535,66 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
+
         let unitsQuery;
-        
-        if (userType === 'Agency') {
+
+        if (userType === "Agency") {
           // Agency users can only see units from their own agency
           unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', currentUser.uid)
+            collection(db, "units"),
+            where("agencyId", "==", currentUser.uid)
           );
         } else if (agencyId) {
           // Super Admin/Admin users query units for specific agency
           unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', agencyId)
+            collection(db, "units"),
+            where("agencyId", "==", agencyId)
           );
         } else {
           // Super Admin/Admin users query all units when no agency selected
-          unitsQuery = collection(db, 'units');
+          unitsQuery = collection(db, "units");
         }
-        
+
         const querySnapshot = await getDocs(unitsQuery);
-        this.units = querySnapshot.docs.map(doc => ({
+        this.units = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
-        
-        console.log('Units fetched:', this.units);
-        console.log('User type:', userType, 'Agency ID filter:', agencyId);
+
+        console.log("Units fetched:", this.units);
+        console.log("User type:", userType, "Agency ID filter:", agencyId);
       } catch (error) {
-        console.error('Error fetching units:', error);
-        this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK');
+        console.error("Error fetching units:", error);
+        this.showErrorDialog(
+          "Failed to load units. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
         this.unitsLoading = false;
       }
     },
 
-
     goBack() {
       this.$router.push("/inspections");
-    }
+    },
   },
   async mounted() {
-    await this.fetchAgencies()
+    await this.fetchAgencies();
   },
   watch: {
-    'entry.agencyId': {
+    "entry.agencyId": {
       handler(newAgencyId) {
         if (newAgencyId) {
           this.fetchUnits(newAgencyId);
         } else {
           this.units = [];
-          this.entry.unitName = '';
+          this.entry.unitName = "";
         }
       },
-      immediate: false
-    }
-  }
+      immediate: false,
+    },
+  },
 };
 </script>
 
@@ -554,7 +626,7 @@ export default {
   background: white;
   border-radius: 0 0 12px 12px;
   padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .custom-input .v-field {
@@ -590,7 +662,7 @@ export default {
   border-radius: 8px;
   background-color: black !important;
   color: white !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 

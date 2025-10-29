@@ -41,31 +41,71 @@
           <!-- Documents (read‑only) -->
           <v-card v-else class="form-card" elevation="0">
             <v-card-text>
-              <!-- Centered search -->
+              <!-- Search and Date Filter -->
               <div class="doc-search">
-                <v-text-field
-                  v-model="search"
-                  label="Search documents..."
-                  prepend-inner-icon="mdi-magnify"
-                  density="comfortable"
-                  variant="outlined"
-                  clearable
-                  hide-details
-                  class="search-input"
-                />
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="search"
+                      label="Search documents..."
+                      prepend-inner-icon="mdi-magnify"
+                      density="comfortable"
+                      variant="outlined"
+                      clearable
+                      hide-details
+                      class="search-input"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="dateFilter"
+                      label="Filter by date..."
+                      prepend-inner-icon="mdi-calendar"
+                      density="comfortable"
+                      variant="outlined"
+                      type="date"
+                      clearable
+                      hide-details
+                      class="date-input"
+                    />
+                  </v-col>
+                </v-row>
               </div>
 
               <div class="docs-section">
                 <h3 class="docs-title">Quotes</h3>
                 <div v-if="filteredQuotes.length" class="doc-list">
-                  <div v-for="(docItem, idx) in filteredQuotes" :key="'q-'+idx" class="doc-item">
-                    <v-icon color="primary" class="mr-2">mdi-file-document</v-icon>
-                    <span class="doc-name">{{ docItem.fileName || 'Document' }}</span>
-                    <v-btn size="small" variant="outlined" color="primary" class="ml-2" @click="viewDoc(docItem)">View</v-btn>
-                    <a v-if="docItem.fileURL" class="download-link ml-2" :href="docItem.fileURL" target="_blank">Download</a>
+                  <div
+                    v-for="(docItem, idx) in filteredQuotes"
+                    :key="'q-' + idx"
+                    class="doc-item"
+                  >
+                    <v-icon color="primary" class="mr-2"
+                      >mdi-file-document</v-icon
+                    >
+                    <span class="doc-name">{{
+                      docItem.fileName || "Document"
+                    }}</span>
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      class="ml-2"
+                      @click="viewDoc(docItem)"
+                      >View</v-btn
+                    >
+                    <a
+                      v-if="docItem.fileURL"
+                      class="download-link ml-2"
+                      :href="docItem.fileURL"
+                      target="_blank"
+                      >Download</a
+                    >
                   </div>
                 </div>
-                <div v-else class="text-medium-emphasis">No quotes uploaded.</div>
+                <div v-else class="text-medium-emphasis">
+                  No quotes uploaded.
+                </div>
               </div>
 
               <v-divider class="my-6" />
@@ -73,14 +113,37 @@
               <div class="docs-section">
                 <h3 class="docs-title">Inspections</h3>
                 <div v-if="filteredInspections.length" class="doc-list">
-                  <div v-for="(docItem, idx) in filteredInspections" :key="'i-'+idx" class="doc-item">
-                    <v-icon color="success" class="mr-2">mdi-clipboard-check</v-icon>
-                    <span class="doc-name">{{ docItem.fileName || 'Document' }}</span>
-                    <v-btn size="small" variant="outlined" color="success" class="ml-2" @click="viewDoc(docItem)">View</v-btn>
-                    <a v-if="docItem.fileURL" class="download-link ml-2" :href="docItem.fileURL" target="_blank">Download</a>
+                  <div
+                    v-for="(docItem, idx) in filteredInspections"
+                    :key="'i-' + idx"
+                    class="doc-item"
+                  >
+                    <v-icon color="success" class="mr-2"
+                      >mdi-clipboard-check</v-icon
+                    >
+                    <span class="doc-name">{{
+                      docItem.fileName || "Document"
+                    }}</span>
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                      class="ml-2"
+                      @click="viewDoc(docItem)"
+                      >View</v-btn
+                    >
+                    <a
+                      v-if="docItem.fileURL"
+                      class="download-link ml-2"
+                      :href="docItem.fileURL"
+                      target="_blank"
+                      >Download</a
+                    >
                   </div>
                 </div>
-                <div v-else class="text-medium-emphasis">No inspection documents uploaded.</div>
+                <div v-else class="text-medium-emphasis">
+                  No inspection documents uploaded.
+                </div>
               </div>
 
               <v-divider class="my-6" />
@@ -88,14 +151,37 @@
               <div class="docs-section">
                 <h3 class="docs-title">Invoices</h3>
                 <div v-if="filteredInvoices.length" class="doc-list">
-                  <div v-for="(docItem, idx) in filteredInvoices" :key="'inv-'+idx" class="doc-item">
-                    <v-icon color="success" class="mr-2">mdi-receipt-text</v-icon>
-                    <span class="doc-name">{{ docItem.fileName || 'Document' }}</span>
-                    <v-btn size="small" variant="outlined" color="success" class="ml-2" @click="viewDoc(docItem)">View</v-btn>
-                    <a v-if="docItem.fileURL" class="download-link ml-2" :href="docItem.fileURL" target="_blank">Download</a>
+                  <div
+                    v-for="(docItem, idx) in filteredInvoices"
+                    :key="'inv-' + idx"
+                    class="doc-item"
+                  >
+                    <v-icon color="success" class="mr-2"
+                      >mdi-receipt-text</v-icon
+                    >
+                    <span class="doc-name">{{
+                      docItem.fileName || "Document"
+                    }}</span>
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                      class="ml-2"
+                      @click="viewDoc(docItem)"
+                      >View</v-btn
+                    >
+                    <a
+                      v-if="docItem.fileURL"
+                      class="download-link ml-2"
+                      :href="docItem.fileURL"
+                      target="_blank"
+                      >Download</a
+                    >
                   </div>
                 </div>
-                <div v-else class="text-medium-emphasis">No invoices uploaded.</div>
+                <div v-else class="text-medium-emphasis">
+                  No invoices uploaded.
+                </div>
               </div>
             </v-card-text>
           </v-card>
@@ -104,15 +190,21 @@
     </v-container>
 
     <!-- Document Viewer Dialog -->
-    <div v-if="showDialog" class="document-overlay" @click.self="showDialog = false">
+    <div
+      v-if="showDialog"
+      class="document-overlay"
+      @click.self="showDialog = false"
+    >
       <div class="document-dialog">
         <div class="document-dialog-bg"></div>
         <div class="document-dialog-inner">
-          <button class="document-close" @click="showDialog = false">&times;</button>
+          <button class="document-close" @click="showDialog = false">
+            &times;
+          </button>
 
-          <h2 class="document-title">{{ currentName || 'Document' }}</h2>
+          <h2 class="document-title">{{ currentName || "Document" }}</h2>
           <p class="document-subtitle">Property Documents</p>
-          
+
           <div v-if="currentURL" class="pdf-container">
             <div class="pdf-controls">
               <button class="zoom-btn" @click="zoomOut">-</button>
@@ -120,7 +212,13 @@
               <button class="zoom-btn" @click="zoomIn">+</button>
             </div>
             <div class="pdf-wrapper" :style="{ transform: `scale(${zoom})` }">
-              <iframe :src="currentURL" width="100%" height="420" frameborder="0" class="pdf-iframe" />
+              <iframe
+                :src="currentURL"
+                width="100%"
+                height="420"
+                frameborder="0"
+                class="pdf-iframe"
+              />
             </div>
           </div>
           <div v-else class="no-pdf-message">
@@ -128,8 +226,19 @@
             <p>PDF file not available</p>
           </div>
           <div class="document-actions">
-            <button class="document-button secondary" @click="showDialog = false">Close</button>
-            <button v-if="currentURL" class="document-button primary" @click="openInNewTab">Open in New Tab</button>
+            <button
+              class="document-button secondary"
+              @click="showDialog = false"
+            >
+              Close
+            </button>
+            <button
+              v-if="currentURL"
+              class="document-button primary"
+              @click="openInNewTab"
+            >
+              Open in New Tab
+            </button>
           </div>
         </div>
       </div>
@@ -138,51 +247,115 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
+import { db } from "@/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { useAppStore } from "@/stores/app";
 
 export default {
-  name: 'PropertyDocumentsPage',
+  name: "PropertyDocumentsPage",
   data() {
     return {
       loading: true,
       error: null,
       property: {},
-      search: '',
+      search: "",
+      dateFilter: "",
       showDialog: false,
-      currentURL: '',
-      currentName: '',
-      zoom: 1
-    }
+      currentURL: "",
+      currentName: "",
+      zoom: 1,
+    };
   },
   computed: {
     isAgencyContext() {
-      const appStore = useAppStore()
-      const u = appStore.currentUser
-      return u?.userType === 'Agency' || (u?.userType === 'Admin' && u?.adminScope === 'agency')
+      const appStore = useAppStore();
+      const u = appStore.currentUser;
+      return (
+        u?.userType === "Agency" ||
+        (u?.userType === "Admin" && u?.adminScope === "agency")
+      );
     },
     filteredQuotes() {
-      const q = (this.search || '').toLowerCase()
-      const list = Array.isArray(this.property?.quotes) ? [...this.property.quotes] : []
-      const sorted = this.sortByNewest(list)
-      if (q) return sorted.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
-      return this.isAgencyContext ? sorted.slice(0, 3) : sorted
+      const q = (this.search || "").toLowerCase();
+      const list = Array.isArray(this.property?.quotes)
+        ? [...this.property.quotes]
+        : [];
+      const sorted = this.sortByNewest(list);
+
+      let filtered = sorted;
+
+      // Apply search filter
+      if (q) {
+        filtered = filtered.filter((d) =>
+          String(d?.fileName || "")
+            .toLowerCase()
+            .includes(q)
+        );
+      }
+
+      // Apply date filter
+      if (this.dateFilter) {
+        filtered = filtered.filter((d) =>
+          this.matchesDateFilter(d, this.dateFilter)
+        );
+      }
+
+      return this.isAgencyContext ? filtered.slice(0, 3) : filtered;
     },
     filteredInspections() {
-      const q = (this.search || '').toLowerCase()
-      const list = Array.isArray(this.property?.inspections) ? [...this.property.inspections] : []
-      const sorted = this.sortByNewest(list)
-      if (q) return sorted.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
-      return this.isAgencyContext ? sorted.slice(0, 3) : sorted
+      const q = (this.search || "").toLowerCase();
+      const list = Array.isArray(this.property?.inspections)
+        ? [...this.property.inspections]
+        : [];
+      const sorted = this.sortByNewest(list);
+
+      let filtered = sorted;
+
+      // Apply search filter
+      if (q) {
+        filtered = filtered.filter((d) =>
+          String(d?.fileName || "")
+            .toLowerCase()
+            .includes(q)
+        );
+      }
+
+      // Apply date filter
+      if (this.dateFilter) {
+        filtered = filtered.filter((d) =>
+          this.matchesDateFilter(d, this.dateFilter)
+        );
+      }
+
+      return this.isAgencyContext ? filtered.slice(0, 3) : filtered;
     },
     filteredInvoices() {
-      const q = (this.search || '').toLowerCase()
-      const list = Array.isArray(this.property?.invoices) ? [...this.property.invoices] : []
-      const sorted = this.sortByNewest(list)
-      if (q) return sorted.filter(d => String(d?.fileName || '').toLowerCase().includes(q))
-      return this.isAgencyContext ? sorted.slice(0, 3) : sorted
-    }
+      const q = (this.search || "").toLowerCase();
+      const list = Array.isArray(this.property?.invoices)
+        ? [...this.property.invoices]
+        : [];
+      const sorted = this.sortByNewest(list);
+
+      let filtered = sorted;
+
+      // Apply search filter
+      if (q) {
+        filtered = filtered.filter((d) =>
+          String(d?.fileName || "")
+            .toLowerCase()
+            .includes(q)
+        );
+      }
+
+      // Apply date filter
+      if (this.dateFilter) {
+        filtered = filtered.filter((d) =>
+          this.matchesDateFilter(d, this.dateFilter)
+        );
+      }
+
+      return this.isAgencyContext ? filtered.slice(0, 3) : filtered;
+    },
   },
   methods: {
     sortByNewest(arr) {
@@ -190,74 +363,145 @@ export default {
         const withKeys = (arr || []).map((d, i) => ({
           item: d,
           ts: this.extractTimestamp(d),
-          idx: i
-        }))
+          idx: i,
+        }));
         // Sort descending by timestamp; fall back to original order when equal
         withKeys.sort((a, b) => {
-          if (a.ts === b.ts) return b.idx - a.idx // assume later index is newer
-          return (b.ts || 0) - (a.ts || 0)
-        })
-        return withKeys.map(x => x.item)
-      } catch (_) { return Array.isArray(arr) ? arr : [] }
+          if (a.ts === b.ts) return b.idx - a.idx; // assume later index is newer
+          return (b.ts || 0) - (a.ts || 0);
+        });
+        return withKeys.map((x) => x.item);
+      } catch (_) {
+        return Array.isArray(arr) ? arr : [];
+      }
     },
     extractTimestamp(d) {
       try {
-        const raw = d?.uploadedAt || d?.createdAt || d?.date || d?.timestamp || null
-        if (!raw) return 0
+        const raw =
+          d?.uploadedAt || d?.createdAt || d?.date || d?.timestamp || null;
+        if (!raw) return 0;
         if (raw?.toDate) {
-          return raw.toDate().getTime()
+          return raw.toDate().getTime();
         }
-        const t = new Date(raw).getTime()
-        return Number.isFinite(t) ? t : 0
-      } catch { return 0 }
+        const t = new Date(raw).getTime();
+        return Number.isFinite(t) ? t : 0;
+      } catch {
+        return 0;
+      }
+    },
+    matchesDateFilter(doc, filterDate) {
+      try {
+        const docTimestamp = this.extractTimestamp(doc);
+        if (!docTimestamp) return false;
+
+        const docDate = new Date(docTimestamp);
+        const filterDateObj = new Date(filterDate);
+
+        // Compare dates (ignore time)
+        const docDateStr = docDate.toISOString().split("T")[0];
+        const filterDateStr = filterDateObj.toISOString().split("T")[0];
+
+        return docDateStr === filterDateStr;
+      } catch {
+        return false;
+      }
     },
     async loadPropertyData(id) {
-      this.loading = true
+      this.loading = true;
       try {
-        const snap = await getDoc(doc(db, 'units', id))
-        if (!snap.exists()) { this.error = 'Property not found'; return }
-        const data = snap.data() || {}
-        this.property = { id: snap.id, ...data }
+        const snap = await getDoc(doc(db, "units", id));
+        if (!snap.exists()) {
+          this.error = "Property not found";
+          return;
+        }
+        const data = snap.data() || {};
+        this.property = { id: snap.id, ...data };
       } catch (e) {
-        console.error('Load property failed', e)
-        this.error = 'Failed to load property documents'
-      } finally { this.loading = false }
+        console.error("Load property failed", e);
+        this.error = "Failed to load property documents";
+      } finally {
+        this.loading = false;
+      }
     },
     viewDoc(docItem) {
-      this.currentURL = docItem?.fileURL || ''
-      this.currentName = docItem?.fileName || 'Document'
-      if (this.currentURL) this.showDialog = true
+      this.currentURL = docItem?.fileURL || "";
+      this.currentName = docItem?.fileName || "Document";
+      if (this.currentURL) this.showDialog = true;
     },
-    openInNewTab() { if (this.currentURL) window.open(this.currentURL, '_blank') },
-    zoomIn() { if (this.zoom < 2) this.zoom += 0.1 },
-    zoomOut() { if (this.zoom > 0.5) this.zoom -= 0.1 },
+    openInNewTab() {
+      if (this.currentURL) window.open(this.currentURL, "_blank");
+    },
+    zoomIn() {
+      if (this.zoom < 2) this.zoom += 0.1;
+    },
+    zoomOut() {
+      if (this.zoom > 0.5) this.zoom -= 0.1;
+    },
     goBack() {
-      const from = this.$route?.query?.from
-      if (from === 'onboard') this.$router.push('/onboard-units')
-      else this.$router.push('/active-units')
-    }
+      const from = this.$route?.query?.from;
+      if (from === "onboard") this.$router.push("/onboard-units");
+      else this.$router.push("/active-units");
+    },
   },
-  async mounted() { await this.loadPropertyData(this.$route.params.id) }
-}
+  async mounted() {
+    await this.loadPropertyData(this.$route.params.id);
+  },
+};
 </script>
 
 <style scoped>
-.property-docs-page { padding: 20px; min-height: 100vh; }
-.back-btn { font-weight: 500; text-transform: none; border-radius: 8px; transition: all 0.3s ease; background-color: black !important; color: white !important; border: 2px solid black !important; width: 160px; height: 44px; }
-.back-btn:hover { background-color: #333 !important; border-color: #333 !important; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
-.title-section { background: black; color: white; padding: 0.75rem; border-radius: 12px 12px 0 0; }
-.page-title { font-size: 1.25rem; font-weight: 600; color: white; margin: 0; text-align: center; text-transform: uppercase; }
-.form-card { background: white; border-radius: 0 0 12px 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
+.property-docs-page {
+  padding: 20px;
+  min-height: 100vh;
+}
+.back-btn {
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background-color: black !important;
+  color: white !important;
+  border: 2px solid black !important;
+  width: 160px;
+  height: 44px;
+}
+.back-btn:hover {
+  background-color: #333 !important;
+  border-color: #333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.title-section {
+  background: black;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 12px 12px 0 0;
+}
+.page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+.form-card {
+  background: white;
+  border-radius: 0 0 12px 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
 
 /* Document sections - enhanced styling */
-.docs-section { 
+.docs-section {
   margin-bottom: 32px;
   padding: 20px;
   border-radius: 8px;
   border-left: 4px solid #e5e7eb;
 }
 
-.docs-title { 
+.docs-title {
   font-size: 1.2rem;
   font-weight: 600;
   color: #333;
@@ -266,19 +510,19 @@ export default {
   align-items: center;
 }
 
-.doc-list { 
-  display: flex; 
-  flex-direction: column; 
+.doc-list {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.doc-item { 
-  display: flex; 
-  align-items: center; 
-  gap: 6px; 
-  padding: 12px; 
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
   background-color: white;
-  border: 1px solid #e9ecef; 
+  border: 1px solid #e9ecef;
   border-radius: 6px;
   transition: all 0.3s ease;
 }
@@ -288,7 +532,7 @@ export default {
   transform: translateY(-1px);
 }
 
-.doc-name { 
+.doc-name {
   flex: 1;
   font-weight: 500;
   color: #333;
@@ -317,34 +561,147 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Centered search styling */
-.doc-search { display: flex; justify-content: center; margin: 14px 0 24px 0; }
-.search-input { max-width: 520px; width: 100%; }
+/* Search and date filter styling */
+.doc-search {
+  margin: 14px 0 24px 0;
+}
+.search-input,
+.date-input {
+  width: 100%;
+}
+.search-input .v-field,
+.date-input .v-field {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+.search-input .v-field:focus-within,
+.date-input .v-field:focus-within {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
 
 /* Document viewer dialog */
-.document-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100000; }
-.document-dialog { position: relative; width: 90vw; max-width: 900px; min-height: 300px; }
-.document-dialog-bg { position: absolute; top: 12px; left: 12px; width: 96%; height: 100%; border-radius: 16px; box-shadow: 0 6px 24px rgba(0,0,0,0.15); background: #111; }
-.document-dialog-inner { position: relative; background: #ffffff; border-radius: 16px; padding: 32px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,0.15); }
-.document-close { position: absolute; top: 12px; right: 12px; background: transparent; border: none; font-size: 24px; cursor: pointer; line-height: 1; }
-.document-title { font-size: 2em; margin: 8px 0; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
-.document-subtitle { font-size: 1.1rem; margin: 0 0 16px 0; color: #6b7280; }
-.pdf-container { position: relative; margin-top: 8px; }
-.pdf-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; }
-.zoom-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #ddd; background: #000; color: #fff; cursor: pointer; }
-.zoom-btn:hover { background: #333; }
-.pdf-wrapper { transform-origin: top left; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
-.document-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
-.document-button { border: none; border-radius: 8px; color: #ffffff; font-size: 0.95rem; padding: 10px 16px; cursor: pointer; transition: opacity 0.3s ease; }
-.document-button.secondary { background-color: #6b7280; }
-.document-button.primary { background-color: #111827; }
-.document-button:hover { opacity: 0.9; }
+.document-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+}
+.document-dialog {
+  position: relative;
+  width: 90vw;
+  max-width: 900px;
+  min-height: 300px;
+}
+.document-dialog-bg {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 96%;
+  height: 100%;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  background: #111;
+}
+.document-dialog-inner {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+.document-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+.document-title {
+  font-size: 2em;
+  margin: 8px 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.document-subtitle {
+  font-size: 1.1rem;
+  margin: 0 0 16px 0;
+  color: #6b7280;
+}
+.pdf-container {
+  position: relative;
+  margin-top: 8px;
+}
+.pdf-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.zoom-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #000;
+  color: #fff;
+  cursor: pointer;
+}
+.zoom-btn:hover {
+  background: #333;
+}
+.pdf-wrapper {
+  transform-origin: top left;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.document-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+.document-button {
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+.document-button.secondary {
+  background-color: #6b7280;
+}
+.document-button.primary {
+  background-color: #111827;
+}
+.document-button:hover {
+  opacity: 0.9;
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .property-docs-page { padding: 10px; }
-  .form-card { padding: 16px; }
-  .docs-section { padding: 16px; }
-  .doc-item { padding: 10px; }
+  .property-docs-page {
+    padding: 10px;
+  }
+  .form-card {
+    padding: 16px;
+  }
+  .docs-section {
+    padding: 16px;
+  }
+  .doc-item {
+    padding: 10px;
+  }
 }
 </style>
