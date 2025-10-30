@@ -73,16 +73,17 @@
           >
             <!-- Black background base -->
             <div class="agency-unified-bg"></div>
-            <!-- Logo positioned on the right -->
-            <div class="agency-logo-right" :style="agencyLogoStyle"></div>
-            <!-- Black to transparent gradient overlay -->
-            <div class="agency-gradient-overlay"></div>
+            <!-- Logo rendered in the right column to avoid overlap -->
             <!-- Content overlay -->
             <div class="agency-content-overlay">
               <v-row class="no-gutters">
                 <!-- Left content area -->
-                <v-col cols="12" md="6" class="agency-content-left">
-                  <div class="agency-content-wrapper">
+                <v-col cols="12" md="7" class="agency-content-left">
+                  <div
+                    ref="contentWrapper"
+                    class="agency-content-wrapper"
+                    :style="contentWrapperInlineStyle"
+                  >
                     <v-card-title
                       class="agency-title text-white text-h3 mb-4"
                       :class="{ 'title-animated': animationReady }"
@@ -162,12 +163,7 @@
                           }}</span>
                         </div>
                       </div>
-                      <v-divider
-                        v-if="agency.notes"
-                        class="my-4 bg-white"
-                        :class="{ 'divider-animated': animationReady }"
-                        style="animation-delay: 1.2s"
-                      />
+                      <!-- Divider removed to avoid thin line between details and notes -->
                       <p
                         v-if="agency.notes"
                         class="agency-description-black"
@@ -179,9 +175,13 @@
                     </v-card-text>
                   </div>
                 </v-col>
-                <!-- Right side - Logo area (empty, just for layout) -->
-                <v-col cols="12" md="6" class="agency-logo-section">
-                  <!-- Logo will be displayed via background image -->
+                <!-- Right side - Logo area -->
+                <v-col cols="12" md="5" class="agency-logo-section">
+                  <div
+                    ref="logoEl"
+                    class="agency-logo-square"
+                    :style="agencyLogoStyle"
+                  ></div>
                 </v-col>
               </v-row>
             </div>
@@ -198,7 +198,14 @@
 
 <script>
 import { db } from "@/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { useCustomDialogs } from "@/composables/useCustomDialogs";
 import { useAppStore } from "@/stores/app";
 
@@ -213,6 +220,8 @@ export default {
       agency: {},
       loading: false,
       animationReady: false,
+      contentRightReservePx: 0,
+      contentMaxWidthPx: 0,
     };
   },
   computed: {
@@ -238,24 +247,42 @@ export default {
     },
 
     agencyLogoStyle() {
-      const profileImageUrl =
-        this.agency?.profileImageUrl || this.agency?.profileImage;
-      if (profileImageUrl) {
-        return {
-          backgroundImage: `url(${profileImageUrl})`,
-          backgroundSize: this.getOptimalBackgroundSize(),
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        };
-      }
-      // Fallback to a default background if no profile image
+      const urlCandidate =
+        this.agency?.profileImageUrl ||
+        this.agency?.profileImage ||
+        this.agency?.logoUrl ||
+        this.agency?.logo ||
+        this.agency?.agencyLogo ||
+        this.agency?.imageUrl;
+
+      const logoUrl =
+        urlCandidate &&
+        typeof urlCandidate === "string" &&
+        urlCandidate.trim().length
+          ? urlCandidate
+          : null;
+
+      const backgroundImage = logoUrl
+        ? `url(${logoUrl})`
+        : "url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)";
+
       return {
-        backgroundImage:
-          "url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)",
-        backgroundSize: "contain",
+        backgroundImage,
+        backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       };
+    },
+
+    contentWrapperInlineStyle() {
+      const style = {};
+      if (this.contentRightReservePx > 0) {
+        style.paddingRight = `${this.contentRightReservePx}px`;
+      }
+      if (this.contentMaxWidthPx > 0) {
+        style.maxWidth = `${this.contentMaxWidthPx}px`;
+      }
+      return style;
     },
   },
   methods: {
@@ -298,6 +325,48 @@ export default {
       return "cover";
     },
 
+    updateContentSpacing() {
+      try {
+        const logoEl = this.$refs.logoEl;
+        const wrapperEl = this.$refs.contentWrapper;
+        const cardEl =
+          wrapperEl && wrapperEl.closest
+            ? wrapperEl.closest(".agency-info-card-black")
+            : null;
+        if (!logoEl || !wrapperEl || !cardEl) {
+          this.contentRightReservePx = 0;
+          this.contentMaxWidthPx = 0;
+          return;
+        }
+
+        const cardRect = cardEl.getBoundingClientRect();
+        const logoRect = logoEl.getBoundingClientRect();
+        const wrapperRect = wrapperEl.getBoundingClientRect();
+
+        // Compute overlap-based reserve (legacy safeguard)
+        const horizontalOverlap = wrapperRect.right - logoRect.left;
+        if (horizontalOverlap > 0) {
+          const reserve = Math.min(
+            horizontalOverlap + 16,
+            cardRect.width * 0.6
+          );
+          this.contentRightReservePx = Math.max(0, Math.round(reserve));
+        } else {
+          this.contentRightReservePx = 0;
+        }
+
+        // Compute an early wrap max-width so text breaks before reaching the logo column
+        const available = Math.max(
+          0,
+          Math.floor(logoRect.left - wrapperRect.left - 24)
+        );
+        this.contentMaxWidthPx = available > 0 ? available : 0;
+      } catch (_) {
+        this.contentRightReservePx = 0;
+        this.contentMaxWidthPx = 0;
+      }
+    },
+
     openMonthPicker() {
       const el = this.$refs.monthInput?.$el?.querySelector("input");
       if (el) {
@@ -312,24 +381,17 @@ export default {
       return `${year}-${month}`;
     },
     filterProperties() {
-      this.filteredProperties = this.properties.filter((property) => {
-        // Text search filter
+      const queryStr = (this.searchQuery || "").toString().toLowerCase();
+      const properties = Array.isArray(this.properties) ? this.properties : [];
+      this.filteredProperties = properties.filter((property) => {
+        // Text search filter (safe access)
+        const getLc = (v) => (v == null ? "" : String(v)).toLowerCase();
         const textMatch =
-          property.tenantRef
-            .toLowerCase()
-            .includes(this.searchQuery.toLowerCase()) ||
-          property.propertyName
-            .toLowerCase()
-            .includes(this.searchQuery.toLowerCase()) ||
-          property.newOccupation
-            .toLowerCase()
-            .includes(this.searchQuery.toLowerCase()) ||
-          property.contractorRequested
-            .toLowerCase()
-            .includes(this.searchQuery.toLowerCase()) ||
-          property.paidOut
-            .toLowerCase()
-            .includes(this.searchQuery.toLowerCase());
+          getLc(property.tenantRef).includes(queryStr) ||
+          getLc(property.propertyName).includes(queryStr) ||
+          getLc(property.newOccupation).includes(queryStr) ||
+          getLc(property.contractorRequested).includes(queryStr) ||
+          getLc(property.paidOut).includes(queryStr);
 
         // Month filter - now filtering by createdAt date
         if (this.monthFilter) {
@@ -456,6 +518,7 @@ export default {
         // Trigger animation after a short delay to ensure DOM is ready
         setTimeout(() => {
           this.animationReady = true;
+          this.$nextTick(() => this.updateContentSpacing());
         }, 200);
       }
     },
@@ -472,6 +535,35 @@ export default {
     } else {
       console.error("No agency ID provided in route");
     }
+
+    // Recompute on resize
+    this._depsureResizeHandler = () => this.updateContentSpacing();
+    window.addEventListener("resize", this._depsureResizeHandler, {
+      passive: true,
+    });
+
+    // Observe size changes for dynamic updates
+    if (typeof ResizeObserver !== "undefined") {
+      this._depsureResizeObserver = new ResizeObserver(() =>
+        this.updateContentSpacing()
+      );
+      if (this.$refs.logoEl)
+        this._depsureResizeObserver.observe(this.$refs.logoEl);
+      if (this.$refs.contentWrapper)
+        this._depsureResizeObserver.observe(this.$refs.contentWrapper);
+      const cardEl = this.$el?.querySelector?.(".agency-info-card-black");
+      if (cardEl) this._depsureResizeObserver.observe(cardEl);
+    }
+  },
+  beforeUnmount() {
+    if (this._depsureResizeHandler) {
+      window.removeEventListener("resize", this._depsureResizeHandler);
+    }
+    if (this._depsureResizeObserver) {
+      try {
+        this._depsureResizeObserver.disconnect();
+      } catch (_) {}
+    }
   },
 };
 </script>
@@ -484,43 +576,47 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+  /* Layered black gradient with subtle diagonal stripes and shadow */
+  background:
+    /* soft vertical vignette */ radial-gradient(
+      120% 80% at 30% 20%,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0) 60%
+    ),
+    /* diagonal stripes */
+      repeating-linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.06) 0px,
+        rgba(255, 255, 255, 0.06) 2px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0) 10px
+      ),
+    /* base gradient */
+      linear-gradient(135deg, #0a0a0a 0%, #141414 45%, #0a0a0a 100%);
+  box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.6),
+    inset 0 -10px 30px rgba(0, 0, 0, 0.6);
   z-index: 0;
 }
 
-/* Logo positioned on the right */
-.agency-logo-right {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 60%;
+/* Right logo area container */
+.agency-logo-section {
+  padding: 0;
   height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: 1;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
 }
 
-/* Black to transparent gradient overlay */
-.agency-gradient-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+/* Logo square inside right column */
+.agency-logo-square {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.95) 0%,
-    rgba(0, 0, 0, 0.9) 15%,
-    rgba(0, 0, 0, 0.8) 30%,
-    rgba(0, 0, 0, 0.6) 45%,
-    rgba(0, 0, 0, 0.4) 60%,
-    rgba(0, 0, 0, 0.2) 75%,
-    rgba(0, 0, 0, 0.05) 90%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  z-index: 2;
-  pointer-events: none;
+  width: 100%;
+  border-radius: 0;
+  background-size: auto 100%;
+  background-position: right center;
+  background-repeat: no-repeat;
+  will-change: transform, opacity;
 }
 
 .agency-info-card-black {
@@ -535,6 +631,9 @@ export default {
   display: flex;
   align-items: center;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .agency-info-card-black .no-gutters,
@@ -550,6 +649,8 @@ export default {
   align-items: center;
   padding: 0;
   height: 100%;
+  position: relative;
+  z-index: 2;
 }
 
 .agency-content-wrapper {
@@ -559,6 +660,9 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Right logo area */
@@ -566,11 +670,16 @@ export default {
   padding: 0;
   height: 100%;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  z-index: 1;
 }
 .agency-title {
   display: block;
   margin: 0 0 16px;
-  white-space: nowrap !important;
+  white-space: normal;
   overflow: visible;
   text-overflow: unset;
   line-height: 1.2;
@@ -580,6 +689,11 @@ export default {
   font-size: 2.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
   color: #ffd700; /* Gold color like in the image */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .view-agency-page {
   padding: 20px;
@@ -640,13 +754,13 @@ export default {
 
 /* Right-side details */
 .agency-details-black {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .detail-item-black {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   font-size: 1.2rem;
   color: #ffffff;
   min-height: 36px;
@@ -656,15 +770,20 @@ export default {
 
 .detail-text {
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.35;
   color: #f0f0f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .agency-description-black {
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.5;
   color: #e0e0e0;
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Search field styling to match agency page */
@@ -738,10 +857,16 @@ export default {
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .agency-logo-right {
-    width: 100%;
-    height: 40%;
-    top: 60%;
+  .agency-logo-square {
+    width: 80%;
+    max-width: 360px;
+    min-width: 200px;
+    margin: 0 auto;
+  }
+
+  .agency-title {
+    font-size: 2rem;
+    line-height: 1.25;
   }
 
   .agency-content-left {
@@ -750,6 +875,7 @@ export default {
 
   .agency-logo-section {
     height: 40%;
+    justify-content: center;
   }
 
   .agency-content-wrapper {
@@ -801,7 +927,7 @@ export default {
 }
 
 .agency-info-card-black.card-loaded {
-  transform: translateX(0);
+  transform: none;
   opacity: 1;
 }
 
@@ -850,26 +976,20 @@ export default {
 }
 
 /* Logo animation */
-.agency-logo-right {
+.agency-logo-square {
   opacity: 0;
-  transform: translateX(50px) scale(0.8);
-  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.35s ease;
   transition-delay: 0.3s;
 }
 
-.card-loaded .agency-logo-right {
-  opacity: 1;
-  transform: translateX(0) scale(1);
-}
-
-/* Gradient overlay animation */
-.agency-gradient-overlay {
-  opacity: 0;
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  transition-delay: 0.2s;
-}
-
-.card-loaded .agency-gradient-overlay {
+.card-loaded .agency-logo-square {
   opacity: 1;
 }
+
+.card-loaded .agency-logo-square:hover {
+  transform: scale(1.03);
+}
+
+/* (gradient overlay removed) */
 </style>
