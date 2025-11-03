@@ -39,142 +39,127 @@
             </v-card-text>
           </v-card>
 
-          <!-- Notice Info -->
+          <!-- Editable Form -->
           <div v-else class="form-card" elevation="0">
-            <v-card-text>
-              <v-row>
-                <!-- Unit Name -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="notice.unitName"
-                    label="Unit Name"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+            <v-form ref="form" v-model="valid" lazy-validation>
+              <v-card-text>
+                <v-row>
+                  <!-- Unit Name -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="notice.unitName"
+                      label="Unit Name"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
 
-                <!-- Lease Start Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="formatDateField(notice.leaseStartDate)"
-                    label="Lease Start Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                  <!-- Lease Start Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="notice.leaseStartDate"
+                      label="Lease Start Date"
+                      type="date"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
 
-                <!-- Lease End Date -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="formatDateField(notice.leaseEndDate)"
-                    label="Lease End Date"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                  <!-- Lease End Date -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="notice.leaseEndDate"
+                      label="Lease End Date"
+                      type="date"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
 
-                <!-- Month's Missed Rent -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="notice.monthsMissedRent || 0"
-                    label="Month's Missed Rent"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                  />
-                </v-col>
+                  <!-- Months Missed Rent -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="notice.monthsMissedRent"
+                      label="Months Missed Rent"
+                      variant="outlined"
+                      type="number"
+                      min="0"
+                      step="1"
+                      class="custom-input"
+                    />
+                  </v-col>
 
-                <!-- Paid Towards Fund (Super Admin only, editable) -->
-                <v-col v-if="isSuperAdmin" cols="12" md="6">
-                  <v-text-field
-                    v-model.number="paidTowardsFund"
-                    label="Paid Towards Fund (ZAR)"
-                    variant="outlined"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    :rules="[
-                      (v) =>
-                        v === '' ||
-                        v === 0 ||
-                        Number(v) >= 0 ||
-                        'Amount must be positive',
-                    ]"
-                    class="custom-input"
-                    prefix="R"
-                  />
-                </v-col>
+                  <!-- Paid Towards Fund (Super Admin only) -->
+                  <v-col v-if="isSuperAdmin" cols="12" md="6">
+                    <v-text-field
+                      v-model.number="paidTowardsFund"
+                      label="Paid Towards Fund (ZAR)"
+                      variant="outlined"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      :rules="[
+                        (v) =>
+                          v === '' ||
+                          v === 0 ||
+                          Number(v) >= 0 ||
+                          'Amount must be positive',
+                      ]"
+                      class="custom-input"
+                      prefix="R"
+                    />
+                  </v-col>
 
-                <!-- Paid Out (Super Admin only, editable) -->
-                <v-col v-if="isSuperAdmin" cols="12" md="6">
-                  <v-select
-                    v-model="paidOut"
-                    label="Paid Out"
-                    variant="outlined"
-                    :items="['Yes', 'No', 'Pending']"
-                    :rules="[
-                      (v) => v === '' || !!v || 'This field is required',
-                    ]"
-                    class="custom-input"
-                  />
-                </v-col>
+                  <!-- Paid Out (Super Admin only) -->
+                  <v-col v-if="isSuperAdmin" cols="12" md="6">
+                    <v-select
+                      v-model="paidOut"
+                      label="Paid Out"
+                      variant="outlined"
+                      :items="['Yes', 'No', 'Pending']"
+                      class="custom-input"
+                    />
+                  </v-col>
 
-                <!-- Lease End Notes (at bottom) -->
-                <v-col cols="12" v-if="notice.leaseEndNotes">
-                  <v-textarea
-                    :model-value="notice.leaseEndNotes"
-                    label="Lease End Notes"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
-                    rows="3"
-                    hide-details
-                  />
-                </v-col>
-              </v-row>
-            </v-card-text>
+                  <!-- Lease End Notes (display only if present) -->
+                  <v-col
+                    cols="12"
+                    v-if="(notice.leaseEndNotes || '').toString().trim()"
+                  >
+                    <v-textarea
+                      v-model="notice.leaseEndNotes"
+                      label="Lease End Notes"
+                      variant="outlined"
+                      class="custom-input"
+                      rows="3"
+                      hide-details
+                    />
+                  </v-col>
+                </v-row>
+              </v-card-text>
 
-            <!-- Action Buttons -->
-            <v-card-actions class="pa-4">
-              <v-spacer />
-              <v-btn
-                v-if="isSuperAdmin"
-                color="black"
-                variant="elevated"
-                class="edit-btn mr-2"
-                :disabled="
-                  !isFinancialsValid ||
-                  !hasFinancialsChanged ||
-                  savingFinancials
-                "
-                :loading="savingFinancials"
-                @click="saveNoticeFinancials"
-              >
-                Save Changes
-              </v-btn>
-              <v-btn
-                v-if="isAgencyUser || userType === 'Admin'"
-                color="black"
-                variant="elevated"
-                class="edit-btn"
-                @click="$router.push(`/edit-notice-${notice.id}`)"
-              >
-                Edit Notice
-              </v-btn>
-              <v-btn
-                v-if="isAgencyUser || userType === 'Admin'"
-                color="error"
-                variant="text"
-                class="delete-btn"
-                @click="deleteNotice"
-              >
-                <v-icon start>mdi-delete</v-icon>
-                Delete
-              </v-btn>
-            </v-card-actions>
+              <!-- Action Buttons -->
+              <v-card-actions class="pa-4">
+                <v-spacer />
+                <v-btn
+                  color="grey"
+                  variant="outlined"
+                  class="edit-btn mr-2"
+                  @click="$router.push('/notices')"
+                >
+                  Cancel
+                </v-btn>
+                <v-btn
+                  color="black"
+                  variant="elevated"
+                  class="edit-btn"
+                  :loading="savingFinancials"
+                  @click="saveNotice"
+                >
+                  Save Changes
+                </v-btn>
+              </v-card-actions>
+            </v-form>
           </div>
         </v-col>
       </v-row>
@@ -207,6 +192,7 @@ export default {
       savingFinancials: false,
       loading: true,
       error: null,
+      valid: true,
     };
   },
   computed: {
@@ -304,6 +290,44 @@ export default {
         console.error("Failed updating notice financials", e);
         const { showErrorDialog } = useCustomDialogs();
         showErrorDialog?.("Failed to update financial fields.", "Error", "OK");
+      } finally {
+        this.savingFinancials = false;
+      }
+    },
+    async saveNotice() {
+      try {
+        if (!this.notice?.id) return;
+        this.savingFinancials = true;
+        const { updateDoc } = await import("firebase/firestore");
+        const payload = {
+          unitName: this.notice.unitName || "",
+          leaseStartDate: this.notice.leaseStartDate || "",
+          leaseEndDate: this.notice.leaseEndDate || "",
+          leaseEndNotes: this.notice.leaseEndNotes || "",
+          monthsMissedRent: Number(this.notice.monthsMissedRent) || 0,
+          vacateDate: this.notice.leaseEndDate || "",
+          updatedAt: new Date(),
+        };
+        if (this.isSuperAdmin) {
+          payload.paidTowardsFund = Number(this.paidTowardsFund) || 0;
+          payload.paidOut = this.paidOut || "";
+        }
+        await updateDoc(doc(db, "notices", this.notice.id), payload);
+        const { showSuccessDialog } = useCustomDialogs();
+        showSuccessDialog?.(
+          "Notice saved successfully!",
+          "Success!",
+          "Continue"
+        );
+        await this.loadNotice(this.notice.id);
+      } catch (e) {
+        console.error("Failed to save notice", e);
+        const { showErrorDialog } = useCustomDialogs();
+        showErrorDialog?.(
+          "Failed to save notice. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
         this.savingFinancials = false;
       }

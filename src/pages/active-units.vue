@@ -221,7 +221,7 @@
                 <v-chip
                   :color="(item.monthsMissed || 0) > 0 ? 'error' : 'success'"
                   size="small"
-                  variant="tonal"
+                  variant="elevated"
                   :title="
                     (item.monthsMissed || 0) > 0
                       ? `${item.monthsMissed} ${
@@ -395,6 +395,12 @@ export default {
         { title: "UNIT NO.", key: "unitNumber", sortable: true },
         { title: "PROPERTY NAME", key: "propertyName", sortable: true },
         { title: "TYPE", key: "propertyType", sortable: true, align: "center" },
+        {
+          title: "MISSED RENT",
+          key: "monthsMissed",
+          sortable: true,
+          align: "center",
+        },
         {
           title: "LEASE STARTING DATE",
           key: "leaseStartDate",
