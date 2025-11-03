@@ -8,7 +8,7 @@
             v-model="searchQuery"
             label="Search agencies..."
             prepend-inner-icon="mdi-magnify"
-            flat="true"
+            flat
             density="comfortable"
             variant="outlined"
             clearable

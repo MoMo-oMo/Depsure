@@ -9,7 +9,7 @@
             v-model="searchQuery"
             label="Search Unit"
             prepend-inner-icon="mdi-magnify"
-            flat="true"
+            flat
             density="comfortable"
             variant="outlined"
             clearable
@@ -53,7 +53,7 @@
                 :model-value="monthFilterLabel"
                 label="Filter by month"
                 append-inner-icon="mdi-calendar-month"
-                flat="true"
+                flat
                 density="comfortable"
                 variant="outlined"
                 hide-details

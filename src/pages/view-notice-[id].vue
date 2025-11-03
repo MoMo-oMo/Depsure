@@ -114,7 +114,7 @@
                     v-model="paidOut"
                     label="Paid Out"
                     variant="outlined"
-                    :items="['', 'Yes', 'No', 'Pending']"
+                    :items="['Yes', 'No', 'Pending']"
                     :rules="[
                       (v) => v === '' || !!v || 'This field is required',
                     ]"

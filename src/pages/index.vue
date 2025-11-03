@@ -12,7 +12,7 @@
               v-model="email"
               label="Email Address"
               prepend-inner-icon="mdi-email"
-              flat="true"
+              flat
               density="comfortable"
               variant="outlined"
               class="custom-input animate-input pa-0"
@@ -29,7 +29,7 @@
                prepend-inner-icon="mdi-lock"
                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                @click:append-inner="showPassword = !showPassword"
-               flat="true"
+               flat
                style="margin-top: -18px;"
                variant="outlined"
                class="custom-input animate-input pa-0"

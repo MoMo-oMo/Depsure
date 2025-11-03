@@ -146,7 +146,7 @@
               <v-chip
                 :color="getPropertyTypeColor(item.propertyType)"
                 size="small"
-                variant="outlined"
+                variant="elevated"
               >
                 {{ getPropertyTypeLabel(item.propertyType) }}
               </v-chip>

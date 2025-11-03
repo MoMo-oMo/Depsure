@@ -260,3 +260,7 @@ export function useNoticeVacancyAutomation() {
     runAutomation,
   };
 }
+
+
+
+

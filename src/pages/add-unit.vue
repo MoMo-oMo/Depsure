@@ -22,7 +22,7 @@
           <div class="title-section">
             <h1 class="page-title">Add New Unit</h1>
           </div>
-          
+
           <div class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-card-text>
@@ -150,7 +150,7 @@
                     />
                   </v-col>
                   <!-- Lease End Date (optional) -->
-                  <v-col cols="12" md="6">
+                  <!-- <v-col cols="12" md="6">
                     <v-text-field
                       v-model="property.leaseEndDate"
                       label="Lease End Date"
@@ -159,10 +159,10 @@
                       class="custom-input"
                       :rules="leaseEndDateRules"
                     />
-                  </v-col>
+                  </v-col> -->
 
                   <!-- Paid Towards Fund -->
-                  <v-col cols="12" md="6">
+                  <!-- <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="property.paidTowardsFund"
                       label="Paid Towards Fund"
@@ -175,10 +175,10 @@
                       step="0.01"
                       required
                     />
-                  </v-col>
+                  </v-col> -->
 
                   <!-- Amount to be Paid Out (Inc Interest) -->
-                  <v-col cols="12" md="6">
+                  <!-- <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="property.amountToBePaidOut"
                       label="Amount to be Paid Out (Inc Interest)"
@@ -191,10 +191,10 @@
                       step="0.01"
                       required
                     />
-                  </v-col>
+                  </v-col> -->
 
                   <!-- Paid Out Yes/No -->
-                  <v-col cols="12" md="6">
+                  <!-- <v-col cols="12" md="6">
                     <v-select
                       v-model="property.paidOut"
                       label="Paid Out Yes/No"
@@ -204,7 +204,7 @@
                       :rules="paidOutRules"
                       required
                     />
-                  </v-col>
+                  </v-col> -->
                 </v-row>
               </v-card-text>
 
@@ -231,7 +231,7 @@
                 </v-btn>
               </v-card-actions>
             </v-form>
-        </div>
+          </div>
         </v-col>
       </v-row>
     </v-container>
@@ -406,7 +406,7 @@ export default {
         const appStore = useAppStore();
         const currentUser = appStore.currentUser;
         const userType = currentUser?.userType;
-        
+
         if (
           userType === "Agency" ||
           (userType === "Admin" && currentUser.adminScope === "agency")
@@ -464,7 +464,7 @@ export default {
         this.agenciesLoading = false;
       }
     },
-    
+
     async saveProperty() {
       if (this.$refs.form.validate()) {
         this.loading = true;
@@ -635,16 +635,16 @@ export default {
   .add-unit-page {
     padding: 10px;
   }
-  
+
   .page-title {
     font-size: 1.1rem;
   }
-  
+
   .back-btn {
     width: 140px;
     height: 40px;
   }
-  
+
   .cancel-btn,
   .save-btn {
     width: 100%;

@@ -98,7 +98,7 @@
             :items="flaggedFilterOptions"
             item-title="title"
             item-value="value"
-            label="All Units / Flagged Units"
+            label="Flagged Units"
             density="comfortable"
             variant="outlined"
             hide-details
@@ -313,12 +313,12 @@ export default {
           sortable: true,
           align: "center",
         },
-        {
-          title: "LEASE END DATE",
-          key: "leaseEndDate",
-          sortable: true,
-          align: "center",
-        },
+        // {
+        //   title: "LEASE END DATE",
+        //   key: "leaseEndDate",
+        //   sortable: true,
+        //   align: "center",
+        // },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ],
     };
@@ -342,6 +342,7 @@ export default {
       return [
         { value: "all", title: "All Units" },
         { value: "only", title: "Flagged Only" },
+        { value: "unflagged", title: "Unflagged" },
       ];
     },
     monthFilterLabel() {
@@ -447,9 +448,12 @@ export default {
         }
 
         // Flagged filter
+        const isFlagged = u.isFlagged === true || u.isFlagged === "Yes";
         const flaggedMatch =
           this.flaggedFilter === "only"
-            ? u.isFlagged === true || u.isFlagged === "Yes"
+            ? isFlagged
+            : this.flaggedFilter === "unflagged"
+            ? !isFlagged
             : true;
 
         // Exclude units that have an active notice or vacancy

@@ -3,7 +3,6 @@
     <v-container fluid>
       <!-- Header -->
 
-
       <!-- Filters -->
       <v-row class="mb-4">
         <v-col cols="12" md="3">
@@ -18,7 +17,7 @@
             @update:model-value="applyFilters"
           />
         </v-col>
-        
+
         <v-col cols="12" md="2">
           <v-select
             v-model="filters.action"
@@ -26,13 +25,15 @@
             variant="outlined"
             density="comfortable"
             :items="actionOptions"
+            item-title="title"
+            item-value="value"
             clearable
             hide-details
             class="custom-input"
             @update:model-value="applyFilters"
           />
         </v-col>
-        
+
         <v-col cols="12" md="2">
           <v-select
             v-model="filters.resourceType"
@@ -40,13 +41,15 @@
             variant="outlined"
             density="comfortable"
             :items="resourceTypeOptions"
+            item-title="title"
+            item-value="value"
             clearable
             hide-details
             class="custom-input"
             @update:model-value="applyFilters"
           />
         </v-col>
-        
+
         <v-col cols="12" md="2">
           <v-select
             v-model="filters.userType"
@@ -60,7 +63,7 @@
             @update:model-value="applyFilters"
           />
         </v-col>
-        
+
         <v-col cols="12" md="2">
           <v-text-field
             v-model="filters.startDate"
@@ -74,158 +77,179 @@
             @update:model-value="applyFilters"
           />
         </v-col>
-        
-                 <v-col cols="12" md="1">
-           <button
-             @click="clearFilters"
-             class="custom-btn secondary my-2"
-             :disabled="!hasActiveFilters"
-           >
-             Clear
-           </button>
-         </v-col>
+
+        <v-col cols="12" md="1">
+          <button
+            @click="clearFilters"
+            class="custom-btn secondary my-2"
+            :disabled="!hasActiveFilters"
+          >
+            Clear
+          </button>
+        </v-col>
       </v-row>
 
-      
+      <!-- Audit Trail Table -->
+      <v-row>
+        <v-col cols="12">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <span class="text-h6 font-weight-bold">Audit Log Entries</span>
+            <button
+              @click="exportAuditTrailXLSX"
+              :disabled="exportLoading"
+              class="custom-btn"
+            >
+              {{ exportLoading ? "Exporting..." : "Export to Excel" }}
+            </button>
+          </div>
 
-             <!-- Audit Trail Table -->
-       <v-row>
-         <v-col cols="12">
-                       <div class="d-flex justify-space-between align-center mb-4">
-              <span class="text-h6 font-weight-bold">Audit Log Entries</span>
-              <button
-                @click="exportAuditTrailXLSX"
-                :disabled="exportLoading"
-                class="custom-btn"
+          <v-data-table
+            :headers="headers"
+            :items="filteredAuditEntries"
+            :loading="loading"
+            :items-per-page="20"
+            :items-per-page-options="[10, 20, 50, 100]"
+            class="custom-header"
+            hover
+          >
+            <!-- Timestamp Column -->
+            <template #item.timestamp="{ item }">
+              <span class="text-caption">
+                {{ formatDateTime(item.timestamp) }}
+              </span>
+            </template>
+
+            <!-- User Column -->
+            <template #item.userName="{ item }">
+              <div>
+                <div class="font-weight-medium">{{ item.userName }}</div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ item.userEmail }}
+                </div>
+              </div>
+            </template>
+
+            <!-- User Type Column -->
+            <template #item.userType="{ item }">
+              <v-chip
+                :color="getUserTypeColor(item.userType)"
+                size="small"
+                variant="outlined"
               >
-                {{ exportLoading ? 'Exporting...' : 'Export to Excel' }}
-              </button>
-            </div>
-           
-           <v-data-table
-             :headers="headers"
-             :items="filteredAuditEntries"
-             :loading="loading"
-             :items-per-page="20"
-             :items-per-page-options="[10, 20, 50, 100]"
-             class="custom-header"
-             hover
-           >
-                <!-- Timestamp Column -->
-                <template #item.timestamp="{ item }">
-                  <span class="text-caption">
-                    {{ formatDateTime(item.timestamp) }}
-                  </span>
-                </template>
+                {{ item.userType }}
+              </v-chip>
+            </template>
 
-                <!-- User Column -->
-                <template #item.userName="{ item }">
-                  <div>
-                    <div class="font-weight-medium">{{ item.userName }}</div>
-                    <div class="text-caption text-medium-emphasis">{{ item.userEmail }}</div>
-                  </div>
-                </template>
+            <!-- Action Column -->
+            <template #item.action="{ item }">
+              <v-chip
+                :color="getActionColor(item.action)"
+                size="small"
+                variant="tonal"
+              >
+                {{ item.action }}
+              </v-chip>
+            </template>
 
-                <!-- User Type Column -->
-                <template #item.userType="{ item }">
-                  <v-chip
-                    :color="getUserTypeColor(item.userType)"
-                    size="small"
-                    variant="outlined"
-                  >
-                    {{ item.userType }}
-                  </v-chip>
-                </template>
+            <!-- Resource Column -->
+            <template #item.resourceType="{ item }">
+              <div v-if="item.resourceType">
+                <v-chip color="primary" size="small" variant="outlined">
+                  {{ item.resourceType }}
+                </v-chip>
+              </div>
+              <span v-else class="text-medium-emphasis">-</span>
+            </template>
 
-                <!-- Action Column -->
-                <template #item.action="{ item }">
-                  <v-chip
-                    :color="getActionColor(item.action)"
-                    size="small"
-                    variant="tonal"
-                  >
-                    {{ item.action }}
-                  </v-chip>
-                </template>
-
-                <!-- Resource Column -->
-                <template #item.resourceType="{ item }">
-                  <div v-if="item.resourceType">
-                    <v-chip
-                      color="primary"
-                      size="small"
-                      variant="outlined"
-                    >
-                      {{ item.resourceType }}
-                    </v-chip>
-                  </div>
-                  <span v-else class="text-medium-emphasis">-</span>
-                </template>
-
-                                 <!-- Details Column -->
-                 <template #item.details="{ item }">
-                   <v-icon
-                     v-if="Object.keys(item.details).length > 0"
-                     icon="mdi-eye"
-                     color="black"
-                     class="cursor-pointer"
-                     @click="showDetails(item)"
-                   />
-                   <span v-else class="text-medium-emphasis">-</span>
-                 </template>
-
-                             </v-data-table>
-         </v-col>
-       </v-row>
+            <!-- Details Column -->
+            <template #item.details="{ item }">
+              <v-icon
+                v-if="Object.keys(item.details).length > 0"
+                icon="mdi-eye"
+                color="black"
+                class="cursor-pointer"
+                @click="showDetails(item)"
+              />
+              <span v-else class="text-medium-emphasis">-</span>
+            </template>
+          </v-data-table>
+        </v-col>
+      </v-row>
     </v-container>
 
     <!-- Details Dialog -->
-    <div v-if="detailsDialog" class="details-overlay" @click.self="detailsDialog = false">
+    <div
+      v-if="detailsDialog"
+      class="details-overlay"
+      @click.self="detailsDialog = false"
+    >
       <div class="details-dialog">
         <!-- colored card behind -->
         <div class="details-dialog-bg"></div>
         <!-- main white card -->
         <div class="details-dialog-inner">
-          <button class="details-close" @click="detailsDialog = false">&times;</button>
+          <button class="details-close" @click="detailsDialog = false">
+            &times;
+          </button>
 
           <div class="details-icon">
             <v-icon>mdi-eye</v-icon>
           </div>
 
           <h2 class="details-title">Audit Entry Details</h2>
-          
+
           <div class="details-scroll-container">
             <div class="details-content">
               <div class="detail-item">
                 <label class="detail-label">User</label>
-                <div class="detail-value">{{ selectedEntry?.userName }} ({{ selectedEntry?.userEmail }})</div>
+                <div class="detail-value">
+                  {{ selectedEntry?.userName }} ({{ selectedEntry?.userEmail }})
+                </div>
               </div>
-              
+
               <div class="detail-item">
                 <label class="detail-label">Action</label>
                 <div class="detail-value">{{ selectedEntry?.action }}</div>
               </div>
-              
+
               <div class="detail-item">
                 <label class="detail-label">Timestamp</label>
-                <div class="detail-value">{{ formatDateTime(selectedEntry?.timestamp) }}</div>
+                <div class="detail-value">
+                  {{ formatDateTime(selectedEntry?.timestamp) }}
+                </div>
               </div>
-              
-              
+
               <div v-if="selectedEntry?.resourceType" class="detail-item">
                 <label class="detail-label">Resource</label>
-                <div class="detail-value">{{ selectedEntry?.resourceType }}</div>
+                <div class="detail-value">
+                  {{ selectedEntry?.resourceType }}
+                </div>
               </div>
-              
-              <div v-if="selectedEntry && selectedEntry.details && Object.keys(selectedEntry.details || {}).length > 0" class="detail-item">
+
+              <div
+                v-if="
+                  selectedEntry &&
+                  selectedEntry.details &&
+                  Object.keys(selectedEntry.details || {}).length > 0
+                "
+                class="detail-item"
+              >
                 <label class="detail-label">Details</label>
                 <div class="detail-value">
-                  <pre class="details-json">{{ JSON.stringify((selectedEntry && selectedEntry.details) ? selectedEntry.details : {}, null, 2) }}</pre>
+                  <pre class="details-json">{{
+                    JSON.stringify(
+                      selectedEntry && selectedEntry.details
+                        ? selectedEntry.details
+                        : {},
+                      null,
+                      2
+                    )
+                  }}</pre>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <button class="details-button" @click="detailsDialog = false">
             Close
           </button>
@@ -236,376 +260,433 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { Workbook } from 'exceljs'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { useAppStore } from '@/stores/app'
-import { useNotification } from '@/composables/useNotification'
+import { ref, reactive, computed, onMounted } from "vue";
+import { Workbook } from "exceljs";
+import { useAuditTrail } from "@/composables/useAuditTrail";
+import { useAppStore } from "@/stores/app";
+import { useNotification } from "@/composables/useNotification";
 
 export default {
-  name: 'AuditTrailPage',
+  name: "AuditTrailPage",
   setup() {
-    const appStore = useAppStore()
-    const { fetchAuditTrail, logAuditEvent, auditActions, resourceTypes, loading } = useAuditTrail()
-    const { showError } = useNotification()
+    const appStore = useAppStore();
+    const {
+      fetchAuditTrail,
+      logAuditEvent,
+      auditActions,
+      resourceTypes,
+      loading,
+    } = useAuditTrail();
+    const { showError } = useNotification();
 
     // Check if user is super admin
-    const isSuperAdmin = computed(() => appStore.userType === 'Super Admin')
+    const isSuperAdmin = computed(() => appStore.userType === "Super Admin");
 
     // Redirect if not super admin
     if (!isSuperAdmin.value) {
-      window.location.href = '/dashboard'
+      window.location.href = "/dashboard";
     }
 
     // Data
-    const auditEntries = ref([])
-    const filteredAuditEntries = ref([])
-    const exportLoading = ref(false)
-    const detailsDialog = ref(false)
-    const selectedEntry = ref(null)
+    const auditEntries = ref([]);
+    const filteredAuditEntries = ref([]);
+    const exportLoading = ref(false);
+    const detailsDialog = ref(false);
+    const selectedEntry = ref(null);
 
     // Filters
     const filters = reactive({
-      userEmail: '',
-      action: '',
-      resourceType: '',
-      userType: '',
-      startDate: '',
-      endDate: ''
-    })
+      userEmail: "",
+      action: "",
+      resourceType: "",
+      userType: "",
+      startDate: "",
+      endDate: "",
+    });
 
     // Table headers
     const headers = [
-      { title: 'Timestamp', key: 'timestamp', sortable: true },
-      { title: 'User', key: 'userName', sortable: true },
-      { title: 'User Type', key: 'userType', sortable: true },
-      { title: 'Action', key: 'action', sortable: true },
-      { title: 'Details', key: 'details', sortable: false },
-      
-    ].map(header => ({
+      { title: "Timestamp", key: "timestamp", sortable: true },
+      { title: "User", key: "userName", sortable: true },
+      { title: "User Type", key: "userType", sortable: true },
+      { title: "Action", key: "action", sortable: true },
+      { title: "Details", key: "details", sortable: false },
+    ].map((header) => ({
       ...header,
-      title: header.title.toUpperCase()
-    }))
+      title: header.title.toUpperCase(),
+    }));
 
     // Options for filters
-    const actionOptions = Object.values(auditActions)
-    const resourceTypeOptions = Object.values(resourceTypes)
-    const userTypeOptions = ['Super Admin', 'Admin', 'Agency']
+    const toTitleCase = (value) => {
+      try {
+        return String(value)
+          .toLowerCase()
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+      } catch (_) {
+        return String(value || "");
+      }
+    };
+
+    const actionOptions = Object.values(auditActions).map((v) => ({
+      title: toTitleCase(v),
+      value: v,
+    }));
+    const resourceTypeOptions = Object.values(resourceTypes).map((v) => ({
+      title: toTitleCase(v),
+      value: v,
+    }));
+    const userTypeOptions = ["Super Admin", "Admin", "Agency"];
 
     // Computed
     const hasActiveFilters = computed(() => {
-      return Object.values(filters).some(value => value !== '')
-    })
+      return Object.values(filters).some((value) => value !== "");
+    });
 
     // Methods
     const loadAuditTrail = async () => {
       try {
-        const entries = await fetchAuditTrail()
-        auditEntries.value = entries
-        filteredAuditEntries.value = entries
-        
+        const entries = await fetchAuditTrail();
+        auditEntries.value = entries;
+        filteredAuditEntries.value = entries;
+
         // Log the audit event for viewing audit trail
         await logAuditEvent(
           auditActions.VIEW,
           {
             recordCount: entries.length,
-            filters: filters
+            filters: filters,
           },
           resourceTypes.DOCUMENT,
           null
-        )
+        );
       } catch (error) {
-        showError('Failed to load audit trail')
-        console.error('Error loading audit trail:', error)
+        showError("Failed to load audit trail");
+        console.error("Error loading audit trail:", error);
       }
-    }
+    };
 
     const applyFilters = () => {
-      filteredAuditEntries.value = auditEntries.value.filter(entry => {
-        const emailMatch = !filters.userEmail || 
-          entry.userEmail.toLowerCase().includes(filters.userEmail.toLowerCase())
-        
-        const actionMatch = !filters.action || entry.action === filters.action
-        
-        const resourceMatch = !filters.resourceType || entry.resourceType === filters.resourceType
-        
-        const userTypeMatch = !filters.userType || entry.userType === filters.userType
-        
-        const dateMatch = !filters.startDate || 
-          new Date(entry.timestamp) >= new Date(filters.startDate)
-        
-        return emailMatch && actionMatch && resourceMatch && userTypeMatch && dateMatch
-      })
-    }
+      filteredAuditEntries.value = auditEntries.value.filter((entry) => {
+        const emailMatch =
+          !filters.userEmail ||
+          entry.userEmail
+            .toLowerCase()
+            .includes(filters.userEmail.toLowerCase());
+
+        const actionMatch = !filters.action || entry.action === filters.action;
+
+        const resourceMatch =
+          !filters.resourceType || entry.resourceType === filters.resourceType;
+
+        const userTypeMatch =
+          !filters.userType || entry.userType === filters.userType;
+
+        const dateMatch =
+          !filters.startDate ||
+          new Date(entry.timestamp) >= new Date(filters.startDate);
+
+        return (
+          emailMatch &&
+          actionMatch &&
+          resourceMatch &&
+          userTypeMatch &&
+          dateMatch
+        );
+      });
+    };
 
     const clearFilters = () => {
-      Object.keys(filters).forEach(key => {
-        filters[key] = ''
-      })
-      filteredAuditEntries.value = auditEntries.value
-    }
+      Object.keys(filters).forEach((key) => {
+        filters[key] = "";
+      });
+      filteredAuditEntries.value = auditEntries.value;
+    };
 
     const showDetails = (entry) => {
-      selectedEntry.value = entry
-      detailsDialog.value = true
-    }
+      selectedEntry.value = entry;
+      detailsDialog.value = true;
+    };
 
     const formatDateTime = (timestamp) => {
-      if (!timestamp) return 'N/A'
-      return new Date(timestamp).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      })
-    }
+      if (!timestamp) return "N/A";
+      return new Date(timestamp).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+    };
 
     const getUserTypeColor = (userType) => {
       const colors = {
-        'Super Admin': 'error',
-        'Admin': 'warning',
-        'Agency': 'info'
-      }
-      return colors[userType] || 'grey'
-    }
+        "Super Admin": "error",
+        Admin: "warning",
+        Agency: "info",
+      };
+      return colors[userType] || "grey";
+    };
 
     const getActionColor = (action) => {
       const colors = {
-        'LOGIN': 'success',
-        'LOGOUT': 'grey',
-        'CREATE': 'primary',
-        'UPDATE': 'warning',
-        'DELETE': 'error',
-        'VIEW': 'info',
-        'EXPORT': 'secondary',
-        'IMPORT': 'secondary',
-        'APPROVE': 'success',
-        'REJECT': 'error',
-        'ASSIGN': 'primary',
-        'UPLOAD': 'info',
-        'DOWNLOAD': 'info'
-      }
-      return colors[action] || 'grey'
-    }
+        Login: "success",
+        Logout: "grey",
+        Create: "primary",
+        Update: "warning",
+        Delete: "error",
+        View: "info",
+        Export: "secondary",
+        Import: "secondary",
+        Approve: "success",
+        Reject: "error",
+        Assign: "primary",
+        Upload: "info",
+        Download: "info",
+      };
+      return colors[action] || "grey";
+    };
 
     const exportAuditTrail = async () => {
-      exportLoading.value = true
+      exportLoading.value = true;
       try {
         // Log the audit event for export
         await logAuditEvent(
           auditActions.EXPORT,
           {
-            exportType: 'CSV',
+            exportType: "CSV",
             recordCount: filteredAuditEntries.value.length,
-            filters: filters
+            filters: filters,
           },
           resourceTypes.DOCUMENT,
           null
-        )
-        
-        const csvContent = generateCSV(filteredAuditEntries.value)
-        downloadCSV(csvContent, `audit-trail-${new Date().toISOString().split('T')[0]}.csv`)
+        );
+
+        const csvContent = generateCSV(filteredAuditEntries.value);
+        downloadCSV(
+          csvContent,
+          `audit-trail-${new Date().toISOString().split("T")[0]}.csv`
+        );
       } catch (error) {
-        showError('Failed to export audit trail')
-        console.error('Export error:', error)
+        showError("Failed to export audit trail");
+        console.error("Export error:", error);
       } finally {
-        exportLoading.value = false
+        exportLoading.value = false;
       }
-    }
+    };
 
     const exportAuditTrailXLSX = async () => {
-      exportLoading.value = true
+      exportLoading.value = true;
       try {
         await logAuditEvent(
           auditActions.EXPORT,
           {
-            exportType: 'XLSX',
+            exportType: "XLSX",
             recordCount: filteredAuditEntries.value.length,
-            filters: filters
+            filters: filters,
           },
           resourceTypes.DOCUMENT,
           null
-        )
+        );
 
         // Prepare tabular data with readable details
         const columns = [
-          { header: 'TIMESTAMP', key: 'timestamp' },
-          { header: 'USER', key: 'userName' },
-          { header: 'USER EMAIL', key: 'userEmail' },
-          { header: 'USER TYPE', key: 'userType' },
-          { header: 'ACTION', key: 'action' },
-          { header: 'RESOURCE TYPE', key: 'resourceType' },
-          { header: 'DETAILS', key: 'details' }
-        ]
+          { header: "TIMESTAMP", key: "timestamp" },
+          { header: "USER", key: "userName" },
+          { header: "USER EMAIL", key: "userEmail" },
+          { header: "USER TYPE", key: "userType" },
+          { header: "ACTION", key: "action" },
+          { header: "RESOURCE TYPE", key: "resourceType" },
+          { header: "DETAILS", key: "details" },
+        ];
 
-        const rows = filteredAuditEntries.value.map(entry => ({
+        const rows = filteredAuditEntries.value.map((entry) => ({
           timestamp: formatCsvDate(entry.timestamp),
-          userName: entry.userName || '',
-          userEmail: entry.userEmail || '',
-          userType: entry.userType || '',
-          action: entry.action || '',
-          resourceType: entry.resourceType || '',
+          userName: entry.userName || "",
+          userEmail: entry.userEmail || "",
+          userType: entry.userType || "",
+          action: entry.action || "",
+          resourceType: entry.resourceType || "",
           details: JSON.stringify(entry.details || {}, null, 2)
             .replace(/[{}\"\[\]]/g, "")
             .replace(/\\n\\s*/g, "\\n")
             .replace(/:\\s*\\n/g, ": ")
-            .split("\\n").map(s => s.trim()).filter(s => s && !/:\\s*$/.test(s)).join("\\n")
-        }))
+            .split("\\n")
+            .map((s) => s.trim())
+            .filter((s) => s && !/:\\s*$/.test(s))
+            .join("\\n"),
+        }));
 
         // Create workbook / worksheet
-        const wb = new Workbook()
-        const ws = wb.addWorksheet('Audit Trail')
+        const wb = new Workbook();
+        const ws = wb.addWorksheet("Audit Trail");
 
         // Define columns with starter widths
-        ws.columns = columns.map(column => ({
+        ws.columns = columns.map((column) => ({
           header: column.header,
           key: column.key,
-          width: column.key === 'details' ? 45 : 20
-        }))
+          width: column.key === "details" ? 45 : 20,
+        }));
 
         // Add data rows
-        rows.forEach(row => ws.addRow(row))
+        rows.forEach((row) => ws.addRow(row));
 
         // Style header row
-        const headerRow = ws.getRow(1)
-        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
-        headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
-        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }
-        headerRow.height = 20
-        headerRow.eachCell(cell => {
+        const headerRow = ws.getRow(1);
+        headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        headerRow.alignment = { vertical: "middle", horizontal: "center" };
+        headerRow.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF000000" },
+        };
+        headerRow.height = 20;
+        headerRow.eachCell((cell) => {
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-          }
-        })
+            top: { style: "thin", color: { argb: "FFCCCCCC" } },
+            bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
+          };
+        });
 
         // Freeze header and add autofilter
-        ws.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
-        const lastColumnLetter = String.fromCharCode(64 + columns.length)
-        ws.autoFilter = { from: 'A1', to: lastColumnLetter + '1' }
+        ws.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
+        const lastColumnLetter = String.fromCharCode(64 + columns.length);
+        ws.autoFilter = { from: "A1", to: lastColumnLetter + "1" };
 
         // Wrap and align longer detail entries for readability
-        ws.getColumn('details').alignment = { wrapText: true, vertical: 'top' }
+        ws.getColumn("details").alignment = { wrapText: true, vertical: "top" };
         ws.eachRow((row, rowNumber) => {
-          if (rowNumber === 1) return
-          row.alignment = { vertical: 'top' }
-          const detailCell = row.getCell('details')
+          if (rowNumber === 1) return;
+          row.alignment = { vertical: "top" };
+          const detailCell = row.getCell("details");
           if (detailCell) {
-            detailCell.alignment = { vertical: 'top', wrapText: true }
+            detailCell.alignment = { vertical: "top", wrapText: true };
           }
-        })
+        });
 
         // Auto-fit column widths based on content (with padding and limits)
         columns.forEach((column, index) => {
-          const lengths = rows.map(row => {
-            const value = row[column.key]
-            if (value === null || value === undefined) return 0
-            if (typeof value === 'string') {
-              return value.split('\n').reduce((max, segment) => Math.max(max, segment.length), 0)
+          const lengths = rows.map((row) => {
+            const value = row[column.key];
+            if (value === null || value === undefined) return 0;
+            if (typeof value === "string") {
+              return value
+                .split("\n")
+                .reduce((max, segment) => Math.max(max, segment.length), 0);
             }
-            return String(value).length
-          })
-          const headerLength = column.header.length
-          const maxLength = Math.max(headerLength, ...lengths)
-          const minWidth = column.key === 'details' ? 30 : 12
-          const maxWidth = column.key === 'details' ? 70 : 40
-          ws.getColumn(index + 1).width = Math.min(Math.max(maxLength + 2, minWidth), maxWidth)
-        })
+            return String(value).length;
+          });
+          const headerLength = column.header.length;
+          const maxLength = Math.max(headerLength, ...lengths);
+          const minWidth = column.key === "details" ? 30 : 12;
+          const maxWidth = column.key === "details" ? 70 : 40;
+          ws.getColumn(index + 1).width = Math.min(
+            Math.max(maxLength + 2, minWidth),
+            maxWidth
+          );
+        });
 
         // Generate and download
-        const filename = `audit-trail-${new Date().toISOString().split('T')[0]}.xlsx`
-        const buffer = await wb.xlsx.writeBuffer()
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = filename
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
+        const filename = `audit-trail-${
+          new Date().toISOString().split("T")[0]
+        }.xlsx`;
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       } catch (error) {
-        showError('Failed to export audit trail')
-        console.error('XLSX Export error:', error)
+        showError("Failed to export audit trail");
+        console.error("XLSX Export error:", error);
       } finally {
-        exportLoading.value = false
+        exportLoading.value = false;
       }
-    }
+    };
 
     const generateCSV = (data) => {
       const headers = [
-        'TIMESTAMP',
-        'USER',
-        'USER EMAIL',
-        'USER TYPE',
-        'ACTION',
-        'RESOURCE TYPE',
-        'DETAILS'
-      ]
+        "TIMESTAMP",
+        "USER",
+        "USER EMAIL",
+        "USER TYPE",
+        "ACTION",
+        "RESOURCE TYPE",
+        "DETAILS",
+      ];
 
-      const csvRows = []
-      csvRows.push(headers.map(csvEscape).join(','))
+      const csvRows = [];
+      csvRows.push(headers.map(csvEscape).join(","));
 
-      data.forEach(entry => {
+      data.forEach((entry) => {
         const row = [
           formatCsvDate(entry.timestamp),
           entry.userName,
           entry.userEmail,
           entry.userType,
           entry.action,
-          entry.resourceType || '',
+          entry.resourceType || "",
           JSON.stringify(entry.details || {}, null, 2)
             .replace(/[{}\"\[\]]/g, "")
             .replace(/\\n\\s*/g, "\\n")
             .replace(/:\\s*\\n/g, ": ")
-            .split("\\n").map(s => s.trim()).filter(s => s && !/:\\s*$/.test(s)).join("\\n")
-        ]
-        csvRows.push(row.map(csvEscape).join(','))
-      })
+            .split("\\n")
+            .map((s) => s.trim())
+            .filter((s) => s && !/:\\s*$/.test(s))
+            .join("\\n"),
+        ];
+        csvRows.push(row.map(csvEscape).join(","));
+      });
 
-      return csvRows.join('\n')
-    }
+      return csvRows.join("\n");
+    };
 
     // Ensures values are CSV-safe: wraps in quotes, escapes quotes, normalizes newlines
     const csvEscape = (value) => {
-      if (value === null || value === undefined) return '""'
+      if (value === null || value === undefined) return '""';
       const str = String(value)
         .replace(/"/g, '""')
-        .replace(/\r?\n|\r/g, ' ')
-      return `"${str}"`
-    }
+        .replace(/\r?\n|\r/g, " ");
+      return `"${str}"`;
+    };
 
     // Format timestamp without commas so CSV stays tidy
     const formatCsvDate = (timestamp) => {
-      const d = new Date(timestamp)
-      if (isNaN(d)) return ''
-      const pad = (n) => String(n).padStart(2, '0')
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-    }
-
-    
+      const d = new Date(timestamp);
+      if (isNaN(d)) return "";
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+        d.getDate()
+      )} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
 
     const downloadCSV = (content, filename) => {
       // Prepend BOM so Excel opens UTF-8 correctly
-      const BOM = '\uFEFF'
-      const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' })
-      const link = document.createElement('a')
-      const url = URL.createObjectURL(blob)
-      link.setAttribute('href', url)
-      link.setAttribute('download', filename)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    }
+      const BOM = "\uFEFF";
+      const blob = new Blob([BOM + content], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
 
     // Lifecycle
     onMounted(() => {
-      loadAuditTrail()
-      document.title = "Audit Trail - Depsure"
-    })
+      loadAuditTrail();
+      document.title = "Audit Trail - Depsure";
+    });
 
     return {
       // Data
@@ -616,16 +697,16 @@ export default {
       detailsDialog,
       selectedEntry,
       filters,
-      
+
       // Options
       headers,
       actionOptions,
       resourceTypeOptions,
       userTypeOptions,
-      
+
       // Computed
       hasActiveFilters,
-      
+
       // Methods
       applyFilters,
       clearFilters,
@@ -635,17 +716,16 @@ export default {
       getActionColor,
       exportAuditTrail,
       exportAuditTrailXLSX,
-      logAuditEvent
-    }
-  }
-}
+      logAuditEvent,
+    };
+  },
+};
 </script>
 
 <style scoped>
 .audit-trail-page {
   padding: 20px;
   min-height: 100vh;
-
 }
 
 .custom-input {
@@ -653,7 +733,7 @@ export default {
 }
 
 .font-family-mono {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .cursor-pointer {
@@ -790,7 +870,7 @@ pre {
 }
 
 .details-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 80px;
   height: 80px;
@@ -815,7 +895,8 @@ pre {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
   }
   50% {
