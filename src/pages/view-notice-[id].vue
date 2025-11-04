@@ -224,7 +224,7 @@ export default {
       const status = String(this.paidOut || "")
         .trim()
         .toLowerCase();
-      const statusOk = ["", "yes", "no", "pending"].includes(status);
+      const statusOk = ["yes", "no", "pending"].includes(status);
       return amountOk && statusOk;
     },
     hasFinancialsChanged() {
