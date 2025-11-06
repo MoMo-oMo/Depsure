@@ -319,7 +319,7 @@ export default {
           "Success!",
           "Continue"
         );
-        await this.loadNotice(this.notice.id);
+        this.$router.push("/notices");
       } catch (e) {
         console.error("Failed to save notice", e);
         const { showErrorDialog } = useCustomDialogs();

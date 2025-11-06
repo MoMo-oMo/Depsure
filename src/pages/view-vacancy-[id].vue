@@ -39,6 +39,13 @@
                   </v-col>
 
                   <v-col cols="12" md="6">
+                    <v-text-field :model-value="vacancy.propertyType || 'residential'" label="Property Type" variant="outlined" readonly class="custom-input" />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field :model-value="vacancy.monthsMissed" label="Months Missed Rent" variant="outlined" readonly class="custom-input" />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
                     <v-text-field :model-value="formatDate(vacancy.createdAt, 'Not specified')" label="Created At" variant="outlined" readonly class="custom-input" />
                   </v-col>
                   <v-col cols="12" md="6">
@@ -148,6 +155,8 @@ export default {
         updatedAt: this.toDateValue(data?.updatedAt) || data?.updatedAt || null,
         paidTowardsFund: this.toNumber(data?.paidTowardsFund, 0),
         paidOut: data?.paidOut ?? '',
+        propertyType: data?.propertyType || 'residential',
+        monthsMissed: this.toNumber(data?.monthsMissed, 0),
       }
       return base
     }

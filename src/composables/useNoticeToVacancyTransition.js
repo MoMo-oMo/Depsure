@@ -62,8 +62,13 @@ export function useNoticeToVacancyTransition() {
         moveInDate: null,
         propertyManager: unitData?.propertyManager || '',
         contactNumber: unitData?.contactNumber || '',
-        paidTowardsFund: 0,
-        paidOut: '',
+        paidTowardsFund: Number(notice.paidTowardsFund ?? 0),
+        paidOut: (() => {
+          const v = notice.paidOut
+          if (v === true || v === 'Yes' || v === 'yes') return 'Yes'
+          if (v === false || v === 'No' || v === 'no') return 'No'
+          return v || ''
+        })(),
         notes: `Transitioned from notice. Month's Missed Rent: ${notice.monthsMissedRent || 0}`,
         propertyType: notice.propertyType || unitData?.propertyType || 'residential',
         monthsMissedRent: notice.monthsMissedRent || 0,

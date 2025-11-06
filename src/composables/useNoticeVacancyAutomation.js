@@ -181,11 +181,16 @@ export function useNoticeVacancyAutomation() {
 
             // Fields that should be EMPTY initially (as per user request)
             leaseEndDate: "", // Empty - for new tenant
-            paidTowardsFund: 0, // Empty
+            paidTowardsFund: Number(notice.paidTowardsFund ?? 0),
             amountToBePaidOut: 0, // Empty
             newTenantRef: "", // Empty - for new tenant
             notes: "", // Empty
-            paidOut: "", // Empty
+            paidOut: (() => {
+              const v = notice.paidOut;
+              if (v === true || v === "Yes" || v === "yes") return "Yes";
+              if (v === false || v === "No" || v === "no") return "No";
+              return v || "";
+            })(),
 
             // System fields
             status: "Available",

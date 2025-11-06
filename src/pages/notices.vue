@@ -1006,11 +1006,13 @@ export default {
 
           // Fields that should be EMPTY initially (as per user request)
           leaseEndDate: "", // Empty - for new tenant
-          paidTowardsFund: 0, // Empty
+          paidTowardsFund: normalizeCurrency(
+            notice.paidTowardsFund ?? unitData.paidTowardsFund ?? 0
+          ),
           amountToBePaidOut: 0, // Empty
           newTenantRef: "", // Empty - for new tenant
           notes: "", // Empty
-          paidOut: "", // Empty
+          paidOut: normalizePaidOut(notice.paidOut ?? unitData.paidOut ?? ""),
 
           // System fields
           createdAt: new Date(),
