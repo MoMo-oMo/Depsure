@@ -745,6 +745,21 @@ export default {
       }
 
       try {
+        // Re-fetch the latest notice to ensure we use any recent edits
+        try {
+          const latestNoticeSnap = await getDoc(doc(db, "notices", notice.id));
+          if (latestNoticeSnap.exists()) {
+            const latestNotice = latestNoticeSnap.data() || {};
+            // Merge latest fields onto the passed-in notice
+            notice = { ...notice, ...latestNotice };
+            // Normalize vacateDate alias from leaseEndDate if missing
+            if (!notice.vacateDate && notice.leaseEndDate) {
+              notice.vacateDate = notice.leaseEndDate;
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to refresh latest notice before processing", e);
+        }
         const nameCandidates = Array.from(
           new Set(
             [
@@ -970,17 +985,20 @@ export default {
           unitName: vacancyUnitName,
           unitNumber: unitData.unitNumber || "",
           tenantRef: unitData.tenantRef || "",
-          propertyType: unitData.propertyType || "residential",
+          propertyType: notice.propertyType || unitData.propertyType || "residential",
           propertyManager: unitData.propertyManager || "",
           contactNumber: unitData.contactNumber || "",
           newOccupation: unitData.newOccupation || "",
           contractorRequested: unitData.contractorRequested || "",
           maintenanceAmount: unitData.maintenanceAmount || 0,
-          monthsMissed: unitData.monthsMissed || 0,
+          monthsMissed: Number(
+            notice.monthsMissedRent ?? unitData.monthsMissed ?? 0
+          ),
 
           // Vacancy specific dates
-          dateVacated:
-            notice.vacateDate || new Date().toISOString().slice(0, 10),
+          dateVacated: normalizeDateValue(
+            notice.leaseEndDate || notice.vacateDate || new Date()
+          ),
           leaseStartDate: normalizeDateValue(
             notice.leaseStartDate || unitData.leaseStartDate
           ),
