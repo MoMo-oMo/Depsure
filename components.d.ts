@@ -19,7 +19,6 @@ declare module 'vue' {
     GlobalNotification: typeof import('./src/components/GlobalNotification.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     NavDrawer: typeof import('./src/components/NavDrawer.vue')['default']
-    NoticeProcessingDialog: typeof import('./src/components/NoticeProcessingDialog.vue')['default']
     NotificationDialog: typeof import('./src/components/NotificationDialog.vue')['default']
     PromptDialog: typeof import('./src/components/PromptDialog.vue')['default']
     PushPermissionPrompt: typeof import('./src/components/PushPermissionPrompt.vue')['default']
