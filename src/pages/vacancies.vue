@@ -151,6 +151,12 @@
                 {{ getPropertyTypeLabel(item.propertyType) }}
               </v-chip>
             </template>
+            <template #item.maintenanceAmount="{ item }">
+              {{ formatCurrency(item.maintenanceAmount) }}
+            </template>
+            <template #item.paidOutAmount="{ item }">
+              {{ formatCurrency(item.paidOutAmount) }}
+            </template>
 
             <template #item.actions="{ item }">
               <div class="action-btn-container">
@@ -390,6 +396,18 @@ export default {
           sortable: true,
           align: "center",
         },
+        {
+          title: "MAINTENANCE AMOUNT",
+          key: "maintenanceAmount",
+          sortable: true,
+          align: "center",
+        },
+        {
+          title: "PAID OUT AMOUNT",
+          key: "paidOutAmount",
+          sortable: true,
+          align: "center",
+        },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ],
     };
@@ -432,6 +450,19 @@ export default {
     },
   },
   methods: {
+    formatCurrency(amount) {
+      const value = Number(amount ?? 0);
+      if (!Number.isFinite(value)) return "R0";
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: "currency",
+          currency: "ZAR",
+          minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+        }).format(value);
+      } catch {
+        return `R${value.toLocaleString()}`;
+      }
+    },
     onMonthMenuToggle(open) {
       if (open) this.tempMonth = this.monthFilter || "";
     },
@@ -818,6 +849,11 @@ export default {
             }
           })
         );
+        this.vacancies = this.vacancies.map((vacancy) => ({
+          ...vacancy,
+          maintenanceAmount: Number(vacancy.maintenanceAmount ?? 0) || 0,
+          paidOutAmount: Number(vacancy.paidOutAmount ?? 0) || 0,
+        }));
         this.filterVacancies();
       } catch (e) {
         console.error("Fetch vacancies failed", e);

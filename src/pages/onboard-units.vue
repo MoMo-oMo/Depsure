@@ -788,6 +788,8 @@ export default {
           vacateDate: vacateDate,
           leaseEndNotes: leaseEndNotes,
           status: "Notice Given",
+          monthsMissed: 0,
+          monthsMissedRent: 0,
           updatedAt: new Date(),
         });
 
@@ -858,6 +860,8 @@ export default {
           status: "Notice Given",
           noticeId: noticeId,
           vacateDate: vacateDate,
+          monthsMissed: 0,
+          monthsMissedRent: 0,
           updatedAt: new Date(),
         });
 

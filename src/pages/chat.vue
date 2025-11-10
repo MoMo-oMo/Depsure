@@ -1241,6 +1241,7 @@ export default {
         const isAgency =
           user?.userType === "Agency" ||
           (user?.userType === "Admin" && user?.adminScope === "agency");
+        const agencyFallbackName = this.resolveAgencyNameForUser(user);
 
         let authorName = "Unknown User";
         if (user?.userType === "Agency") {
@@ -1250,8 +1251,8 @@ export default {
               ? `${user.firstName} ${user.lastName}`
               : user?.firstName ||
                 user?.lastName ||
+                agencyFallbackName ||
                 user?.email ||
-                user?.agencyName ||
                 "Agency";
         } else if (
           user?.userType === "Admin" &&
@@ -1263,6 +1264,7 @@ export default {
               ? `${user.firstName} ${user.lastName}`
               : user?.firstName ||
                 user?.lastName ||
+                agencyFallbackName ||
                 user?.email ||
                 "Agency Admin";
         } else {
@@ -1387,6 +1389,45 @@ export default {
     dismissReply() {
       this.replyTo = null;
       this.$nextTick(this.updateSafeGaps);
+    },
+    resolveAgencyNameForUser(user) {
+      try {
+        if (!user) return null;
+        const agenciesList = Array.isArray(this.agencies)
+          ? this.agencies
+          : [];
+
+        if (user.userType === "Agency") {
+          const agencyId =
+            user.uid ||
+            this.selectedAgencyId ||
+            (agenciesList.length === 1 ? agenciesList[0].id : null);
+          const agencyMatch = agenciesList.find((a) => a?.id === agencyId);
+          return (
+            user.agencyName ||
+            agencyMatch?.agencyName ||
+            null
+          );
+        }
+
+        if (user.userType === "Admin" && user.adminScope === "agency") {
+          const agencyId =
+            user.managedAgencyId ||
+            this.selectedAgencyId ||
+            (agenciesList.length === 1 ? agenciesList[0].id : null);
+          const agencyMatch = agenciesList.find((a) => a?.id === agencyId);
+          return (
+            user.managedAgencyName ||
+            user.agencyName ||
+            agencyMatch?.agencyName ||
+            null
+          );
+        }
+
+        return null;
+      } catch {
+        return null;
+      }
     },
     buildReplyRef(m) {
       if (!m) return null;
@@ -2227,14 +2268,15 @@ export default {
                     ? `${user.firstName} ${user.lastName}`
                     : user?.firstName ||
                       user?.lastName ||
+                      agencyFallbackName ||
                       user?.email ||
-                      user?.agencyName ||
                       "Agency"
                   : user?.userType === "Admin" && user?.adminScope === "agency"
                   ? user?.firstName && user?.lastName
                     ? `${user.firstName} ${user.lastName}`
                     : user?.firstName ||
                       user?.lastName ||
+                      agencyFallbackName ||
                       user?.email ||
                       "Agency Admin"
                   : user?.firstName && user?.lastName

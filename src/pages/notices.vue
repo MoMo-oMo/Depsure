@@ -429,6 +429,19 @@ export default {
     },
   },
   methods: {
+    formatCurrency(amount) {
+      const value = Number(amount ?? 0);
+      if (!Number.isFinite(value)) return "R0";
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: "currency",
+          currency: "ZAR",
+          minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+        }).format(value);
+      } catch {
+        return `R${value.toLocaleString()}`;
+      }
+    },
     onMonthMenuToggle(open) {
       if (open) this.tempMonth = this.monthFilter || "";
     },
@@ -990,7 +1003,9 @@ export default {
           contactNumber: unitData.contactNumber || "",
           newOccupation: unitData.newOccupation || "",
           contractorRequested: unitData.contractorRequested || "",
-          maintenanceAmount: unitData.maintenanceAmount || 0,
+          maintenanceAmount: normalizeCurrency(
+            notice.maintenanceAmount ?? unitData.maintenanceAmount ?? 0
+          ),
           monthsMissed: Number(
             notice.monthsMissedRent ?? unitData.monthsMissed ?? 0
           ),
@@ -1009,7 +1024,12 @@ export default {
           paidTowardsFund: normalizeCurrency(
             notice.paidTowardsFund ?? unitData.paidTowardsFund ?? 0
           ),
-          amountToBePaidOut: 0, // Empty
+          paidOutAmount: normalizeCurrency(
+            notice.paidOutAmount ?? unitData.paidOutAmount ?? 0
+          ),
+          amountToBePaidOut: normalizeCurrency(
+            notice.paidOutAmount ?? unitData.amountToBePaidOut ?? 0
+          ),
           newTenantRef: "", // Empty - for new tenant
           notes: "", // Empty
           paidOut: normalizePaidOut(notice.paidOut ?? unitData.paidOut ?? ""),
@@ -1026,6 +1046,8 @@ export default {
           status: "Vacancy Created",
           vacancyCreatedAt: new Date(),
           noticeId: null, // Clear the notice reference
+          monthsMissed: 0,
+          monthsMissedRent: 0,
           updatedAt: new Date(),
         });
 

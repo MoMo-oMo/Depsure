@@ -76,8 +76,39 @@
                   />
                 </v-col>
 
-                  </v-row>
-                </v-card-text>
+                <!-- Months Missed Rent -->
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model.number="editedMonths"
+                    label="Months Missed Rent"
+                    type="number"
+                    min="0"
+                    step="1"
+                    variant="outlined"
+                    class="custom-input"
+                    :rules="monthsRules"
+                    :disabled="savingMonths"
+                    suffix="months"
+                    hint="Total number of months this unit has missed rent"
+                    persistent-hint
+                    @blur="handleMonthsBlur"
+                  />
+                </v-col>
+                   
+                   </v-row>
+                 </v-card-text>
+                <v-card-actions class="pa-4 pt-0">
+                  <v-spacer />
+                  <v-btn
+                    color="black"
+                    variant="elevated"
+                    :disabled="!canSaveMonths || savingMonths"
+                    :loading="savingMonths"
+                    @click="saveMonthsMissed"
+                  >
+                    Save Changes
+                  </v-btn>
+                </v-card-actions>
               <!-- Notes removed - using live chat -->
               <div style="display:none;">
                 <v-card-text>
@@ -166,15 +197,15 @@
 
 <script>
 import { db } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
 export default {
   name: "ViewFlaggedUnitPage",
   setup() {
-    const { showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    return { showErrorDialog, showConfirmDialog }
+    const { showErrorDialog, showConfirmDialog, showSuccessDialog } = useCustomDialogs()
+    return { showErrorDialog, showConfirmDialog, showSuccessDialog }
   },
   data() {
     return {
@@ -187,6 +218,13 @@ export default {
       editingKey: null,
       editingText: '',
       savingEdit: false,
+      editedMonths: 0,
+      originalMonths: 0,
+      savingMonths: false,
+      monthsDirty: false,
+      monthsRules: [
+        (v) => v === null || v === '' || Number(v) >= 0 || 'Months missed must be zero or greater',
+      ],
     };
   },
   computed: {
@@ -201,7 +239,22 @@ export default {
         const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
         return ad - bd
       })
+    },
+    canSaveMonths() {
+      const normalized = this.normalizeMonths(this.editedMonths)
+      if (normalized === null) return false
+      return this.monthsDirty
     }
+  },
+  watch: {
+    editedMonths(newVal) {
+      const normalized = this.normalizeMonths(newVal)
+      if (normalized === null) {
+        this.monthsDirty = false
+        return
+      }
+      this.monthsDirty = normalized !== this.originalMonths
+    },
   },
   async mounted() {
     document.title = "Flagged Unit Details - Depsure";
@@ -214,6 +267,110 @@ export default {
     }
   },
   methods: {
+    normalizeMonths(value) {
+      if (value === null || value === undefined || value === '') return null
+      const num = Number(value)
+      if (!Number.isFinite(num) || num < 0) return null
+      return Math.round(num)
+    },
+    handleMonthsBlur() {
+      const normalized = this.normalizeMonths(this.editedMonths)
+      if (normalized === null) return
+      this.editedMonths = normalized
+    },
+    async saveMonthsMissed() {
+      if (!this.unit?.id) return
+      const months = this.normalizeMonths(this.editedMonths)
+      if (months === null) {
+        this.showErrorDialog?.('Please enter a valid number of months (0 or more).', 'Invalid Value', 'OK')
+        return
+      }
+
+      this.savingMonths = true
+      try {
+        await updateDoc(doc(db, 'flaggedUnits', this.unit.id), {
+          monthsMissed: months,
+          monthsMissedRent: months,
+          updatedAt: serverTimestamp(),
+        })
+
+        const synced = await this.syncMonthsToActiveUnit(months)
+
+        this.unit.monthsMissed = months
+        this.unit.monthsMissedRent = months
+        this.originalMonths = months
+        this.editedMonths = months
+        this.monthsDirty = false
+
+        if (synced) {
+          this.showSuccessDialog?.(
+            'Months missed rent updated across flagged and active unit records.',
+            'Success!',
+            'Continue'
+          )
+        } else {
+          this.showErrorDialog?.(
+            'Months missed rent was updated for the flagged unit, but the active unit record could not be updated automatically. Please verify the unit linkage.',
+            'Sync Warning',
+            'OK'
+          )
+        }
+      } catch (error) {
+        console.error('Error updating months missed:', error)
+        this.showErrorDialog?.(
+          'Failed to update months missed rent. Please try again.',
+          'Error',
+          'OK'
+        )
+      } finally {
+        this.savingMonths = false
+      }
+    },
+    async syncMonthsToActiveUnit(months) {
+      try {
+        if (this.unit?.unitId) {
+          await updateDoc(doc(db, 'units', this.unit.unitId), {
+            monthsMissed: months,
+            monthsMissedRent: months,
+            updatedAt: serverTimestamp(),
+          })
+          return true
+        }
+
+        const unitName = (this.unit?.unitName || '').trim()
+        if (!unitName) return false
+
+        const constraints = [where('propertyName', '==', unitName)]
+        if (this.unit?.agencyId) {
+          constraints.push(where('agencyId', '==', this.unit.agencyId))
+        }
+
+        const unitsRef = collection(db, 'units')
+        const unitsQuery = query(unitsRef, ...constraints)
+        const snapshot = await getDocs(unitsQuery)
+
+        if (snapshot.empty) {
+          console.warn('No matching active unit found to sync months missed.')
+          return false
+        }
+
+        const targetDoc = snapshot.docs[0]
+        await updateDoc(doc(db, 'units', targetDoc.id), {
+          monthsMissed: months,
+          monthsMissedRent: months,
+          updatedAt: serverTimestamp(),
+        })
+
+        if (!this.unit.unitId) {
+          this.unit.unitId = targetDoc.id
+        }
+
+        return true
+      } catch (error) {
+        console.warn('Failed to sync months missed to active unit:', error)
+        return false
+      }
+    },
     scrollNotesToBottom() {
       this.$nextTick(() => {
         const el = this.$refs.chatLog
@@ -291,6 +448,16 @@ export default {
             id: unitDoc.id,
             ...unitData
           };
+
+          const normalizedMonths = this.normalizeMonths(
+            unitData.monthsMissed ?? unitData.monthsMissedRent ?? 0
+          )
+          const monthsValue = normalizedMonths === null ? 0 : normalizedMonths
+          this.unit.monthsMissed = monthsValue
+          this.unit.monthsMissedRent = monthsValue
+          this.originalMonths = monthsValue
+          this.editedMonths = monthsValue
+          this.monthsDirty = false
           
           console.log('Flagged unit loaded:', this.unit);
           this.scrollNotesToBottom()

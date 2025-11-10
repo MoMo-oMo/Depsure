@@ -22,8 +22,23 @@
               <v-btn @click="loadVacancy" color="black" variant="elevated">Try Again</v-btn>
             </div>
             <template v-else-if="vacancy">
-              <v-card-text>
-                <v-row>
+              <v-tabs
+                v-model="activeTab"
+                class="vacancy-tabs"
+                color="primary"
+              >
+                <v-tab value="details" class="tab-label tab--details">
+                  Vacancy Details
+                </v-tab>
+                <v-tab value="documents" class="tab-label tab--documents">
+                  Documents
+                </v-tab>
+              </v-tabs>
+
+              <v-window v-model="activeTab">
+                <v-window-item value="details">
+                  <v-card-text>
+                    <v-row>
                   <v-col cols="12" md="6">
                     <v-text-field :model-value="vacancy.unitName" label="Unit Name/Address" variant="outlined" readonly class="custom-input" />
                   </v-col>
@@ -46,6 +61,25 @@
                   </v-col>
 
                   <v-col cols="12" md="6">
+                    <v-text-field
+                      :model-value="formatCurrency(vacancy.maintenanceAmount)"
+                      label="Maintenance Amount"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      :model-value="formatCurrency(vacancy.paidOutAmount)"
+                      label="Paid Out Amount"
+                      variant="outlined"
+                      readonly
+                      class="custom-input"
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
                     <v-text-field :model-value="formatDate(vacancy.createdAt, 'Not specified')" label="Created At" variant="outlined" readonly class="custom-input" />
                   </v-col>
                   <v-col cols="12" md="6">
@@ -58,8 +92,200 @@
                   <v-col cols="12" md="6">
                     <v-text-field :model-value="formatPaidOut(vacancy.paidOut)" label="Paid Out (Yes/No)" variant="outlined" readonly class="custom-input" />
                   </v-col>
-                </v-row>
-              </v-card-text>
+                    </v-row>
+                  </v-card-text>
+                </v-window-item>
+
+                <v-window-item value="documents">
+                  <v-card-text class="documents-tab">
+                    <div v-if="documentsLoading" class="documents-loading">
+                      <v-progress-circular indeterminate color="black" />
+                      <p class="text-medium-emphasis mt-3">
+                        Loading supporting documents…
+                      </p>
+                    </div>
+                    <div v-else-if="documentsError" class="documents-error">
+                      <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                      <span>{{ documentsError }}</span>
+                    </div>
+                    <div v-else>
+                      <h3 class="documents-title">Supporting Documents</h3>
+                      <div
+                        v-if="documentsLoaded && !unitDocumentId"
+                        class="documents-empty text-medium-emphasis mb-4"
+                      >
+                        No unit is linked to this vacancy yet, so documents are
+                        not available.
+                      </div>
+
+                      <div v-else>
+                        <div class="doc-filters">
+                          <v-text-field
+                            v-model="docFilterSearch"
+                            label="Search documents..."
+                            prepend-inner-icon="mdi-magnify"
+                            density="comfortable"
+                            variant="outlined"
+                            clearable
+                            hide-details
+                            class="custom-input doc-search"
+                          />
+                          <v-text-field
+                            v-model="docFilterMonth"
+                            type="month"
+                            label="Month"
+                            density="comfortable"
+                            variant="outlined"
+                            hide-details
+                            clearable
+                            class="custom-input doc-month-input"
+                          />
+                        </div>
+
+                        <div class="documents-section">
+                          <div class="document-category category-quotes">
+                            <div class="category-header">
+                              <h4 class="category-title">
+                                <v-icon color="primary" class="mr-2"
+                                  >mdi-file-pdf-box</v-icon
+                                >
+                                Quotes
+                              </h4>
+                            </div>
+                            <div
+                              v-if="filteredQuotes.length"
+                              class="document-list"
+                            >
+                              <div
+                                v-for="(docItem, index) in filteredQuotes"
+                                :key="docItem.fileURL || docItem.name || index"
+                                class="document-item"
+                              >
+                                <v-icon color="primary" class="mr-2"
+                                  >mdi-file-pdf-box</v-icon
+                                >
+                                <span class="document-name">{{
+                                  docItem.fileName ||
+                                  docItem.name ||
+                                  "Document"
+                                }}</span>
+                                <v-btn
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                  :disabled="!docItem.fileURL"
+                                  @click="openDocument(docItem)"
+                                  class="view-btn"
+                                >
+                                  View
+                                </v-btn>
+                              </div>
+                            </div>
+                            <div v-else class="no-documents">
+                              <v-icon color="grey" class="mr-2"
+                                >mdi-file-pdf-box</v-icon
+                              >
+                              No quotes available.
+                            </div>
+                          </div>
+
+                          <div class="document-category category-inspections">
+                            <div class="category-header">
+                              <h4 class="category-title">
+                                <v-icon color="warning" class="mr-2"
+                                  >mdi-clipboard-check</v-icon
+                                >
+                                Inspections
+                              </h4>
+                            </div>
+                            <div
+                              v-if="filteredInspections.length"
+                              class="document-list"
+                            >
+                              <div
+                                v-for="(docItem, index) in filteredInspections"
+                                :key="docItem.fileURL || docItem.name || index"
+                                class="document-item"
+                              >
+                                <v-icon color="warning" class="mr-2"
+                                  >mdi-clipboard-check</v-icon
+                                >
+                                <span class="document-name">{{
+                                  docItem.fileName ||
+                                  docItem.name ||
+                                  "Document"
+                                }}</span>
+                                <v-btn
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                  :disabled="!docItem.fileURL"
+                                  @click="openDocument(docItem)"
+                                  class="view-btn"
+                                >
+                                  View
+                                </v-btn>
+                              </div>
+                            </div>
+                            <div v-else class="no-documents">
+                              <v-icon color="grey" class="mr-2"
+                                >mdi-clipboard-check</v-icon
+                              >
+                              No inspections available.
+                            </div>
+                          </div>
+
+                          <div class="document-category category-invoices">
+                            <div class="category-header">
+                              <h4 class="category-title">
+                                <v-icon color="success" class="mr-2"
+                                  >mdi-receipt</v-icon
+                                >
+                                Invoices
+                              </h4>
+                            </div>
+                            <div
+                              v-if="filteredInvoices.length"
+                              class="document-list"
+                            >
+                              <div
+                                v-for="(docItem, index) in filteredInvoices"
+                                :key="docItem.fileURL || docItem.name || index"
+                                class="document-item"
+                              >
+                                <v-icon color="success" class="mr-2"
+                                  >mdi-receipt</v-icon
+                                >
+                                <span class="document-name">{{
+                                  docItem.fileName ||
+                                  docItem.name ||
+                                  "Document"
+                                }}</span>
+                                <v-btn
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                  :disabled="!docItem.fileURL"
+                                  @click="openDocument(docItem)"
+                                  class="view-btn"
+                                >
+                                  View
+                                </v-btn>
+                              </div>
+                            </div>
+                            <div v-else class="no-documents">
+                              <v-icon color="grey" class="mr-2"
+                                >mdi-receipt</v-icon
+                              >
+                              No invoices available.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-window-item>
+              </v-window>
               <v-card-actions class="pa-4">
                 <v-spacer />
                 <v-btn color="grey" variant="outlined" @click="goBack">Close</v-btn>
@@ -80,9 +306,135 @@ import { useAppStore } from '@/stores/app'
 export default {
   name: 'ViewVacancyPage',
   data() {
-    return { vacancy: null, loading: true, error: null }
+    return {
+      vacancy: null,
+      loading: true,
+      error: null,
+      unitDocumentId: '',
+      activeTab: 'details',
+      documentsLoaded: false,
+      documentsLoading: false,
+      documentsError: null,
+      documents: {
+        quotes: [],
+        inspections: [],
+        invoices: [],
+      },
+      docFilterSearch: '',
+      docFilterMonth: '',
+    }
+  },
+  computed: {
+    filteredQuotes() {
+      return this.filterDocumentsList(this.documents.quotes);
+    },
+    filteredInspections() {
+      return this.filterDocumentsList(this.documents.inspections);
+    },
+    filteredInvoices() {
+      return this.filterDocumentsList(this.documents.invoices);
+    },
+  },
+  watch: {
+    unitDocumentId(newVal, oldVal) {
+      if (newVal && newVal !== oldVal) {
+        this.loadDocuments(true);
+      }
+    },
+    activeTab(newVal) {
+      if (newVal === 'documents') {
+        this.loadDocuments();
+      }
+    },
   },
   methods: {
+    async loadDocuments(force = false) {
+      if (!this.unitDocumentId) {
+        this.documents = { quotes: [], inspections: [], invoices: [] };
+        this.documentsLoaded = false;
+        return;
+      }
+      if (this.documentsLoading) return;
+      if (this.documentsLoaded && !force) return;
+      this.documentsLoading = true;
+      this.documentsError = null;
+      try {
+        const snap = await getDoc(doc(db, 'units', this.unitDocumentId));
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          this.documents = {
+            quotes: Array.isArray(data.quotes) ? data.quotes : [],
+            inspections: Array.isArray(data.inspections)
+              ? data.inspections
+              : [],
+            invoices: Array.isArray(data.invoices) ? data.invoices : [],
+          };
+          this.documentsLoaded = true;
+        } else {
+          this.documents = { quotes: [], inspections: [], invoices: [] };
+          this.documentsLoaded = true;
+          this.documentsError = 'No documents found for this unit.';
+        }
+      } catch (error) {
+        console.error('Failed to load supporting documents', error);
+        this.documentsError = 'Failed to load supporting documents.';
+      } finally {
+        this.documentsLoading = false;
+      }
+    },
+    resolveDocumentDate(entry) {
+      if (!entry) return null;
+      const raw =
+        entry.uploadedAt || entry.createdAt || entry.date || entry.timestamp;
+      if (!raw) return null;
+      try {
+        if (typeof raw.toDate === 'function') return raw.toDate();
+        return new Date(raw);
+      } catch {
+        return null;
+      }
+    },
+    monthKey(date) {
+      if (!date || Number.isNaN(date.getTime())) return '';
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        '0'
+      )}`;
+    },
+    filterDocumentsList(list) {
+      if (!Array.isArray(list) || !list.length) return [];
+      const hasFilter = this.docFilterSearch || this.docFilterMonth;
+      if (hasFilter) {
+        const term = (this.docFilterSearch || '').toLowerCase();
+        const month = this.docFilterMonth || '';
+        return list.filter((item) => {
+          const name = String(item?.fileName || item?.name || '').toLowerCase();
+          const date = this.resolveDocumentDate(item);
+          const matchesTerm = term ? name.includes(term) : true;
+          const matchesMonth = month ? this.monthKey(date) === month : true;
+          return matchesTerm && matchesMonth;
+        });
+      }
+      const sorted = [...list].sort((a, b) => {
+        const dateA = this.resolveDocumentDate(a);
+        const dateB = this.resolveDocumentDate(b);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return dateB.getTime() - dateA.getTime();
+      });
+      return sorted.slice(0, 3);
+    },
+    formatDocumentDate(entry) {
+      const date = this.resolveDocumentDate(entry);
+      if (!date) return '';
+      return date.toISOString().slice(0, 10);
+    },
+    openDocument(entry) {
+      const url = entry?.fileURL || entry?.url;
+      if (!url) return;
+      window.open(url, '_blank');
+    },
     goBack() {
       try {
         const appStore = useAppStore();
@@ -108,6 +460,12 @@ export default {
         if (snap.exists()) {
           const data = snap.data()
           this.vacancy = this.normalizeVacancyData(data, snap.id)
+          this.documentsLoaded = false
+          this.documents = { quotes: [], inspections: [], invoices: [] }
+          this.unitDocumentId = this.vacancy?.unitId || ''
+          if (!this.unitDocumentId) {
+            await this.resolveUnitForDocuments(this.vacancy)
+          }
         } else {
           this.error = 'Vacancy not found'
         }
@@ -157,11 +515,69 @@ export default {
         paidOut: data?.paidOut ?? '',
         propertyType: data?.propertyType || 'residential',
         monthsMissed: this.toNumber(data?.monthsMissed, 0),
+        maintenanceAmount: this.toNumber(data?.maintenanceAmount, 0),
+        paidOutAmount: this.toNumber(data?.paidOutAmount, 0),
       }
       return base
-    }
+    },
+    async resolveUnitForDocuments(vacancy) {
+      try {
+        if (!vacancy) return
+        const candidates = [
+          vacancy.unitName,
+          vacancy.propertyName,
+          vacancy.unitNumber,
+        ]
+          .map((value) =>
+            typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
+          )
+          .filter(Boolean)
+        if (!candidates.length) {
+          this.unitDocumentId = ''
+          return
+        }
+        const { collection, query, where, getDocs } = await import(
+          'firebase/firestore'
+        )
+        for (const candidate of candidates) {
+          const q = query(collection(db, 'units'), where('unitName', '==', candidate))
+          const snap = await getDocs(q)
+          if (!snap.empty) {
+            this.unitDocumentId = snap.docs[0].id
+            this.loadDocuments(true)
+            return
+          }
+          const alt = query(
+            collection(db, 'units'),
+            where('propertyName', '==', candidate)
+          )
+          const altSnap = await getDocs(alt)
+          if (!altSnap.empty) {
+            this.unitDocumentId = altSnap.docs[0].id
+            this.loadDocuments(true)
+            return
+          }
+        }
+        this.unitDocumentId = ''
+        this.documentsLoaded = false
+        this.documents = { quotes: [], inspections: [], invoices: [] }
+      } catch (error) {
+        console.warn('Failed to resolve vacancy documents', error)
+        this.unitDocumentId = ''
+        this.documentsLoaded = false
+        this.documents = { quotes: [], inspections: [], invoices: [] }
+      }
+    },
   },
-  mounted() { this.loadVacancy() }
+  mounted() {
+    try {
+      const initialTab = this.$route?.query?.tab;
+      if (initialTab === 'documents' || initialTab === 'details') {
+        this.activeTab = initialTab;
+      }
+    } catch {}
+    this.loadVacancy();
+  }
 }
 </script>
 
@@ -172,6 +588,125 @@ export default {
 .page-title { font-size:1.25rem; font-weight:600; color:white; margin:0; text-align:center; text-transform:uppercase; }
 .content-card { background:white; border-radius:0 0 12px 12px; }
 .custom-input .v-field { border-radius:8px; }
+.vacancy-tabs {
+  border-bottom: 1px solid #e9ecef;
+}
+.vacancy-tabs :deep(.v-tab) {
+  text-transform: none;
+  font-weight: 600;
+}
+.vacancy-tabs :deep(.v-tab--selected) {
+  color: #000000 !important;
+}
+.documents-tab {
+  padding: 24px 16px;
+}
+.documents-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+  margin-bottom: 24px;
+}
+.documents-loading,
+.documents-error,
+.documents-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #666;
+  margin-top: 32px;
+}
+.documents-loading {
+  flex-direction: column;
+}
+.documents-error {
+  color: #b91c1c;
+  font-weight: 500;
+}
+.doc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.doc-filters .doc-search,
+.doc-filters .doc-month {
+  flex: 1 1 260px;
+}
+
+.documents-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.document-category {
+  padding: 18px;
+  border-radius: 8px;
+  border-left: 4px solid #e5e7eb;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.category-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.document-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.document-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.document-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+  margin-left: 8px;
+}
+
+.view-btn {
+  margin-left: 12px;
+}
+
+.no-documents {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-style: italic;
+  color: #6b7280;
+}
 .loading-container, .error-container { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; }
 .error-title { margin:6px 0 }
 </style>

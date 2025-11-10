@@ -383,6 +383,8 @@ export default {
                 status: "Notice Given",
                 noticeId: docRef.id,
                 updatedAt: new Date(),
+                monthsMissed: 0,
+                monthsMissedRent: 0,
               });
             }
           } catch (transitionErr) {

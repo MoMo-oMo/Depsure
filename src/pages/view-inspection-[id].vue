@@ -232,29 +232,25 @@
               <div class="uploaded-docs">
                 <div
                   v-if="entry.inspectionFileName && entry.inspectionFileURL"
-                  class="doc-item d-flex align-center mb-2"
+                  class="doc-item"
                 >
-                  <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
-                  <span class="mr-4">{{ entry.inspectionFileName }}</span>
-                  <v-btn
-                    size="small"
-                    color="black"
-                    variant="outlined"
-                    class="mr-2"
-                    :href="entry.inspectionFileURL"
-                    target="_blank"
-                    tag="a"
-                    >View</v-btn
-                  >
-                  <v-btn
-                    size="small"
-                    color="black"
-                    variant="outlined"
-                    class="mr-2"
-                    :href="entry.inspectionFileURL"
-                    download
-                    >Download</v-btn
-                  >
+                  <div class="doc-main">
+                    <v-icon color="primary">mdi-file-pdf-box</v-icon>
+                    <span class="doc-name">{{ entry.inspectionFileName }}</span>
+                  </div>
+                  <div class="doc-actions">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="black"
+                      class="doc-view-btn"
+                      :href="entry.inspectionFileURL"
+                      target="_blank"
+                      tag="a"
+                    >
+                      View
+                    </v-btn>
+                  </div>
                 </div>
                 <div v-else class="text-medium-emphasis">
                   No documents uploaded yet.
@@ -1076,10 +1072,6 @@ export default {
   border-radius: 10px;
   padding: 6px;
 }
-.edit-area :deep(.v-field) {
-}
-.edit-area :deep(.v-field__input) {
-}
 .edit-area :deep(.v-field__outline) {
   border-color: #444 !important;
 }
@@ -1190,8 +1182,54 @@ export default {
   flex: 1;
   min-width: 0;
 }
+.uploaded-docs {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .uploaded-docs .doc-item {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background-color: #fff;
+  margin-bottom: 12px;
+}
+
+.uploaded-docs .doc-item:last-of-type {
+  margin-bottom: 0;
+}
+
+.uploaded-docs .doc-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.uploaded-docs .doc-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.uploaded-docs .doc-actions {
+  display: flex;
+  align-items: center;
+}
+
+.uploaded-docs .doc-actions :deep(.v-btn) {
+  text-transform: none;
+}
+
+.doc-view-btn {
+  border-width: 1.5px !important;
+  padding: 0 18px;
 }
 
 /* Slightly bigger Property Details button */

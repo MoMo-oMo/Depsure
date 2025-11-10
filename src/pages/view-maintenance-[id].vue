@@ -90,7 +90,11 @@
                 <!-- Contact Person Number -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.contactPersonNumber || entry.contactNumber || 'Not specified'"
+                    :model-value="
+                      entry.contactPersonNumber ||
+                      entry.contactNumber ||
+                      'Not specified'
+                    "
                     label="Contact Person Number"
                     variant="outlined"
                     readonly
@@ -100,22 +104,31 @@
 
                 <!-- Uploaded Requests -->
                 <v-col cols="12">
-                  <div v-if="entry.quotes && entry.quotes.length" class="existing-quotes mt-2">
+                  <div
+                    v-if="entry.quotes && entry.quotes.length"
+                    class="existing-quotes mt-2"
+                  >
                     <h5 class="existing-title">Uploaded Requests</h5>
                     <div class="quote-list">
-                      <div v-for="(doc, idx) in entry.quotes" :key="'rq-'+idx" class="quote-item">
-                        <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                      <div
+                        v-for="(doc, idx) in entry.quotes"
+                        :key="'rq-' + idx"
+                        class="quote-item"
+                      >
+                        <v-icon color="primary" class="mr-2"
+                          >mdi-file-pdf-box</v-icon
+                        >
                         <span class="quote-name">{{ doc.fileName }}</span>
-                        <v-btn 
-                          size="small" 
-                          color="black" 
-                          variant="outlined" 
+                        <v-btn
+                          size="small"
+                          color="black"
+                          variant="outlined"
                           class="doc-action-btn"
                           @click="openRequest(doc)"
                         >
                           View
                         </v-btn>
-                        <v-btn 
+                        <!-- <v-btn 
                           v-if="doc.fileURL"
                           size="small"
                           color="black"
@@ -126,11 +139,13 @@
                           tag="a"
                         >
                           Download
-                        </v-btn>
+                        </v-btn> -->
                       </div>
                     </div>
                   </div>
-                  <div v-else class="text-medium-emphasis">No requests uploaded.</div>
+                  <div v-else class="text-medium-emphasis">
+                    No requests uploaded.
+                  </div>
                 </v-col>
 
                 <!-- Estimated Cost hidden as non-essential in UI -->
@@ -172,7 +187,7 @@
                 @click="editEntry"
               >
                 Edit Entry
-                  </v-btn>
+              </v-btn>
               <!-- Only Super Admins can delete (after completion) -->
               <v-btn
                 v-if="isSuperAdmin"
@@ -183,125 +198,211 @@
               >
                 Delete Entry
               </v-btn>
-                </v-card-actions>
-              <!-- Notes removed - using live chat -->
-              <div style="display:none;">
-                <v-card-text>
-            <!-- Notes (Chat-like) -->
-            <v-divider class="my-4" />
-            <div class="notes-section">
-              <h3 class="mb-2">Notes</h3>
-                    <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
-                      <div
-                        v-for="(n, idx) in sortedNotes"
-                        :key="noteKey(n)"
-                        class="chat-message"
-                        :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
-                      >
-                        <div class="chat-avatar">
-                          <img v-if="n.authorAvatarUrl" :src="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" />
-                          <template v-else>{{ noteInitials(n.authorName) }}</template>
+            </v-card-actions>
+            <!-- Notes removed - using live chat -->
+            <div style="display: none">
+              <v-card-text>
+                <!-- Notes (Chat-like) -->
+                <v-divider class="my-4" />
+                <div class="notes-section">
+                  <h3 class="mb-2">Notes</h3>
+                  <div
+                    v-if="entry.notesLog && entry.notesLog.length"
+                    class="chat-log"
+                    ref="chatLog"
+                  >
+                    <div
+                      v-for="(n, idx) in sortedNotes"
+                      :key="noteKey(n)"
+                      class="chat-message"
+                      :class="{
+                        mine: n.authorId === currentUserId,
+                        other: n.authorId !== currentUserId,
+                      }"
+                    >
+                      <div class="chat-avatar">
+                        <img
+                          v-if="n.authorAvatarUrl"
+                          :src="n.authorAvatarUrl"
+                          alt="avatar"
+                          class="chat-avatar-img"
+                        />
+                        <template v-else>{{
+                          noteInitials(n.authorName)
+                        }}</template>
+                      </div>
+                      <div class="chat-bubble">
+                        <div class="chat-header">
+                          <span class="chat-author">{{
+                            n.authorName || "Unknown"
+                          }}</span>
+                          <div class="chat-header-right">
+                            <span class="chat-time">{{
+                              formatNoteDate(n.timestamp)
+                            }}</span>
+                            <span
+                              v-if="n.isEdited && !n.isDeleted"
+                              class="chat-edited"
+                              >(edited)</span
+                            >
+                            <v-menu
+                              v-if="
+                                n.authorId === currentUserId && !n.isDeleted
+                              "
+                              location="bottom end"
+                            >
+                              <template #activator="{ props }">
+                                <v-btn
+                                  v-bind="props"
+                                  icon="mdi-dots-vertical"
+                                  size="x-small"
+                                  variant="text"
+                                  color="white"
+                                />
+                              </template>
+                              <v-list density="compact">
+                                <v-list-item @click="startEdit(n)">
+                                  <v-list-item-title>
+                                    <v-icon size="small" class="mr-1"
+                                      >mdi-pencil</v-icon
+                                    >
+                                    Edit
+                                  </v-list-item-title>
+                                </v-list-item>
+                                <v-list-item @click="softDeleteNote(n)">
+                                  <v-list-item-title class="text-error">
+                                    <v-icon
+                                      size="small"
+                                      class="mr-1"
+                                      color="error"
+                                      >mdi-delete</v-icon
+                                    >
+                                    Delete
+                                  </v-list-item-title>
+                                </v-list-item>
+                              </v-list>
+                            </v-menu>
+                          </div>
                         </div>
-                        <div class="chat-bubble">
-                          <div class="chat-header">
-                            <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
-                            <div class="chat-header-right">
-                              <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
-                              <span v-if="n.isEdited && !n.isDeleted" class="chat-edited">(edited)</span>
-                              <v-menu v-if="n.authorId === currentUserId && !n.isDeleted" location="bottom end">
-                                <template #activator="{ props }">
-                                  <v-btn v-bind="props" icon="mdi-dots-vertical" size="x-small" variant="text" color="white" />
-                                </template>
-                                <v-list density="compact">
-                                  <v-list-item @click="startEdit(n)">
-                                    <v-list-item-title>
-                                      <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
-                                      Edit
-                                    </v-list-item-title>
-                                  </v-list-item>
-                                  <v-list-item @click="softDeleteNote(n)">
-                                    <v-list-item-title class="text-error">
-                                      <v-icon size="small" class="mr-1" color="error">mdi-delete</v-icon>
-                                      Delete
-                                    </v-list-item-title>
-                                  </v-list-item>
-                                </v-list>
-                              </v-menu>
+                        <div v-if="n.isDeleted" class="chat-text deleted">
+                          This message was deleted
+                        </div>
+                        <div v-else>
+                          <div
+                            v-if="editingKey && editingKey === noteKey(n)"
+                            class="edit-area"
+                          >
+                            <v-textarea
+                              v-model="editingText"
+                              rows="2"
+                              auto-grow
+                              variant="outlined"
+                              class="custom-input"
+                              :counter="500"
+                              maxlength="500"
+                            />
+                            <div class="d-flex justify-end mt-2 gap-2">
+                              <v-btn
+                                size="small"
+                                variant="text"
+                                @click="cancelEdit"
+                                >Cancel</v-btn
+                              >
+                              <v-btn
+                                size="small"
+                                color="black"
+                                variant="elevated"
+                                :loading="savingEdit"
+                                :disabled="!editingText.trim()"
+                                @click="saveEdit(n)"
+                                >Save</v-btn
+                              >
                             </div>
                           </div>
-                          <div v-if="n.isDeleted" class="chat-text deleted">This message was deleted</div>
-                          <div v-else>
-                            <div v-if="editingKey && editingKey === noteKey(n)" class="edit-area">
-                              <v-textarea v-model="editingText" rows="2" auto-grow variant="outlined" class="custom-input" :counter="500" maxlength="500" />
-                              <div class="d-flex justify-end mt-2 gap-2">
-                                <v-btn size="small" variant="text" @click="cancelEdit">Cancel</v-btn>
-                                <v-btn size="small" color="black" variant="elevated" :loading="savingEdit" :disabled="!editingText.trim()" @click="saveEdit(n)">Save</v-btn>
-                              </div>
-                            </div>
-                            <div v-else class="chat-text">{{ n.text }}</div>
-                          </div>
+                          <div v-else class="chat-text">{{ n.text }}</div>
                         </div>
                       </div>
                     </div>
-              <div v-else class="text-medium-emphasis">No notes yet.</div>
+                  </div>
+                  <div v-else class="text-medium-emphasis">No notes yet.</div>
 
-              <!-- Append note input (Admin and Agency) -->
-                <div v-if="userType === 'Admin' || userType === 'Super Admin' || isAgencyUser" class="chat-input mt-4">
-                      <v-textarea
-                        v-model="newNote"
-                        placeholder="Write a note..."
-                        variant="outlined"
-                        class="custom-input"
-                  :counter="500"
-                  maxlength="500"
-                  rows="2"
-                  auto-grow
-                />
-                <div class="d-flex justify-end mt-2">
-                  <v-btn
-                    color="black"
-                    variant="elevated"
-                    :disabled="!newNote || savingNote"
-                    :loading="savingNote"
-                    @click="appendNote"
+                  <!-- Append note input (Admin and Agency) -->
+                  <div
+                    v-if="
+                      userType === 'Admin' ||
+                      userType === 'Super Admin' ||
+                      isAgencyUser
+                    "
+                    class="chat-input mt-4"
                   >
-                    <v-icon start>mdi-send</v-icon>
-                    Send
-                  </v-btn>
+                    <v-textarea
+                      v-model="newNote"
+                      placeholder="Write a note..."
+                      variant="outlined"
+                      class="custom-input"
+                      :counter="500"
+                      maxlength="500"
+                      rows="2"
+                      auto-grow
+                    />
+                    <div class="d-flex justify-end mt-2">
+                      <v-btn
+                        color="black"
+                        variant="elevated"
+                        :disabled="!newNote || savingNote"
+                        :loading="savingNote"
+                        @click="appendNote"
+                      >
+                        <v-icon start>mdi-send</v-icon>
+                        Send
+                      </v-btn>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </v-card-text>
             </div>
-
-                </v-card-text>
-              </div>
           </div>
         </v-col>
       </v-row>
     </v-container>
 
     <!-- Request Document Dialog -->
-    <div v-if="showQuoteDialog" class="quote-overlay" @click.self="showQuoteDialog = false">
+    <div
+      v-if="showQuoteDialog"
+      class="quote-overlay"
+      @click.self="showQuoteDialog = false"
+    >
       <div class="quote-dialog">
         <!-- colored card behind -->
         <div class="quote-dialog-bg"></div>
         <!-- main white card -->
-        <div class="quote-dialog-inner" >
-          <button class="quote-close" @click="showQuoteDialog = false">&times;</button>
+        <div class="quote-dialog-inner">
+          <button class="quote-close" @click="showQuoteDialog = false">
+            &times;
+          </button>
 
           <div class="quote-icon">
-            <v-icon >mdi-file-pdf-box</v-icon>
+            <v-icon>mdi-file-pdf-box</v-icon>
           </div>
 
           <h2 class="quote-title">Request Document</h2>
-          <p class="quote-subtitle">{{ currentQuoteName || entry.quoteFileName }}</p>
-          
-          <div v-if="currentQuoteURL || entry.quoteFileURL" class="pdf-container">
+          <p class="quote-subtitle">
+            {{ currentQuoteName || entry.quoteFileName }}
+          </p>
+
+          <div
+            v-if="currentQuoteURL || entry.quoteFileURL"
+            class="pdf-container"
+          >
             <div class="pdf-controls">
               <button class="zoom-btn" @click="zoomOut">-</button>
               <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
               <button class="zoom-btn" @click="zoomIn">+</button>
             </div>
-            <div class="pdf-wrapper" :style="{ transform: `scale(${zoomLevel})` }">
+            <div
+              class="pdf-wrapper"
+              :style="{ transform: `scale(${zoomLevel})` }"
+            >
               <iframe
                 :src="currentQuoteURL || entry.quoteFileURL"
                 width="100%"
@@ -317,12 +418,15 @@
           </div>
 
           <div class="quote-actions">
-            <button class="quote-button secondary" @click="showQuoteDialog = false">
+            <button
+              class="quote-button secondary"
+              @click="showQuoteDialog = false"
+            >
               Close
             </button>
-            <button 
+            <button
               v-if="currentQuoteURL || entry.quoteFileURL"
-              class="quote-button primary" 
+              class="quote-button primary"
               @click="openInNewTab"
             >
               Open in New Tab
@@ -331,7 +435,9 @@
               v-if="currentQuoteURL || entry.quoteFileURL"
               class="quote-button primary"
               :href="currentQuoteURL || entry.quoteFileURL"
-              :download="(currentQuoteName || entry.quoteFileName) || 'request.pdf'"
+              :download="
+                currentQuoteName || entry.quoteFileName || 'request.pdf'
+              "
             >
               Download
             </a>
@@ -343,61 +449,86 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, deleteDoc } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
-import { useAuditTrail } from '@/composables/useAuditTrail'
+import { useCustomDialogs } from "@/composables/useCustomDialogs";
+import { db } from "@/firebaseConfig";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  serverTimestamp,
+  deleteDoc,
+} from "firebase/firestore";
+import { useAppStore } from "@/stores/app";
+import { useAuditTrail } from "@/composables/useAuditTrail";
 
 export default {
   name: "ViewMaintenancePage",
   setup() {
-    const { showErrorDialog, showConfirmDialog, showSuccessDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showErrorDialog, showConfirmDialog, showSuccessDialog, logAuditEvent, auditActions, resourceTypes }
+    const { showErrorDialog, showConfirmDialog, showSuccessDialog } =
+      useCustomDialogs();
+    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
+    return {
+      showErrorDialog,
+      showConfirmDialog,
+      showSuccessDialog,
+      logAuditEvent,
+      auditActions,
+      resourceTypes,
+    };
   },
   computed: {
     isAgencyUser() {
       const appStore = useAppStore();
       const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      return (
+        user?.userType === "Agency" ||
+        (user?.userType === "Admin" && user?.adminScope === "agency")
+      );
     },
     isSuperAdmin() {
       const appStore = useAppStore();
-      return appStore.currentUser?.userType === 'Super Admin';
+      return appStore.currentUser?.userType === "Super Admin";
     },
     userType() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType;
     },
-    currentUserId() { const appStore = useAppStore(); return appStore.userId; },
-    
+    currentUserId() {
+      const appStore = useAppStore();
+      return appStore.userId;
+    },
+
     sortedNotes() {
-      const notes = this.entry?.notesLog || []
+      const notes = this.entry?.notesLog || [];
       // Oldest at top, newest at bottom
-      return [...notes].sort((a,b) => {
-        const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
-        const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
-        return ad - bd
-      })
-    }
+      return [...notes].sort((a, b) => {
+        const ad = a.timestamp?.toDate
+          ? a.timestamp.toDate()
+          : new Date(a.timestamp || 0);
+        const bd = b.timestamp?.toDate
+          ? b.timestamp.toDate()
+          : new Date(b.timestamp || 0);
+        return ad - bd;
+      });
+    },
   },
   data() {
     return {
-      activeTab: 'details',
+      activeTab: "details",
       entry: {},
       loading: true,
       error: null,
       showQuoteDialog: false,
       zoomLevel: 1,
-      newNote: '',
+      newNote: "",
       savingNote: false,
       editingKey: null,
-      editingText: '',
+      editingText: "",
       savingEdit: false,
       updatingStatus: false,
-      currentQuoteURL: '',
-      currentQuoteName: ''
+      currentQuoteURL: "",
+      currentQuoteName: "",
     };
   },
   async mounted() {
@@ -408,90 +539,163 @@ export default {
   methods: {
     openRequest(doc) {
       try {
-        this.currentQuoteURL = doc?.fileURL || ''
-        this.currentQuoteName = doc?.fileName || ''
-        if (this.currentQuoteURL) this.showQuoteDialog = true
+        this.currentQuoteURL = doc?.fileURL || "";
+        this.currentQuoteName = doc?.fileName || "";
+        if (this.currentQuoteURL) this.showQuoteDialog = true;
       } catch {}
     },
     goBack() {
       try {
         const appStore = useAppStore();
         const user = appStore.currentUser;
-        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
-        if (isAgency) { this.$router.push('/onboard-units'); return }
-      } catch(_) {}
-      const from = this.$route?.query?.from
-      if (from === 'onboard') this.$router.push('/onboard-units')
-      else this.$router.push('/maintenance')
+        const isAgency =
+          user?.userType === "Agency" ||
+          (user?.userType === "Admin" && user?.adminScope === "agency");
+        if (isAgency) {
+          this.$router.push("/onboard-units");
+          return;
+        }
+      } catch (_) {}
+      const from = this.$route?.query?.from;
+      if (from === "onboard") this.$router.push("/onboard-units");
+      else this.$router.push("/maintenance");
     },
     scrollNotesToBottom() {
       this.$nextTick(() => {
-        const el = this.$refs.chatLog
+        const el = this.$refs.chatLog;
         if (el && el.scrollHeight != null) {
-          el.scrollTop = el.scrollHeight
+          el.scrollTop = el.scrollHeight;
         }
-      })
+      });
     },
-    startEdit(note) { this.editingKey = this.noteKey(note); this.editingText = String(note.text || '') },
-    cancelEdit() { this.editingKey = null; this.editingText = '' },
+    startEdit(note) {
+      this.editingKey = this.noteKey(note);
+      this.editingText = String(note.text || "");
+    },
+    cancelEdit() {
+      this.editingKey = null;
+      this.editingText = "";
+    },
     noteKey(n) {
       try {
-        if (n?.id) return `id:${n.id}`
-        const t = n?.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n?.timestamp || 0).getTime()
-        const aid = n?.authorId || ''
-        const txt = String(n?.text || '')
-        return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0,8)}`
-      } catch (_) { return `legacy:${Math.random().toString(36).slice(2,8)}` }
+        if (n?.id) return `id:${n.id}`;
+        const t = n?.timestamp?.toDate
+          ? n.timestamp.toDate().getTime()
+          : new Date(n?.timestamp || 0).getTime();
+        const aid = n?.authorId || "";
+        const txt = String(n?.text || "");
+        return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0, 8)}`;
+      } catch (_) {
+        return `legacy:${Math.random().toString(36).slice(2, 8)}`;
+      }
     },
     findNoteIndexByIdOrMatch(list, target) {
-      if (!Array.isArray(list)) return -1
-      if (target.id) { const i = list.findIndex(n => n && n.id === target.id); if (i !== -1) return i }
-      const tA = target.timestamp?.toDate ? target.timestamp.toDate().getTime() : new Date(target.timestamp || 0).getTime()
-      const txt = String(target.text || '')
-      const aid = target.authorId || ''
-      for (let i = list.length - 1; i >= 0; i--) {
-        const n = list[i] || {}
-        const nT = n.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n.timestamp || 0).getTime()
-        if ((n.id && !target.id) ? false : (String(n.text || '') === txt && (n.authorId || '') === aid && nT === tA)) return i
+      if (!Array.isArray(list)) return -1;
+      if (target.id) {
+        const i = list.findIndex((n) => n && n.id === target.id);
+        if (i !== -1) return i;
       }
-      return -1
+      const tA = target.timestamp?.toDate
+        ? target.timestamp.toDate().getTime()
+        : new Date(target.timestamp || 0).getTime();
+      const txt = String(target.text || "");
+      const aid = target.authorId || "";
+      for (let i = list.length - 1; i >= 0; i--) {
+        const n = list[i] || {};
+        const nT = n.timestamp?.toDate
+          ? n.timestamp.toDate().getTime()
+          : new Date(n.timestamp || 0).getTime();
+        if (
+          n.id && !target.id
+            ? false
+            : String(n.text || "") === txt &&
+              (n.authorId || "") === aid &&
+              nT === tA
+        )
+          return i;
+      }
+      return -1;
     },
     async saveEdit(target) {
-      if (!this.entry?.id) return
-      const newText = this.editingText.trim(); if (!newText) return
+      if (!this.entry?.id) return;
+      const newText = this.editingText.trim();
+      if (!newText) return;
       try {
-        this.savingEdit = true
-        const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
-        const idx = this.findNoteIndexByIdOrMatch(list, target)
-        if (idx === -1) throw new Error('Note not found')
-        const old = list[idx] || {}
-        list[idx] = { ...old, text: newText, isEdited: true, editedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
-        await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
-        this.entry.notesLog = list
-        this.cancelEdit()
+        this.savingEdit = true;
+        const list = Array.isArray(this.entry.notesLog)
+          ? [...this.entry.notesLog]
+          : [];
+        const idx = this.findNoteIndexByIdOrMatch(list, target);
+        if (idx === -1) throw new Error("Note not found");
+        const old = list[idx] || {};
+        list[idx] = {
+          ...old,
+          text: newText,
+          isEdited: true,
+          editedAt: new Date(),
+          id:
+            old.id || Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        };
+        await updateDoc(doc(db, "maintenance", this.entry.id), {
+          notesLog: list,
+          updatedAt: serverTimestamp(),
+        });
+        this.entry.notesLog = list;
+        this.cancelEdit();
       } catch (e) {
-        console.error('Error editing note:', e)
-        this.showErrorDialog('Failed to edit note. Please try again.', 'Error', 'OK')
-      } finally { this.savingEdit = false }
+        console.error("Error editing note:", e);
+        this.showErrorDialog(
+          "Failed to edit note. Please try again.",
+          "Error",
+          "OK"
+        );
+      } finally {
+        this.savingEdit = false;
+      }
     },
     async softDeleteNote(target) {
-      if (!this.entry?.id) return
-      try { await this.showConfirmDialog({ title: 'Delete message?', message: 'This message will be shown as deleted.', confirmText: 'Delete', cancelText: 'Cancel', color: '#dc3545' }) } catch(_) { return }
+      if (!this.entry?.id) return;
       try {
-        const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
-        const idx = this.findNoteIndexByIdOrMatch(list, target)
-        if (idx === -1) throw new Error('Note not found')
-        const old = list[idx] || {}
-        list[idx] = { ...old, isDeleted: true, deletedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
-        await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
-        this.entry.notesLog = list
+        await this.showConfirmDialog({
+          title: "Delete message?",
+          message: "This message will be shown as deleted.",
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
+      } catch (_) {
+        return;
+      }
+      try {
+        const list = Array.isArray(this.entry.notesLog)
+          ? [...this.entry.notesLog]
+          : [];
+        const idx = this.findNoteIndexByIdOrMatch(list, target);
+        if (idx === -1) throw new Error("Note not found");
+        const old = list[idx] || {};
+        list[idx] = {
+          ...old,
+          isDeleted: true,
+          deletedAt: new Date(),
+          id:
+            old.id || Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        };
+        await updateDoc(doc(db, "maintenance", this.entry.id), {
+          notesLog: list,
+          updatedAt: serverTimestamp(),
+        });
+        this.entry.notesLog = list;
       } catch (e) {
-        console.error('Error deleting note:', e)
-        this.showErrorDialog('Failed to delete note. Please try again.', 'Error', 'OK')
+        console.error("Error deleting note:", e);
+        this.showErrorDialog(
+          "Failed to delete note. Please try again.",
+          "Error",
+          "OK"
+        );
       }
     },
     formatDate(value) {
-      if (!value) return 'Not available';
+      if (!value) return "Not available";
       try {
         const d = value?.toDate ? value.toDate() : new Date(value);
         return d.toLocaleDateString();
@@ -500,49 +704,50 @@ export default {
       }
     },
     noteInitials(name) {
-      const raw = String(name || '').trim()
-      if (!raw) return '?'
-      const words = raw.split(/\s+/).filter(Boolean)
+      const raw = String(name || "").trim();
+      if (!raw) return "?";
+      const words = raw.split(/\s+/).filter(Boolean);
       if (words.length === 1) {
-        const cleaned = words[0].replace(/[^A-Za-z0-9]/g, '')
-        if (!cleaned) return '?'
-        return cleaned.slice(0, 2).toUpperCase()
+        const cleaned = words[0].replace(/[^A-Za-z0-9]/g, "");
+        if (!cleaned) return "?";
+        return cleaned.slice(0, 2).toUpperCase();
       }
-      const first = (words[0] && words[0][0]) ? words[0][0] : ''
-      const second = (words[1] && words[1][0]) ? words[1][0] : ''
-      const res = (first + second).trim()
-      return res ? res.toUpperCase() : '?'
+      const first = words[0] && words[0][0] ? words[0][0] : "";
+      const second = words[1] && words[1][0] ? words[1][0] : "";
+      const res = (first + second).trim();
+      return res ? res.toUpperCase() : "?";
     },
     async loadEntry(entryId) {
       try {
-        const docRef = doc(db, 'maintenance', entryId);
+        const docRef = doc(db, "maintenance", entryId);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
           const data = docSnap.data();
           this.entry = {
             id: docSnap.id,
-            unitName: data.unitName || '',
-            unitNumber: data.unitNumber || '',
-            contactPerson: data.contactPerson || '',
-            contactPersonNumber: (data.contactPersonNumber || data.contactNumber || ''),
+            unitName: data.unitName || "",
+            unitNumber: data.unitNumber || "",
+            contactPerson: data.contactPerson || "",
+            contactPersonNumber:
+              data.contactPersonNumber || data.contactNumber || "",
             estimatedCost: data.estimatedCost || 0,
-            notes: data.notes || '',
+            notes: data.notes || "",
             notesLog: data.notesLog || [],
-            quoteFileName: data.quoteFileName || '',
-            quoteFileURL: data.quoteFileURL || '',
+            quoteFileName: data.quoteFileName || "",
+            quoteFileURL: data.quoteFileURL || "",
             quotes: data.quotes || [],
             createdAt: data.createdAt?.toDate() || data.createdAt,
-            updatedAt: data.updatedAt?.toDate() || data.updatedAt
+            updatedAt: data.updatedAt?.toDate() || data.updatedAt,
           };
           this.loading = false;
-          this.scrollNotesToBottom()
+          this.scrollNotesToBottom();
         } else {
           this.error = "Maintenance entry not found";
           this.loading = false;
         }
       } catch (error) {
-        console.error('Error loading maintenance entry:', error);
+        console.error("Error loading maintenance entry:", error);
         this.error = "Failed to load maintenance entry";
         this.loading = false;
       }
@@ -551,138 +756,164 @@ export default {
     editEntry() {
       this.$router.push(`/edit-maintenance-${this.entry.id}`);
     },
-    
+
     async deleteEntry() {
       try {
         await this.showConfirmDialog({
-          title: 'Delete Maintenance Entry?',
-          message: 'Are you sure you want to delete this maintenance entry? This action cannot be undone. After deletion, upload any related quotes or invoices to the unit documents.',
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
+          title: "Delete Maintenance Entry?",
+          message:
+            "Are you sure you want to delete this maintenance entry? This action cannot be undone. After deletion, upload any related quotes or invoices to the unit documents.",
+          confirmText: "Delete",
+          cancelText: "Cancel",
+          color: "#dc3545",
+        });
       } catch (_) {
-        return
+        return;
       }
 
       try {
-        await deleteDoc(doc(db, 'maintenance', this.entry.id))
-        
+        await deleteDoc(doc(db, "maintenance", this.entry.id));
+
         await this.logAuditEvent(
           this.auditActions.DELETE,
           {
             maintenanceId: this.entry.id,
             unitName: this.entry.unitName,
-            deletedBy: 'Super Admin'
+            deletedBy: "Super Admin",
           },
           this.resourceTypes.MAINTENANCE,
           this.entry.id
-        )
-        
+        );
+
         this.showSuccessDialog(
-          'Maintenance entry deleted successfully! Remember to upload related quotes or invoices to the unit documents.',
-          'Deleted',
-          'OK',
-          '/maintenance'
-        )
+          "Maintenance entry deleted successfully! Remember to upload related quotes or invoices to the unit documents.",
+          "Deleted",
+          "OK",
+          "/maintenance"
+        );
       } catch (error) {
-        console.error('Error deleting maintenance entry:', error)
-        this.showErrorDialog('Failed to delete maintenance entry. Please try again.', 'Error', 'OK')
+        console.error("Error deleting maintenance entry:", error);
+        this.showErrorDialog(
+          "Failed to delete maintenance entry. Please try again.",
+          "Error",
+          "OK"
+        );
       }
     },
-    
+
     openInNewTab() {
-      const url = this.currentQuoteURL || this.entry.quoteFileURL
-      if (url) window.open(url, '_blank')
+      const url = this.currentQuoteURL || this.entry.quoteFileURL;
+      if (url) window.open(url, "_blank");
     },
     async updateStatus() {
-      if (this.userType !== 'Admin') return
+      if (this.userType !== "Admin") return;
       try {
-        this.updatingStatus = true
-        const docRef = doc(db, 'maintenance', this.entry.id)
-        await updateDoc(docRef, { status: this.entry.status, updatedAt: serverTimestamp() })
+        this.updatingStatus = true;
+        const docRef = doc(db, "maintenance", this.entry.id);
+        await updateDoc(docRef, {
+          status: this.entry.status,
+          updatedAt: serverTimestamp(),
+        });
       } catch (error) {
-        console.error('Error updating status:', error)
-        this.showErrorDialog('Failed to update status. Please try again.', 'Error', 'OK')
+        console.error("Error updating status:", error);
+        this.showErrorDialog(
+          "Failed to update status. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.updatingStatus = false
+        this.updatingStatus = false;
       }
     },
     formatNoteDate(ts) {
       try {
-        if (!ts) return 'Just now'
-        const d = ts.toDate ? ts.toDate() : new Date(ts)
-        return d.toLocaleString()
-      } catch (_) { return String(ts) }
+        if (!ts) return "Just now";
+        const d = ts.toDate ? ts.toDate() : new Date(ts);
+        return d.toLocaleString();
+      } catch (_) {
+        return String(ts);
+      }
     },
     async appendNote() {
-      if (!this.newNote || !this.entry?.id) return
+      if (!this.newNote || !this.entry?.id) return;
       try {
-        this.savingNote = true
-        const appStore = useAppStore()
-        const currentUser = appStore.currentUser
-        const isAgency = currentUser?.userType === 'Agency' || (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency')
-        
+        this.savingNote = true;
+        const appStore = useAppStore();
+        const currentUser = appStore.currentUser;
+        const isAgency =
+          currentUser?.userType === "Agency" ||
+          (currentUser?.userType === "Admin" &&
+            currentUser?.adminScope === "agency");
+
         // Get proper author name based on user type
-        let authorName = 'Unknown User'
+        let authorName = "Unknown User";
         if (isAgency) {
-          authorName = currentUser?.agencyName || this.entry?.unitName || 'Property'
+          authorName =
+            currentUser?.agencyName || this.entry?.unitName || "Property";
         } else {
           // For regular users, use firstName + lastName or fallback to email
           if (currentUser?.firstName && currentUser?.lastName) {
-            authorName = `${currentUser.firstName} ${currentUser.lastName}`
+            authorName = `${currentUser.firstName} ${currentUser.lastName}`;
           } else if (currentUser?.firstName) {
-            authorName = currentUser.firstName
+            authorName = currentUser.firstName;
           } else if (currentUser?.lastName) {
-            authorName = currentUser.lastName
+            authorName = currentUser.lastName;
           } else if (currentUser?.email) {
-            authorName = currentUser.email
+            authorName = currentUser.email;
           }
         }
-        
+
         const note = {
-          id: Date.now() + '_' + Math.random().toString(36).slice(2,8),
+          id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
           text: this.newNote,
-          authorId: appStore.userId || currentUser?.uid || '',
+          authorId: appStore.userId || currentUser?.uid || "",
           authorName: authorName,
-          authorType: appStore.userType || currentUser?.userType || '',
-          authorAvatarUrl: isAgency 
-            ? (this.entry?.agencyProfileImageUrl || this.entry?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
-            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
+          authorType: appStore.userType || currentUser?.userType || "",
+          authorAvatarUrl: isAgency
+            ? this.entry?.agencyProfileImageUrl ||
+              this.entry?.profileImageUrl ||
+              currentUser?.profileImageUrl ||
+              currentUser?.profileImage ||
+              ""
+            : currentUser?.profileImageUrl || currentUser?.profileImage || "",
           timestamp: new Date(),
           isEdited: false,
-          isDeleted: false
-        }
-        
-        await updateDoc(doc(db, 'maintenance', this.entry.id), { 
-          notesLog: arrayUnion(note), 
-          updatedAt: serverTimestamp() 
-        })
-        
-        if (!this.entry.notesLog) this.entry.notesLog = []
-        this.entry.notesLog.push(note)
-        this.newNote = ''
-        this.scrollNotesToBottom()
+          isDeleted: false,
+        };
+
+        await updateDoc(doc(db, "maintenance", this.entry.id), {
+          notesLog: arrayUnion(note),
+          updatedAt: serverTimestamp(),
+        });
+
+        if (!this.entry.notesLog) this.entry.notesLog = [];
+        this.entry.notesLog.push(note);
+        this.newNote = "";
+        this.scrollNotesToBottom();
       } catch (e) {
-        console.error('Error adding note:', e)
-        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
+        console.error("Error adding note:", e);
+        this.showErrorDialog(
+          "Failed to add note. Please try again.",
+          "Error",
+          "OK"
+        );
       } finally {
-        this.savingNote = false
+        this.savingNote = false;
       }
     },
-    
+
     zoomIn() {
       if (this.zoomLevel < 2) {
         this.zoomLevel += 0.1;
       }
     },
-    
+
     zoomOut() {
       if (this.zoomLevel > 0.5) {
         this.zoomLevel -= 0.1;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -735,7 +966,7 @@ export default {
   background: white;
   border-radius: 0 0 12px 12px;
   padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .custom-input .v-field {
@@ -751,26 +982,110 @@ export default {
 }
 
 /* Chat-like notes styling (structured like example) */
-.notes-section { margin-top: 8px; }
-.chat-log { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; padding: 8px 0; }
-.chat-message { display: flex; align-items: flex-end; gap: 8px; }
-.chat-message.mine { flex-direction: row-reverse; }
-.chat-avatar { width: 28px; height: 28px; border-radius: 50%; background: #6b7280; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; overflow: hidden; }
-.chat-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.chat-bubble { max-width: 55%; min-width: 0; overflow-wrap: anywhere; word-break: break-word; background: #f2f4f7; color: #111; border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
-.chat-message.mine .chat-bubble { background: #000; color: #fff; }
-.chat-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
-.chat-header-right { display: flex; align-items: center; gap: 8px; }
-.chat-author { font-weight: 700; font-size: 0.8rem; opacity: 0.95; }
-.chat-time { font-size: 0.7rem; opacity: 0.7; margin-left: 8px; }
-.chat-edited { font-size: 0.7rem; opacity: 0.7; }
-.chat-text { white-space: pre-wrap; word-wrap: break-word; line-height: 1.35; text-align: center; }
-.chat-text.deleted { font-style: italic; opacity: 0.75; }
-.edit-area { background: #000; border-radius: 10px; padding: 6px; }
-.edit-area :deep(.v-field) {}
-.edit-area :deep(.v-field__input) {}
-.edit-area :deep(.v-field__outline) { border-color: #444 !important; }
-.chat-input :deep(.v-field__input) { min-height: 44px; }
+.notes-section {
+  margin-top: 8px;
+}
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.chat-message {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.chat-message.mine {
+  flex-direction: row-reverse;
+}
+.chat-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #6b7280;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+}
+.chat-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.chat-bubble {
+  max-width: 55%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  background: #f2f4f7;
+  color: #111;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.chat-message.mine .chat-bubble {
+  background: #000;
+  color: #fff;
+}
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chat-author {
+  font-weight: 700;
+  font-size: 0.8rem;
+  opacity: 0.95;
+}
+.chat-time {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-left: 8px;
+}
+.chat-edited {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+.chat-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.35;
+  text-align: center;
+}
+.chat-text.deleted {
+  font-style: italic;
+  opacity: 0.75;
+}
+.edit-area {
+  background: #000;
+  border-radius: 10px;
+  padding: 6px;
+}
+.edit-area :deep(.v-field) {
+}
+.edit-area :deep(.v-field__input) {
+}
+.edit-area :deep(.v-field__outline) {
+  border-color: #444 !important;
+}
+.chat-input :deep(.v-field__input) {
+  min-height: 44px;
+}
 
 .edit-btn {
   width: 160px;
@@ -780,7 +1095,7 @@ export default {
   border-radius: 8px;
   background-color: black !important;
   color: white !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 
@@ -877,7 +1192,6 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-
 /* View Quote Button */
 .view-quote-btn {
   width: 240px;
@@ -887,7 +1201,7 @@ export default {
   border-radius: 8px;
   background-color: black !important;
   color: white !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   margin-right: 12px;
 }
@@ -974,7 +1288,7 @@ export default {
 }
 
 .quote-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 100px;
   height: 100px;
@@ -999,7 +1313,8 @@ export default {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(-50%, -50%) scale(1);
   }
   50% {

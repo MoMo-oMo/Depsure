@@ -164,8 +164,13 @@ export function useNoticeVacancyAutomation() {
             contactNumber: unitData?.contactNumber || "",
             newOccupation: unitData?.newOccupation || "",
             contractorRequested: unitData?.contractorRequested || "",
-            maintenanceAmount: unitData?.maintenanceAmount || 0,
-            monthsMissed: unitData?.monthsMissed || 0,
+            maintenanceAmount:
+              Number(notice.maintenanceAmount ?? unitData?.maintenanceAmount ?? 0) ||
+              0,
+            monthsMissed:
+              Number(
+                notice.monthsMissedRent ?? unitData?.monthsMissed ?? 0
+              ) || 0,
 
             // Vacancy specific dates
             dateVacated: vacateDate.toISOString().slice(0, 10),
@@ -182,7 +187,12 @@ export function useNoticeVacancyAutomation() {
             // Fields that should be EMPTY initially (as per user request)
             leaseEndDate: "", // Empty - for new tenant
             paidTowardsFund: Number(notice.paidTowardsFund ?? 0),
-            amountToBePaidOut: 0, // Empty
+            paidOutAmount:
+              Number(notice.paidOutAmount ?? unitData?.paidOutAmount ?? 0) || 0,
+            amountToBePaidOut:
+              Number(
+                notice.paidOutAmount ?? unitData?.amountToBePaidOut ?? 0
+              ) || 0, // Empty
             newTenantRef: "", // Empty - for new tenant
             notes: "", // Empty
             paidOut: (() => {
@@ -211,6 +221,8 @@ export function useNoticeVacancyAutomation() {
           status: "Vacancy Created",
           vacancyCreatedAt: new Date(),
           noticeId: null, // Clear the notice reference
+          monthsMissed: 0,
+          monthsMissedRent: 0,
           updatedAt: new Date(),
         });
         console.log(

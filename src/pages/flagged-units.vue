@@ -227,6 +227,22 @@
             :loading="unitsLoading"
             no-data-text="No data available"
           >
+            <!-- Months Missed -->
+            <template v-slot:item.monthsMissed="{ item }">
+              <v-chip
+                :color="(item.monthsMissed || 0) > 0 ? 'error' : 'success'"
+                text-color="white"
+                size="small"
+                variant="elevated"
+              >
+                <template v-if="(item.monthsMissed || 0) > 0">
+                  {{ item.monthsMissed }} {{ item.monthsMissed === 1 ? 'month' : 'months' }}
+                </template>
+                <template v-else>
+                  0 months
+                </template>
+              </v-chip>
+            </template>
             <!-- Centered Action Buttons -->
             <template v-slot:item.actions="{ item }">
               <div class="action-btn-container">
@@ -325,6 +341,7 @@ export default {
         { title: "UNIT NAME", key: "unitName", sortable: true },
         { title: "UNIT NUMBER", key: "unitNumber", sortable: true },
         { title: "DATE FLAGGED", key: "dateFlagged", sortable: true },
+        { title: "MONTHS MISSED", key: "monthsMissed", sortable: true, align: "center" },
         { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
       ],
     };
@@ -387,6 +404,12 @@ export default {
     },
   },
   methods: {
+    normalizeMonthsValue(value) {
+      if (value === null || value === undefined || value === '') return 0;
+      const num = Number(value);
+      if (!Number.isFinite(num) || num < 0) return 0;
+      return Math.round(num);
+    },
     onMonthMenuToggle(open) {
       if (open) {
         this.tempMonth = this.monthFilter || "";
@@ -449,16 +472,22 @@ export default {
     },
     filterUnits() {
       this.filteredUnits = this.units.filter((unit) => {
+        const searchValue = this.searchQuery.toLowerCase();
         const textMatch =
           (unit.unitName || "")
             .toLowerCase()
-            .includes(this.searchQuery.toLowerCase()) ||
+            .includes(searchValue) ||
           (unit.unitNumber || "")
             .toLowerCase()
-            .includes(this.searchQuery.toLowerCase()) ||
+            .includes(searchValue) ||
           (unit.dateFlagged || "")
             .toLowerCase()
-            .includes(this.searchQuery.toLowerCase());
+            .includes(searchValue) ||
+          String(
+            unit.monthsMissed ?? unit.monthsMissedRent ?? ""
+          )
+            .toLowerCase()
+            .includes(searchValue);
 
         // Agency filtering is already done in fetchFlaggedUnits() - no need to do it again here
         // (this allows old flagged units without agencyId to show up)
@@ -617,6 +646,7 @@ export default {
           { header: "UNIT NAME", key: "unitName" },
           { header: "UNIT NUMBER", key: "unitNumber" },
           { header: "DATE FLAGGED", key: "dateFlagged" },
+          { header: "MONTHS MISSED", key: "monthsMissed" },
           { header: "PROPERTY TYPE", key: "propertyType" },
         ];
 
@@ -624,6 +654,7 @@ export default {
           unitName: u.unitName || "",
           unitNumber: u.unitNumber || "",
           dateFlagged: this.formatCsvDate(u.createdAt || u.dateFlagged),
+          monthsMissed: u.monthsMissed ?? 0,
           propertyType:
             this.getPropertyTypeLabel?.(u.propertyType) || u.propertyType || "",
         }));
@@ -734,6 +765,8 @@ export default {
           dateFlagged: new Date().toISOString().slice(0, 10),
           createdAt: new Date(),
           updatedAt: new Date(),
+          monthsMissed: 0,
+          monthsMissedRent: 0,
         };
 
         // Add to flaggedUnits collection
@@ -953,10 +986,21 @@ export default {
               const enriched = await Promise.all(
                 unitsData.map(async (unit) => {
                   try {
+                    const monthsMissed = this.normalizeMonthsValue(
+                      unit.monthsMissed ??
+                        unit.monthsMissedRent ??
+                        unit.monthsMissedMonths ??
+                        0
+                    );
                     if (unit.unitId) {
                       const propertyType =
                         await this.resolvePropertyTypeFromUnit(unit.unitId);
-                      return { ...unit, propertyType };
+                      return {
+                        ...unit,
+                        propertyType,
+                        monthsMissed,
+                        monthsMissedRent: monthsMissed,
+                      };
                     } else if (unit.unitName) {
                       const uq = query(
                         collection(db, "units"),
@@ -967,16 +1011,37 @@ export default {
                         const unitDoc = uSnap.docs[0];
                         const propertyType =
                           await this.resolvePropertyTypeFromUnit(unitDoc.id);
-                        return { ...unit, propertyType };
+                        return {
+                          ...unit,
+                          propertyType,
+                          monthsMissed,
+                          monthsMissedRent: monthsMissed,
+                        };
                       }
                     }
-                    return { ...unit, propertyType: "residential" };
+                    return {
+                      ...unit,
+                      propertyType: "residential",
+                      monthsMissed,
+                      monthsMissedRent: monthsMissed,
+                    };
                   } catch (e) {
                     console.error(
                       `Error resolving property type for unit ${unit.id}:`,
                       e
                     );
-                    return { ...unit, propertyType: "residential" };
+                    const monthsMissed = this.normalizeMonthsValue(
+                      unit.monthsMissed ??
+                        unit.monthsMissedRent ??
+                        unit.monthsMissedMonths ??
+                        0
+                    );
+                    return {
+                      ...unit,
+                      propertyType: "residential",
+                      monthsMissed,
+                      monthsMissedRent: monthsMissed,
+                    };
                   }
                 })
               );

@@ -93,20 +93,29 @@
           />
         </v-col>
 
-        <!-- Add Unit Button - Only when Super Admin AND an agency exists and is selected -->
+        <!-- Summary + Add Unit -->
         <v-col
           cols="12"
-          md="2"
-          lg="2"
-          class="pa-4 d-flex align-center"
-          v-if="isSuperAdmin && agencies.length > 0 && selectedAgency"
+          md="4"
+          lg="4"
+          class="pa-4 d-flex align-center justify-end flex-wrap gap-2"
         >
+          <v-text-field
+            :model-value="`${displayedUnitsCount}`"
+            label="Total Units"
+            variant="outlined"
+            hide-details
+            readonly
+            density="comfortable"
+            class="custom-input top-filter total-units-field"
+          />
           <v-btn
+            v-if="isSuperAdmin && agencies.length > 0 && selectedAgency"
             icon="mdi-plus"
             variant="outlined"
             color="primary"
             @click="addUnit"
-            class="back-btn"
+            class="back-btn add-unit-btn"
           >
             Add Unit
           </v-btn>
@@ -464,6 +473,11 @@ export default {
     isSuperAdmin() {
       const appStore = useAppStore();
       return appStore.currentUser?.userType === "Super Admin";
+    },
+    displayedUnitsCount() {
+      return Array.isArray(this.filteredProperties)
+        ? this.filteredProperties.length
+        : 0;
     },
     tableHeaders() {
       return this.headers;
@@ -1385,6 +1399,37 @@ export default {
   font-weight: 700;
   font-size: 1.25rem;
   color: #0a2f3d;
+}
+
+.total-units-field {
+  max-width: 165px;
+  min-width: 140px;
+  margin-right: 8px;
+}
+
+.total-units-field :deep(.v-field__field) {
+  align-items: center;
+  min-height: 56px;
+}
+
+.total-units-field :deep(.v-field__input) {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.total-units-field :deep(.v-field__label) {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.total-units-field :deep(.v-field__outline) {
+  border-radius: 10px;
+}
+
+.add-unit-btn {
+  min-width: 140px;
 }
 
 /* Action Button Styling */

@@ -80,6 +80,20 @@
                     />
                   </v-col>
 
+                  <!-- Maintenance Amount -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="notice.maintenanceAmount"
+                      label="Maintenance Amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      prefix="R"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
+
                   <!-- Month's Missed Rent -->
                   <v-col cols="12" md="6">
                     <v-text-field
@@ -92,6 +106,20 @@
                       step="1"
                       hint="Enter number of months rent was missed"
                       persistent-hint
+                    />
+                  </v-col>
+
+                  <!-- Paid Out Amount -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="notice.paidOutAmount"
+                      label="Paid Out Amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      prefix="R"
+                      variant="outlined"
+                      class="custom-input"
                     />
                   </v-col>
 
@@ -150,7 +178,9 @@ export default {
         unitName: '',
         leaseStartDate: '',
         leaseEndDate: '',
-        monthsMissedRent: 0
+        monthsMissedRent: 0,
+        maintenanceAmount: 0,
+        paidOutAmount: 0
       },
       loading: true,
       error: null,
@@ -195,6 +225,12 @@ export default {
             id: noticeDoc.id,
             ...noticeData
           };
+          this.notice.maintenanceAmount = Number(
+            noticeData?.maintenanceAmount ?? 0
+          ) || 0;
+          this.notice.paidOutAmount = Number(
+            noticeData?.paidOutAmount ?? 0
+          ) || 0;
           console.log('Notice loaded successfully:', this.notice);
         } else {
           this.error = 'Notice not found';
@@ -227,6 +263,10 @@ export default {
           
           // Add updated timestamp
           noticeData.updatedAt = new Date();
+        noticeData.maintenanceAmount =
+          Number(this.notice.maintenanceAmount) || 0;
+        noticeData.paidOutAmount =
+          Number(this.notice.paidOutAmount) || 0;
           
           console.log('Notice data to save:', noticeData);
           
