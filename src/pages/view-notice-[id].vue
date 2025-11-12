@@ -164,6 +164,24 @@
                     />
                   </v-col>
 
+                  <!-- Square Meterage (Commercial/Industrial only) -->
+                  <v-col
+                    v-if="showSquareMeterageField"
+                    cols="12"
+                    md="6"
+                  >
+                    <v-text-field
+                      v-model.number="notice.squareMeterage"
+                      label="Square Meterage (sqm)"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      suffix="sqm"
+                      variant="outlined"
+                      class="custom-input"
+                    />
+                  </v-col>
+
                   <!-- Lease End Notes (display only if present) -->
                   <v-col
                     cols="12"
@@ -400,6 +418,12 @@ import { useCustomDialogs } from "@/composables/useCustomDialogs";
 import { useAppStore } from "@/stores/app";
 import { db } from "@/firebaseConfig";
 import { doc, getDoc, deleteDoc } from "firebase/firestore";
+import { PROPERTY_TYPES } from "@/constants/propertyTypes";
+
+const SQUARE_METER_TYPES = [
+  PROPERTY_TYPES.COMMERCIAL,
+  PROPERTY_TYPES.INDUSTRIAL,
+];
 
 export default {
   name: "ViewNoticePage",
@@ -414,6 +438,8 @@ export default {
         monthsMissedRent: 0,
         maintenanceAmount: 0,
         paidOutAmount: 0,
+        propertyType: "",
+        squareMeterage: null,
       },
       paidTowardsFund: 0,
       paidOut: "",
@@ -492,6 +518,12 @@ export default {
     },
     filteredInvoices() {
       return this.filterDocumentsList(this.documents.invoices);
+    },
+    showSquareMeterageField() {
+      return (
+        this.notice.propertyType === PROPERTY_TYPES.COMMERCIAL ||
+        this.notice.propertyType === PROPERTY_TYPES.INDUSTRIAL
+      );
     },
   },
   watch: {
@@ -667,6 +699,12 @@ export default {
             extra.paidOutAmount,
             this.notice?.paidOutAmount
           ),
+          propertyType: extra.propertyType ?? this.notice?.propertyType ?? "",
+          squareMeterage: extra.squareMeterage !== undefined 
+            ? extra.squareMeterage 
+            : (this.notice?.squareMeterage !== null && this.notice?.squareMeterage !== undefined
+              ? Number(this.notice.squareMeterage)
+              : null),
           updatedAt: new Date(),
         };
 
@@ -757,6 +795,10 @@ export default {
           maintenanceAmount: Number(this.notice.maintenanceAmount) || 0,
           paidOutAmount: Number(this.notice.paidOutAmount) || 0,
           vacateDate: this.notice.leaseEndDate || "",
+          propertyType: this.notice.propertyType || "",
+          squareMeterage: this.notice.squareMeterage !== null && this.notice.squareMeterage !== undefined
+            ? Number(this.notice.squareMeterage)
+            : null,
           updatedAt: new Date(),
         };
         if (this.isSuperAdmin) {
@@ -764,7 +806,10 @@ export default {
           payload.paidOut = this.paidOut || "";
         }
         await updateDoc(doc(db, "notices", this.notice.id), payload);
-        await this.syncNoticeToVacancy(payload);
+        await this.syncNoticeToVacancy({
+          ...payload,
+          monthsMissed: payload.monthsMissedRent,
+        });
         const { showSuccessDialog } = useCustomDialogs();
         showSuccessDialog?.(
           "Notice saved successfully!",
@@ -796,6 +841,28 @@ export default {
 
         if (noticeDoc.exists()) {
           const noticeData = noticeDoc.data();
+          
+          // Resolve propertyType and squareMeterage from unit if available
+          let propertyType = noticeData.propertyType || "";
+          let squareMeterage = noticeData.squareMeterage ?? null;
+          
+          if (noticeData.unitId) {
+            try {
+              const unitSnap = await getDoc(doc(db, "units", noticeData.unitId));
+              if (unitSnap.exists()) {
+                const unitData = unitSnap.data() || {};
+                if (!propertyType) {
+                  propertyType = unitData.propertyType || "";
+                }
+                if (squareMeterage === null && unitData.squareMeterage !== undefined) {
+                  squareMeterage = unitData.squareMeterage;
+                }
+              }
+            } catch (e) {
+              console.warn("Failed to resolve unit data for property type", e);
+            }
+          }
+          
           this.notice = {
             id: noticeDoc.id,
             unitName: noticeData.unitName || "",
@@ -807,6 +874,10 @@ export default {
               Number(noticeData.maintenanceAmount ?? 0) || 0,
             paidOutAmount: Number(noticeData.paidOutAmount ?? 0) || 0,
             unitId: noticeData.unitId || "",
+            propertyType: propertyType,
+            squareMeterage: squareMeterage !== null && squareMeterage !== undefined 
+              ? Number(squareMeterage) 
+              : null,
           };
           this.documentsLoaded = false;
           this.documents = { quotes: [], inspections: [], invoices: [] };

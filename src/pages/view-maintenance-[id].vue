@@ -431,16 +431,6 @@
             >
               Open in New Tab
             </button>
-            <a
-              v-if="currentQuoteURL || entry.quoteFileURL"
-              class="quote-button primary"
-              :href="currentQuoteURL || entry.quoteFileURL"
-              :download="
-                currentQuoteName || entry.quoteFileName || 'request.pdf'
-              "
-            >
-              Download
-            </a>
           </div>
         </div>
       </div>

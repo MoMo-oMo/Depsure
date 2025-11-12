@@ -6,7 +6,7 @@
       <!-- Filters -->
       <v-row class="mb-4">
         <!-- Month filter -->
-        <v-col cols="12" md="3" lg="3" class="pa-4">
+        <v-col cols="12" md="2" lg="2" class="pa-4">
           <v-menu
             v-model="monthMenu"
             :close-on-content-click="false"
@@ -60,7 +60,7 @@
         </v-col>
 
         <!-- Property Type filter -->
-        <v-col cols="12" md="3" lg="3" class="pa-4">
+        <v-col cols="12" md="2" lg="2" class="pa-4">
           <v-select
             v-model="propertyTypeFilter"
             :items="propertyTypeFilterOptions"
@@ -77,7 +77,7 @@
         </v-col>
 
         <!-- Search Unit -->
-        <v-col cols="12" md="3" lg="3" class="pa-4">
+        <v-col cols="12" md="2" lg="2" class="pa-4">
           <v-text-field
             v-model="searchQuery"
             label="Search Unit"
@@ -104,6 +104,19 @@
             hide-details
             class="custom-input top-filter"
             @update:model-value="filterUnits"
+          />
+        </v-col>
+
+        <!-- Total Units Count -->
+        <v-col cols="12" md="3" lg="3" class="pa-4 d-flex align-center justify-end">
+          <v-text-field
+            :model-value="`${displayedUnitsCount}`"
+            label="Total Units"
+            variant="outlined"
+            hide-details
+            readonly
+            density="comfortable"
+            class="custom-input top-filter total-units-field"
           />
         </v-col>
       </v-row>
@@ -377,6 +390,11 @@ export default {
     squareMeterageSummaryLabel() {
       if (!SQUARE_METER_TYPES.includes(this.propertyTypeFilter)) return "";
       return this.getLabel(this.propertyTypeFilter) || "";
+    },
+    displayedUnitsCount() {
+      return Array.isArray(this.filteredUnits)
+        ? this.filteredUnits.length
+        : 0;
     },
   },
   methods: {
@@ -1277,6 +1295,33 @@ export default {
   font-weight: 700;
   font-size: 1.25rem;
   color: #0a2f3d;
+}
+
+.total-units-field {
+  max-width: 165px;
+  min-width: 140px;
+  margin-right: 8px;
+}
+
+.total-units-field :deep(.v-field__field) {
+  align-items: center;
+  min-height: 56px;
+}
+
+.total-units-field :deep(.v-field__input) {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.total-units-field :deep(.v-field__label) {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.total-units-field :deep(.v-field__outline) {
+  border-radius: 10px;
 }
 
 /* Document notification badge */
