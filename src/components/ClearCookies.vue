@@ -51,7 +51,7 @@ export default {
   data() {
     return {
       open: false,
-      currentVersion: "1.0.12",
+      currentVersion: "1.0.13",
     };
   },
   computed: {
@@ -255,6 +255,11 @@ export default {
 .cookie__box > img {
   max-width: 64px;
   animation: slow-spin 24s linear infinite;
+  border: none;
+  outline: none;
+  display: block;
+  background: transparent;
+  box-shadow: none;
 }
 .cookie__box .content {
   margin-top: 10px;

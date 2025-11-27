@@ -669,7 +669,12 @@ export default {
 .logo-square img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+  border: none;
+  outline: none;
+  display: block;
+  background: transparent;
+  box-shadow: none;
 }
 
 .logo-placeholder {
