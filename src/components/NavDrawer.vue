@@ -233,7 +233,7 @@
     where,
   } from 'firebase/firestore'
   import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
   import { useAuditTrail } from '@/composables/useAuditTrail'
   import { useDrawer } from '@/composables/useDrawer'
@@ -249,6 +249,7 @@
       const { mdAndUp } = useDisplay()
       const isDesktop = computed(() => mdAndUp.value)
       const { isOpen } = useDrawer()
+      const route = useRoute()
       const router = useRouter()
       const { selectedKey, setSelected } = useNav()
       const appStore = useAppStore()
@@ -687,6 +688,15 @@
         if (section === 'flagged') flaggedUnread.value = 0
       }
 
+      function resetSectionForPath (path) {
+        if (!path) return
+        if (path.startsWith('/notices')) resetSection('notices')
+        if (path.startsWith('/maintenance')) resetSection('maintenance')
+        if (path.startsWith('/inspections')) resetSection('inspections')
+        if (path.startsWith('/vacancies')) resetSection('vacancies')
+        if (path.startsWith('/flagged-units')) resetSection('flagged')
+      }
+
       async function subscribeToUnread () {
         try {
           if (unsubUnread) {
@@ -925,6 +935,12 @@
           subscribeSection('inspections', 'inspections', inspectionsUnread)
           subscribeSection('vacancies', 'vacancies', vacanciesUnread)
           subscribeSection('flagged', 'flaggedUnits', flaggedUnread)
+        },
+      )
+      watch(
+        () => route.path,
+        path => {
+          resetSectionForPath(path)
         },
       )
 

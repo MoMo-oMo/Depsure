@@ -88,12 +88,14 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="user.password"
+                      :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                       class="custom-input"
                       label="Password"
                       required
                       :rules="passwordRules"
-                      type="password"
+                      :type="showPassword ? 'text' : 'password'"
                       variant="outlined"
+                      @click:append-inner="showPassword = !showPassword"
                     />
                   </v-col>
 
@@ -331,6 +333,7 @@
         agenciesLoading: false,
         valid: true,
         loading: false,
+        showPassword: false,
         // Validation rules
         emailRules: [
           v => !!v || 'Email is required',

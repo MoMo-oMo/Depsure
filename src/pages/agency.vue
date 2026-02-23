@@ -76,17 +76,18 @@
                 <div class="image-section">
                   <v-btn
                     v-if="canPinAgencies"
-                    class="pin-agency-btn"
-                    :color="isPinnedAgency(agency.id) ? 'warning' : 'white'"
+                    :class="[
+                      'pin-agency-btn',
+                      { 'pin-agency-btn--pinned': isPinnedAgency(agency.id) },
+                    ]"
+                    :color="isPinnedAgency(agency.id) ? 'black' : 'white'"
                     icon
                     size="small"
                     variant="flat"
                     :title="isPinnedAgency(agency.id) ? 'Unpin agency' : 'Pin agency'"
                     @click.stop="togglePinAgency(agency)"
                   >
-                    <v-icon>
-                      {{ isPinnedAgency(agency.id) ? 'mdi-pin' : 'mdi-pin-outline' }}
-                    </v-icon>
+                    <v-icon>mdi-pin-outline</v-icon>
                   </v-btn>
 
                   <v-menu
@@ -214,7 +215,9 @@
     doc,
     getDoc,
     getDocs,
+    limit,
     onSnapshot,
+    orderBy,
     query,
     setDoc,
     updateDoc,
@@ -231,13 +234,15 @@
         searchQuery: '',
         filteredAgencies: [],
         loading: false,
-        monthFilter: this.getCurrentMonth(),
+        monthFilter: '',
         pinnedAgencyIds: [],
         maintenanceCountsByAgency: {},
         inspectionCountsByAgency: {},
         noticeCountsByAgency: {},
         vacancyCountsByAgency: {},
         liveChatCountsByAgency: {},
+        liveChatFallbackCountsByAgency: {},
+        hasLiveChatCounterData: false,
         flaggedCountsByAgency: {},
         activitySeenAtByAgency: {},
         agencyAlerts: {},
@@ -426,6 +431,13 @@
           ...(this[field] || {}),
           [agencyId]: 0,
         }
+
+        if (key === 'liveChat') {
+          this.liveChatFallbackCountsByAgency = {
+            ...(this.liveChatFallbackCountsByAgency || {}),
+            [agencyId]: 0,
+          }
+        }
       },
       markAgencyCategorySeen (agencyId, key) {
         if (!agencyId || !key) return
@@ -608,7 +620,9 @@
           const inspectionCount = Number(this.inspectionCountsByAgency?.[id] || 0)
           const noticeCount = Number(this.noticeCountsByAgency?.[id] || 0)
           const vacancyCount = Number(this.vacancyCountsByAgency?.[id] || 0)
-          const liveChatCount = Number(this.liveChatCountsByAgency?.[id] || 0)
+          const liveChatRealtimeCount = Number(this.liveChatCountsByAgency?.[id] || 0)
+          const liveChatFallbackCount = Number(this.liveChatFallbackCountsByAgency?.[id] || 0)
+          const liveChatCount = Math.max(liveChatRealtimeCount, liveChatFallbackCount)
           const flaggedUnitsCount = Number(this.flaggedCountsByAgency?.[id] || 0)
           const totalCount
             = maintenanceCount
@@ -713,21 +727,82 @@
         )
 
         const appStore = useAppStore()
-        const uid = appStore.userId
+        const uid = appStore.userId || appStore.currentUser?.uid
         if (uid) {
           pushUnsub(
-            onSnapshot(collection(db, 'unread', uid, 'chats'), snapshot => {
+            onSnapshot(collection(db, 'unread', uid, 'chats'), async snapshot => {
               const next = {}
               for (const row of snapshot.docs) {
                 const data = row.data() || {}
-                const agencyId = data.agencyId
-                const count = Number(data.count || 0)
+                let agencyId = data.agencyId
+                const count = Number(data.count || data.unreadCount || 0)
+                if (!agencyId && row.id) {
+                  try {
+                    const chatSnap = await getDoc(doc(db, 'chats', row.id))
+                    if (chatSnap.exists()) {
+                      agencyId = chatSnap.data()?.agencyId || ''
+                    }
+                  } catch {}
+                }
                 if (!agencyId || count <= 0) continue
-                const activityAt = this.extractActivityTimestamp(data)
-                if (!this.isUnseenActivity(agencyId, 'liveChat', activityAt)) continue
                 next[agencyId] = Number(next[agencyId] || 0) + count
               }
+
+              this.hasLiveChatCounterData = Object.keys(next).length > 0
               this.liveChatCountsByAgency = next
+              if (
+                this.hasLiveChatCounterData
+                && Object.keys(this.liveChatFallbackCountsByAgency).length
+              ) {
+                this.liveChatFallbackCountsByAgency = {}
+              }
+              this.rebuildAgencyAlerts()
+            }),
+          )
+
+          pushUnsub(
+            onSnapshot(collection(db, 'chats'), async snapshot => {
+              if (this.hasLiveChatCounterData) return
+
+              const knownAgencyIds = new Set(
+                (this.agencies || []).map(agency => agency?.id).filter(Boolean),
+              )
+              const next = {}
+
+              await Promise.all(
+                snapshot.docs.map(async chatDoc => {
+                  const chatData = chatDoc.data() || {}
+                  const agencyId = chatData.agencyId
+                  if (!agencyId) return
+                  if (knownAgencyIds.size && !knownAgencyIds.has(agencyId)) return
+
+                  try {
+                    const messagesSnap = await getDocs(
+                      query(
+                        collection(db, 'chats', chatDoc.id, 'messages'),
+                        orderBy('timestamp', 'desc'),
+                        limit(30),
+                      ),
+                    )
+
+                    let unread = 0
+                    for (const msgDoc of messagesSnap.docs) {
+                      const msg = msgDoc.data() || {}
+                      if (msg.deleted) continue
+                      if (String(msg.authorId || '') === String(uid)) continue
+                      const readBy = Array.isArray(msg.readBy) ? msg.readBy : []
+                      if (readBy.includes(uid)) continue
+                      unread += 1
+                    }
+
+                    if (unread > 0) {
+                      next[agencyId] = Number(next[agencyId] || 0) + unread
+                    }
+                  } catch {}
+                }),
+              )
+
+              this.liveChatFallbackCountsByAgency = next
               this.rebuildAgencyAlerts()
             }),
           )
@@ -804,7 +879,7 @@
         }
       },
       filterAgencies () {
-        const queryText = this.searchQuery.toLowerCase()
+        const queryText = (this.searchQuery || '').trim().toLowerCase()
         const filtered = this.agencies.filter(agency => {
           const textMatch
             = agency.agencyName?.toLowerCase().includes(queryText)
@@ -1008,11 +1083,6 @@
   flex-direction: column;
 }
 
-.business-card--selected {
-  outline: 2px solid #ef4444;
-  outline-offset: 2px;
-}
-
 .business-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -1032,6 +1102,16 @@
   left: 10px;
   z-index: 3;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.pin-agency-btn--pinned :deep(.v-icon) {
+  color: #ffffff !important;
+}
+
+.pin-agency-btn--pinned {
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .agency-alert-bubble {
@@ -1063,7 +1143,7 @@
   min-width: 320px;
   max-width: 380px;
   border-radius: 12px;
-  background: #0f172a;
+  background: #000000;
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #ffffff;
 }
@@ -1135,7 +1215,7 @@
 
 /* Teleported menu content can ignore scoped styles without deep selectors */
 :deep(.agency-alert-overlay .agency-alert-menu) {
-  background: #0f172a !important;
+  background: #000000 !important;
   color: #f8fafc !important;
 }
 
