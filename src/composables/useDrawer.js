@@ -4,27 +4,25 @@ const isOpen = ref(true)
 const isRail = ref(false)
 
 export function useDrawer () {
-	function toggle () {
-		isOpen.value = !isOpen.value
-	}
+  function toggle () {
+    isOpen.value = !isOpen.value
+  }
 
-	function open () {
-		isOpen.value = true
-	}
+  function open () {
+    isOpen.value = true
+  }
 
-	function close () {
-		isOpen.value = false
-	}
+  function close () {
+    isOpen.value = false
+  }
 
-	function toggleRail () {
-		isRail.value = !isRail.value
-	}
+  function toggleRail () {
+    isRail.value = !isRail.value
+  }
 
-	function setRail (value) {
-		isRail.value = !!value
-	}
+  function setRail (value) {
+    isRail.value = !!value
+  }
 
-	return { isOpen, toggle, open, close, isRail, toggleRail, setRail }
+  return { isOpen, toggle, open, close, isRail, toggleRail, setRail }
 }
-
-

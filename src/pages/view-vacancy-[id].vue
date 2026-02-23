@@ -3,7 +3,13 @@
     <v-container fluid>
       <v-row class="mb-4">
         <v-col cols="12">
-          <v-btn icon="mdi-arrow-left" variant="outlined" color="primary" @click="goBack" class="back-btn">Back</v-btn>
+          <v-btn
+            class="back-btn"
+            color="primary"
+            icon="mdi-arrow-left"
+            variant="outlined"
+            @click="goBack"
+          >Back</v-btn>
         </v-col>
       </v-row>
 
@@ -12,14 +18,14 @@
           <div class="title-section"><h1 class="page-title">View Vacancy Details</h1></div>
           <v-card class="content-card" elevation="0">
             <div v-if="loading" class="loading-container">
-              <v-progress-circular indeterminate color="black" size="64"></v-progress-circular>
+              <v-progress-circular color="black" indeterminate size="64" />
               <p class="loading-text">Loading vacancy details...</p>
             </div>
             <div v-else-if="error" class="error-container">
               <v-icon color="error" size="64">mdi-alert-circle</v-icon>
               <h3 class="error-title">Error Loading Vacancy</h3>
               <p class="error-message">{{ error }}</p>
-              <v-btn @click="loadVacancy" color="black" variant="elevated">Try Again</v-btn>
+              <v-btn color="black" variant="elevated" @click="loadVacancy">Try Again</v-btn>
             </div>
             <template v-else-if="vacancy">
               <v-tabs
@@ -27,10 +33,10 @@
                 class="vacancy-tabs"
                 color="primary"
               >
-                <v-tab value="details" class="tab-label tab--details">
+                <v-tab class="tab-label tab--details" value="details">
                   Vacancy Details
                 </v-tab>
-                <v-tab value="documents" class="tab-label tab--documents">
+                <v-tab class="tab-label tab--documents" value="documents">
                   Documents
                 </v-tab>
               </v-tabs>
@@ -39,59 +45,119 @@
                 <v-window-item value="details">
                   <v-card-text>
                     <v-row>
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="vacancy.unitName" label="Unit Name/Address" variant="outlined" readonly class="custom-input" />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="formatDate(vacancy.dateVacated)" label="Date Vacated" variant="outlined" readonly class="custom-input" />
-                  </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Unit Name/Address"
+                          :model-value="vacancy.unitName"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Date Vacated"
+                          :model-value="formatDate(vacancy.dateVacated)"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
 
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="formatDate(vacancy.leaseStartDate, 'Not specified')" label="Lease Start Date" variant="outlined" readonly class="custom-input" />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="formatDate(vacancy.leaseEndDate, 'Not specified')" label="Lease End Date" variant="outlined" readonly class="custom-input" />
-                  </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Lease Start Date"
+                          :model-value="formatDate(vacancy.leaseStartDate, 'Not specified')"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Lease End Date"
+                          :model-value="formatDate(vacancy.leaseEndDate, 'Not specified')"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
 
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="vacancy.propertyType || 'residential'" label="Property Type" variant="outlined" readonly class="custom-input" />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="vacancy.monthsMissed" label="Months Missed Rent" variant="outlined" readonly class="custom-input" />
-                  </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Property Type"
+                          :model-value="vacancy.propertyType || 'residential'"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Months Missed Rent"
+                          :model-value="vacancy.monthsMissed"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
 
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      :model-value="formatCurrency(vacancy.maintenanceAmount)"
-                      label="Maintenance Amount"
-                      variant="outlined"
-                      readonly
-                      class="custom-input"
-                    />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      :model-value="formatCurrency(vacancy.paidOutAmount)"
-                      label="Paid Out Amount"
-                      variant="outlined"
-                      readonly
-                      class="custom-input"
-                    />
-                  </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Maintenance Amount"
+                          :model-value="formatCurrency(vacancy.maintenanceAmount)"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Paid Out Amount"
+                          :model-value="formatCurrency(vacancy.paidOutAmount)"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
 
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="formatDate(vacancy.createdAt, 'Not specified')" label="Created At" variant="outlined" readonly class="custom-input" />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="formatDate(vacancy.updatedAt, 'Not specified')" label="Updated At" variant="outlined" readonly class="custom-input" />
-                  </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Created At"
+                          :model-value="formatDate(vacancy.createdAt, 'Not specified')"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Updated At"
+                          :model-value="formatDate(vacancy.updatedAt, 'Not specified')"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
 
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="formatCurrency(vacancy.paidTowardsFund)" label="Paid Towards Fund" variant="outlined" readonly class="custom-input" />
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field :model-value="formatPaidOut(vacancy.paidOut)" label="Paid Out (Yes/No)" variant="outlined" readonly class="custom-input" />
-                  </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Paid Towards Fund"
+                          :model-value="formatCurrency(vacancy.paidTowardsFund)"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          class="custom-input"
+                          label="Paid Out (Yes/No)"
+                          :model-value="formatPaidOut(vacancy.paidOut)"
+                          readonly
+                          variant="outlined"
+                        />
+                      </v-col>
                     </v-row>
                   </v-card-text>
                 </v-window-item>
@@ -99,13 +165,13 @@
                 <v-window-item value="documents">
                   <v-card-text class="documents-tab">
                     <div v-if="documentsLoading" class="documents-loading">
-                      <v-progress-circular indeterminate color="black" />
+                      <v-progress-circular color="black" indeterminate />
                       <p class="text-medium-emphasis mt-3">
                         Loading supporting documents…
                       </p>
                     </div>
                     <div v-else-if="documentsError" class="documents-error">
-                      <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                      <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
                       <span>{{ documentsError }}</span>
                     </div>
                     <div v-else>
@@ -122,23 +188,23 @@
                         <div class="doc-filters">
                           <v-text-field
                             v-model="docFilterSearch"
+                            class="custom-input doc-search"
+                            clearable
+                            density="comfortable"
+                            hide-details
                             label="Search documents..."
                             prepend-inner-icon="mdi-magnify"
-                            density="comfortable"
                             variant="outlined"
-                            clearable
-                            hide-details
-                            class="custom-input doc-search"
                           />
                           <v-text-field
                             v-model="docFilterMonth"
-                            type="month"
-                            label="Month"
-                            density="comfortable"
-                            variant="outlined"
-                            hide-details
-                            clearable
                             class="custom-input doc-month-input"
+                            clearable
+                            density="comfortable"
+                            hide-details
+                            label="Month"
+                            type="month"
+                            variant="outlined"
                           />
                         </div>
 
@@ -146,14 +212,15 @@
                           <div class="document-category category-quotes">
                             <div class="category-header">
                               <h4 class="category-title">
-                                <v-icon color="primary" class="mr-2"
-                                  >mdi-file-pdf-box</v-icon
-                                >
+                                <v-icon
+                                  class="mr-2"
+                                  color="primary"
+                                >mdi-file-pdf-box</v-icon>
                                 Quotes
                               </h4>
                             </div>
                             <div
-                              v-if="filteredQuotes.length"
+                              v-if="filteredQuotes.length > 0"
                               class="document-list"
                             >
                               <div
@@ -161,30 +228,32 @@
                                 :key="docItem.fileURL || docItem.name || index"
                                 class="document-item"
                               >
-                                <v-icon color="primary" class="mr-2"
-                                  >mdi-file-pdf-box</v-icon
-                                >
+                                <v-icon
+                                  class="mr-2"
+                                  color="primary"
+                                >mdi-file-pdf-box</v-icon>
                                 <span class="document-name">{{
                                   docItem.fileName ||
-                                  docItem.name ||
-                                  "Document"
+                                    docItem.name ||
+                                    "Document"
                                 }}</span>
                                 <v-btn
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                  :disabled="!docItem.fileURL"
-                                  @click="openDocument(docItem)"
                                   class="view-btn"
+                                  color="primary"
+                                  :disabled="!docItem.fileURL"
+                                  size="small"
+                                  variant="outlined"
+                                  @click="openDocument(docItem)"
                                 >
                                   View
                                 </v-btn>
                               </div>
                             </div>
                             <div v-else class="no-documents">
-                              <v-icon color="grey" class="mr-2"
-                                >mdi-file-pdf-box</v-icon
-                              >
+                              <v-icon
+                                class="mr-2"
+                                color="grey"
+                              >mdi-file-pdf-box</v-icon>
                               No quotes available.
                             </div>
                           </div>
@@ -192,14 +261,15 @@
                           <div class="document-category category-inspections">
                             <div class="category-header">
                               <h4 class="category-title">
-                                <v-icon color="warning" class="mr-2"
-                                  >mdi-clipboard-check</v-icon
-                                >
+                                <v-icon
+                                  class="mr-2"
+                                  color="warning"
+                                >mdi-clipboard-check</v-icon>
                                 Inspections
                               </h4>
                             </div>
                             <div
-                              v-if="filteredInspections.length"
+                              v-if="filteredInspections.length > 0"
                               class="document-list"
                             >
                               <div
@@ -207,30 +277,32 @@
                                 :key="docItem.fileURL || docItem.name || index"
                                 class="document-item"
                               >
-                                <v-icon color="warning" class="mr-2"
-                                  >mdi-clipboard-check</v-icon
-                                >
+                                <v-icon
+                                  class="mr-2"
+                                  color="warning"
+                                >mdi-clipboard-check</v-icon>
                                 <span class="document-name">{{
                                   docItem.fileName ||
-                                  docItem.name ||
-                                  "Document"
+                                    docItem.name ||
+                                    "Document"
                                 }}</span>
                                 <v-btn
-                                  size="small"
-                                  color="warning"
-                                  variant="outlined"
-                                  :disabled="!docItem.fileURL"
-                                  @click="openDocument(docItem)"
                                   class="view-btn"
+                                  color="warning"
+                                  :disabled="!docItem.fileURL"
+                                  size="small"
+                                  variant="outlined"
+                                  @click="openDocument(docItem)"
                                 >
                                   View
                                 </v-btn>
                               </div>
                             </div>
                             <div v-else class="no-documents">
-                              <v-icon color="grey" class="mr-2"
-                                >mdi-clipboard-check</v-icon
-                              >
+                              <v-icon
+                                class="mr-2"
+                                color="grey"
+                              >mdi-clipboard-check</v-icon>
                               No inspections available.
                             </div>
                           </div>
@@ -238,14 +310,15 @@
                           <div class="document-category category-invoices">
                             <div class="category-header">
                               <h4 class="category-title">
-                                <v-icon color="success" class="mr-2"
-                                  >mdi-receipt</v-icon
-                                >
+                                <v-icon
+                                  class="mr-2"
+                                  color="success"
+                                >mdi-receipt</v-icon>
                                 Invoices
                               </h4>
                             </div>
                             <div
-                              v-if="filteredInvoices.length"
+                              v-if="filteredInvoices.length > 0"
                               class="document-list"
                             >
                               <div
@@ -253,30 +326,32 @@
                                 :key="docItem.fileURL || docItem.name || index"
                                 class="document-item"
                               >
-                                <v-icon color="success" class="mr-2"
-                                  >mdi-receipt</v-icon
-                                >
+                                <v-icon
+                                  class="mr-2"
+                                  color="success"
+                                >mdi-receipt</v-icon>
                                 <span class="document-name">{{
                                   docItem.fileName ||
-                                  docItem.name ||
-                                  "Document"
+                                    docItem.name ||
+                                    "Document"
                                 }}</span>
                                 <v-btn
-                                  size="small"
-                                  color="success"
-                                  variant="outlined"
-                                  :disabled="!docItem.fileURL"
-                                  @click="openDocument(docItem)"
                                   class="view-btn"
+                                  color="success"
+                                  :disabled="!docItem.fileURL"
+                                  size="small"
+                                  variant="outlined"
+                                  @click="openDocument(docItem)"
                                 >
                                   View
                                 </v-btn>
                               </div>
                             </div>
                             <div v-else class="no-documents">
-                              <v-icon color="grey" class="mr-2"
-                                >mdi-receipt</v-icon
-                              >
+                              <v-icon
+                                class="mr-2"
+                                color="grey"
+                              >mdi-receipt</v-icon>
                               No invoices available.
                             </div>
                           </div>
@@ -299,286 +374,290 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
-import { useAppStore } from '@/stores/app'
+  import { doc, getDoc } from 'firebase/firestore'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: 'ViewVacancyPage',
-  data() {
-    return {
-      vacancy: null,
-      loading: true,
-      error: null,
-      unitDocumentId: '',
-      activeTab: 'details',
-      documentsLoaded: false,
-      documentsLoading: false,
-      documentsError: null,
-      documents: {
-        quotes: [],
-        inspections: [],
-        invoices: [],
+  export default {
+    name: 'ViewVacancyPage',
+    data () {
+      return {
+        vacancy: null,
+        loading: true,
+        error: null,
+        unitDocumentId: '',
+        activeTab: 'details',
+        documentsLoaded: false,
+        documentsLoading: false,
+        documentsError: null,
+        documents: {
+          quotes: [],
+          inspections: [],
+          invoices: [],
+        },
+        docFilterSearch: '',
+        docFilterMonth: '',
+      }
+    },
+    computed: {
+      filteredQuotes () {
+        return this.filterDocumentsList(this.documents.quotes)
       },
-      docFilterSearch: '',
-      docFilterMonth: '',
-    }
-  },
-  computed: {
-    filteredQuotes() {
-      return this.filterDocumentsList(this.documents.quotes);
+      filteredInspections () {
+        return this.filterDocumentsList(this.documents.inspections)
+      },
+      filteredInvoices () {
+        return this.filterDocumentsList(this.documents.invoices)
+      },
     },
-    filteredInspections() {
-      return this.filterDocumentsList(this.documents.inspections);
-    },
-    filteredInvoices() {
-      return this.filterDocumentsList(this.documents.invoices);
-    },
-  },
-  watch: {
-    unitDocumentId(newVal, oldVal) {
-      if (newVal && newVal !== oldVal) {
-        this.loadDocuments(true);
-      }
-    },
-    activeTab(newVal) {
-      if (newVal === 'documents') {
-        this.loadDocuments();
-      }
-    },
-  },
-  methods: {
-    async loadDocuments(force = false) {
-      if (!this.unitDocumentId) {
-        this.documents = { quotes: [], inspections: [], invoices: [] };
-        this.documentsLoaded = false;
-        return;
-      }
-      if (this.documentsLoading) return;
-      if (this.documentsLoaded && !force) return;
-      this.documentsLoading = true;
-      this.documentsError = null;
-      try {
-        const snap = await getDoc(doc(db, 'units', this.unitDocumentId));
-        if (snap.exists()) {
-          const data = snap.data() || {};
-          this.documents = {
-            quotes: Array.isArray(data.quotes) ? data.quotes : [],
-            inspections: Array.isArray(data.inspections)
-              ? data.inspections
-              : [],
-            invoices: Array.isArray(data.invoices) ? data.invoices : [],
-          };
-          this.documentsLoaded = true;
-        } else {
-          this.documents = { quotes: [], inspections: [], invoices: [] };
-          this.documentsLoaded = true;
-          this.documentsError = 'No documents found for this unit.';
+    watch: {
+      unitDocumentId (newVal, oldVal) {
+        if (newVal && newVal !== oldVal) {
+          this.loadDocuments(true)
         }
-      } catch (error) {
-        console.error('Failed to load supporting documents', error);
-        this.documentsError = 'Failed to load supporting documents.';
-      } finally {
-        this.documentsLoading = false;
-      }
-    },
-    resolveDocumentDate(entry) {
-      if (!entry) return null;
-      const raw =
-        entry.uploadedAt || entry.createdAt || entry.date || entry.timestamp;
-      if (!raw) return null;
-      try {
-        if (typeof raw.toDate === 'function') return raw.toDate();
-        return new Date(raw);
-      } catch {
-        return null;
-      }
-    },
-    monthKey(date) {
-      if (!date || Number.isNaN(date.getTime())) return '';
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-        2,
-        '0'
-      )}`;
-    },
-    filterDocumentsList(list) {
-      if (!Array.isArray(list) || !list.length) return [];
-      const hasFilter = this.docFilterSearch || this.docFilterMonth;
-      if (hasFilter) {
-        const term = (this.docFilterSearch || '').toLowerCase();
-        const month = this.docFilterMonth || '';
-        return list.filter((item) => {
-          const name = String(item?.fileName || item?.name || '').toLowerCase();
-          const date = this.resolveDocumentDate(item);
-          const matchesTerm = term ? name.includes(term) : true;
-          const matchesMonth = month ? this.monthKey(date) === month : true;
-          return matchesTerm && matchesMonth;
-        });
-      }
-      const sorted = [...list].sort((a, b) => {
-        const dateA = this.resolveDocumentDate(a);
-        const dateB = this.resolveDocumentDate(b);
-        if (!dateA && !dateB) return 0;
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        return dateB.getTime() - dateA.getTime();
-      });
-      return sorted.slice(0, 3);
-    },
-    formatDocumentDate(entry) {
-      const date = this.resolveDocumentDate(entry);
-      if (!date) return '';
-      return date.toISOString().slice(0, 10);
-    },
-    openDocument(entry) {
-      const url = entry?.fileURL || entry?.url;
-      if (!url) return;
-      window.open(url, '_blank');
-    },
-    goBack() {
-      try {
-        const appStore = useAppStore();
-        const user = appStore.currentUser;
-        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
-        if (isAgency) { 
-          this.$router.push('/onboard-units'); 
-          return 
+      },
+      activeTab (newVal) {
+        if (newVal === 'documents') {
+          this.loadDocuments()
         }
-      } catch(_) {}
-      const from = this.$route?.query?.from
-      if (from === 'onboard') {
-        this.$router.push('/onboard-units')
-      } else {
-        this.$router.push('/vacancies')
-      }
+      },
     },
-    async loadVacancy() {
-      this.loading = true; this.error = null
+    mounted () {
       try {
-        const ref = doc(db, 'vacancies', this.$route.params.id)
-        const snap = await getDoc(ref)
-        if (snap.exists()) {
-          const data = snap.data()
-          this.vacancy = this.normalizeVacancyData(data, snap.id)
-          this.documentsLoaded = false
+        const initialTab = this.$route?.query?.tab
+        if (initialTab === 'documents' || initialTab === 'details') {
+          this.activeTab = initialTab
+        }
+      } catch {}
+      this.loadVacancy()
+    },
+    methods: {
+      async loadDocuments (force = false) {
+        if (!this.unitDocumentId) {
           this.documents = { quotes: [], inspections: [], invoices: [] }
-          this.unitDocumentId = this.vacancy?.unitId || ''
-          if (!this.unitDocumentId) {
-            await this.resolveUnitForDocuments(this.vacancy)
-          }
-        } else {
-          this.error = 'Vacancy not found'
-        }
-      } catch (e) { this.error = 'Failed to load vacancy' } finally { this.loading = false }
-    },
-    toDateValue(val) {
-      if (!val) return null
-      try {
-        if (typeof val?.toDate === 'function') return val.toDate()
-        const date = new Date(val)
-        return Number.isNaN(date.getTime()) ? null : date
-      } catch {
-        return null
-      }
-    },
-    toNumber(val, fallback = 0) {
-      if (val === null || val === undefined || val === '') return fallback
-      const num = typeof val === 'number' ? val : Number(val)
-      return Number.isFinite(num) ? num : fallback
-    },
-    formatDate(val, fallback = 'N/A') {
-      const date = this.toDateValue(val)
-      if (date) return date.toISOString().slice(0, 10)
-      if (typeof val === 'string' && val) return val
-      return fallback
-    },
-    formatCurrency(val) {
-      const amount = this.toNumber(val, 0)
-      return `R${amount.toLocaleString()}`
-    },
-    formatPaidOut(val) {
-      if (val === true || val === 'Yes' || val === 'yes') return 'Yes'
-      if (val === false || val === 'No' || val === 'no') return 'No'
-      return String(val || 'Not specified')
-    },
-    normalizeVacancyData(data, id) {
-      const base = {
-        id,
-        ...data,
-        unitName: data?.unitName || 'Not specified',
-        dateVacated: this.toDateValue(data?.dateVacated) || data?.dateVacated || null,
-        leaseStartDate: this.toDateValue(data?.leaseStartDate) || data?.leaseStartDate || null,
-        leaseEndDate: this.toDateValue(data?.leaseEndDate) || data?.leaseEndDate || null,
-        createdAt: this.toDateValue(data?.createdAt) || data?.createdAt || null,
-        updatedAt: this.toDateValue(data?.updatedAt) || data?.updatedAt || null,
-        paidTowardsFund: this.toNumber(data?.paidTowardsFund, 0),
-        paidOut: data?.paidOut ?? '',
-        propertyType: data?.propertyType || 'residential',
-        monthsMissed: this.toNumber(data?.monthsMissed, 0),
-        maintenanceAmount: this.toNumber(data?.maintenanceAmount, 0),
-        paidOutAmount: this.toNumber(data?.paidOutAmount, 0),
-      }
-      return base
-    },
-    async resolveUnitForDocuments(vacancy) {
-      try {
-        if (!vacancy) return
-        const candidates = [
-          vacancy.unitName,
-          vacancy.propertyName,
-          vacancy.unitNumber,
-        ]
-          .map((value) =>
-            typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : ''
-          )
-          .filter(Boolean)
-        if (!candidates.length) {
-          this.unitDocumentId = ''
+          this.documentsLoaded = false
           return
         }
-        const { collection, query, where, getDocs } = await import(
-          'firebase/firestore'
-        )
-        for (const candidate of candidates) {
-          const q = query(collection(db, 'units'), where('unitName', '==', candidate))
-          const snap = await getDocs(q)
-          if (!snap.empty) {
-            this.unitDocumentId = snap.docs[0].id
-            this.loadDocuments(true)
-            return
+        if (this.documentsLoading) return
+        if (this.documentsLoaded && !force) return
+        this.documentsLoading = true
+        this.documentsError = null
+        try {
+          const snap = await getDoc(doc(db, 'units', this.unitDocumentId))
+          if (snap.exists()) {
+            const data = snap.data() || {}
+            this.documents = {
+              quotes: Array.isArray(data.quotes) ? data.quotes : [],
+              inspections: Array.isArray(data.inspections)
+                ? data.inspections
+                : [],
+              invoices: Array.isArray(data.invoices) ? data.invoices : [],
+            }
+            this.documentsLoaded = true
+          } else {
+            this.documents = { quotes: [], inspections: [], invoices: [] }
+            this.documentsLoaded = true
+            this.documentsError = 'No documents found for this unit.'
           }
-          const alt = query(
-            collection(db, 'units'),
-            where('propertyName', '==', candidate)
-          )
-          const altSnap = await getDocs(alt)
-          if (!altSnap.empty) {
-            this.unitDocumentId = altSnap.docs[0].id
-            this.loadDocuments(true)
-            return
-          }
+        } catch (error) {
+          console.error('Failed to load supporting documents', error)
+          this.documentsError = 'Failed to load supporting documents.'
+        } finally {
+          this.documentsLoading = false
         }
-        this.unitDocumentId = ''
-        this.documentsLoaded = false
-        this.documents = { quotes: [], inspections: [], invoices: [] }
-      } catch (error) {
-        console.warn('Failed to resolve vacancy documents', error)
-        this.unitDocumentId = ''
-        this.documentsLoaded = false
-        this.documents = { quotes: [], inspections: [], invoices: [] }
-      }
+      },
+      resolveDocumentDate (entry) {
+        if (!entry) return null
+        const raw
+          = entry.uploadedAt || entry.createdAt || entry.date || entry.timestamp
+        if (!raw) return null
+        try {
+          if (typeof raw.toDate === 'function') return raw.toDate()
+          return new Date(raw)
+        } catch {
+          return null
+        }
+      },
+      monthKey (date) {
+        if (!date || Number.isNaN(date.getTime())) return ''
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+          2,
+          '0',
+        )}`
+      },
+      filterDocumentsList (list) {
+        if (!Array.isArray(list) || list.length === 0) return []
+        const hasFilter = this.docFilterSearch || this.docFilterMonth
+        if (hasFilter) {
+          const term = (this.docFilterSearch || '').toLowerCase()
+          const month = this.docFilterMonth || ''
+          return list.filter(item => {
+            const name = String(item?.fileName || item?.name || '').toLowerCase()
+            const date = this.resolveDocumentDate(item)
+            const matchesTerm = term ? name.includes(term) : true
+            const matchesMonth = month ? this.monthKey(date) === month : true
+            return matchesTerm && matchesMonth
+          })
+        }
+        const sorted = [...list].sort((a, b) => {
+          const dateA = this.resolveDocumentDate(a)
+          const dateB = this.resolveDocumentDate(b)
+          if (!dateA && !dateB) return 0
+          if (!dateA) return 1
+          if (!dateB) return -1
+          return dateB.getTime() - dateA.getTime()
+        })
+        return sorted.slice(0, 3)
+      },
+      formatDocumentDate (entry) {
+        const date = this.resolveDocumentDate(entry)
+        if (!date) return ''
+        return date.toISOString().slice(0, 10)
+      },
+      openDocument (entry) {
+        const url = entry?.fileURL || entry?.url
+        if (!url) return
+        window.open(url, '_blank')
+      },
+      goBack () {
+        try {
+          const appStore = useAppStore()
+          const user = appStore.currentUser
+          const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+          if (isAgency) {
+            this.$router.push('/onboard-units')
+            return
+          }
+        } catch {}
+        const from = this.$route?.query?.from
+        if (from === 'onboard') {
+          this.$router.push('/onboard-units')
+        } else {
+          this.$router.push('/vacancies')
+        }
+      },
+      async loadVacancy () {
+        this.loading = true; this.error = null
+        try {
+          const ref = doc(db, 'vacancies', this.$route.params.id)
+          const snap = await getDoc(ref)
+          if (snap.exists()) {
+            const data = snap.data()
+            this.vacancy = this.normalizeVacancyData(data, snap.id)
+            this.documentsLoaded = false
+            this.documents = { quotes: [], inspections: [], invoices: [] }
+            this.unitDocumentId = this.vacancy?.unitId || ''
+            if (!this.unitDocumentId) {
+              await this.resolveUnitForDocuments(this.vacancy)
+            }
+          } else {
+            this.error = 'Vacancy not found'
+          }
+        } catch {
+          this.error = 'Failed to load vacancy'
+        } finally {
+          this.loading = false
+        }
+      },
+      toDateValue (val) {
+        if (!val) return null
+        try {
+          if (typeof val?.toDate === 'function') return val.toDate()
+          const date = new Date(val)
+          return Number.isNaN(date.getTime()) ? null : date
+        } catch {
+          return null
+        }
+      },
+      toNumber (val, fallback = 0) {
+        if (val === null || val === undefined || val === '') return fallback
+        const num = typeof val === 'number' ? val : Number(val)
+        return Number.isFinite(num) ? num : fallback
+      },
+      formatDate (val, fallback = 'N/A') {
+        const date = this.toDateValue(val)
+        if (date) return date.toISOString().slice(0, 10)
+        if (typeof val === 'string' && val) return val
+        return fallback
+      },
+      formatCurrency (val) {
+        const amount = this.toNumber(val, 0)
+        return `R${amount.toLocaleString()}`
+      },
+      formatPaidOut (val) {
+        if (val === true || val === 'Yes' || val === 'yes') return 'Yes'
+        if (val === false || val === 'No' || val === 'no') return 'No'
+        return String(val || 'Not specified')
+      },
+      normalizeVacancyData (data, id) {
+        const base = {
+          id,
+          ...data,
+          unitName: data?.unitName || 'Not specified',
+          dateVacated: this.toDateValue(data?.dateVacated) || data?.dateVacated || null,
+          leaseStartDate: this.toDateValue(data?.leaseStartDate) || data?.leaseStartDate || null,
+          leaseEndDate: this.toDateValue(data?.leaseEndDate) || data?.leaseEndDate || null,
+          createdAt: this.toDateValue(data?.createdAt) || data?.createdAt || null,
+          updatedAt: this.toDateValue(data?.updatedAt) || data?.updatedAt || null,
+          paidTowardsFund: this.toNumber(data?.paidTowardsFund, 0),
+          paidOut: data?.paidOut ?? '',
+          propertyType: data?.propertyType || 'residential',
+          monthsMissed: this.toNumber(data?.monthsMissed, 0),
+          maintenanceAmount: this.toNumber(data?.maintenanceAmount, 0),
+          paidOutAmount: this.toNumber(data?.paidOutAmount, 0),
+        }
+        return base
+      },
+      async resolveUnitForDocuments (vacancy) {
+        try {
+          if (!vacancy) return
+          const candidates = [
+            vacancy.unitName,
+            vacancy.propertyName,
+            vacancy.unitNumber,
+          ]
+            .map(value =>
+              typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '',
+            )
+            .filter(Boolean)
+          if (candidates.length === 0) {
+            this.unitDocumentId = ''
+            return
+          }
+          const { collection, query, where, getDocs } = await import(
+            'firebase/firestore',
+          )
+          for (const candidate of candidates) {
+            const q = query(collection(db, 'units'), where('unitName', '==', candidate))
+            const snap = await getDocs(q)
+            if (!snap.empty) {
+              this.unitDocumentId = snap.docs[0].id
+              this.loadDocuments(true)
+              return
+            }
+            const alt = query(
+              collection(db, 'units'),
+              where('propertyName', '==', candidate),
+            )
+            const altSnap = await getDocs(alt)
+            if (!altSnap.empty) {
+              this.unitDocumentId = altSnap.docs[0].id
+              this.loadDocuments(true)
+              return
+            }
+          }
+          this.unitDocumentId = ''
+          this.documentsLoaded = false
+          this.documents = { quotes: [], inspections: [], invoices: [] }
+        } catch (error) {
+          console.warn('Failed to resolve vacancy documents', error)
+          this.unitDocumentId = ''
+          this.documentsLoaded = false
+          this.documents = { quotes: [], inspections: [], invoices: [] }
+        }
+      },
     },
-  },
-  mounted() {
-    try {
-      const initialTab = this.$route?.query?.tab;
-      if (initialTab === 'documents' || initialTab === 'details') {
-        this.activeTab = initialTab;
-      }
-    } catch {}
-    this.loadVacancy();
   }
-}
 </script>
 
 <style scoped>

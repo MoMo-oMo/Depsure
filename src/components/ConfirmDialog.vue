@@ -8,7 +8,7 @@
       <div
         class="notification-dialog-bg"
         :style="{ backgroundColor: accentColor }"
-      ></div>
+      />
       <div class="notification-dialog-inner">
         <button class="notification-close" @click="onCancel">&times;</button>
 
@@ -50,23 +50,23 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue'
+  import { computed, defineEmits, defineProps } from 'vue'
 
-const props = defineProps({
-  show: { type: Boolean, default: false },
-  title: { type: String, default: 'Are you sure?' },
-  message: { type: String, default: 'Do you really want to delete this item?' },
-  confirmText: { type: String, default: 'Delete' },
-  cancelText: { type: String, default: 'Cancel' },
-  color: { type: String, default: '#dc3545' }
-})
+  const props = defineProps({
+    show: { type: Boolean, default: false },
+    title: { type: String, default: 'Are you sure?' },
+    message: { type: String, default: 'Do you really want to delete this item?' },
+    confirmText: { type: String, default: 'Delete' },
+    cancelText: { type: String, default: 'Cancel' },
+    color: { type: String, default: '#dc3545' },
+  })
 
-const emit = defineEmits(['confirm', 'cancel'])
+  const emit = defineEmits(['confirm', 'cancel'])
 
-const accentColor = computed(() => props.color)
+  const accentColor = computed(() => props.color)
 
-const onConfirm = () => emit('confirm')
-const onCancel = () => emit('cancel')
+  const onConfirm = () => emit('confirm')
+  const onCancel = () => emit('cancel')
 </script>
 
 <style scoped>
@@ -210,5 +210,3 @@ const onCancel = () => emit('cancel')
   .notification-message { font-size: 1em; }
 }
 </style>
-
-

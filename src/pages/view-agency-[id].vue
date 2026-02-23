@@ -5,11 +5,11 @@
       <v-row class="mb-4">
         <v-col cols="12" md="3">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="primary"
             @click="$router.push('/agencies')"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -23,25 +23,25 @@
           <v-col cols="12">
             <v-card class="agency-info-card-black skeleton-card">
               <v-row align="stretch" class="no-gutters">
-                <v-col cols="12" md="3" class="pa-0 ma-0">
+                <v-col class="pa-0 ma-0" cols="12" md="3">
                   <v-skeleton-loader
-                    type="image"
-                    height="100%"
                     class="agency-logo-black"
+                    height="100%"
+                    type="image"
                   />
                 </v-col>
-                <v-col cols="12" md="9" class="pa-4">
-                  <v-skeleton-loader type="heading" class="mb-4" />
+                <v-col class="pa-4" cols="12" md="9">
+                  <v-skeleton-loader class="mb-4" type="heading" />
                   <div class="agency-details-black">
                     <v-skeleton-loader
                       v-for="i in 4"
                       :key="i"
-                      type="list-item-two-line"
                       class="mb-2"
+                      type="list-item-two-line"
                     />
                   </div>
                   <v-divider class="my-4 bg-white" />
-                  <v-skeleton-loader type="paragraph" class="mt-4" />
+                  <v-skeleton-loader class="mt-4" type="paragraph" />
                 </v-col>
               </v-row>
             </v-card>
@@ -50,14 +50,14 @@
 
         <!-- Skeleton for Properties Table -->
         <v-row>
-          <v-col cols="12" class="pa-4">
+          <v-col class="pa-4" cols="12">
             <v-card class="table-card">
-              <v-skeleton-loader type="table-heading" class="mb-4" />
+              <v-skeleton-loader class="mb-4" type="table-heading" />
               <v-skeleton-loader
                 v-for="i in 5"
                 :key="i"
-                type="table-row"
                 class="mb-2"
+                type="table-row"
               />
             </v-card>
           </v-col>
@@ -72,13 +72,13 @@
             :class="{ 'card-loaded': animationReady }"
           >
             <!-- Black background base -->
-            <div class="agency-unified-bg"></div>
+            <div class="agency-unified-bg" />
             <!-- Logo rendered in the right column to avoid overlap -->
             <!-- Content overlay -->
             <div class="agency-content-overlay">
               <v-row class="no-gutters">
                 <!-- Left content area -->
-                <v-col cols="12" md="7" class="agency-content-left">
+                <v-col class="agency-content-left" cols="12" md="7">
                   <div
                     ref="contentWrapper"
                     class="agency-content-wrapper"
@@ -87,8 +87,7 @@
                     <v-card-title
                       class="agency-title text-white text-h3 mb-4"
                       :class="{ 'title-animated': animationReady }"
-                      >{{ agency.agencyName }}</v-card-title
-                    >
+                    >{{ agency.agencyName }}</v-card-title>
                     <v-card-text class="text-white">
                       <div class="agency-details-black">
                         <div
@@ -97,8 +96,8 @@
                           style="animation-delay: 0.2s"
                         >
                           <v-icon
-                            icon="mdi-map-marker"
                             class="mr-3 text-white"
+                            icon="mdi-map-marker"
                             size="20"
                           />
                           <span class="detail-text">{{
@@ -111,13 +110,11 @@
                           style="animation-delay: 0.4s"
                         >
                           <v-icon
-                            icon="mdi-card-account-details"
                             class="mr-3 text-white"
+                            icon="mdi-card-account-details"
                             size="20"
                           />
-                          <span class="detail-text"
-                            >Reg No: {{ agency.regNo || "—" }}</span
-                          >
+                          <span class="detail-text">Reg No: {{ agency.regNo || "—" }}</span>
                         </div>
                         <div
                           class="detail-item-black"
@@ -125,14 +122,12 @@
                           style="animation-delay: 0.6s"
                         >
                           <v-icon
-                            icon="mdi-account"
                             class="mr-3 text-white"
+                            icon="mdi-account"
                             size="20"
                           />
-                          <span class="detail-text"
-                            >Primary Contact:
-                            {{ agency.primaryContactName || "N/A" }}</span
-                          >
+                          <span class="detail-text">Primary Contact:
+                            {{ agency.primaryContactName || "N/A" }}</span>
                         </div>
                         <div
                           class="detail-item-black"
@@ -140,8 +135,8 @@
                           style="animation-delay: 0.8s"
                         >
                           <v-icon
-                            icon="mdi-phone"
                             class="mr-3 text-white"
+                            icon="mdi-phone"
                             size="20"
                           />
                           <span class="detail-text">{{
@@ -154,8 +149,8 @@
                           style="animation-delay: 1s"
                         >
                           <v-icon
-                            icon="mdi-email"
                             class="mr-3 text-white"
+                            icon="mdi-email"
                             size="20"
                           />
                           <span class="detail-text">{{
@@ -176,12 +171,12 @@
                   </div>
                 </v-col>
                 <!-- Right side - Logo area -->
-                <v-col cols="12" md="5" class="agency-logo-section">
+                <v-col class="agency-logo-section" cols="12" md="5">
                   <div
                     ref="logoEl"
                     class="agency-logo-square"
                     :style="agencyLogoStyle"
-                  ></div>
+                  />
                 </v-col>
               </v-row>
             </div>
@@ -197,375 +192,375 @@
 </template>
 
 <script>
-import { db } from "@/firebaseConfig";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
-import { useAppStore } from "@/stores/app";
+  import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+  } from 'firebase/firestore'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: "ViewAgencyPage",
-  setup() {
-    const { showConfirmDialog } = useCustomDialogs();
-    return { showConfirmDialog };
-  },
-  data() {
-    return {
-      agency: {},
-      loading: false,
-      animationReady: false,
-      contentRightReservePx: 0,
-      contentMaxWidthPx: 0,
-    };
-  },
-  computed: {
-    agencyCardBgStyle() {
-      const profileImageUrl =
-        this.agency?.profileImageUrl || this.agency?.profileImage;
-      if (profileImageUrl) {
+  export default {
+    name: 'ViewAgencyPage',
+    setup () {
+      const { showConfirmDialog } = useCustomDialogs()
+      return { showConfirmDialog }
+    },
+    data () {
+      return {
+        agency: {},
+        loading: false,
+        animationReady: false,
+        contentRightReservePx: 0,
+        contentMaxWidthPx: 0,
+      }
+    },
+    computed: {
+      agencyCardBgStyle () {
+        const profileImageUrl
+          = this.agency?.profileImageUrl || this.agency?.profileImage
+        if (profileImageUrl) {
+          return {
+            backgroundImage: `url(${profileImageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }
+        }
+        // Fallback to a default background if no profile image
         return {
-          backgroundImage: `url(${profileImageUrl})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        };
-      }
-      // Fallback to a default background if no profile image
-      return {
-        backgroundImage:
-          "url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      };
+          backgroundImage:
+            'url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }
+      },
+
+      agencyLogoStyle () {
+        const urlCandidate
+          = this.agency?.profileImageUrl
+            || this.agency?.profileImage
+            || this.agency?.logoUrl
+            || this.agency?.logo
+            || this.agency?.agencyLogo
+            || this.agency?.imageUrl
+
+        const logoUrl
+          = urlCandidate
+            && typeof urlCandidate === 'string'
+            && urlCandidate.trim().length > 0
+            ? urlCandidate
+            : null
+
+        const backgroundImage = logoUrl
+          ? `url(${logoUrl})`
+          : 'url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)'
+
+        return {
+          backgroundImage,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }
+      },
+
+      contentWrapperInlineStyle () {
+        const style = {}
+        if (this.contentRightReservePx > 0) {
+          style.paddingRight = `${this.contentRightReservePx}px`
+        }
+        if (this.contentMaxWidthPx > 0) {
+          style.maxWidth = `${this.contentMaxWidthPx}px`
+        }
+        return style
+      },
     },
+    async mounted () {
+      // Set the page title for the app bar
+      document.title = 'Agency Details - Depsure'
 
-    agencyLogoStyle() {
-      const urlCandidate =
-        this.agency?.profileImageUrl ||
-        this.agency?.profileImage ||
-        this.agency?.logoUrl ||
-        this.agency?.logo ||
-        this.agency?.agencyLogo ||
-        this.agency?.imageUrl;
-
-      const logoUrl =
-        urlCandidate &&
-        typeof urlCandidate === "string" &&
-        urlCandidate.trim().length
-          ? urlCandidate
-          : null;
-
-      const backgroundImage = logoUrl
-        ? `url(${logoUrl})`
-        : "url(https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg)";
-
-      return {
-        backgroundImage,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      };
-    },
-
-    contentWrapperInlineStyle() {
-      const style = {};
-      if (this.contentRightReservePx > 0) {
-        style.paddingRight = `${this.contentRightReservePx}px`;
-      }
-      if (this.contentMaxWidthPx > 0) {
-        style.maxWidth = `${this.contentMaxWidthPx}px`;
-      }
-      return style;
-    },
-  },
-  methods: {
-    getOptimalBackgroundSize() {
-      // This function determines the best background size for the logo
-      // based on common logo aspect ratios and container dimensions
-      const profileImageUrl =
-        this.agency?.profileImageUrl || this.agency?.profileImage;
-
-      if (!profileImageUrl) return "contain";
-
-      // For logos, we typically want to:
-      // 1. Use 'contain' for square logos to show the full logo
-      // 2. Use 'cover' for wide logos to fill the space
-      // 3. Use 'contain' for tall logos to prevent cropping
-
-      // Since we can't easily detect image dimensions without loading the image,
-      // we'll use a smart approach based on common logo patterns
-
-      // Check if the URL suggests it's a logo (common logo file patterns)
-      const logoPatterns = [
-        "logo",
-        "brand",
-        "icon",
-        "symbol",
-        "mark",
-        "emblem",
-      ];
-
-      const isLikelyLogo = logoPatterns.some((pattern) =>
-        profileImageUrl.toLowerCase().includes(pattern)
-      );
-
-      if (isLikelyLogo) {
-        // For likely logos, use contain to show the full logo
-        return "contain";
+      // Get agency ID from route params
+      const agencyId = this.$route.params.id
+      if (agencyId) {
+        console.log('Loading agency with ID:', agencyId)
+        await this.fetchAgencyData(agencyId)
+      } else {
+        console.error('No agency ID provided in route')
       }
 
-      // For other images, use cover to fill the space nicely
-      return "cover";
-    },
+      // Recompute on resize
+      this._depsureResizeHandler = () => this.updateContentSpacing()
+      window.addEventListener('resize', this._depsureResizeHandler, {
+        passive: true,
+      })
 
-    updateContentSpacing() {
-      try {
-        const logoEl = this.$refs.logoEl;
-        const wrapperEl = this.$refs.contentWrapper;
-        const cardEl =
-          wrapperEl && wrapperEl.closest
-            ? wrapperEl.closest(".agency-info-card-black")
-            : null;
-        if (!logoEl || !wrapperEl || !cardEl) {
-          this.contentRightReservePx = 0;
-          this.contentMaxWidthPx = 0;
-          return;
+      // Observe size changes for dynamic updates
+      if (typeof ResizeObserver !== 'undefined') {
+        this._depsureResizeObserver = new ResizeObserver(() =>
+          this.updateContentSpacing(),
+        )
+        if (this.$refs.logoEl)
+          this._depsureResizeObserver.observe(this.$refs.logoEl)
+        if (this.$refs.contentWrapper)
+          this._depsureResizeObserver.observe(this.$refs.contentWrapper)
+        const cardEl = this.$el?.querySelector?.('.agency-info-card-black')
+        if (cardEl) this._depsureResizeObserver.observe(cardEl)
+      }
+    },
+    beforeUnmount () {
+      if (this._depsureResizeHandler) {
+        window.removeEventListener('resize', this._depsureResizeHandler)
+      }
+      if (this._depsureResizeObserver) {
+        try {
+          this._depsureResizeObserver.disconnect()
+        } catch {}
+      }
+    },
+    methods: {
+      getOptimalBackgroundSize () {
+        // This function determines the best background size for the logo
+        // based on common logo aspect ratios and container dimensions
+        const profileImageUrl
+          = this.agency?.profileImageUrl || this.agency?.profileImage
+
+        if (!profileImageUrl) return 'contain'
+
+        // For logos, we typically want to:
+        // 1. Use 'contain' for square logos to show the full logo
+        // 2. Use 'cover' for wide logos to fill the space
+        // 3. Use 'contain' for tall logos to prevent cropping
+
+        // Since we can't easily detect image dimensions without loading the image,
+        // we'll use a smart approach based on common logo patterns
+
+        // Check if the URL suggests it's a logo (common logo file patterns)
+        const logoPatterns = [
+          'logo',
+          'brand',
+          'icon',
+          'symbol',
+          'mark',
+          'emblem',
+        ]
+
+        const isLikelyLogo = logoPatterns.some(pattern =>
+          profileImageUrl.toLowerCase().includes(pattern),
+        )
+
+        if (isLikelyLogo) {
+          // For likely logos, use contain to show the full logo
+          return 'contain'
         }
 
-        const cardRect = cardEl.getBoundingClientRect();
-        const logoRect = logoEl.getBoundingClientRect();
-        const wrapperRect = wrapperEl.getBoundingClientRect();
+        // For other images, use cover to fill the space nicely
+        return 'cover'
+      },
 
-        // Compute overlap-based reserve (legacy safeguard)
-        const horizontalOverlap = wrapperRect.right - logoRect.left;
-        if (horizontalOverlap > 0) {
-          const reserve = Math.min(
-            horizontalOverlap + 16,
-            cardRect.width * 0.6
-          );
-          this.contentRightReservePx = Math.max(0, Math.round(reserve));
-        } else {
-          this.contentRightReservePx = 0;
-        }
-
-        // Compute an early wrap max-width so text breaks before reaching the logo column
-        const available = Math.max(
-          0,
-          Math.floor(logoRect.left - wrapperRect.left - 24)
-        );
-        this.contentMaxWidthPx = available > 0 ? available : 0;
-      } catch (_) {
-        this.contentRightReservePx = 0;
-        this.contentMaxWidthPx = 0;
-      }
-    },
-
-    openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector("input");
-      if (el) {
-        if (typeof el.showPicker === "function") el.showPicker();
-        else el.focus();
-      }
-    },
-    getCurrentMonth() {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      return `${year}-${month}`;
-    },
-    filterProperties() {
-      const queryStr = (this.searchQuery || "").toString().toLowerCase();
-      const properties = Array.isArray(this.properties) ? this.properties : [];
-      this.filteredProperties = properties.filter((property) => {
-        // Text search filter (safe access)
-        const getLc = (v) => (v == null ? "" : String(v)).toLowerCase();
-        const textMatch =
-          getLc(property.tenantRef).includes(queryStr) ||
-          getLc(property.propertyName).includes(queryStr) ||
-          getLc(property.newOccupation).includes(queryStr) ||
-          getLc(property.contractorRequested).includes(queryStr) ||
-          getLc(property.paidOut).includes(queryStr);
-
-        // Month filter - now filtering by createdAt date
-        if (this.monthFilter) {
-          // Handle Firestore Timestamp objects
-          let propertyDate;
-          if (property.createdAt && property.createdAt.toDate) {
-            // Firestore Timestamp object
-            propertyDate = property.createdAt.toDate();
-          } else if (property.createdAt) {
-            // Regular Date object or date string
-            propertyDate = new Date(property.createdAt);
-          } else {
-            // No createdAt date, skip this property
-            return textMatch;
+      updateContentSpacing () {
+        try {
+          const logoEl = this.$refs.logoEl
+          const wrapperEl = this.$refs.contentWrapper
+          const cardEl
+            = wrapperEl && wrapperEl.closest
+              ? wrapperEl.closest('.agency-info-card-black')
+              : null
+          if (!logoEl || !wrapperEl || !cardEl) {
+            this.contentRightReservePx = 0
+            this.contentMaxWidthPx = 0
+            return
           }
 
-          const filterDate = new Date(this.monthFilter + "-01");
-          const propertyMonth = `${propertyDate.getFullYear()}-${String(
-            propertyDate.getMonth() + 1
-          ).padStart(2, "0")}`;
-          const filterMonth = `${filterDate.getFullYear()}-${String(
-            filterDate.getMonth() + 1
-          ).padStart(2, "0")}`;
+          const cardRect = cardEl.getBoundingClientRect()
+          const logoRect = logoEl.getBoundingClientRect()
+          const wrapperRect = wrapperEl.getBoundingClientRect()
 
-          return textMatch && propertyMonth === filterMonth;
+          // Compute overlap-based reserve (legacy safeguard)
+          const horizontalOverlap = wrapperRect.right - logoRect.left
+          if (horizontalOverlap > 0) {
+            const reserve = Math.min(
+              horizontalOverlap + 16,
+              cardRect.width * 0.6,
+            )
+            this.contentRightReservePx = Math.max(0, Math.round(reserve))
+          } else {
+            this.contentRightReservePx = 0
+          }
+
+          // Compute an early wrap max-width so text breaks before reaching the logo column
+          const available = Math.max(
+            0,
+            Math.floor(logoRect.left - wrapperRect.left - 24),
+          )
+          this.contentMaxWidthPx = Math.max(available, 0)
+        } catch {
+          this.contentRightReservePx = 0
+          this.contentMaxWidthPx = 0
         }
+      },
 
-        return textMatch;
-      });
-    },
-    viewProperty(property) {
-      console.log("Viewing property:", property);
-      // Navigate to property details page
-      this.$router.push(`/view-property-${property.id}`);
-    },
-    editProperty(property) {
-      console.log("Editing property:", property);
-      // Navigate to edit property page
-      this.$router.push(`/edit-property-${property.id}`);
-    },
-    async deleteProperty(property) {
-      console.log("Deleting property:", property);
-      try {
-        await this.showConfirmDialog({
-          title: "Delete property?",
-          message: `Are you sure you want to delete property ${property.tenantRef}?`,
-          confirmText: "Delete",
-          cancelText: "Cancel",
-          color: "#dc3545",
-        });
-      } catch (_) {
-        return;
-      }
-      const index = this.properties.findIndex((p) => p.id === property.id);
-      if (index > -1) {
-        this.properties.splice(index, 1);
-        this.filterProperties(); // Refresh filtered list
-      }
-    },
-    addUnit() {
-      console.log("Adding new unit");
-      // Navigate to add unit page with agency ID
-      this.$router.push(`/add-unit?agencyId=${this.agency.id}`);
-    },
-
-    async fetchProperties(agencyId) {
-      this.propertiesLoading = true;
-      try {
-        // Query units collection for properties belonging to this agency
-        const unitsQuery = query(
-          collection(db, "units"),
-          where("agencyId", "==", agencyId)
-        );
-
-        const querySnapshot = await getDocs(unitsQuery);
-        this.properties = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        // Apply initial filtering
-        this.filterProperties();
-        console.log("Properties fetched for agency:", this.properties);
-      } catch (error) {
-        console.error("Error fetching properties:", error);
-      } finally {
-        this.propertiesLoading = false;
-      }
-    },
-
-    async fetchAgencyData(agencyId) {
-      this.loading = true;
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
-
-        // Check if user has permission to view this agency
-        if (userType === "Agency" && currentUser.uid !== agencyId) {
-          console.error("Agency user can only view their own agency");
-          this.$router.push("/active-units");
-          return;
+      openMonthPicker () {
+        const el = this.$refs.monthInput?.$el?.querySelector('input')
+        if (el) {
+          if (typeof el.showPicker === 'function') el.showPicker()
+          else el.focus()
         }
+      },
+      getCurrentMonth () {
+        const now = new Date()
+        const year = now.getFullYear()
+        const month = String(now.getMonth() + 1).padStart(2, '0')
+        return `${year}-${month}`
+      },
+      filterProperties () {
+        const queryStr = (this.searchQuery || '').toString().toLowerCase()
+        const properties = Array.isArray(this.properties) ? this.properties : []
+        this.filteredProperties = properties.filter(property => {
+          // Text search filter (safe access)
+          const getLc = v => (v == null ? '' : String(v)).toLowerCase()
+          const textMatch
+            = getLc(property.tenantRef).includes(queryStr)
+              || getLc(property.propertyName).includes(queryStr)
+              || getLc(property.newOccupation).includes(queryStr)
+              || getLc(property.contractorRequested).includes(queryStr)
+              || getLc(property.paidOut).includes(queryStr)
 
-        const agencyDoc = await getDoc(doc(db, "users", agencyId));
+          // Month filter - now filtering by createdAt date
+          if (this.monthFilter) {
+            // Handle Firestore Timestamp objects
+            let propertyDate
+            if (property.createdAt && property.createdAt.toDate) {
+              // Firestore Timestamp object
+              propertyDate = property.createdAt.toDate()
+            } else if (property.createdAt) {
+              // Regular Date object or date string
+              propertyDate = new Date(property.createdAt)
+            } else {
+              // No createdAt date, skip this property
+              return textMatch
+            }
 
-        if (agencyDoc.exists()) {
-          const agencyData = agencyDoc.data();
-          this.agency = {
-            id: agencyDoc.id,
-            ...agencyData,
-          };
-          console.log("Agency data loaded:", this.agency);
+            const filterDate = new Date(this.monthFilter + '-01')
+            const propertyMonth = `${propertyDate.getFullYear()}-${String(
+              propertyDate.getMonth() + 1,
+            ).padStart(2, '0')}`
+            const filterMonth = `${filterDate.getFullYear()}-${String(
+              filterDate.getMonth() + 1,
+            ).padStart(2, '0')}`
 
-          // Fetch properties for this agency
-          await this.fetchProperties(agencyId);
-        } else {
-          console.error("Agency not found");
+            return textMatch && propertyMonth === filterMonth
+          }
+
+          return textMatch
+        })
+      },
+      viewProperty (property) {
+        console.log('Viewing property:', property)
+        // Navigate to property details page
+        this.$router.push(`/view-property-${property.id}`)
+      },
+      editProperty (property) {
+        console.log('Editing property:', property)
+        // Navigate to edit property page
+        this.$router.push(`/edit-property-${property.id}`)
+      },
+      async deleteProperty (property) {
+        console.log('Deleting property:', property)
+        try {
+          await this.showConfirmDialog({
+            title: 'Delete property?',
+            message: `Are you sure you want to delete property ${property.tenantRef}?`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            color: '#dc3545',
+          })
+        } catch {
+          return
+        }
+        const index = this.properties.findIndex(p => p.id === property.id)
+        if (index !== -1) {
+          this.properties.splice(index, 1)
+          this.filterProperties() // Refresh filtered list
+        }
+      },
+      addUnit () {
+        console.log('Adding new unit')
+        // Navigate to add unit page with agency ID
+        this.$router.push(`/add-unit?agencyId=${this.agency.id}`)
+      },
+
+      async fetchProperties (agencyId) {
+        this.propertiesLoading = true
+        try {
+          // Query units collection for properties belonging to this agency
+          const unitsQuery = query(
+            collection(db, 'units'),
+            where('agencyId', '==', agencyId),
+          )
+
+          const querySnapshot = await getDocs(unitsQuery)
+          this.properties = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          // Apply initial filtering
+          this.filterProperties()
+          console.log('Properties fetched for agency:', this.properties)
+        } catch (error) {
+          console.error('Error fetching properties:', error)
+        } finally {
+          this.propertiesLoading = false
+        }
+      },
+
+      async fetchAgencyData (agencyId) {
+        this.loading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
+
+          // Check if user has permission to view this agency
+          if (userType === 'Agency' && currentUser.uid !== agencyId) {
+            console.error('Agency user can only view their own agency')
+            this.$router.push('/active-units')
+            return
+          }
+
+          const agencyDoc = await getDoc(doc(db, 'users', agencyId))
+
+          if (agencyDoc.exists()) {
+            const agencyData = agencyDoc.data()
+            this.agency = {
+              id: agencyDoc.id,
+              ...agencyData,
+            }
+            console.log('Agency data loaded:', this.agency)
+
+            // Fetch properties for this agency
+            await this.fetchProperties(agencyId)
+          } else {
+            console.error('Agency not found')
           // Handle agency not found - could redirect to 404 or show error
+          }
+        } catch (error) {
+          console.error('Error fetching agency data:', error)
+        } finally {
+          this.loading = false
+          // Trigger animation after a short delay to ensure DOM is ready
+          setTimeout(() => {
+            this.animationReady = true
+            this.$nextTick(() => this.updateContentSpacing())
+          }, 200)
         }
-      } catch (error) {
-        console.error("Error fetching agency data:", error);
-      } finally {
-        this.loading = false;
-        // Trigger animation after a short delay to ensure DOM is ready
-        setTimeout(() => {
-          this.animationReady = true;
-          this.$nextTick(() => this.updateContentSpacing());
-        }, 200);
-      }
+      },
     },
-  },
-  async mounted() {
-    // Set the page title for the app bar
-    document.title = "Agency Details - Depsure";
-
-    // Get agency ID from route params
-    const agencyId = this.$route.params.id;
-    if (agencyId) {
-      console.log("Loading agency with ID:", agencyId);
-      await this.fetchAgencyData(agencyId);
-    } else {
-      console.error("No agency ID provided in route");
-    }
-
-    // Recompute on resize
-    this._depsureResizeHandler = () => this.updateContentSpacing();
-    window.addEventListener("resize", this._depsureResizeHandler, {
-      passive: true,
-    });
-
-    // Observe size changes for dynamic updates
-    if (typeof ResizeObserver !== "undefined") {
-      this._depsureResizeObserver = new ResizeObserver(() =>
-        this.updateContentSpacing()
-      );
-      if (this.$refs.logoEl)
-        this._depsureResizeObserver.observe(this.$refs.logoEl);
-      if (this.$refs.contentWrapper)
-        this._depsureResizeObserver.observe(this.$refs.contentWrapper);
-      const cardEl = this.$el?.querySelector?.(".agency-info-card-black");
-      if (cardEl) this._depsureResizeObserver.observe(cardEl);
-    }
-  },
-  beforeUnmount() {
-    if (this._depsureResizeHandler) {
-      window.removeEventListener("resize", this._depsureResizeHandler);
-    }
-    if (this._depsureResizeObserver) {
-      try {
-        this._depsureResizeObserver.disconnect();
-      } catch (_) {}
-    }
-  },
-};
+  }
 </script>
 
 <style scoped>

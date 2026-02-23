@@ -16,16 +16,16 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.agencyId"
-                      label="Select Agency"
-                      variant="outlined"
                       class="custom-input"
-                      :items="agencies"
                       item-title="agencyName"
                       item-value="id"
-                      :rules="agencyRules"
-                      required
+                      :items="agencies"
+                      label="Select Agency"
                       :loading="agenciesLoading"
                       :disabled="isAgencyUser"
+                      required
+                      :rules="agencyRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -33,30 +33,30 @@
                   <v-col cols="12" md="6">
                     <v-autocomplete
                       v-model="entry.unitName"
-                      label="Select Unit"
-                      variant="outlined"
                       class="custom-input"
-                      :items="units"
                       item-title="propertyName"
                       item-value="propertyName"
-                      :rules="unitNameRules"
-                      :loading="unitsLoading"
+                      :items="units"
                       clearable
+                      label="Select Unit"
                       hide-no-data
+                      :loading="unitsLoading"
                       auto-select-first
+                      :rules="unitNameRules"
                       required
+                      variant="outlined"
                     />
                   </v-col>
 
                   <!-- Property Type (Read-only) -->
-                  <v-col cols="12" md="6" v-if="selectedUnitPropertyType">
+                  <v-col v-if="selectedUnitPropertyType" cols="12" md="6">
                     <v-text-field
-                      :model-value="propertyTypeLabel"
-                      label="Property Type"
-                      variant="outlined"
                       class="custom-input"
-                      readonly
+                      label="Property Type"
+                      :model-value="propertyTypeLabel"
                       prepend-inner-icon="mdi-home"
+                      readonly
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -64,11 +64,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.contactPerson"
-                      label="Contact Person"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="contactPersonRules"
+                      label="Contact Person"
                       required
+                      :rules="contactPersonRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -76,11 +76,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.contactNumber"
-                      label="Contact Number"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="contactNumberRules"
+                      label="Contact Number"
                       required
+                      :rules="contactNumberRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -88,12 +88,12 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.appointmentMade"
-                      label="Appointment Made (Yes/No)"
-                      variant="outlined"
                       class="custom-input"
                       :items="['Yes', 'No']"
-                      :rules="appointmentMadeRules"
+                      label="Appointment Made (Yes/No)"
                       required
+                      :rules="appointmentMadeRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -101,15 +101,15 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.inspectionDate"
-                      label="Inspection Date"
-                      type="date"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="appointmentMadeIsYes ? requiredRule : []"
                       :disabled="!appointmentMadeIsYes"
+                      label="Inspection Date"
                       :placeholder="
                         appointmentMadeIsYes ? '' : 'Not applicable'
                       "
+                      :rules="appointmentMadeIsYes ? requiredRule : []"
+                      type="date"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -117,15 +117,15 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.inspectionTime"
-                      label="Inspection Time"
-                      type="time"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="appointmentMadeIsYes ? requiredRule : []"
                       :disabled="!appointmentMadeIsYes"
+                      label="Inspection Time"
                       :placeholder="
                         appointmentMadeIsYes ? '' : 'Not applicable'
                       "
+                      :rules="appointmentMadeIsYes ? requiredRule : []"
+                      type="time"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -133,12 +133,12 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.quotesNeeded"
-                      label="Quotes Needed (Yes/No)"
-                      variant="outlined"
                       class="custom-input"
                       :items="['Yes', 'No']"
-                      :rules="quotesNeededRules"
+                      label="Quotes Needed (Yes/No)"
                       required
+                      :rules="quotesNeededRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -147,21 +147,21 @@
                     <template v-if="userType === 'Admin'">
                       <v-select
                         v-model="entry.status"
-                        label="Inspection Status"
-                        variant="outlined"
                         class="custom-input"
                         :items="['Active', 'Pending', 'Completed']"
-                        :rules="statusRules"
+                        label="Inspection Status"
                         required
+                        :rules="statusRules"
+                        variant="outlined"
                       />
                     </template>
                     <template v-else>
                       <v-text-field
-                        :model-value="entry.status"
-                        label="Inspection Status"
-                        variant="outlined"
                         class="custom-input"
+                        label="Inspection Status"
+                        :model-value="entry.status"
                         readonly
+                        variant="outlined"
                       />
                     </template>
                   </v-col>
@@ -170,12 +170,12 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.priority"
-                      label="Priority Level"
-                      variant="outlined"
                       class="custom-input"
                       :items="['Low', 'Medium', 'High', 'Urgent']"
-                      :rules="priorityRules"
+                      label="Priority Level"
                       required
+                      :rules="priorityRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -183,16 +183,16 @@
                   <v-col cols="12" md="6">
                     <v-file-input
                       v-model="entry.inspectionFile"
-                      label="Upload Inspection Document (PDF only)"
-                      variant="outlined"
-                      class="custom-input"
                       accept=".pdf"
-                      show-size
-                      prepend-icon="mdi-file-pdf-box"
+                      class="custom-input"
+                      label="Upload Inspection Document (PDF only)"
                       :loading="uploading"
-                      :rules="inspectionFileRules"
                       hint="Only PDF files are allowed. Maximum size: 50MB"
+                      prepend-icon="mdi-file-pdf-box"
                       persistent-hint
+                      :rules="inspectionFileRules"
+                      show-size
+                      variant="outlined"
                     />
                   </v-col>
                 </v-row>
@@ -202,20 +202,20 @@
               <v-card-actions class="pa-4">
                 <v-spacer />
                 <v-btn
-                  color="grey"
-                  variant="outlined"
                   class="cancel-btn"
-                  @click="goBack"
+                  color="grey"
                   :disabled="loading"
+                  variant="outlined"
+                  @click="goBack"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
-                  color="black"
-                  variant="elevated"
                   class="submit-btn"
+                  color="black"
                   :disabled="!valid || loading"
                   :loading="loading"
+                  variant="elevated"
                   @click="submitForm"
                 >
                   {{ loading ? "Adding..." : "Upload Request" }}
@@ -230,372 +230,370 @@
 </template>
 
 <script>
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
-import { db, storage } from "@/firebaseConfig";
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useAppStore } from "@/stores/app";
-import { useAuditTrail } from "@/composables/useAuditTrail";
-import { usePropertyType } from "@/composables/usePropertyType";
+  import {
+    addDoc,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+  } from 'firebase/firestore'
+  import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { usePropertyType } from '@/composables/usePropertyType'
+  import { db, storage } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: "AddInspectionPage",
-  setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs();
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
-    const { getLabel } = usePropertyType();
-    return {
-      showSuccessDialog,
-      showErrorDialog,
-      logAuditEvent,
-      auditActions,
-      resourceTypes,
-      getLabel,
-    };
-  },
-  data() {
-    return {
-      valid: false,
-      loading: false,
-      uploading: false,
-      agenciesLoading: false,
-      unitsLoading: false,
-      agencies: [],
-      units: [],
-      entry: {
-        agencyId: "",
-        unitName: "",
-        contactPerson: "",
-        contactNumber: "",
-        appointmentMade: "No",
-        inspectionDate: "",
-        inspectionTime: "",
-        quotesNeeded: "No",
-        status: "Pending",
-        priority: "Medium",
-        inspectionFile: null,
-        inspectionFileName: "",
-        inspectionFileURL: "",
-      },
-      agencyRules: [(v) => !!v || "Agency selection is required"],
-      unitNameRules: [(v) => !!v || "Unit Name is required"],
-      contactPersonRules: [(v) => !!v || "Contact Person is required"],
-      contactNumberRules: [(v) => !!v || "Contact Number is required"],
-      appointmentMadeRules: [(v) => !!v || "Appointment Made is required"],
-      inspectionDateRules: [],
-      requiredRule: [(v) => !!v || "This field is required"],
-      quotesNeededRules: [(v) => !!v || "Quotes Needed is required"],
-      statusRules: [(v) => !!v || "Status is required"],
-      priorityRules: [(v) => !!v || "Priority is required"],
-      inspectionFileRules: [
-        (v) =>
-          !v ||
-          v.size <= 50 * 1024 * 1024 ||
-          "File size must be less than 50MB",
-        (v) =>
-          !v || v.type === "application/pdf" || "Only PDF files are allowed",
-      ],
-    };
-  },
-  computed: {
-    isAgencyUser() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      return (
-        user?.userType === "Agency" ||
-        (user?.userType === "Admin" && user?.adminScope === "agency")
-      );
-    },
-    userType() {
-      const appStore = useAppStore();
-      return appStore.currentUser?.userType;
-    },
-    selectedUnitPropertyType() {
-      if (!this.entry.unitName) return null;
-      const selectedUnit = this.units.find(
-        (unit) => unit.propertyName === this.entry.unitName
-      );
-      return selectedUnit?.propertyType || null;
-    },
-    propertyTypeLabel() {
-      return this.selectedUnitPropertyType
-        ? this.getLabel(this.selectedUnitPropertyType)
-        : "";
-    },
-    appointmentMadeIsYes() {
-      return String(this.entry.appointmentMade).toLowerCase() === "yes";
-    },
-  },
-  methods: {
-    async submitForm() {
-      if (this.$refs.form.validate()) {
-        this.loading = true;
-        try {
-          console.log("Adding inspection entry:", this.entry);
-
-          // Get agency name from selected agency
-          const selectedAgency = this.agencies.find(
-            (agency) => agency.id === this.entry.agencyId
-          );
-          console.log("Selected agency ID:", this.entry.agencyId);
-          console.log("Selected agency object:", selectedAgency);
-          console.log("Available agencies:", this.agencies);
-
-          // Prepare inspection data for Firestore
-          const inspectionData = {
-            agencyId: this.entry.agencyId,
-            agencyName: selectedAgency ? selectedAgency.agencyName : "",
-            unitName: this.entry.unitName,
-            inspectionRequired: "Yes",
-            contactPerson: this.entry.contactPerson,
-            contactNumber: this.entry.contactNumber,
-            appointmentMade: this.entry.appointmentMade,
-            inspectionDate: this.entry.inspectionDate,
-            inspectionTime: this.entry.inspectionTime || "",
-            quotesNeeded: this.entry.quotesNeeded,
-            status: this.entry.status,
-            priority: this.entry.priority,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-
-          // Upload file if provided
-          if (this.entry.inspectionFile) {
-            this.uploading = true;
-            try {
-              const fileRef = ref(
-                storage,
-                `inspection-documents/${Date.now()}_${
-                  this.entry.inspectionFile.name
-                }`
-              );
-              const snapshot = await uploadBytes(
-                fileRef,
-                this.entry.inspectionFile
-              );
-              const downloadURL = await getDownloadURL(snapshot.ref);
-              inspectionData.inspectionFileURL = downloadURL;
-              inspectionData.inspectionFileName =
-                this.entry.inspectionFile.name;
-              console.log("File uploaded successfully:", downloadURL);
-            } catch (uploadError) {
-              console.error("Error uploading file:", uploadError);
-              this.showErrorDialog(
-                "Failed to upload file. Please try again.",
-                "Upload Error",
-                "OK"
-              );
-              return;
-            } finally {
-              this.uploading = false;
-            }
-          }
-
-          // Store inspection data in Firestore
-          const docRef = await addDoc(
-            collection(db, "inspections"),
-            inspectionData
-          );
-
-          // Log the audit event
-          await this.logAuditEvent(
-            this.auditActions.CREATE,
-            {
-              unitName: this.entry.unitName,
-              agencyId: this.entry.agencyId,
-              agencyName: selectedAgency ? selectedAgency.agencyName : "",
-              inspectionRequired: "Yes",
-              appointmentMade: this.entry.appointmentMade,
-              inspectionDate: this.entry.inspectionDate,
-              inspectionTime: this.entry.inspectionTime || "",
-              status: this.entry.status,
-              priority: this.entry.priority,
-            },
-            this.resourceTypes.INSPECTION,
-            docRef.id
-          );
-
-          console.log("Inspection data stored in Firestore");
-          this.showSuccessDialog(
-            "Inspection entry added successfully!",
-            "Success!",
-            "Continue",
-            "/inspections"
-          );
-        } catch (error) {
-          console.error("Error creating inspection entry:", error);
-          this.showErrorDialog(
-            "Failed to create inspection entry. Please try again.",
-            "Error",
-            "OK"
-          );
-        } finally {
-          this.loading = false;
-        }
+  export default {
+    name: 'AddInspectionPage',
+    setup () {
+      const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      const { getLabel } = usePropertyType()
+      return {
+        showSuccessDialog,
+        showErrorDialog,
+        logAuditEvent,
+        auditActions,
+        resourceTypes,
+        getLabel,
       }
     },
+    data () {
+      return {
+        valid: false,
+        loading: false,
+        uploading: false,
+        agenciesLoading: false,
+        unitsLoading: false,
+        agencies: [],
+        units: [],
+        entry: {
+          agencyId: '',
+          unitName: '',
+          contactPerson: '',
+          contactNumber: '',
+          appointmentMade: 'No',
+          inspectionDate: '',
+          inspectionTime: '',
+          quotesNeeded: 'No',
+          status: 'Pending',
+          priority: 'Medium',
+          inspectionFile: null,
+          inspectionFileName: '',
+          inspectionFileURL: '',
+        },
+        agencyRules: [v => !!v || 'Agency selection is required'],
+        unitNameRules: [v => !!v || 'Unit Name is required'],
+        contactPersonRules: [v => !!v || 'Contact Person is required'],
+        contactNumberRules: [v => !!v || 'Contact Number is required'],
+        appointmentMadeRules: [v => !!v || 'Appointment Made is required'],
+        inspectionDateRules: [],
+        requiredRule: [v => !!v || 'This field is required'],
+        quotesNeededRules: [v => !!v || 'Quotes Needed is required'],
+        statusRules: [v => !!v || 'Status is required'],
+        priorityRules: [v => !!v || 'Priority is required'],
+        inspectionFileRules: [
+          v =>
+            !v
+            || v.size <= 50 * 1024 * 1024
+            || 'File size must be less than 50MB',
+          v =>
+            !v || v.type === 'application/pdf' || 'Only PDF files are allowed',
+        ],
+      }
+    },
+    computed: {
+      isAgencyUser () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        return (
+          user?.userType === 'Agency'
+          || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+        )
+      },
+      userType () {
+        const appStore = useAppStore()
+        return appStore.currentUser?.userType
+      },
+      selectedUnitPropertyType () {
+        if (!this.entry.unitName) return null
+        const selectedUnit = this.units.find(
+          unit => unit.propertyName === this.entry.unitName,
+        )
+        return selectedUnit?.propertyType || null
+      },
+      propertyTypeLabel () {
+        return this.selectedUnitPropertyType
+          ? this.getLabel(this.selectedUnitPropertyType)
+          : ''
+      },
+      appointmentMadeIsYes () {
+        return String(this.entry.appointmentMade).toLowerCase() === 'yes'
+      },
+    },
+    watch: {
+      'entry.agencyId': {
+        handler (newAgencyId) {
+          if (newAgencyId) {
+            this.fetchUnits(newAgencyId)
+          } else {
+            this.units = []
+            this.entry.unitName = ''
+          }
+        },
+        immediate: false,
+      },
+    },
+    async mounted () {
+      await this.fetchAgencies()
+    },
+    methods: {
+      async submitForm () {
+        if (this.$refs.form.validate()) {
+          this.loading = true
+          try {
+            console.log('Adding inspection entry:', this.entry)
 
-    async fetchAgencies() {
-      this.agenciesLoading = true;
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
+            // Get agency name from selected agency
+            const selectedAgency = this.agencies.find(
+              agency => agency.id === this.entry.agencyId,
+            )
+            console.log('Selected agency ID:', this.entry.agencyId)
+            console.log('Selected agency object:', selectedAgency)
+            console.log('Available agencies:', this.agencies)
 
-        if (
-          userType === "Agency" ||
-          (userType === "Admin" && currentUser.adminScope === "agency")
-        ) {
-          // Agency users and Agency Admin users can only add inspection entries to their own agency
-          let agencyData = null;
-
-          if (userType === "Agency") {
-            // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
-            if (agencyDoc.exists()) {
-              agencyData = {
-                id: agencyDoc.id,
-                ...agencyDoc.data(),
-              };
+            // Prepare inspection data for Firestore
+            const inspectionData = {
+              agencyId: this.entry.agencyId,
+              agencyName: selectedAgency ? selectedAgency.agencyName : '',
+              unitName: this.entry.unitName,
+              inspectionRequired: 'Yes',
+              contactPerson: this.entry.contactPerson,
+              contactNumber: this.entry.contactNumber,
+              appointmentMade: this.entry.appointmentMade,
+              inspectionDate: this.entry.inspectionDate,
+              inspectionTime: this.entry.inspectionTime || '',
+              quotesNeeded: this.entry.quotesNeeded,
+              status: this.entry.status,
+              priority: this.entry.priority,
+              createdAt: new Date(),
+              updatedAt: new Date(),
             }
-          } else if (
-            userType === "Admin" &&
-            currentUser.adminScope === "agency"
+
+            // Upload file if provided
+            if (this.entry.inspectionFile) {
+              this.uploading = true
+              try {
+                const fileRef = ref(
+                  storage,
+                  `inspection-documents/${Date.now()}_${
+                    this.entry.inspectionFile.name
+                  }`,
+                )
+                const snapshot = await uploadBytes(
+                  fileRef,
+                  this.entry.inspectionFile,
+                )
+                const downloadURL = await getDownloadURL(snapshot.ref)
+                inspectionData.inspectionFileURL = downloadURL
+                inspectionData.inspectionFileName
+                  = this.entry.inspectionFile.name
+                console.log('File uploaded successfully:', downloadURL)
+              } catch (uploadError) {
+                console.error('Error uploading file:', uploadError)
+                this.showErrorDialog(
+                  'Failed to upload file. Please try again.',
+                  'Upload Error',
+                  'OK',
+                )
+                return
+              } finally {
+                this.uploading = false
+              }
+            }
+
+            // Store inspection data in Firestore
+            const docRef = await addDoc(
+              collection(db, 'inspections'),
+              inspectionData,
+            )
+
+            // Log the audit event
+            await this.logAuditEvent(
+              this.auditActions.CREATE,
+              {
+                unitName: this.entry.unitName,
+                agencyId: this.entry.agencyId,
+                agencyName: selectedAgency ? selectedAgency.agencyName : '',
+                inspectionRequired: 'Yes',
+                appointmentMade: this.entry.appointmentMade,
+                inspectionDate: this.entry.inspectionDate,
+                inspectionTime: this.entry.inspectionTime || '',
+                status: this.entry.status,
+                priority: this.entry.priority,
+              },
+              this.resourceTypes.INSPECTION,
+              docRef.id,
+            )
+
+            console.log('Inspection data stored in Firestore')
+            this.showSuccessDialog(
+              'Inspection entry added successfully!',
+              'Success!',
+              'Continue',
+              '/inspections',
+            )
+          } catch (error) {
+            console.error('Error creating inspection entry:', error)
+            this.showErrorDialog(
+              'Failed to create inspection entry. Please try again.',
+              'Error',
+              'OK',
+            )
+          } finally {
+            this.loading = false
+          }
+        }
+      },
+
+      async fetchAgencies () {
+        this.agenciesLoading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
+
+          if (
+            userType === 'Agency'
+            || (userType === 'Admin' && currentUser.adminScope === 'agency')
           ) {
-            // For Agency Admin users, fetch their managed agency
-            if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(
-                doc(db, "users", currentUser.managedAgencyId)
-              );
+            // Agency users and Agency Admin users can only add inspection entries to their own agency
+            let agencyData = null
+
+            if (userType === 'Agency') {
+              // For Agency users, use their own document
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid))
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
                   ...agencyDoc.data(),
-                };
+                }
+              }
+            } else if (
+              userType === 'Admin'
+              && currentUser.adminScope === 'agency'
+              && // For Agency Admin users, fetch their managed agency
+              currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(
+                doc(db, 'users', currentUser.managedAgencyId),
+              )
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data(),
+                }
               }
             }
-          }
 
-          if (agencyData) {
-            this.agencies = [agencyData];
-            // Pre-select the agency for agency users and agency admins
-            this.entry.agencyId = agencyData.id;
+            if (agencyData) {
+              this.agencies = [agencyData]
+              // Pre-select the agency for agency users and agency admins
+              this.entry.agencyId = agencyData.id
+            } else {
+              this.agencies = []
+            }
+            console.log('Agency user - own agency loaded:', this.agencies)
           } else {
-            this.agencies = [];
-          }
-          console.log("Agency user - own agency loaded:", this.agencies);
-        } else {
-          // Super Admin and Admin users can see all agencies
-          const q = query(
-            collection(db, "users"),
-            where("userType", "==", "Agency")
-          );
-          const querySnapshot = await getDocs(q);
-          this.agencies = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          console.log("All agencies loaded:", this.agencies.length);
-          console.log("Agencies data:", this.agencies);
-          // Check if agencies have the correct field names
-          if (this.agencies.length > 0) {
-            console.log("First agency structure:", this.agencies[0]);
-            console.log(
-              "First agency agencyName:",
-              this.agencies[0].agencyName
-            );
-          } else {
-            console.log("No agencies found in database");
+            // Super Admin and Admin users can see all agencies
+            const q = query(
+              collection(db, 'users'),
+              where('userType', '==', 'Agency'),
+            )
+            const querySnapshot = await getDocs(q)
+            this.agencies = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            console.log('All agencies loaded:', this.agencies.length)
+            console.log('Agencies data:', this.agencies)
+            // Check if agencies have the correct field names
+            if (this.agencies.length > 0) {
+              console.log('First agency structure:', this.agencies[0])
+              console.log(
+                'First agency agencyName:',
+                this.agencies[0].agencyName,
+              )
+            } else {
+              console.log('No agencies found in database')
             // Avoid auto-creating test agencies from this page
+            }
           }
-        }
-      } catch (error) {
-        console.error("Error fetching agencies:", error);
-        this.showErrorDialog(
-          "Failed to load agencies. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.agenciesLoading = false;
-      }
-    },
-
-    async fetchUnits(agencyId = null) {
-      this.unitsLoading = true;
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
-
-        let unitsQuery;
-
-        if (userType === "Agency") {
-          // Agency users can only see units from their own agency
-          unitsQuery = query(
-            collection(db, "units"),
-            where("agencyId", "==", currentUser.uid)
-          );
-        } else if (agencyId) {
-          // Super Admin/Admin users query units for specific agency
-          unitsQuery = query(
-            collection(db, "units"),
-            where("agencyId", "==", agencyId)
-          );
-        } else {
-          // Super Admin/Admin users query all units when no agency selected
-          unitsQuery = collection(db, "units");
-        }
-
-        const querySnapshot = await getDocs(unitsQuery);
-        this.units = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        console.log("Units fetched:", this.units);
-        console.log("User type:", userType, "Agency ID filter:", agencyId);
-      } catch (error) {
-        console.error("Error fetching units:", error);
-        this.showErrorDialog(
-          "Failed to load units. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.unitsLoading = false;
-      }
-    },
-
-    goBack() {
-      this.$router.push("/inspections");
-    },
-  },
-  async mounted() {
-    await this.fetchAgencies();
-  },
-  watch: {
-    "entry.agencyId": {
-      handler(newAgencyId) {
-        if (newAgencyId) {
-          this.fetchUnits(newAgencyId);
-        } else {
-          this.units = [];
-          this.entry.unitName = "";
+        } catch (error) {
+          console.error('Error fetching agencies:', error)
+          this.showErrorDialog(
+            'Failed to load agencies. Please try again.',
+            'Error',
+            'OK',
+          )
+        } finally {
+          this.agenciesLoading = false
         }
       },
-      immediate: false,
+
+      async fetchUnits (agencyId = null) {
+        this.unitsLoading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
+
+          let unitsQuery
+
+          if (userType === 'Agency') {
+            // Agency users can only see units from their own agency
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', currentUser.uid),
+            )
+          } else if (agencyId) {
+            // Super Admin/Admin users query units for specific agency
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', agencyId),
+            )
+          } else {
+            // Super Admin/Admin users query all units when no agency selected
+            unitsQuery = collection(db, 'units')
+          }
+
+          const querySnapshot = await getDocs(unitsQuery)
+          this.units = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+
+          console.log('Units fetched:', this.units)
+          console.log('User type:', userType, 'Agency ID filter:', agencyId)
+        } catch (error) {
+          console.error('Error fetching units:', error)
+          this.showErrorDialog(
+            'Failed to load units. Please try again.',
+            'Error',
+            'OK',
+          )
+        } finally {
+          this.unitsLoading = false
+        }
+      },
+
+      goBack () {
+        this.$router.push('/inspections')
+      },
     },
-  },
-};
+  }
 </script>
 
 <style scoped>

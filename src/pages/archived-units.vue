@@ -5,11 +5,11 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn my-7"
+            color="black"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="black"
             @click="$router.push('/profile')"
-            class="back-btn my-7"
           >
             Back to Profile
           </v-btn>
@@ -21,18 +21,18 @@
       <!-- Filters -->
       <v-row class="mb-4" style="margin-top: -33px">
         <!-- Search -->
-        <v-col cols="12" md="3" lg="3" class="pa-4">
+        <v-col class="pa-4" cols="12" lg="3" md="3">
           <v-text-field
             v-model="searchQuery"
-            label="Search archived properties..."
-            prepend-inner-icon="mdi-magnify"
-            :flat="true"
-            density="comfortable"
-            variant="outlined"
             clearable
-            hide-details
             dense
             class="custom-input top-filter"
+            density="comfortable"
+            :flat="true"
+            hide-details
+            label="Search archived properties..."
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
             @input="filterProperties"
           />
         </v-col>
@@ -40,54 +40,55 @@
         <!-- Agency Select -->
         <v-col
           v-if="!isAgencyUser && !hasCurrentAgency"
-          cols="12"
-          md="2"
-          lg="2"
           class="pa-4"
+          cols="12"
+          lg="2"
+          md="2"
         >
           <v-select
             v-model="selectedAgency"
-            :items="agencies"
+            density="comfortable"
+            class="custom-input top-filter"
+            hide-details
             item-title="agencyName"
             item-value="id"
+            :items="agencies"
             label="Select Agency"
-            prepend-inner-icon="mdi-domain"
-            density="comfortable"
-            variant="outlined"
-            hide-details
             :loading="agenciesLoading"
-            class="custom-input top-filter"
+            prepend-inner-icon="mdi-domain"
+            variant="outlined"
             @update:model-value="onAgencyChange"
           />
         </v-col>
 
         <!-- Month filter -->
-        <v-col cols="12" md="2" lg="3" class="pa-4">
+        <v-col class="pa-4" cols="12" lg="3" md="2">
           <v-menu
             v-model="monthMenu"
             :close-on-content-click="false"
-            transition="fade-transition"
             location="bottom"
+            transition="fade-transition"
             @update:model-value="onMonthMenuToggle"
           >
             <template #activator="{ props }">
               <v-text-field
                 v-bind="props"
-                :model-value="monthFilterLabel"
-                label="Filter by month"
                 append-inner-icon="mdi-calendar-month"
-                :flat="true"
-                density="comfortable"
-                variant="outlined"
-                hide-details
                 dense
+                density="comfortable"
                 class="custom-input top-filter month-input flex-grow-1"
+                :flat="true"
+                hide-details
+                label="Filter by month"
+                :model-value="monthFilterLabel"
                 readonly
+                variant="outlined"
               />
             </template>
             <div class="month-menu">
               <div class="month-menu__title">Pick month</div>
               <input
+                class="month-menu__input"
                 type="month"
                 :value="tempMonth"
                 @input="
@@ -95,60 +96,57 @@
                     tempMonth = e.target.value;
                   }
                 "
-                class="month-menu__input"
-              />
+              >
               <div class="month-menu__actions">
                 <v-btn
                   color="black"
-                  variant="elevated"
                   size="small"
+                  variant="elevated"
                   @click="applyMonth"
-                  >Apply</v-btn
-                >
+                >Apply</v-btn>
                 <v-btn
                   color="grey"
-                  variant="text"
                   size="small"
+                  variant="text"
                   @click="clearMonth"
-                  >All</v-btn
-                >
+                >All</v-btn>
               </div>
             </div>
           </v-menu>
         </v-col>
 
         <!-- Property Type filter -->
-        <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-col class="pa-4" cols="12" lg="2" md="2">
           <v-select
             v-model="propertyTypeFilter"
-            :items="propertyTypeFilterOptions"
+            class="custom-input top-filter"
+            density="comfortable"
+            hide-details
             item-title="title"
             item-value="value"
+            :items="propertyTypeFilterOptions"
             label="Property Type"
             prepend-inner-icon="mdi-home"
-            density="comfortable"
             variant="outlined"
-            hide-details
-            class="custom-input top-filter"
             @update:model-value="filterProperties"
           />
         </v-col>
 
         <!-- Restore All Button -->
         <v-col
-          cols="12"
-          md="2"
-          lg="2"
-          class="pa-4 d-flex align-center"
           v-if="isSuperAdmin"
+          class="pa-4 d-flex align-center"
+          cols="12"
+          lg="2"
+          md="2"
         >
           <v-btn
+            class="back-btn"
+            color="success"
+            :disabled="filteredProperties.length === 0"
             prepend-icon="mdi-restore"
             variant="outlined"
-            color="success"
             @click="restoreAllUnits"
-            :disabled="filteredProperties.length === 0"
-            class="back-btn"
           >
             Restore All
           </v-btn>
@@ -156,10 +154,10 @@
       </v-row>
 
       <!-- Agency Info Card (only when selected) -->
-      <v-row class="mb-6" v-if="selectedAgencyDetails">
+      <v-row v-if="selectedAgencyDetails" class="mb-6">
         <v-col cols="12">
           <v-card class="agency-info-card-black">
-            <div class="agency-card-bg" :style="agencyCardBgStyle"></div>
+            <div class="agency-card-bg" :style="agencyCardBgStyle" />
             <v-row align="stretch" class="no-gutters">
               <v-col cols="12">
                 <div class="agency-content-right">
@@ -169,43 +167,39 @@
                   <v-card-text class="text-white">
                     <div class="agency-details-black">
                       <div class="detail-item-black">
-                        <v-icon icon="mdi-map-marker" class="mr-2 text-white" />
+                        <v-icon class="mr-2 text-white" icon="mdi-map-marker" />
                         <span>{{
                           selectedAgencyDetails.address ||
-                          "Address not provided"
+                            "Address not provided"
                         }}</span>
                       </div>
                       <div class="detail-item-black">
                         <v-icon
-                          icon="mdi-card-account-details"
                           class="mr-2 text-white"
+                          icon="mdi-card-account-details"
                         />
-                        <span
-                          >Reg No:
-                          {{ selectedAgencyDetails.regNo || "—" }}</span
-                        >
+                        <span>Reg No:
+                          {{ selectedAgencyDetails.regNo || "—" }}</span>
                       </div>
                       <div class="detail-item-black">
-                        <v-icon icon="mdi-account" class="mr-2 text-white" />
-                        <span
-                          >Primary Contact:
+                        <v-icon class="mr-2 text-white" icon="mdi-account" />
+                        <span>Primary Contact:
                           {{
                             selectedAgencyDetails.primaryContactName || "N/A"
-                          }}</span
-                        >
+                          }}</span>
                       </div>
                       <div class="detail-item-black">
-                        <v-icon icon="mdi-phone" class="mr-2 text-white" />
+                        <v-icon class="mr-2 text-white" icon="mdi-phone" />
                         <span>{{
                           selectedAgencyDetails.contactNumber || "N/A"
                         }}</span>
                       </div>
                       <div class="detail-item-black">
-                        <v-icon icon="mdi-email" class="mr-2 text-white" />
+                        <v-icon class="mr-2 text-white" icon="mdi-email" />
                         <span>{{ selectedAgencyDetails.email || "N/A" }}</span>
                       </div>
                       <div class="detail-item-black">
-                        <v-icon icon="mdi-home" class="mr-2 text-white" />
+                        <v-icon class="mr-2 text-white" icon="mdi-home" />
                         <span>{{ activeUnitsCount }} Properties</span>
                       </div>
                     </div>
@@ -221,18 +215,18 @@
 
       <!-- Archived Properties Table -->
       <v-row>
-        <v-col cols="12" class="pa-4">
+        <v-col class="pa-4" cols="12">
           <v-data-table
-            :headers="headers"
-            :items="filteredProperties"
-            :search="searchQuery"
             class="custom-header"
             density="comfortable"
+            :headers="headers"
             hover
+            :items="filteredProperties"
             :loading="propertiesLoading"
             no-data-text="No archived units found"
+            :search="searchQuery"
           >
-            <template v-slot:item.propertyType="{ item }">
+            <template #item.propertyType="{ item }">
               <v-chip
                 :color="getColor(item.propertyType)"
                 size="small"
@@ -242,33 +236,33 @@
               </v-chip>
             </template>
             <!-- Truncate long property names for alignment -->
-            <template v-slot:item.propertyName="{ item }">
+            <template #item.propertyName="{ item }">
               <span class="truncate-cell" :title="item.propertyName">{{
                 item.propertyName
               }}</span>
             </template>
-            <template v-slot:item.archivedAt="{ item }">
+            <template #item.archivedAt="{ item }">
               <span class="font-weight-medium text-grey">
                 {{ formatDate(item.archivedAt) }}
               </span>
             </template>
-            <template v-slot:item.actions="{ item }">
+            <template #item.actions="{ item }">
               <div class="v-data-table_actions-cell">
                 <v-btn
+                  class="action-btn"
+                  color="black"
                   icon="mdi-eye"
                   size="small"
                   variant="text"
-                  color="black"
                   @click="viewProperty(item)"
-                  class="action-btn"
                 />
                 <v-btn
+                  class="action-btn"
+                  color="success"
                   icon="mdi-restore"
                   size="small"
                   variant="text"
-                  color="success"
                   @click="restoreProperty(item)"
-                  class="action-btn"
                 />
               </div>
             </template>
@@ -280,492 +274,484 @@
 </template>
 
 <script>
-import { db } from "@/firebaseConfig";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  addDoc,
-} from "firebase/firestore";
-import { useAppStore } from "@/stores/app";
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
-import { useAuditTrail } from "@/composables/useAuditTrail";
-import { usePropertyType } from "@/composables/usePropertyType";
-import { useNotification } from "@/composables/useNotification";
+  import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    updateDoc,
+    where,
+  } from 'firebase/firestore'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { useNotification } from '@/composables/useNotification'
+  import { usePropertyType } from '@/composables/usePropertyType'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: "ArchivedUnitsPage",
-  setup() {
-    const appStore = useAppStore();
-    const { showConfirmDialog } = useCustomDialogs();
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
-    const { getOptions, getLabel, getColor } = usePropertyType();
-    const { showSuccess, showError } = useNotification();
-    return {
-      appStore,
-      showConfirmDialog,
-      logAuditEvent,
-      auditActions,
-      resourceTypes,
-      getOptions,
-      getLabel,
-      getColor,
-      showSuccess,
-      showError,
-    };
-  },
-  data() {
-    return {
-      searchQuery: "",
-      monthFilter: "",
-      monthMenu: false,
-      tempMonth: "",
-      propertyTypeFilter: null,
-      filteredProperties: [],
-      properties: [],
-      propertiesLoading: true,
-      agencies: [],
-      agenciesLoading: false,
-      selectedAgency: null,
-      activeUnitsCount: 0,
-      propertyTypeFilterOptions: [
-        { title: "All Types", value: null },
-        { title: "Residential", value: "residential" },
-        { title: "Commercial", value: "commercial" },
-        { title: "Industrial", value: "industrial" },
-      ],
-      headers: [
-        { title: "Tenant Ref", key: "tenantRef", sortable: true },
-        { title: "Property Name", key: "propertyName", sortable: true },
-        { title: "Property Type", key: "propertyType", sortable: true },
-        { title: "Archived Date", key: "archivedAt", sortable: true },
-        { title: "Actions", key: "actions", sortable: false },
-      ],
-    };
-  },
-  computed: {
-    agencyCardBgStyle() {
-      const url =
-        this.selectedAgencyDetails?.profileImageUrl ||
-        this.selectedAgencyDetails?.profileImage ||
-        "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
+  export default {
+    name: 'ArchivedUnitsPage',
+    setup () {
+      const appStore = useAppStore()
+      const { showConfirmDialog } = useCustomDialogs()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      const { getOptions, getLabel, getColor } = usePropertyType()
+      const { showSuccess, showError } = useNotification()
       return {
-        background: `url(${url}) center/cover no-repeat`,
-      };
-    },
-    monthFilterLabel() {
-      if (!this.monthFilter) return "All Months";
-      try {
-        const [yy, mm] = String(this.monthFilter).split("-");
-        const d = new Date(Number(yy), Number(mm) - 1, 1);
-        return d.toLocaleString("en-US", { month: "long", year: "numeric" });
-      } catch {
-        return this.monthFilter;
+        appStore,
+        showConfirmDialog,
+        logAuditEvent,
+        auditActions,
+        resourceTypes,
+        getOptions,
+        getLabel,
+        getColor,
+        showSuccess,
+        showError,
       }
     },
-    hasCurrentAgency() {
-      const appStore = useAppStore();
-      return !!appStore.currentAgency;
-    },
-    selectedAgencyDetails() {
-      return this.agencies.find((a) => a.id === this.selectedAgency) || null;
-    },
-    isAgencyUser() {
-      const user = this.appStore.currentUser;
-      return (
-        user?.userType === "Agency" ||
-        (user?.userType === "Admin" && user?.adminScope === "agency")
-      );
-    },
-    isSuperAdmin() {
-      return this.appStore.userType === "Super Admin";
-    },
-  },
-  async mounted() {
-    await this.loadAgencies();
-    await this.loadArchivedProperties();
-    if (this.isAgencyUser) {
-      await this.refreshActiveUnitsCount();
-    } else if (this.selectedAgency) {
-      await this.refreshActiveUnitsCount(this.selectedAgency);
-    }
-  },
-  methods: {
-    onMonthMenuToggle(open) {
-      if (open) this.tempMonth = this.monthFilter || "";
-    },
-    applyMonth() {
-      this.monthFilter = this.tempMonth || "";
-      this.filterProperties();
-      this.monthMenu = false;
-    },
-    clearMonth() {
-      this.tempMonth = "";
-      this.monthFilter = "";
-      this.filterProperties();
-      this.monthMenu = false;
-    },
-    openMonthPicker() {
-      const el = this.$refs.monthInput?.$el?.querySelector("input");
-      if (el) {
-        if (typeof el.showPicker === "function") el.showPicker();
-        else el.focus();
+    data () {
+      return {
+        searchQuery: '',
+        monthFilter: '',
+        monthMenu: false,
+        tempMonth: '',
+        propertyTypeFilter: null,
+        filteredProperties: [],
+        properties: [],
+        propertiesLoading: true,
+        agencies: [],
+        agenciesLoading: false,
+        selectedAgency: null,
+        activeUnitsCount: 0,
+        propertyTypeFilterOptions: [
+          { title: 'All Types', value: null },
+          { title: 'Residential', value: 'residential' },
+          { title: 'Commercial', value: 'commercial' },
+          { title: 'Industrial', value: 'industrial' },
+        ],
+        headers: [
+          { title: 'Tenant Ref', key: 'tenantRef', sortable: true },
+          { title: 'Property Name', key: 'propertyName', sortable: true },
+          { title: 'Property Type', key: 'propertyType', sortable: true },
+          { title: 'Archived Date', key: 'archivedAt', sortable: true },
+          { title: 'Actions', key: 'actions', sortable: false },
+        ],
       }
     },
-    async refreshActiveUnitsCount(agencyId = null) {
-      try {
-        const currentUser = this.appStore.currentUser;
-        const userType = currentUser?.userType;
-        let unitsQuery;
-        if (userType === "Agency") {
-          unitsQuery = query(
-            collection(db, "units"),
-            where("agencyId", "==", currentUser.uid)
-          );
-        } else if (agencyId) {
-          unitsQuery = query(
-            collection(db, "units"),
-            where("agencyId", "==", agencyId)
-          );
-        } else {
-          this.activeUnitsCount = 0;
-          return;
+    computed: {
+      agencyCardBgStyle () {
+        const url
+          = this.selectedAgencyDetails?.profileImageUrl
+            || this.selectedAgencyDetails?.profileImage
+            || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
+        return {
+          background: `url(${url}) center/cover no-repeat`,
         }
-        const snap = await getDocs(unitsQuery);
-        this.activeUnitsCount = snap.size;
-      } catch (error) {
-        console.error("Error counting active units:", error);
-        this.activeUnitsCount = 0;
+      },
+      monthFilterLabel () {
+        if (!this.monthFilter) return 'All Months'
+        try {
+          const [yy, mm] = String(this.monthFilter).split('-')
+          const d = new Date(Number(yy), Number(mm) - 1, 1)
+          return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+        } catch {
+          return this.monthFilter
+        }
+      },
+      hasCurrentAgency () {
+        const appStore = useAppStore()
+        return !!appStore.currentAgency
+      },
+      selectedAgencyDetails () {
+        return this.agencies.find(a => a.id === this.selectedAgency) || null
+      },
+      isAgencyUser () {
+        const user = this.appStore.currentUser
+        return (
+          user?.userType === 'Agency'
+          || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+        )
+      },
+      isSuperAdmin () {
+        return this.appStore.userType === 'Super Admin'
+      },
+    },
+    async mounted () {
+      await this.loadAgencies()
+      await this.loadArchivedProperties()
+      if (this.isAgencyUser) {
+        await this.refreshActiveUnitsCount()
+      } else if (this.selectedAgency) {
+        await this.refreshActiveUnitsCount(this.selectedAgency)
       }
     },
-    getCurrentMonth() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
-        2,
-        "0"
-      )}`;
-    },
-
-    async loadAgencies() {
-      if (this.isAgencyUser) return;
-
-      this.agenciesLoading = true;
-      try {
-        const currentUser = this.appStore.currentUser;
-        const userType = currentUser?.userType;
-
-        if (userType === "Agency") {
-          // Agency users can only see their own agency
-          const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
-          if (agencyDoc.exists()) {
-            const agencyData = agencyDoc.data();
-            this.agencies = [
-              {
-                id: agencyDoc.id,
-                ...agencyData,
-              },
-            ];
-            // Pre-select the agency for agency users
-            this.selectedAgency = agencyDoc.id;
-            await this.refreshActiveUnitsCount(this.selectedAgency);
+    methods: {
+      onMonthMenuToggle (open) {
+        if (open) this.tempMonth = this.monthFilter || ''
+      },
+      applyMonth () {
+        this.monthFilter = this.tempMonth || ''
+        this.filterProperties()
+        this.monthMenu = false
+      },
+      clearMonth () {
+        this.tempMonth = ''
+        this.monthFilter = ''
+        this.filterProperties()
+        this.monthMenu = false
+      },
+      openMonthPicker () {
+        const el = this.$refs.monthInput?.$el?.querySelector('input')
+        if (el) {
+          if (typeof el.showPicker === 'function') el.showPicker()
+          else el.focus()
+        }
+      },
+      async refreshActiveUnitsCount (agencyId = null) {
+        try {
+          const currentUser = this.appStore.currentUser
+          const userType = currentUser?.userType
+          let unitsQuery
+          if (userType === 'Agency') {
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', currentUser.uid),
+            )
+          } else if (agencyId) {
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', agencyId),
+            )
           } else {
-            this.agencies = [];
+            this.activeUnitsCount = 0
+            return
           }
-        } else {
-          // Super Admin and Admin users can see all agencies
-          const agenciesQuery = query(
-            collection(db, "users"),
-            where("userType", "==", "Agency")
-          );
+          const snap = await getDocs(unitsQuery)
+          this.activeUnitsCount = snap.size
+        } catch (error) {
+          console.error('Error counting active units:', error)
+          this.activeUnitsCount = 0
+        }
+      },
+      getCurrentMonth () {
+        const now = new Date()
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+          2,
+          '0',
+        )}`
+      },
 
-          const querySnapshot = await getDocs(agenciesQuery);
-          this.agencies = querySnapshot.docs.map((doc) => ({
+      async loadAgencies () {
+        if (this.isAgencyUser) return
+
+        this.agenciesLoading = true
+        try {
+          const currentUser = this.appStore.currentUser
+          const userType = currentUser?.userType
+
+          if (userType === 'Agency') {
+            // Agency users can only see their own agency
+            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid))
+            if (agencyDoc.exists()) {
+              const agencyData = agencyDoc.data()
+              this.agencies = [
+                {
+                  id: agencyDoc.id,
+                  ...agencyData,
+                },
+              ]
+              // Pre-select the agency for agency users
+              this.selectedAgency = agencyDoc.id
+              await this.refreshActiveUnitsCount(this.selectedAgency)
+            } else {
+              this.agencies = []
+            }
+          } else {
+            // Super Admin and Admin users can see all agencies
+            const agenciesQuery = query(
+              collection(db, 'users'),
+              where('userType', '==', 'Agency'),
+            )
+
+            const querySnapshot = await getDocs(agenciesQuery)
+            this.agencies = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+          }
+        } catch (error) {
+          console.error('Error loading agencies:', error)
+        } finally {
+          this.agenciesLoading = false
+        }
+      },
+
+      async loadArchivedProperties () {
+        this.propertiesLoading = true
+        try {
+          let propertiesQuery
+
+          if (this.isAgencyUser) {
+            // Agency users only see their own archived units
+            propertiesQuery = query(
+              collection(db, 'archivedUnits'),
+              where('agencyId', '==', this.appStore.currentUser.uid),
+            )
+          } else if (this.selectedAgency) {
+            // Super Admin/Admin users query archived units for specific agency
+            propertiesQuery = query(
+              collection(db, 'archivedUnits'),
+              where('agencyId', '==', this.selectedAgency),
+            )
+          } else {
+            // Super Admin/Admin users query all archived units when no agency selected
+            propertiesQuery = query(collection(db, 'archivedUnits'))
+          }
+
+          const propertiesSnapshot = await getDocs(propertiesQuery)
+          this.properties = propertiesSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-          }));
+          }))
+
+          this.filteredProperties = [...this.properties]
+        } catch (error) {
+          console.error('Error loading archived properties:', error)
+        } finally {
+          this.propertiesLoading = false
         }
-      } catch (error) {
-        console.error("Error loading agencies:", error);
-      } finally {
-        this.agenciesLoading = false;
-      }
-    },
+      },
 
-    async loadArchivedProperties() {
-      this.propertiesLoading = true;
-      try {
-        let propertiesQuery;
+      async onAgencyChange () {
+        await this.loadArchivedProperties()
+        if (this.selectedAgency)
+          await this.refreshActiveUnitsCount(this.selectedAgency)
+      },
 
-        if (this.isAgencyUser) {
-          // Agency users only see their own archived units
-          propertiesQuery = query(
-            collection(db, "archivedUnits"),
-            where("agencyId", "==", this.appStore.currentUser.uid)
-          );
-        } else if (this.selectedAgency) {
-          // Super Admin/Admin users query archived units for specific agency
-          propertiesQuery = query(
-            collection(db, "archivedUnits"),
-            where("agencyId", "==", this.selectedAgency)
-          );
-        } else {
-          // Super Admin/Admin users query all archived units when no agency selected
-          propertiesQuery = query(collection(db, "archivedUnits"));
+      filterProperties () {
+        let filtered = [...this.properties]
+
+        // Search filter
+        if (this.searchQuery) {
+          const query = this.searchQuery.toLowerCase()
+          filtered = filtered.filter(
+            property =>
+              property.tenantRef?.toLowerCase().includes(query)
+              || property.propertyName?.toLowerCase().includes(query),
+          )
         }
 
-        const propertiesSnapshot = await getDocs(propertiesQuery);
-        this.properties = propertiesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        // Month filter - now filtering by archivedAt date
+        if (this.monthFilter) {
+          filtered = filtered.filter(property => {
+            if (!property.archivedAt) return false
+            // Handle both Firestore Timestamp and regular Date objects
+            let propertyDate
+            propertyDate = property.archivedAt.toDate ? new Date(property.archivedAt.toDate()) : new Date(property.archivedAt)
+            const filterDate = new Date(this.monthFilter + '-01')
+            return (
+              propertyDate.getFullYear() === filterDate.getFullYear()
+              && propertyDate.getMonth() === filterDate.getMonth()
+            )
+          })
+        }
 
-        this.filteredProperties = [...this.properties];
-      } catch (error) {
-        console.error("Error loading archived properties:", error);
-      } finally {
-        this.propertiesLoading = false;
-      }
-    },
+        // Property type filter
+        if (this.propertyTypeFilter) {
+          filtered = filtered.filter(
+            property => property.propertyType === this.propertyTypeFilter,
+          )
+        }
 
-    async onAgencyChange() {
-      await this.loadArchivedProperties();
-      if (this.selectedAgency)
-        await this.refreshActiveUnitsCount(this.selectedAgency);
-    },
+        this.filteredProperties = filtered
+      },
 
-    filterProperties() {
-      let filtered = [...this.properties];
+      formatDate (date) {
+        if (!date) return 'N/A'
+        // Handle both Firestore Timestamp and regular Date objects
+        return date.toDate ? new Date(date.toDate()).toLocaleDateString() : new Date(date).toLocaleDateString()
+      },
 
-      // Search filter
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase();
-        filtered = filtered.filter(
-          (property) =>
-            property.tenantRef?.toLowerCase().includes(query) ||
-            property.propertyName?.toLowerCase().includes(query)
-        );
-      }
+      viewProperty (property) {
+        // Navigate to view archived unit page
+        this.$router.push(`/view-archived-unit-${property.id}`)
+      },
 
-      // Month filter - now filtering by archivedAt date
-      if (this.monthFilter) {
-        filtered = filtered.filter((property) => {
-          if (!property.archivedAt) return false;
-          // Handle both Firestore Timestamp and regular Date objects
-          let propertyDate;
-          if (property.archivedAt.toDate) {
-            propertyDate = new Date(property.archivedAt.toDate());
-          } else {
-            propertyDate = new Date(property.archivedAt);
-          }
-          const filterDate = new Date(this.monthFilter + "-01");
-          return (
-            propertyDate.getFullYear() === filterDate.getFullYear() &&
-            propertyDate.getMonth() === filterDate.getMonth()
-          );
-        });
-      }
+      async restoreProperty (property) {
+        const confirmed = await this.showConfirmDialog({
+          title: 'Restore Property',
+          message: `Are you sure you want to restore "${property.propertyName}"? This will move it back to active units.`,
+          confirmText: 'Restore',
+          color: '#28a745',
+        })
 
-      // Property type filter
-      if (this.propertyTypeFilter) {
-        filtered = filtered.filter(
-          (property) => property.propertyType === this.propertyTypeFilter
-        );
-      }
-
-      this.filteredProperties = filtered;
-    },
-
-    formatDate(date) {
-      if (!date) return "N/A";
-      // Handle both Firestore Timestamp and regular Date objects
-      if (date.toDate) {
-        return new Date(date.toDate()).toLocaleDateString();
-      } else {
-        return new Date(date).toLocaleDateString();
-      }
-    },
-
-    viewProperty(property) {
-      // Navigate to view archived unit page
-      this.$router.push(`/view-archived-unit-${property.id}`);
-    },
-
-    async restoreProperty(property) {
-      const confirmed = await this.showConfirmDialog({
-        title: "Restore Property",
-        message: `Are you sure you want to restore "${property.propertyName}"? This will move it back to active units.`,
-        confirmText: "Restore",
-        color: "#28a745",
-      });
-
-      if (confirmed) {
-        try {
-          // Create exact duplicate in units collection
-          const restoredUnitData = {
-            ...property,
-            restoredAt: new Date(),
-            restoredBy: this.appStore.currentUser?.uid || "unknown",
-            restoredByUserType:
-              this.appStore.currentUser?.userType || "unknown",
-            // Ensure the restored unit is unflagged
-            isFlagged: false,
-          };
-
-          // Remove fields that shouldn't be in active units
-          delete restoredUnitData.id;
-          delete restoredUnitData.originalId;
-          delete restoredUnitData.archivedAt;
-          delete restoredUnitData.archivedBy;
-          delete restoredUnitData.archivedByUserType;
-
-          // Add to units collection
-          const unitsRef = collection(db, "units");
-          await addDoc(unitsRef, restoredUnitData);
-
-          // Remove from flaggedUnits collection if it exists there
-          // This ensures the restored unit is truly unflagged
+        if (confirmed) {
           try {
-            const flaggedQuery = query(
-              collection(db, "flaggedUnits"),
-              where(
-                "unitName",
-                "==",
-                property.propertyName || property.unitName
+            // Create exact duplicate in units collection
+            const restoredUnitData = {
+              ...property,
+              restoredAt: new Date(),
+              restoredBy: this.appStore.currentUser?.uid || 'unknown',
+              restoredByUserType:
+                this.appStore.currentUser?.userType || 'unknown',
+              // Ensure the restored unit is unflagged
+              isFlagged: false,
+            }
+
+            // Remove fields that shouldn't be in active units
+            delete restoredUnitData.id
+            delete restoredUnitData.originalId
+            delete restoredUnitData.archivedAt
+            delete restoredUnitData.archivedBy
+            delete restoredUnitData.archivedByUserType
+
+            // Add to units collection
+            const unitsRef = collection(db, 'units')
+            await addDoc(unitsRef, restoredUnitData)
+
+            // Remove from flaggedUnits collection if it exists there
+            // This ensures the restored unit is truly unflagged
+            try {
+              const flaggedQuery = query(
+                collection(db, 'flaggedUnits'),
+                where(
+                  'unitName',
+                  '==',
+                  property.propertyName || property.unitName,
+                ),
               )
-            );
-            const flaggedSnapshot = await getDocs(flaggedQuery);
-            if (!flaggedSnapshot.empty) {
-              const flaggedDoc = flaggedSnapshot.docs[0];
-              await deleteDoc(doc(db, "flaggedUnits", flaggedDoc.id));
-              console.log("Removed flagged unit entry for restored unit");
-            }
-          } catch (error) {
-            console.warn("Could not remove flagged unit entry:", error);
-            // Don't fail the restore if we can't remove the flagged entry
-          }
-
-          // Log audit event
-          await this.logAuditEvent(
-            this.auditActions.RESTORE,
-            {
-              propertyName: property.propertyName,
-              tenantRef: property.tenantRef,
-              originalId: property.originalId,
-            },
-            this.resourceTypes.PROPERTY,
-            property.id
-          );
-
-          // Delete from archivedUnits collection
-          const archivedPropertyRef = doc(db, "archivedUnits", property.id);
-          await deleteDoc(archivedPropertyRef);
-
-          // Remove from local list
-          this.properties = this.properties.filter((p) => p.id !== property.id);
-          this.filterProperties();
-
-          this.showSuccess("Property restored successfully");
-        } catch (error) {
-          console.error("Error restoring property:", error);
-          this.showError("Failed to restore property");
-        }
-      }
-    },
-
-    async restoreAllUnits() {
-      const confirmed = await this.showConfirmDialog({
-        title: "Restore All Units",
-        message: `Are you sure you want to restore all ${this.filteredProperties.length} archived units?`,
-        confirmText: "Restore All",
-        color: "#28a745",
-      });
-
-      if (confirmed) {
-        try {
-          const restorePromises = this.filteredProperties.map(
-            async (property) => {
-              // Create exact duplicate in units collection
-              const restoredUnitData = {
-                ...property,
-                restoredAt: new Date(),
-                restoredBy: this.appStore.currentUser?.uid || "unknown",
-                restoredByUserType:
-                  this.appStore.currentUser?.userType || "unknown",
-                // Ensure the restored unit is unflagged
-                isFlagged: false,
-              };
-
-              // Remove fields that shouldn't be in active units
-              delete restoredUnitData.id;
-              delete restoredUnitData.originalId;
-              delete restoredUnitData.archivedAt;
-              delete restoredUnitData.archivedBy;
-              delete restoredUnitData.archivedByUserType;
-
-              // Add to units collection
-              const unitsRef = collection(db, "units");
-              await addDoc(unitsRef, restoredUnitData);
-
-              // Remove from flaggedUnits collection if it exists there
-              // This ensures the restored unit is truly unflagged
-              try {
-                const flaggedQuery = query(
-                  collection(db, "flaggedUnits"),
-                  where(
-                    "unitName",
-                    "==",
-                    property.propertyName || property.unitName
-                  )
-                );
-                const flaggedSnapshot = await getDocs(flaggedQuery);
-                if (!flaggedSnapshot.empty) {
-                  const flaggedDoc = flaggedSnapshot.docs[0];
-                  await deleteDoc(doc(db, "flaggedUnits", flaggedDoc.id));
-                  console.log("Removed flagged unit entry for restored unit");
-                }
-              } catch (error) {
-                console.warn("Could not remove flagged unit entry:", error);
-                // Don't fail the restore if we can't remove the flagged entry
+              const flaggedSnapshot = await getDocs(flaggedQuery)
+              if (!flaggedSnapshot.empty) {
+                const flaggedDoc = flaggedSnapshot.docs[0]
+                await deleteDoc(doc(db, 'flaggedUnits', flaggedDoc.id))
+                console.log('Removed flagged unit entry for restored unit')
               }
-
-              // Log audit event
-              await this.logAuditEvent(
-                this.auditActions.RESTORE,
-                {
-                  propertyName: property.propertyName,
-                  tenantRef: property.tenantRef,
-                  originalId: property.originalId,
-                },
-                this.resourceTypes.PROPERTY,
-                property.id
-              );
-
-              // Delete from archivedUnits collection
-              const archivedPropertyRef = doc(db, "archivedUnits", property.id);
-              await deleteDoc(archivedPropertyRef);
+            } catch (error) {
+              console.warn('Could not remove flagged unit entry:', error)
+            // Don't fail the restore if we can't remove the flagged entry
             }
-          );
 
-          await Promise.all(restorePromises);
+            // Log audit event
+            await this.logAuditEvent(
+              this.auditActions.RESTORE,
+              {
+                propertyName: property.propertyName,
+                tenantRef: property.tenantRef,
+                originalId: property.originalId,
+              },
+              this.resourceTypes.PROPERTY,
+              property.id,
+            )
 
-          // Clear local list
-          this.properties = [];
-          this.filteredProperties = [];
+            // Delete from archivedUnits collection
+            const archivedPropertyRef = doc(db, 'archivedUnits', property.id)
+            await deleteDoc(archivedPropertyRef)
 
-          this.showSuccess("All units restored successfully");
-        } catch (error) {
-          console.error("Error restoring all units:", error);
-          this.showError("Failed to restore all units");
+            // Remove from local list
+            this.properties = this.properties.filter(p => p.id !== property.id)
+            this.filterProperties()
+
+            this.showSuccess('Property restored successfully')
+          } catch (error) {
+            console.error('Error restoring property:', error)
+            this.showError('Failed to restore property')
+          }
         }
-      }
+      },
+
+      async restoreAllUnits () {
+        const confirmed = await this.showConfirmDialog({
+          title: 'Restore All Units',
+          message: `Are you sure you want to restore all ${this.filteredProperties.length} archived units?`,
+          confirmText: 'Restore All',
+          color: '#28a745',
+        })
+
+        if (confirmed) {
+          try {
+            const restorePromises = this.filteredProperties.map(
+              async property => {
+                // Create exact duplicate in units collection
+                const restoredUnitData = {
+                  ...property,
+                  restoredAt: new Date(),
+                  restoredBy: this.appStore.currentUser?.uid || 'unknown',
+                  restoredByUserType:
+                    this.appStore.currentUser?.userType || 'unknown',
+                  // Ensure the restored unit is unflagged
+                  isFlagged: false,
+                }
+
+                // Remove fields that shouldn't be in active units
+                delete restoredUnitData.id
+                delete restoredUnitData.originalId
+                delete restoredUnitData.archivedAt
+                delete restoredUnitData.archivedBy
+                delete restoredUnitData.archivedByUserType
+
+                // Add to units collection
+                const unitsRef = collection(db, 'units')
+                await addDoc(unitsRef, restoredUnitData)
+
+                // Remove from flaggedUnits collection if it exists there
+                // This ensures the restored unit is truly unflagged
+                try {
+                  const flaggedQuery = query(
+                    collection(db, 'flaggedUnits'),
+                    where(
+                      'unitName',
+                      '==',
+                      property.propertyName || property.unitName,
+                    ),
+                  )
+                  const flaggedSnapshot = await getDocs(flaggedQuery)
+                  if (!flaggedSnapshot.empty) {
+                    const flaggedDoc = flaggedSnapshot.docs[0]
+                    await deleteDoc(doc(db, 'flaggedUnits', flaggedDoc.id))
+                    console.log('Removed flagged unit entry for restored unit')
+                  }
+                } catch (error) {
+                  console.warn('Could not remove flagged unit entry:', error)
+                // Don't fail the restore if we can't remove the flagged entry
+                }
+
+                // Log audit event
+                await this.logAuditEvent(
+                  this.auditActions.RESTORE,
+                  {
+                    propertyName: property.propertyName,
+                    tenantRef: property.tenantRef,
+                    originalId: property.originalId,
+                  },
+                  this.resourceTypes.PROPERTY,
+                  property.id,
+                )
+
+                // Delete from archivedUnits collection
+                const archivedPropertyRef = doc(db, 'archivedUnits', property.id)
+                await deleteDoc(archivedPropertyRef)
+              },
+            )
+
+            await Promise.all(restorePromises)
+
+            // Clear local list
+            this.properties = []
+            this.filteredProperties = []
+
+            this.showSuccess('All units restored successfully')
+          } catch (error) {
+            console.error('Error restoring all units:', error)
+            this.showError('Failed to restore all units')
+          }
+        }
+      },
     },
-  },
-};
+  }
 </script>
 
 <style scoped>

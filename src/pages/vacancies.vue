@@ -4,66 +4,67 @@
       <!-- Filters and Action Buttons -->
       <v-row class="mb-4">
         <!-- Search -->
-        <v-col cols="12" md="3" lg="3">
+        <v-col cols="12" lg="3" md="3">
           <v-text-field
             v-model="searchQuery"
-            label="Search vacancy entries..."
-            prepend-inner-icon="mdi-magnify"
-            flat
-            density="comfortable"
-            variant="outlined"
             clearable
-            hide-details
             dense
             class="custom-input top-filter"
+            density="comfortable"
+            flat
+            hide-details
+            label="Search vacancy entries..."
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
             @input="filterVacancies"
           />
         </v-col>
 
         <!-- Property Type Filter -->
-        <v-col cols="12" md="2" lg="2" class="pa-4">
+        <v-col class="pa-4" cols="12" lg="2" md="2">
           <v-select
             v-model="propertyTypeFilter"
-            :items="propertyTypeFilterOptions"
+            class="custom-input top-filter"
+            density="comfortable"
+            hide-details
             item-title="title"
             item-value="value"
+            :items="propertyTypeFilterOptions"
             label="Property Type"
             prepend-inner-icon="mdi-home"
-            density="comfortable"
             variant="outlined"
-            hide-details
-            class="custom-input top-filter"
             @update:model-value="filterVacancies"
           />
         </v-col>
 
         <!-- Month filter -->
-        <v-col cols="12" md="2" lg="3">
+        <v-col cols="12" lg="3" md="2">
           <v-menu
             v-model="monthMenu"
             :close-on-content-click="false"
-            transition="fade-transition"
             location="bottom"
+            transition="fade-transition"
             @update:model-value="onMonthMenuToggle"
           >
             <template #activator="{ props }">
               <v-text-field
                 v-bind="props"
-                :model-value="monthFilterLabel"
-                label="Filter by creation month"
                 append-inner-icon="mdi-calendar-month"
-                flat
-                density="comfortable"
-                variant="outlined"
-                hide-details
                 dense
+                density="comfortable"
                 class="custom-input top-filter month-input flex-grow-1"
+                flat
+                hide-details
+                label="Filter by creation month"
+                :model-value="monthFilterLabel"
                 readonly
+                variant="outlined"
               />
             </template>
             <div class="month-menu">
               <div class="month-menu__title">Pick month</div>
               <input
+                class="month-menu__input"
                 type="month"
                 :value="tempMonth"
                 @input="
@@ -71,23 +72,20 @@
                     tempMonth = e.target.value;
                   }
                 "
-                class="month-menu__input"
-              />
+              >
               <div class="month-menu__actions">
                 <v-btn
                   color="black"
-                  variant="elevated"
                   size="small"
+                  variant="elevated"
                   @click="applyMonth"
-                  >Apply</v-btn
-                >
+                >Apply</v-btn>
                 <v-btn
                   color="grey"
-                  variant="text"
                   size="small"
+                  variant="text"
                   @click="clearMonth"
-                  >All</v-btn
-                >
+                >All</v-btn>
               </div>
             </div>
           </v-menu>
@@ -95,13 +93,13 @@
 
         <!-- Add Vacancy Button - Only visible to Agency users -->
         <v-col
-          cols="12"
-          md="2"
-          lg="2"
-          class="d-flex align-center"
           v-if="isAgencyUser"
+          class="d-flex align-center"
+          cols="12"
+          lg="2"
+          md="2"
         >
-          <v-btn @click="addVacancy" class="back-btn">Add Vacancy</v-btn>
+          <v-btn class="back-btn" @click="addVacancy">Add Vacancy</v-btn>
         </v-col>
 
         <!-- Export to Excel Button -->
@@ -120,7 +118,7 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-card class="agency-hero-card" elevation="1">
-            <div class="agency-hero-bg" :style="agencyHeroBgStyle"></div>
+            <div class="agency-hero-bg" :style="agencyHeroBgStyle" />
             <div class="agency-hero-center">{{ heroTitle }}</div>
           </v-card>
         </v-col>
@@ -130,12 +128,12 @@
       <v-row>
         <v-col cols="12">
           <v-data-table
-            :headers="headers"
-            :items="filteredVacancies"
-            :loading="vacanciesLoading"
             class="custom-header"
             density="comfortable"
+            :headers="headers"
             hover
+            :items="filteredVacancies"
+            :loading="vacanciesLoading"
             no-data-text="No data available"
           >
             <template #item.dateVacated="{ item }">
@@ -161,33 +159,33 @@
             <template #item.actions="{ item }">
               <div class="action-btn-container">
                 <v-btn
+                  class="action-btn"
+                  color="black"
                   icon="mdi-eye"
                   size="small"
-                  variant="text"
-                  color="black"
-                  @click="viewVacancy(item)"
-                  class="action-btn"
                   title="View Vacancy"
+                  variant="text"
+                  @click="viewVacancy(item)"
                 />
                 <!-- Move to Active Units -->
-                <v-btn 
-                  icon="mdi-arrow-left-bold-box" 
-                  size="small" 
-                  variant="text" 
-                  color="black" 
-                  @click="openMoveToActive(item)" 
-                  class="action-btn" 
-                  title="Move to Active Units" 
+                <v-btn
+                  class="action-btn"
+                  color="black"
+                  icon="mdi-arrow-left-bold-box"
+                  size="small"
+                  title="Move to Active Units"
+                  variant="text"
+                  @click="openMoveToActive(item)"
                 />
-                <v-btn 
+                <v-btn
                   v-if="userType === 'Admin' || userType === 'Super Admin'"
-                  icon="mdi-delete" 
-                  size="small" 
-                  variant="text" 
-                  color="error" 
-                  @click="deleteVacancy(item)" 
-                  class="action-btn" 
+                  class="action-btn"
+                  color="error"
+                  icon="mdi-delete"
+                  size="small"
                   title="Delete Vacancy"
+                  variant="text"
+                  @click="deleteVacancy(item)"
                 />
               </div>
             </template>
@@ -202,7 +200,7 @@
         @click.self="closeMoveToActive"
       >
         <div class="notification-dialog">
-          <div class="notification-dialog-bg info"></div>
+          <div class="notification-dialog-bg info" />
           <div class="notification-dialog-inner">
             <button class="notification-close" @click="closeMoveToActive">
               &times;
@@ -222,71 +220,71 @@
               <v-row class="tight-grid">
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="moveToActive.unitName"
+                    class="custom-input"
+                    density="compact"
                     label="Unit Name"
-                    variant="outlined"
-                    class="custom-input"
-                    density="compact"
+                    :model-value="moveToActive.unitName"
                     readonly
+                    variant="outlined"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="moveToActive.unitNumber"
+                    class="custom-input"
+                    density="compact"
                     label="Unit Number"
-                    variant="outlined"
-                    class="custom-input"
-                    density="compact"
+                    :model-value="moveToActive.unitNumber"
                     readonly
+                    variant="outlined"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
+                    class="custom-input"
+                    density="compact"
+                    label="Unit Type"
                     :model-value="
                       getPropertyTypeLabel(moveToActive.propertyType)
                     "
-                    label="Unit Type"
-                    variant="outlined"
-                    class="custom-input"
-                    density="compact"
                     readonly
+                    variant="outlined"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="moveToActive.leaseStartDate"
-                    label="Lease Start Date"
-                    type="date"
-                    variant="outlined"
                     class="custom-input"
                     density="compact"
-                    :rules="[(v) => !!v || 'Required']"
+                    label="Lease Start Date"
                     required
+                    :rules="[(v) => !!v || 'Required']"
+                    type="date"
+                    variant="outlined"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="moveToActive.tenantRef"
-                    label="New Tenant Reference (Optional)"
-                    variant="outlined"
                     class="custom-input"
                     density="compact"
+                    label="New Tenant Reference (Optional)"
                     :rules="[]"
+                    variant="outlined"
                   />
                 </v-col>
                 <v-col cols="12">
                   <v-textarea
                     v-model="moveToActive.notes"
-                    label="Notes (optional)"
-                    variant="outlined"
                     class="custom-input pl-3 pr-3"
                     density="compact"
+                    label="Notes (optional)"
                     rows="2"
+                    variant="outlined"
                   />
                 </v-col>
-                <v-col cols="12" v-if="moveToActive.error">
+                <v-col v-if="moveToActive.error" cols="12">
                   <div class="error-message">
-                    <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                    <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
                     {{ moveToActive.error }}
                   </div>
                 </v-col>
@@ -296,15 +294,15 @@
             <div class="button-container">
               <button
                 class="notification-button info"
-                @click="submitMoveToActive"
                 :disabled="!moveToActive.valid || moveToActive.loading"
+                @click="submitMoveToActive"
               >
                 {{ moveToActive.loading ? "Saving..." : "Submit" }}
               </button>
               <button
                 class="notification-button secondary"
-                @click="closeMoveToActive"
                 :disabled="moveToActive.loading"
+                @click="closeMoveToActive"
               >
                 Cancel
               </button>
@@ -317,694 +315,694 @@
 </template>
 
 <script>
-import { Workbook } from "exceljs";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc,
-  deleteDoc,
-  setDoc,
-} from "firebase/firestore";
-import { db } from "@/firebaseConfig";
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
-import { useAuditTrail } from "@/composables/useAuditTrail";
-import { useAppStore } from "@/stores/app";
-import { usePropertyType } from "@/composables/usePropertyType";
-const heroBg =
-  "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg";
+  import { Workbook } from 'exceljs'
+  import {
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    setDoc,
+    where,
+  } from 'firebase/firestore'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { usePropertyType } from '@/composables/usePropertyType'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
+  const heroBg
+    = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg'
 
-export default {
-  name: "ViewVacancies",
-  setup() {
-    const { showErrorDialog } = useCustomDialogs();
-    const { getLabel, getColor, resolvePropertyTypeFromUnit } =
-      usePropertyType();
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
-    return {
-      showErrorDialog,
-      getPropertyTypeLabel: getLabel,
-      getPropertyTypeColor: getColor,
-      resolvePropertyTypeFromUnit,
-      logAuditEvent,
-      auditActions,
-      resourceTypes,
-    };
-  },
-  data() {
-    return {
-      searchQuery: "",
-      monthFilter: "",
-      monthMenu: false,
-      tempMonth: "",
-      selectedAgency: null,
-      propertyTypeFilter: null,
-      filteredVacancies: [],
-      vacancies: [],
-      agencies: [],
-      agenciesLoading: false,
-      vacanciesLoading: false,
-      exportLoading: false,
-      moveToActive: {
-        open: false,
-        loading: false,
-        valid: false,
-        error: "",
-        vacancyId: null,
-        unitId: null,
-        unitName: "",
-        unitNumber: "",
-        propertyType: "residential",
-        leaseStartDate: "",
-        tenantRef: "",
-        notes: "",
+  export default {
+    name: 'ViewVacancies',
+    setup () {
+      const { showErrorDialog } = useCustomDialogs()
+      const { getLabel, getColor, resolvePropertyTypeFromUnit }
+        = usePropertyType()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      return {
+        showErrorDialog,
+        getPropertyTypeLabel: getLabel,
+        getPropertyTypeColor: getColor,
+        resolvePropertyTypeFromUnit,
+        logAuditEvent,
+        auditActions,
+        resourceTypes,
+      }
+    },
+    data () {
+      return {
+        searchQuery: '',
+        monthFilter: '',
+        monthMenu: false,
+        tempMonth: '',
+        selectedAgency: null,
+        propertyTypeFilter: null,
+        filteredVacancies: [],
+        vacancies: [],
+        agencies: [],
+        agenciesLoading: false,
+        vacanciesLoading: false,
+        exportLoading: false,
+        moveToActive: {
+          open: false,
+          loading: false,
+          valid: false,
+          error: '',
+          vacancyId: null,
+          unitId: null,
+          unitName: '',
+          unitNumber: '',
+          propertyType: 'residential',
+          leaseStartDate: '',
+          tenantRef: '',
+          notes: '',
+        },
+        headers: [
+          { title: 'UNIT NAME', key: 'unitName', sortable: true },
+          { title: 'UNIT NO.', key: 'unitNumber', sortable: true },
+          {
+            title: 'DATE VACATED',
+            key: 'dateVacated',
+            sortable: true,
+            align: 'center',
+          },
+          {
+            title: 'PROPERTY TYPE',
+            key: 'propertyType',
+            sortable: true,
+            align: 'center',
+          },
+          {
+            title: 'MAINTENANCE AMOUNT',
+            key: 'maintenanceAmount',
+            sortable: true,
+            align: 'center',
+          },
+          {
+            title: 'PAID OUT AMOUNT',
+            key: 'paidOutAmount',
+            sortable: true,
+            align: 'center',
+          },
+          { title: 'ACTIONS', key: 'actions', sortable: false, align: 'center' },
+        ],
+      }
+    },
+    computed: {
+      userType () {
+        const appStore = useAppStore()
+        return appStore.currentUser?.userType
       },
-      headers: [
-        { title: "UNIT NAME", key: "unitName", sortable: true },
-        { title: "UNIT NO.", key: "unitNumber", sortable: true },
-        {
-          title: "DATE VACATED",
-          key: "dateVacated",
-          sortable: true,
-          align: "center",
-        },
-        {
-          title: "PROPERTY TYPE",
-          key: "propertyType",
-          sortable: true,
-          align: "center",
-        },
-        {
-          title: "MAINTENANCE AMOUNT",
-          key: "maintenanceAmount",
-          sortable: true,
-          align: "center",
-        },
-        {
-          title: "PAID OUT AMOUNT",
-          key: "paidOutAmount",
-          sortable: true,
-          align: "center",
-        },
-        { title: "ACTIONS", key: "actions", sortable: false, align: "center" },
-      ],
-    };
-  },
-  computed: {
-    userType() {
-      const appStore = useAppStore();
-      return appStore.currentUser?.userType;
-    },
-    agencyHeroBgStyle() {
-      return { background: `url(${heroBg}) center/cover no-repeat` };
-    },
-    heroTitle() {
-      return "Vacancies";
-    },
-    monthFilterLabel() {
-      if (!this.monthFilter) return "All Months";
-      try {
-        const [yy, mm] = String(this.monthFilter).split("-");
-        const d = new Date(Number(yy), Number(mm) - 1, 1);
-        return d.toLocaleString("en-US", { month: "long", year: "numeric" });
-      } catch {
-        return this.monthFilter;
-      }
-    },
-    selectedAgencyDetails() {
-      return this.agencies.find((a) => a.id === this.selectedAgency) || null;
-    },
-    isAgencyUser() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      return (
-        user?.userType === "Agency" ||
-        (user?.userType === "Admin" && user?.adminScope === "agency")
-      );
-    },
-    propertyTypeFilterOptions() {
-      const { getOptions } = usePropertyType();
-      return [{ value: null, title: "All Types" }, ...getOptions()];
-    },
-  },
-  methods: {
-    formatCurrency(amount) {
-      const value = Number(amount ?? 0);
-      if (!Number.isFinite(value)) return "R0";
-      try {
-        return new Intl.NumberFormat(undefined, {
-          style: "currency",
-          currency: "ZAR",
-          minimumFractionDigits: value % 1 === 0 ? 0 : 2,
-        }).format(value);
-      } catch {
-        return `R${value.toLocaleString()}`;
-      }
-    },
-    onMonthMenuToggle(open) {
-      if (open) this.tempMonth = this.monthFilter || "";
-    },
-    applyMonth() {
-      this.monthFilter = this.tempMonth || "";
-      this.filterVacancies();
-      this.monthMenu = false;
-    },
-    clearMonth() {
-      this.tempMonth = "";
-      this.monthFilter = "";
-      this.filterVacancies();
-      this.monthMenu = false;
-    },
-    formatDate(val) {
-      if (!val) return "N/A";
-      const d =
-        typeof val?.toDate === "function" ? val.toDate() : new Date(val);
-      return d.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    },
-    filterVacancies() {
-      const q = (this.searchQuery || "").toLowerCase();
-      this.filteredVacancies = this.vacancies.filter((v) => {
-        const textMatch =
-          (v.unitName || "").toLowerCase().includes(q) ||
-          (v.notes || "").toLowerCase().includes(q);
-        let agencyMatch = true,
-          monthMatch = true,
-          typeMatch = true;
-        if (this.selectedAgency)
-          agencyMatch = v.agencyId === this.selectedAgency;
-        if (this.propertyTypeFilter)
-          typeMatch = v.propertyType === this.propertyTypeFilter;
-        if (this.monthFilter) {
-          const vd = new Date(v.dateVacated);
-          const fd = new Date(this.monthFilter + "-01");
-          monthMatch =
-            vd.getMonth() === fd.getMonth() &&
-            vd.getFullYear() === fd.getFullYear();
+      agencyHeroBgStyle () {
+        return { background: `url(${heroBg}) center/cover no-repeat` }
+      },
+      heroTitle () {
+        return 'Vacancies'
+      },
+      monthFilterLabel () {
+        if (!this.monthFilter) return 'All Months'
+        try {
+          const [yy, mm] = String(this.monthFilter).split('-')
+          const d = new Date(Number(yy), Number(mm) - 1, 1)
+          return d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+        } catch {
+          return this.monthFilter
         }
-        return textMatch && agencyMatch && monthMatch && typeMatch;
-      });
+      },
+      selectedAgencyDetails () {
+        return this.agencies.find(a => a.id === this.selectedAgency) || null
+      },
+      isAgencyUser () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        return (
+          user?.userType === 'Agency'
+          || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+        )
+      },
+      propertyTypeFilterOptions () {
+        const { getOptions } = usePropertyType()
+        return [{ value: null, title: 'All Types' }, ...getOptions()]
+      },
     },
-    addVacancy() {
-      this.$router.push("/add-vacancy");
+    async mounted () {
+      await this.fetchAgencies()
+      if (this.isAgencyUser) {
+        await this.fetchVacancies()
+      } else {
+        const appStore = useAppStore()
+        const id = appStore.currentAgency?.id || null
+        if (id) {
+          this.selectedAgency = id
+          await this.fetchVacancies(id)
+        } else {
+          // No agency selected, show empty state
+          this.vacancies = []
+          this.filteredVacancies = []
+        }
+      }
     },
-    viewVacancy(item) {
-      this.$router.push(`/view-vacancy-${item.id}`);
-    },
-    async openMoveToActive(item) {
-      try {
-        this.moveToActive.error = "";
-        this.moveToActive.loading = true;
-        this.moveToActive.open = true;
-        this.moveToActive.vacancyId = item.id;
-        this.moveToActive.unitId = item.unitId || null;
-        this.moveToActive.unitName = item.unitName || "";
-        this.moveToActive.propertyType = item.propertyType || "residential";
-        this.moveToActive.unitNumber = item.unitNumber || "";
-        // reset optional fields to empty for new lease
-        this.moveToActive.leaseEndDate = "";
-        this.moveToActive.tenantRef = "";
-        this.moveToActive.paidTowardsFund = null;
-        this.moveToActive.amountToBePaidOut = null;
-        this.moveToActive.paidOut = "No";
-        this.moveToActive.notes = "";
-
-        // Try to load existing unit data from active units first (new workflow)
-        let existingUnit = null;
-        if (item.unitId) {
-          try {
-            const unitDoc = await getDoc(doc(db, "units", item.unitId));
-            if (unitDoc.exists()) {
-              existingUnit = unitDoc.data();
-            }
-          } catch (e) {
-            console.log("Could not fetch existing unit:", e);
+    methods: {
+      formatCurrency (amount) {
+        const value = Number(amount ?? 0)
+        if (!Number.isFinite(value)) return 'R0'
+        try {
+          return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: 'ZAR',
+            minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+          }).format(value)
+        } catch {
+          return `R${value.toLocaleString()}`
+        }
+      },
+      onMonthMenuToggle (open) {
+        if (open) this.tempMonth = this.monthFilter || ''
+      },
+      applyMonth () {
+        this.monthFilter = this.tempMonth || ''
+        this.filterVacancies()
+        this.monthMenu = false
+      },
+      clearMonth () {
+        this.tempMonth = ''
+        this.monthFilter = ''
+        this.filterVacancies()
+        this.monthMenu = false
+      },
+      formatDate (val) {
+        if (!val) return 'N/A'
+        const d
+          = typeof val?.toDate === 'function' ? val.toDate() : new Date(val)
+        return d.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        })
+      },
+      filterVacancies () {
+        const q = (this.searchQuery || '').toLowerCase()
+        this.filteredVacancies = this.vacancies.filter(v => {
+          const textMatch
+            = (v.unitName || '').toLowerCase().includes(q)
+              || (v.notes || '').toLowerCase().includes(q)
+          let agencyMatch = true,
+              monthMatch = true,
+              typeMatch = true
+          if (this.selectedAgency)
+            agencyMatch = v.agencyId === this.selectedAgency
+          if (this.propertyTypeFilter)
+            typeMatch = v.propertyType === this.propertyTypeFilter
+          if (this.monthFilter) {
+            const vd = new Date(v.dateVacated)
+            const fd = new Date(this.monthFilter + '-01')
+            monthMatch
+              = vd.getMonth() === fd.getMonth()
+                && vd.getFullYear() === fd.getFullYear()
           }
-        }
+          return textMatch && agencyMatch && monthMatch && typeMatch
+        })
+      },
+      addVacancy () {
+        this.$router.push('/add-vacancy')
+      },
+      viewVacancy (item) {
+        this.$router.push(`/view-vacancy-${item.id}`)
+      },
+      async openMoveToActive (item) {
+        try {
+          this.moveToActive.error = ''
+          this.moveToActive.loading = true
+          this.moveToActive.open = true
+          this.moveToActive.vacancyId = item.id
+          this.moveToActive.unitId = item.unitId || null
+          this.moveToActive.unitName = item.unitName || ''
+          this.moveToActive.propertyType = item.propertyType || 'residential'
+          this.moveToActive.unitNumber = item.unitNumber || ''
+          // reset optional fields to empty for new lease
+          this.moveToActive.leaseEndDate = ''
+          this.moveToActive.tenantRef = ''
+          this.moveToActive.paidTowardsFund = null
+          this.moveToActive.amountToBePaidOut = null
+          this.moveToActive.paidOut = 'No'
+          this.moveToActive.notes = ''
 
-        // Fallback: Load from archived units (old workflow)
-        if (!existingUnit) {
-          let archivedDoc = null;
+          // Try to load existing unit data from active units first (new workflow)
+          let existingUnit = null
           if (item.unitId) {
-            const q1 = query(
-              collection(db, "archivedUnits"),
-              where("originalId", "==", item.unitId)
-            );
-            const s1 = await getDocs(q1);
-            if (!s1.empty) archivedDoc = s1.docs[0];
-          }
-          if (!archivedDoc && item.unitName) {
-            const q2 = query(
-              collection(db, "archivedUnits"),
-              where("propertyName", "==", item.unitName)
-            );
-            const s2 = await getDocs(q2);
-            if (!s2.empty) archivedDoc = s2.docs[0];
-          }
-          if (archivedDoc) {
-            existingUnit = archivedDoc.data() || {};
-          }
-        }
-
-        // Pre-populate fields from existing unit data
-        if (existingUnit) {
-          this.moveToActive.unitNumber =
-            this.moveToActive.unitNumber ||
-            existingUnit.unitNumber ||
-            existingUnit.propertyNumber ||
-            "";
-          this.moveToActive.tenantRef =
-            existingUnit.tenantRef || existingUnit.tenantName || "";
-          if (!item.propertyType)
-            this.moveToActive.propertyType =
-              existingUnit.propertyType || "residential";
-          if (!this.moveToActive.unitId && existingUnit.originalId)
-            this.moveToActive.unitId = existingUnit.originalId;
-          // Do not carry over past lease/payment values
-        }
-      } catch (e) {
-        console.error("Open move to active failed", e);
-        this.moveToActive.error =
-          "Failed to load unit details. You can still proceed.";
-      } finally {
-        this.moveToActive.loading = false;
-      }
-    },
-    closeMoveToActive() {
-      this.moveToActive.open = false;
-      this.moveToActive.loading = false;
-      this.moveToActive.error = "";
-    },
-    async submitMoveToActive() {
-      const form = this.$refs.moveForm;
-      if (form && typeof form.validate === "function") {
-        const ok = form.validate();
-        if (!ok) return;
-      }
-      this.moveToActive.error = "";
-      this.moveToActive.loading = true;
-      try {
-        const name = this.moveToActive.unitName;
-        const originalId = this.moveToActive.unitId || null;
-
-        // Note: Units now stay in active units when vacancy is created (not archived)
-        // So we're updating the existing unit with new tenant information
-        
-        // Get existing unit data from active units
-        let existingUnitData = {};
-        if (originalId) {
-          try {
-            const unitDoc = await getDoc(doc(db, "units", originalId));
-            if (unitDoc.exists()) {
-              existingUnitData = unitDoc.data();
-            }
-          } catch (e) {
-            console.log("Could not fetch existing unit data:", e);
-          }
-        }
-        
-        // Fallback: check archived units for legacy data (old workflow)
-        let archivedDoc = null;
-        if (!Object.keys(existingUnitData).length) {
-          if (originalId) {
-            const q1 = query(
-              collection(db, "archivedUnits"),
-              where("originalId", "==", originalId)
-            );
-            const s1 = await getDocs(q1);
-            if (!s1.empty) archivedDoc = s1.docs[0];
-          }
-          if (!archivedDoc && name) {
-            const q2 = query(
-              collection(db, "archivedUnits"),
-              where("propertyName", "==", name)
-            );
-            const s2 = await getDocs(q2);
-            if (!s2.empty) archivedDoc = s2.docs[0];
-          }
-          if (archivedDoc) {
-            existingUnitData = archivedDoc.data() || {};
-          }
-        }
-
-        // Prepare unit payload (preserve existing data, update with new tenant info)
-        const unitPayload = {
-          ...existingUnitData,
-          propertyName: name,
-          unitNumber:
-            this.moveToActive.unitNumber || existingUnitData?.unitNumber || "",
-          propertyType:
-            this.moveToActive.propertyType ||
-            existingUnitData?.propertyType ||
-            "residential",
-          leaseStartDate: this.moveToActive.leaseStartDate,
-          tenantRef:
-            this.moveToActive.tenantRef || existingUnitData?.tenantRef || "",
-          status: "Active",
-          newOccupation: "Yes",
-          updatedAt: new Date(),
-        };
-        // Do not carry over archived lease/payment values by default
-        delete unitPayload.leaseEndDate;
-        delete unitPayload.paidTowardsFund;
-        delete unitPayload.amountToBePaidOut;
-        delete unitPayload.paidOut;
-        if (this.moveToActive.notes) {
-          unitPayload.notes = this.moveToActive.notes;
-        }
-        // Remove archive-only fields
-        delete unitPayload.originalId;
-        delete unitPayload.archivedAt;
-        delete unitPayload.archivedBy;
-        delete unitPayload.archivedByUserType;
-        delete unitPayload.archivedReason;
-
-        // Update the unit in active units with new tenant information
-        const unitRef = originalId
-          ? doc(db, "units", originalId)
-          : doc(collection(db, "units"));
-        await setDoc(unitRef, unitPayload);
-
-        // Clean up: delete vacancy (unit stays in active units)
-        if (this.moveToActive.vacancyId)
-          await deleteDoc(doc(db, "vacancies", this.moveToActive.vacancyId));
-        // Also delete any legacy archived unit doc if it exists (old workflow)
-        if (archivedDoc)
-          await deleteDoc(doc(db, "archivedUnits", archivedDoc.id));
-
-        // Update UI: remove from local list
-        const idx = this.vacancies.findIndex(
-          (v) => v.id === this.moveToActive.vacancyId
-        );
-        if (idx > -1) {
-          this.vacancies.splice(idx, 1);
-          this.filterVacancies();
-        }
-
-        this.showSuccessMessage?.(
-          "Unit updated with new tenant details. Vacancy removed."
-        );
-        this.closeMoveToActive();
-      } catch (e) {
-        console.error("Move to Active failed", e);
-        this.moveToActive.error = "Failed to move unit. Please try again.";
-      } finally {
-        this.moveToActive.loading = false;
-      }
-    },
-    async deleteVacancy(item) {
-      try {
-        const { showConfirmDialog } = useCustomDialogs();
-        await showConfirmDialog({
-          title: "Delete Vacancy?",
-          message: `Are you sure you want to delete the vacancy for ${item.unitName}? The unit will remain in Deleted Units (Archive). Documents will stay linked.`,
-          confirmText: "Delete",
-          cancelText: "Cancel",
-          color: "#dc3545",
-        });
-        // Simply delete the vacancy; keep the unit in archivedUnits for document retention
-        await deleteDoc(doc(db, "vacancies", item.id));
-        
-        // Remove from local array
-        const index = this.vacancies.findIndex((v) => v.id === item.id);
-        if (index > -1) {
-          this.vacancies.splice(index, 1);
-          this.filterVacancies();
-        }
-        
-        // Show success message
-        this.showSuccessMessage?.(
-          "Vacancy deleted. Unit remains in Deleted Units (Archive)."
-        );
-      } catch (error) {
-        if (error.message !== "User cancelled") {
-          console.error("Error deleting vacancy:", error);
-          this.showErrorDialog?.(
-            "Failed to delete vacancy. Please try again.",
-            "Error",
-            "OK"
-          );
-        }
-      }
-    },
-    async fetchAgencies() {
-      this.agenciesLoading = true;
-      try {
-        const appStore = useAppStore();
-        const user = appStore.currentUser;
-        const ut = user?.userType;
-        if (
-          ut === "Agency" ||
-          (ut === "Admin" && user?.adminScope === "agency")
-        ) {
-          let agencyData = null;
-          const id = ut === "Agency" ? user.uid : user.managedAgencyId;
-          if (id) {
-            const snap = await getDoc(doc(db, "users", id));
-            if (snap.exists()) agencyData = { id: snap.id, ...snap.data() };
-          }
-          if (agencyData) {
-            this.agencies = [agencyData];
-            this.selectedAgency = agencyData.id;
-        } else {
-            this.agencies = [];
-          }
-        } else {
-          const snap = await getDocs(
-            query(collection(db, "users"), where("userType", "==", "Agency"))
-          );
-          this.agencies = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        }
-      } catch (e) {
-        console.error("Fetch agencies failed", e);
-      } finally {
-        this.agenciesLoading = false;
-      }
-    },
-    async fetchVacancies(agencyId = null) {
-      this.vacanciesLoading = true;
-      try {
-        const appStore = useAppStore();
-        const user = appStore.currentUser;
-        const ut = user?.userType;
-        let qRef;
-        if (
-          ut === "Agency" ||
-          (ut === "Admin" && user?.adminScope === "agency")
-        ) {
-          const target = ut === "Agency" ? user.uid : user.managedAgencyId;
-          qRef = target
-            ? query(
-                collection(db, "vacancies"),
-                where("agencyId", "==", target)
-              )
-            : null;
-        } else {
-          if (agencyId) {
-            qRef = query(
-              collection(db, "vacancies"),
-              where("agencyId", "==", agencyId)
-            );
-          } else {
-            // No agency selected, return empty results
-            this.vacancies = [];
-            this.filteredVacancies = [];
-            this.vacanciesLoading = false;
-            return;
-          }
-        }
-        if (!qRef) {
-          this.vacancies = [];
-          this.filteredVacancies = [];
-          return;
-        }
-        const snap = await getDocs(qRef);
-        const list = snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            ...data,
-            unitNumber: data.unitNumber || "", // Ensure unitNumber is always present
-            createdAt: data.createdAt?.toDate(),
-            updatedAt: data.updatedAt?.toDate(),
-          };
-        });
-        // Resolve property types if missing
-        this.vacancies = await Promise.all(
-          list.map(async (v) => {
-          try {
-              if (v.propertyType) return v;
-            if (v.unitId) {
-                const pt = await this.resolvePropertyTypeFromUnit(v.unitId);
-                return { ...v, propertyType: pt };
+            try {
+              const unitDoc = await getDoc(doc(db, 'units', item.unitId))
+              if (unitDoc.exists()) {
+                existingUnit = unitDoc.data()
               }
-              return { ...v, propertyType: "residential" };
-            } catch {
-              return { ...v, propertyType: "residential" };
+            } catch (error) {
+              console.log('Could not fetch existing unit:', error)
+            }
+          }
+
+          // Fallback: Load from archived units (old workflow)
+          if (!existingUnit) {
+            let archivedDoc = null
+            if (item.unitId) {
+              const q1 = query(
+                collection(db, 'archivedUnits'),
+                where('originalId', '==', item.unitId),
+              )
+              const s1 = await getDocs(q1)
+              if (!s1.empty) archivedDoc = s1.docs[0]
+            }
+            if (!archivedDoc && item.unitName) {
+              const q2 = query(
+                collection(db, 'archivedUnits'),
+                where('propertyName', '==', item.unitName),
+              )
+              const s2 = await getDocs(q2)
+              if (!s2.empty) archivedDoc = s2.docs[0]
+            }
+            if (archivedDoc) {
+              existingUnit = archivedDoc.data() || {}
+            }
+          }
+
+          // Pre-populate fields from existing unit data
+          if (existingUnit) {
+            this.moveToActive.unitNumber
+              = this.moveToActive.unitNumber
+                || existingUnit.unitNumber
+                || existingUnit.propertyNumber
+                || ''
+            this.moveToActive.tenantRef
+              = existingUnit.tenantRef || existingUnit.tenantName || ''
+            if (!item.propertyType)
+              this.moveToActive.propertyType
+                = existingUnit.propertyType || 'residential'
+            if (!this.moveToActive.unitId && existingUnit.originalId)
+              this.moveToActive.unitId = existingUnit.originalId
+          // Do not carry over past lease/payment values
+          }
+        } catch (error) {
+          console.error('Open move to active failed', error)
+          this.moveToActive.error
+            = 'Failed to load unit details. You can still proceed.'
+        } finally {
+          this.moveToActive.loading = false
+        }
+      },
+      closeMoveToActive () {
+        this.moveToActive.open = false
+        this.moveToActive.loading = false
+        this.moveToActive.error = ''
+      },
+      async submitMoveToActive () {
+        const form = this.$refs.moveForm
+        if (form && typeof form.validate === 'function') {
+          const ok = form.validate()
+          if (!ok) return
+        }
+        this.moveToActive.error = ''
+        this.moveToActive.loading = true
+        try {
+          const name = this.moveToActive.unitName
+          const originalId = this.moveToActive.unitId || null
+
+          // Note: Units now stay in active units when vacancy is created (not archived)
+          // So we're updating the existing unit with new tenant information
+
+          // Get existing unit data from active units
+          let existingUnitData = {}
+          if (originalId) {
+            try {
+              const unitDoc = await getDoc(doc(db, 'units', originalId))
+              if (unitDoc.exists()) {
+                existingUnitData = unitDoc.data()
+              }
+            } catch (error) {
+              console.log('Could not fetch existing unit data:', error)
+            }
+          }
+
+          // Fallback: check archived units for legacy data (old workflow)
+          let archivedDoc = null
+          if (Object.keys(existingUnitData).length === 0) {
+            if (originalId) {
+              const q1 = query(
+                collection(db, 'archivedUnits'),
+                where('originalId', '==', originalId),
+              )
+              const s1 = await getDocs(q1)
+              if (!s1.empty) archivedDoc = s1.docs[0]
+            }
+            if (!archivedDoc && name) {
+              const q2 = query(
+                collection(db, 'archivedUnits'),
+                where('propertyName', '==', name),
+              )
+              const s2 = await getDocs(q2)
+              if (!s2.empty) archivedDoc = s2.docs[0]
+            }
+            if (archivedDoc) {
+              existingUnitData = archivedDoc.data() || {}
+            }
+          }
+
+          // Prepare unit payload (preserve existing data, update with new tenant info)
+          const unitPayload = {
+            ...existingUnitData,
+            propertyName: name,
+            unitNumber:
+              this.moveToActive.unitNumber || existingUnitData?.unitNumber || '',
+            propertyType:
+              this.moveToActive.propertyType
+              || existingUnitData?.propertyType
+              || 'residential',
+            leaseStartDate: this.moveToActive.leaseStartDate,
+            tenantRef:
+              this.moveToActive.tenantRef || existingUnitData?.tenantRef || '',
+            status: 'Active',
+            newOccupation: 'Yes',
+            updatedAt: new Date(),
+          }
+          // Do not carry over archived lease/payment values by default
+          delete unitPayload.leaseEndDate
+          delete unitPayload.paidTowardsFund
+          delete unitPayload.amountToBePaidOut
+          delete unitPayload.paidOut
+          if (this.moveToActive.notes) {
+            unitPayload.notes = this.moveToActive.notes
+          }
+          // Remove archive-only fields
+          delete unitPayload.originalId
+          delete unitPayload.archivedAt
+          delete unitPayload.archivedBy
+          delete unitPayload.archivedByUserType
+          delete unitPayload.archivedReason
+
+          // Update the unit in active units with new tenant information
+          const unitRef = originalId
+            ? doc(db, 'units', originalId)
+            : doc(collection(db, 'units'))
+          await setDoc(unitRef, unitPayload)
+
+          // Clean up: delete vacancy (unit stays in active units)
+          if (this.moveToActive.vacancyId)
+            await deleteDoc(doc(db, 'vacancies', this.moveToActive.vacancyId))
+          // Also delete any legacy archived unit doc if it exists (old workflow)
+          if (archivedDoc)
+            await deleteDoc(doc(db, 'archivedUnits', archivedDoc.id))
+
+          // Update UI: remove from local list
+          const idx = this.vacancies.findIndex(
+            v => v.id === this.moveToActive.vacancyId,
+          )
+          if (idx !== -1) {
+            this.vacancies.splice(idx, 1)
+            this.filterVacancies()
+          }
+
+          this.showSuccessMessage?.(
+            'Unit updated with new tenant details. Vacancy removed.',
+          )
+          this.closeMoveToActive()
+        } catch (error) {
+          console.error('Move to Active failed', error)
+          this.moveToActive.error = 'Failed to move unit. Please try again.'
+        } finally {
+          this.moveToActive.loading = false
+        }
+      },
+      async deleteVacancy (item) {
+        try {
+          const { showConfirmDialog } = useCustomDialogs()
+          await showConfirmDialog({
+            title: 'Delete Vacancy?',
+            message: `Are you sure you want to delete the vacancy for ${item.unitName}? The unit will remain in Deleted Units (Archive). Documents will stay linked.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            color: '#dc3545',
+          })
+          // Simply delete the vacancy; keep the unit in archivedUnits for document retention
+          await deleteDoc(doc(db, 'vacancies', item.id))
+
+          // Remove from local array
+          const index = this.vacancies.findIndex(v => v.id === item.id)
+          if (index !== -1) {
+            this.vacancies.splice(index, 1)
+            this.filterVacancies()
+          }
+
+          // Show success message
+          this.showSuccessMessage?.(
+            'Vacancy deleted. Unit remains in Deleted Units (Archive).',
+          )
+        } catch (error) {
+          if (error.message !== 'User cancelled') {
+            console.error('Error deleting vacancy:', error)
+            this.showErrorDialog?.(
+              'Failed to delete vacancy. Please try again.',
+              'Error',
+              'OK',
+            )
+          }
+        }
+      },
+      async fetchAgencies () {
+        this.agenciesLoading = true
+        try {
+          const appStore = useAppStore()
+          const user = appStore.currentUser
+          const ut = user?.userType
+          if (
+            ut === 'Agency'
+            || (ut === 'Admin' && user?.adminScope === 'agency')
+          ) {
+            let agencyData = null
+            const id = ut === 'Agency' ? user.uid : user.managedAgencyId
+            if (id) {
+              const snap = await getDoc(doc(db, 'users', id))
+              if (snap.exists()) agencyData = { id: snap.id, ...snap.data() }
+            }
+            if (agencyData) {
+              this.agencies = [agencyData]
+              this.selectedAgency = agencyData.id
+            } else {
+              this.agencies = []
+            }
+          } else {
+            const snap = await getDocs(
+              query(collection(db, 'users'), where('userType', '==', 'Agency')),
+            )
+            this.agencies = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          }
+        } catch (error) {
+          console.error('Fetch agencies failed', error)
+        } finally {
+          this.agenciesLoading = false
+        }
+      },
+      async fetchVacancies (agencyId = null) {
+        this.vacanciesLoading = true
+        try {
+          const appStore = useAppStore()
+          const user = appStore.currentUser
+          const ut = user?.userType
+          let qRef
+          if (
+            ut === 'Agency'
+            || (ut === 'Admin' && user?.adminScope === 'agency')
+          ) {
+            const target = ut === 'Agency' ? user.uid : user.managedAgencyId
+            qRef = target
+              ? query(
+                collection(db, 'vacancies'),
+                where('agencyId', '==', target),
+              )
+              : null
+          } else {
+            if (agencyId) {
+              qRef = query(
+                collection(db, 'vacancies'),
+                where('agencyId', '==', agencyId),
+              )
+            } else {
+              // No agency selected, return empty results
+              this.vacancies = []
+              this.filteredVacancies = []
+              this.vacanciesLoading = false
+              return
+            }
+          }
+          if (!qRef) {
+            this.vacancies = []
+            this.filteredVacancies = []
+            return
+          }
+          const snap = await getDocs(qRef)
+          const list = snap.docs.map(d => {
+            const data = d.data()
+            return {
+              id: d.id,
+              ...data,
+              unitNumber: data.unitNumber || '', // Ensure unitNumber is always present
+              createdAt: data.createdAt?.toDate(),
+              updatedAt: data.updatedAt?.toDate(),
             }
           })
-        );
-        this.vacancies = this.vacancies.map((vacancy) => ({
-          ...vacancy,
-          maintenanceAmount: Number(vacancy.maintenanceAmount ?? 0) || 0,
-          paidOutAmount: Number(vacancy.paidOutAmount ?? 0) || 0,
-        }));
-        this.filterVacancies();
-      } catch (e) {
-        console.error("Fetch vacancies failed", e);
-        this.showErrorDialog(
-          "Failed to load vacancies. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.vacanciesLoading = false;
-      }
-    },
+          // Resolve property types if missing
+          this.vacancies = await Promise.all(
+            list.map(async v => {
+              try {
+                if (v.propertyType) return v
+                if (v.unitId) {
+                  const pt = await this.resolvePropertyTypeFromUnit(v.unitId)
+                  return { ...v, propertyType: pt }
+                }
+                return { ...v, propertyType: 'residential' }
+              } catch {
+                return { ...v, propertyType: 'residential' }
+              }
+            }),
+          )
+          this.vacancies = this.vacancies.map(vacancy => ({
+            ...vacancy,
+            maintenanceAmount: Number(vacancy.maintenanceAmount ?? 0) || 0,
+            paidOutAmount: Number(vacancy.paidOutAmount ?? 0) || 0,
+          }))
+          this.filterVacancies()
+        } catch (error) {
+          console.error('Fetch vacancies failed', error)
+          this.showErrorDialog(
+            'Failed to load vacancies. Please try again.',
+            'Error',
+            'OK',
+          )
+        } finally {
+          this.vacanciesLoading = false
+        }
+      },
 
-    async exportVacanciesXLSX() {
-      this.exportLoading = true;
-      try {
-        // Log export event
+      async exportVacanciesXLSX () {
+        this.exportLoading = true
         try {
-          await this.logAuditEvent(
-            this.auditActions.EXPORT,
-            {
-              exportType: "XLSX",
-              recordCount: this.filteredVacancies.length,
-              filters: {
-                searchQuery: this.searchQuery,
-                propertyType: this.propertyTypeFilter,
-                month: this.monthFilter,
+          // Log export event
+          try {
+            await this.logAuditEvent(
+              this.auditActions.EXPORT,
+              {
+                exportType: 'XLSX',
+                recordCount: this.filteredVacancies.length,
+                filters: {
+                  searchQuery: this.searchQuery,
+                  propertyType: this.propertyTypeFilter,
+                  month: this.monthFilter,
+                },
               },
-            },
-            this.resourceTypes.VACANCY,
-            null
-          );
-        } catch (_) {}
+              this.resourceTypes.VACANCY,
+              null,
+            )
+          } catch {}
 
-        const columns = [
-          { header: "UNIT NAME", key: "unitName" },
-          { header: "DATE VACATED", key: "dateVacated" },
-          { header: "PROPERTY TYPE", key: "propertyType" },
-          { header: "NOTES", key: "notes" },
-        ];
+          const columns = [
+            { header: 'UNIT NAME', key: 'unitName' },
+            { header: 'DATE VACATED', key: 'dateVacated' },
+            { header: 'PROPERTY TYPE', key: 'propertyType' },
+            { header: 'NOTES', key: 'notes' },
+          ]
 
-        const rows = (this.filteredVacancies || []).map((v) => ({
-          unitName: v.unitName || "",
-          dateVacated: this.formatCsvDate(v.dateVacated),
-          propertyType:
-            this.getPropertyTypeLabel?.(v.propertyType) || v.propertyType || "",
-          notes: (v.notes || "").toString(),
-        }));
+          const rows = (this.filteredVacancies || []).map(v => ({
+            unitName: v.unitName || '',
+            dateVacated: this.formatCsvDate(v.dateVacated),
+            propertyType:
+              this.getPropertyTypeLabel?.(v.propertyType) || v.propertyType || '',
+            notes: (v.notes || '').toString(),
+          }))
 
-        const wb = new Workbook();
-        const ws = wb.addWorksheet("Vacancies");
-        ws.columns = columns.map((c) => ({
-          header: c.header,
-          key: c.key,
-          width: c.key === "notes" ? 45 : 22,
-        }));
-        rows.forEach((r) => ws.addRow(r));
+          const wb = new Workbook()
+          const ws = wb.addWorksheet('Vacancies')
+          ws.columns = columns.map(c => ({
+            header: c.header,
+            key: c.key,
+            width: c.key === 'notes' ? 45 : 22,
+          }))
+          for (const r of rows) ws.addRow(r)
 
-        const headerRow = ws.getRow(1);
-        headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
-        headerRow.alignment = { vertical: "middle", horizontal: "center" };
-        headerRow.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF000000" },
-        };
-        headerRow.height = 20;
+          const headerRow = ws.getRow(1)
+          headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+          headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+          headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF000000' },
+          }
+          headerRow.height = 20
 
-        ws.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
-        const lastCol = String.fromCharCode(64 + columns.length);
-        ws.autoFilter = { from: "A1", to: lastCol + "1" };
+          ws.views = [{ state: 'frozen', xSplit: 0, ySplit: 1 }]
+          const lastCol = String.fromCharCode(64 + columns.length)
+          ws.autoFilter = { from: 'A1', to: lastCol + '1' }
 
-        ws.getColumn("notes").alignment = { wrapText: true, vertical: "top" };
-        ws.eachRow((row, n) => {
-          if (n !== 1) row.alignment = { vertical: "top" };
-        });
+          ws.getColumn('notes').alignment = { wrapText: true, vertical: 'top' }
+          ws.eachRow((row, n) => {
+            if (n !== 1) row.alignment = { vertical: 'top' }
+          })
 
-        // Auto-fit widths within bounds
-        columns.forEach((col, idx) => {
-          const lengths = rows.map((r) => {
-            const val = r[col.key];
-            if (val == null) return 0;
-            if (typeof val === "string")
-              return val.split("\n").reduce((m, s) => Math.max(m, s.length), 0);
-            return String(val).length;
-          });
-          const headerLen = col.header.length;
-          const maxLen = Math.max(headerLen, ...lengths);
-          const minW = col.key === "notes" ? 30 : 14;
-          const maxW = col.key === "notes" ? 70 : 40;
-          ws.getColumn(idx + 1).width = Math.min(
-            Math.max(maxLen + 2, minW),
-            maxW
-          );
-        });
+          // Auto-fit widths within bounds
+          for (const [idx, col] of columns.entries()) {
+            const lengths = rows.map(r => {
+              const val = r[col.key]
+              if (val == null) return 0
+              if (typeof val === 'string')
+                return val.split('\n').reduce((m, s) => Math.max(m, s.length), 0)
+              return String(val).length
+            })
+            const headerLen = col.header.length
+            const maxLen = Math.max(headerLen, ...lengths)
+            const minW = col.key === 'notes' ? 30 : 14
+            const maxW = col.key === 'notes' ? 70 : 40
+            ws.getColumn(idx + 1).width = Math.min(
+              Math.max(maxLen + 2, minW),
+              maxW,
+            )
+          }
 
-        const filename = `vacancies-${
-          new Date().toISOString().split("T")[0]
-        }.xlsx`;
-        const buffer = await wb.xlsx.writeBuffer();
-        const blob = new Blob([buffer], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (e) {
-        console.error("Export vacancies failed", e);
-        this.showErrorDialog?.(
-          "Failed to export vacancies. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.exportLoading = false;
-      }
+          const filename = `vacancies-${
+            new Date().toISOString().split('T')[0]
+          }.xlsx`
+          const buffer = await wb.xlsx.writeBuffer()
+          const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = filename
+          document.body.append(a)
+          a.click()
+          a.remove()
+          URL.revokeObjectURL(url)
+        } catch (error) {
+          console.error('Export vacancies failed', error)
+          this.showErrorDialog?.(
+            'Failed to export vacancies. Please try again.',
+            'Error',
+            'OK',
+          )
+        } finally {
+          this.exportLoading = false
+        }
+      },
+
+      // Reuseable compact CSV-friendly date format
+      formatCsvDate (val) {
+        if (!val) return ''
+        const d
+          = typeof val?.toDate === 'function' ? val.toDate() : new Date(val)
+        if (isNaN(d)) return ''
+        const pad = n => String(n).padStart(2, '0')
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      },
     },
-
-    // Reuseable compact CSV-friendly date format
-    formatCsvDate(val) {
-      if (!val) return "";
-      const d =
-        typeof val?.toDate === "function" ? val.toDate() : new Date(val);
-      if (isNaN(d)) return "";
-      const pad = (n) => String(n).padStart(2, "0");
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    },
-  },
-  async mounted() {
-    await this.fetchAgencies();
-    if (this.isAgencyUser) {
-      await this.fetchVacancies();
-    } else {
-      const appStore = useAppStore();
-      const id = appStore.currentAgency?.id || null;
-      if (id) {
-        this.selectedAgency = id;
-        await this.fetchVacancies(id);
-      } else {
-        // No agency selected, show empty state
-        this.vacancies = [];
-        this.filteredVacancies = [];
-      }
-    }
-  },
-};
+  }
 </script>
 
 <style scoped>

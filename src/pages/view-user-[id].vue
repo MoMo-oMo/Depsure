@@ -6,11 +6,11 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="primary"
             @click="$router.push('/user-management')"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -27,7 +27,7 @@
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-progress-circular indeterminate color="primary" />
+              <v-progress-circular color="primary" indeterminate />
               <p class="mt-4">Loading user details...</p>
             </v-card-text>
           </v-card>
@@ -35,7 +35,7 @@
           <!-- Error -->
           <v-card v-else-if="error" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-icon icon="mdi-alert" color="error" size="large" />
+              <v-icon color="error" icon="mdi-alert" size="large" />
               <p class="mt-4 text-error">{{ error }}</p>
             </v-card-text>
           </v-card>
@@ -45,134 +45,134 @@
             <v-card-text>
               <!-- Profile Image Preview -->
               <v-row class="mb-4" justify="center">
-                <v-col cols="12" class="d-flex justify-center">
-                  <v-avatar size="112" class="user-avatar">
-                    <v-img v-if="profileImageSource" :src="profileImageSource" alt="Profile image" cover />
+                <v-col class="d-flex justify-center" cols="12">
+                  <v-avatar class="user-avatar" size="112">
+                    <v-img v-if="profileImageSource" alt="Profile image" cover :src="profileImageSource" />
                     <span v-else class="avatar-initials">{{ userInitials }}</span>
                   </v-avatar>
                 </v-col>
               </v-row>
               <v-row>
                 <!-- First Name -->
-                <v-col cols="12" md="6" v-if="user.userType !== 'Agency'">
+                <v-col v-if="user.userType !== 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.firstName"
-                    label="First Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="First Name"
+                    :model-value="user.firstName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Last Name -->
-                <v-col cols="12" md="6" v-if="user.userType !== 'Agency'">
+                <v-col v-if="user.userType !== 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.lastName"
-                    label="Last Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Last Name"
+                    :model-value="user.lastName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Email -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.email"
-                    label="Email"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Email"
+                    :model-value="user.email"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- User Type -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.userType"
-                    label="User Type"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="User Type"
+                    :model-value="user.userType"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Agency Name (if Agency type) -->
-                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                <v-col v-if="user.userType === 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.agencyName"
-                    label="Agency Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Agency Name"
+                    :model-value="user.agencyName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Registration Number (if Agency) -->
-                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                <v-col v-if="user.userType === 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.regNo || 'Not specified'"
-                    label="Registration Number"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Registration Number"
+                    :model-value="user.regNo || 'Not specified'"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Address (if Agency) -->
-                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                <v-col v-if="user.userType === 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.address || user.agencyAddress || 'Not specified'"
-                    label="Address"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Address"
+                    :model-value="user.address || user.agencyAddress || 'Not specified'"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Primary Contact Name (if Agency) -->
-                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                <v-col v-if="user.userType === 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.primaryContactName || 'Not specified'"
-                    label="Primary Contact Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Primary Contact Name"
+                    :model-value="user.primaryContactName || 'Not specified'"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Contact Number (if Agency) -->
-                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                <v-col v-if="user.userType === 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.contactNumber || user.agencyPhone || 'Not specified'"
-                    label="Contact Number"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Contact Number"
+                    :model-value="user.contactNumber || user.agencyPhone || 'Not specified'"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Description / Notes (if Agency) -->
-                <v-col cols="12" v-if="user.userType === 'Agency'">
+                <v-col v-if="user.userType === 'Agency'" cols="12">
                   <v-textarea
-                    :model-value="user.agencyDescription || user.notes || 'Not specified'"
-                    label="Description / Notes"
-                    variant="outlined"
-                    readonly
-                    class="custom-input"
                     auto-grow
+                    class="custom-input"
+                    label="Description / Notes"
+                    :model-value="user.agencyDescription || user.notes || 'Not specified'"
+                    readonly
                     rows="3"
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Status -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.status"
-                    label="Status"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Status"
+                    :model-value="user.status"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
               </v-row>
@@ -182,9 +182,9 @@
             <v-card-actions class="pa-4">
               <v-spacer />
               <v-btn
+                class="submit-btn"
                 color="black"
                 variant="elevated"
-                class="submit-btn"
                 @click="editUser"
               >
                 <v-icon left>mdi-pencil</v-icon>
@@ -199,77 +199,77 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
+  import { doc, getDoc } from 'firebase/firestore'
+  import { db } from '@/firebaseConfig'
 
-export default {
-  name: "ViewUserPage",
-  data() {
-    return {
-      user: {
-        id: null,
-        firstName: "",
-        lastName: "",
-        email: "",
-        userType: "",
-        agencyName: "",
-        status: ""
+  export default {
+    name: 'ViewUserPage',
+    data () {
+      return {
+        user: {
+          id: null,
+          firstName: '',
+          lastName: '',
+          email: '',
+          userType: '',
+          agencyName: '',
+          status: '',
+        },
+        loading: true,
+        error: null,
+      }
+    },
+    computed: {
+      profileImageSource () {
+        return this.user?.profileImageUrl || this.user?.profileImage || ''
       },
-      loading: true,
-      error: null
-    }
-  },
-  computed: {
-    profileImageSource() {
-      return this.user?.profileImageUrl || this.user?.profileImage || ''
+      userInitials () {
+        return this._initials(this.user?.firstName, this.user?.lastName)
+      },
     },
-    userInitials() {
-      return this._initials(this.user?.firstName, this.user?.lastName)
-    }
-  },
-  async mounted() {
-    document.title = "User Details - Depsure"
-    const userId = this.$route.params.id
-    if (userId) {
-      await this.loadUser(userId)
-    } else {
-      this.error = "No user ID provided"
-      this.loading = false
-    }
-  },
-  methods: {
-    // Derive initials if no image
-    _initials(first, last) {
-      const a = (String(first || '').trim()[0] || '').toUpperCase();
-      const b = (String(last || '').trim()[0] || '').toUpperCase();
-      return (a + b) || a || b || '?'
-    },
-    async loadUser(userId) {
-      try {
-        const docRef = doc(db, 'users', userId)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          this.user = {
-            id: docSnap.id,
-            ...docSnap.data()
-          }
-        } else {
-          this.error = "User not found"
-        }
-      } catch (error) {
-        console.error('Error loading user:', error)
-        this.error = "Failed to load user details"
-      } finally {
+    async mounted () {
+      document.title = 'User Details - Depsure'
+      const userId = this.$route.params.id
+      if (userId) {
+        await this.loadUser(userId)
+      } else {
+        this.error = 'No user ID provided'
         this.loading = false
       }
     },
-    editUser() {
-      if (this.user?.id) {
-        this.$router.push(`/edit-user-${this.user.id}`)
-      }
-    }
+    methods: {
+      // Derive initials if no image
+      _initials (first, last) {
+        const a = (String(first || '').trim()[0] || '').toUpperCase()
+        const b = (String(last || '').trim()[0] || '').toUpperCase()
+        return (a + b) || a || b || '?'
+      },
+      async loadUser (userId) {
+        try {
+          const docRef = doc(db, 'users', userId)
+          const docSnap = await getDoc(docRef)
+          if (docSnap.exists()) {
+            this.user = {
+              id: docSnap.id,
+              ...docSnap.data(),
+            }
+          } else {
+            this.error = 'User not found'
+          }
+        } catch (error) {
+          console.error('Error loading user:', error)
+          this.error = 'Failed to load user details'
+        } finally {
+          this.loading = false
+        }
+      },
+      editUser () {
+        if (this.user?.id) {
+          this.$router.push(`/edit-user-${this.user.id}`)
+        }
+      },
+    },
   }
-}
 </script>
 
 <style scoped>

@@ -1,21 +1,21 @@
-import { reactive, computed, readonly } from 'vue'
+import { computed, reactive, readonly } from 'vue'
 
 // Create a reactive store for notifications
 const state = reactive({
   snackbar: false,
   snackbarMessage: '',
   snackbarColor: 'success',
-  snackbarTimeout: 3000
+  snackbarTimeout: 3000,
 })
 
 // Export a readonly version of the state for external access if needed
 export const notificationState = readonly(state)
 
-export function useNotification() {
+export function useNotification () {
   const showNotification = (message, type = 'success', timeout = 3000) => {
     // Reset any existing notification first
     state.snackbar = false
-    
+
     // Use nextTick to ensure the reset is processed before showing new notification
     setTimeout(() => {
       state.snackbarMessage = message
@@ -56,6 +56,6 @@ export function useNotification() {
     showError,
     showWarning,
     showInfo,
-    hideNotification
+    hideNotification,
   }
 }

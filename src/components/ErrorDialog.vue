@@ -9,7 +9,7 @@
       <div
         class="notification-dialog-bg"
         style="background-color: #dc3545"
-      ></div>
+      />
       <!-- main white card -->
       <div class="notification-dialog-inner">
         <button class="notification-close" @click="closeDialog">&times;</button>
@@ -44,32 +44,32 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+  import { defineEmits, defineProps } from 'vue'
 
-const props = defineProps({
-  show: {
-    type: Boolean,
-    default: false
-  },
-  title: {
-    type: String,
-    default: 'Error!'
-  },
-  message: {
-    type: String,
-    default: 'An error occurred. Please try again.'
-  },
-  buttonText: {
-    type: String,
-    default: 'OK'
+  const props = defineProps({
+    show: {
+      type: Boolean,
+      default: false,
+    },
+    title: {
+      type: String,
+      default: 'Error!',
+    },
+    message: {
+      type: String,
+      default: 'An error occurred. Please try again.',
+    },
+    buttonText: {
+      type: String,
+      default: 'OK',
+    },
+  })
+
+  const emit = defineEmits(['close'])
+
+  const closeDialog = () => {
+    emit('close')
   }
-})
-
-const emit = defineEmits(['close'])
-
-const closeDialog = () => {
-  emit('close')
-}
 </script>
 
 <style scoped>
@@ -214,15 +214,15 @@ const closeDialog = () => {
     width: 90%;
     margin: 0 20px;
   }
-  
+
   .notification-dialog-inner {
     padding: 24px;
   }
-  
+
   .notification-title {
     font-size: 1.5em;
   }
-  
+
   .notification-message {
     font-size: 1em;
   }

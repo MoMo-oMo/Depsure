@@ -1,27 +1,27 @@
-import { ref, computed } from 'vue'
-import { db } from '@/firebaseConfig'
 import { doc, getDoc } from 'firebase/firestore'
-import { 
-  PROPERTY_TYPES, 
-  PROPERTY_TYPE_LABELS, 
-  PROPERTY_TYPE_OPTIONS,
-  PROPERTY_TYPE_COLORS,
-  getPropertyTypeLabel,
+import { computed, ref } from 'vue'
+import {
+  DEFAULT_PROPERTY_TYPE,
   getPropertyTypeColor,
-  DEFAULT_PROPERTY_TYPE
+  getPropertyTypeLabel,
+  PROPERTY_TYPE_COLORS,
+  PROPERTY_TYPE_LABELS,
+  PROPERTY_TYPE_OPTIONS,
+  PROPERTY_TYPES,
 } from '@/constants/propertyTypes'
+import { db } from '@/firebaseConfig'
 
-export function usePropertyType() {
+export function usePropertyType () {
   const loading = ref(false)
   const error = ref(null)
 
   // Get property type label
-  const getLabel = (propertyType) => {
+  const getLabel = propertyType => {
     return getPropertyTypeLabel(propertyType)
   }
 
   // Get property type color
-  const getColor = (propertyType) => {
+  const getColor = propertyType => {
     return getPropertyTypeColor(propertyType)
   }
 
@@ -31,7 +31,7 @@ export function usePropertyType() {
   }
 
   // Resolve property type from unit ID
-  const resolvePropertyTypeFromUnit = async (unitId) => {
+  const resolvePropertyTypeFromUnit = async unitId => {
     if (!unitId) {
       return DEFAULT_PROPERTY_TYPE
     }
@@ -42,22 +42,22 @@ export function usePropertyType() {
     try {
       // Get the unit document
       const unitDoc = await getDoc(doc(db, 'units', unitId))
-      
+
       if (!unitDoc.exists()) {
         throw new Error('Unit not found')
       }
 
       const unitData = unitDoc.data()
-      
+
       // Return the property type, defaulting to OTHER if not set
       return unitData.propertyType || DEFAULT_PROPERTY_TYPE
-    } catch (err) {
+    } catch (error_) {
       // Silently handle unit not found errors (e.g., when unit is archived)
       // Only log if it's not a "Unit not found" error
-      if (err.message !== 'Unit not found') {
-        console.error('Error resolving property type from unit:', err)
+      if (error_.message !== 'Unit not found') {
+        console.error('Error resolving property type from unit:', error_)
       }
-      error.value = err.message
+      error.value = error_.message
       return DEFAULT_PROPERTY_TYPE
     } finally {
       loading.value = false
@@ -65,7 +65,7 @@ export function usePropertyType() {
   }
 
   // Resolve property type from property ID (for direct property access)
-  const resolvePropertyTypeFromProperty = async (propertyId) => {
+  const resolvePropertyTypeFromProperty = async propertyId => {
     if (!propertyId) {
       return DEFAULT_PROPERTY_TYPE
     }
@@ -76,18 +76,18 @@ export function usePropertyType() {
     try {
       // Get the property document (stored in units collection)
       const propertyDoc = await getDoc(doc(db, 'units', propertyId))
-      
+
       if (!propertyDoc.exists()) {
         throw new Error('Property not found')
       }
 
       const propertyData = propertyDoc.data()
-      
+
       // Return the property type, defaulting to OTHER if not set
       return propertyData.propertyType || DEFAULT_PROPERTY_TYPE
-    } catch (err) {
-      console.error('Error resolving property type from property:', err)
-      error.value = err.message
+    } catch (error_) {
+      console.error('Error resolving property type from property:', error_)
+      error.value = error_.message
       return DEFAULT_PROPERTY_TYPE
     } finally {
       loading.value = false
@@ -122,12 +122,12 @@ export function usePropertyType() {
   }
 
   // Create a property type chip component data
-  const createPropertyTypeChip = (propertyType) => {
+  const createPropertyTypeChip = propertyType => {
     return {
       text: getLabel(propertyType),
       color: getColor(propertyType),
       size: 'small',
-      variant: 'elevated'
+      variant: 'elevated',
     }
   }
 
@@ -150,6 +150,6 @@ export function usePropertyType() {
     resolvePropertyTypeFromUnit,
     resolvePropertyTypeFromProperty,
     filterByPropertyType,
-    createPropertyTypeChip
+    createPropertyTypeChip,
   }
 }

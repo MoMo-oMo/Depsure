@@ -6,8 +6,8 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
-            @click="goBack"
             class="back-btn"
+            @click="goBack"
           >
             Back
           </v-btn>
@@ -24,7 +24,7 @@
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-progress-circular indeterminate color="primary" />
+              <v-progress-circular color="primary" indeterminate />
               <p class="mt-4">Loading maintenance entry details...</p>
             </v-card-text>
           </v-card>
@@ -32,7 +32,7 @@
           <!-- Error -->
           <v-card v-else-if="error" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-icon icon="mdi-alert" color="error" size="large" />
+              <v-icon color="error" icon="mdi-alert" size="large" />
               <p class="mt-4 text-error">{{ error }}</p>
             </v-card-text>
           </v-card>
@@ -40,17 +40,17 @@
           <!-- Form -->
           <div v-else class="form-card" elevation="0">
             <v-form ref="form" v-model="valid" lazy-validation>
-                  <v-card-text>
+              <v-card-text>
                 <v-row>
                   <!-- Property Name -->
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.unitName"
-                      label="Property Name"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="unitNameRules"
+                      label="Property Name"
                       required
+                      :rules="unitNameRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -58,11 +58,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.unitNumber"
-                      label="Unit Number"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="unitNumberRules"
+                      label="Unit Number"
                       required
+                      :rules="unitNumberRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -70,24 +70,24 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.contactPerson"
-                      label="Contact Person for Keys"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="contactPersonRules"
+                      label="Contact Person for Keys"
                       required
+                      :rules="contactPersonRules"
+                      variant="outlined"
                     />
                   </v-col>
-                  
+
                   <!-- Contact Person Number -->
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.contactPersonNumber"
-                      label="Contact Person Number"
-                      variant="outlined"
-                      class="custom-input"
-                      type="tel"
                       autocomplete="tel"
+                      class="custom-input"
+                      label="Contact Person Number"
                       prepend-inner-icon="mdi-phone"
+                      type="tel"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -97,24 +97,24 @@
                       <v-file-input
                         :key="`quotes-${quoteInputKey}`"
                         v-model="newQuoteFiles"
-                        label="Upload Request (PDF only)"
-                        variant="outlined"
-                        class="custom-input file-input-flex"
                         accept=".pdf"
-                        multiple
-                        show-size
-                        prepend-icon="mdi-file-pdf-box"
+                        class="custom-input file-input-flex"
+                        label="Upload Request (PDF only)"
                         :loading="uploadingQuotes"
-                        :rules="quoteFileRules"
+                        multiple
+                        prepend-icon="mdi-file-pdf-box"
                         hint="Only PDF files are allowed. Maximum size: 10MB per file"
+                        :rules="quoteFileRules"
                         persistent-hint
+                        show-size
+                        variant="outlined"
                       />
                       <v-btn
-                        color="black"
-                        variant="elevated"
                         class="upload-doc-btn"
+                        color="black"
                         :disabled="!newQuoteFiles || newQuoteFiles.length === 0 || uploadingQuotes"
                         :loading="uploadingQuotes"
+                        variant="elevated"
                         @click="uploadQuotes"
                       >
                         Upload
@@ -126,23 +126,23 @@
                       <h5 class="existing-title">Uploaded Requests:</h5>
                       <div class="quote-list">
                         <div v-for="(quote, index) in entry.quotes" :key="`quote-${index}`" class="quote-item">
-                          <v-icon color="primary" class="mr-2">mdi-file-pdf-box</v-icon>
+                          <v-icon class="mr-2" color="primary">mdi-file-pdf-box</v-icon>
                           <span class="quote-name">{{ quote.fileName }}</span>
                           <v-btn
-                            size="small"
+                            class="view-btn"
                             color="primary"
+                            size="small"
                             variant="outlined"
                             @click="viewQuote(quote)"
-                            class="view-btn"
                           >
                             View
                           </v-btn>
                           <v-btn
-                            size="small"
+                            class="delete-btn"
                             color="error"
+                            size="small"
                             variant="outlined"
                             @click="deleteQuote(index)"
-                            class="delete-btn"
                           >
                             Delete
                           </v-btn>
@@ -152,136 +152,157 @@
                   </v-col>
 
                 </v-row>
-                  </v-card-text>
-                  <!-- Action Buttons -->
-                  <v-card-actions class="pa-4">
-                    <v-spacer />
-                    <v-btn
-                      v-if="entry.quoteFileName && entry.quoteFileURL"
-                      color="black"
-                      variant="elevated"
-                      class="view-quote-btn"
-                      @click="showQuoteDialog = true"
-                    >
-                      View Quote Instructions
-                    </v-btn>
-                    <v-btn
-                      v-if="entry.quoteFileName && entry.quoteFileURL"
-                      color="error"
-                      variant="outlined"
-                      class="delete-quote-btn"
-                      @click="deleteQuoteFile"
-                      :disabled="saving"
-                    >
-                      Delete Quote
-                    </v-btn>
-                    <v-btn
-                      color="grey"
-                      variant="outlined"
-                      class="cancel-btn"
-                      @click="goBack"
-                      :disabled="saving"
-                    >
-                      Cancel
-                    </v-btn>
-                    <v-btn
-                      color="black"
-                      variant="elevated"
-                      class="submit-btn"
-                      :disabled="!valid || saving"
-                      :loading="saving"
-                      @click="saveEntry"
-                    >
-                      {{ saving ? 'Saving...' : 'Submit Request' }}
-                    </v-btn>
-                  </v-card-actions>
-                <!-- Notes tab removed - using live chat instead -->
-                <div style="display: none;">
-                  <v-card-text>
-                    <div class="notes-section" style="display: none;">
-                      <h3 class="mb-2">Notes</h3>
-                      <div v-if="(entry.notesLog && entry.notesLog.length)" class="chat-log" ref="chatLog">
-                        <div
-                          v-for="(n, idx) in sortedNotes"
-                          :key="noteKey(n)"
-                          class="chat-message"
-                          :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
-                        >
-                          <div class="chat-avatar">
-                            <img v-if="n.authorAvatarUrl" :src="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" />
-                            <template v-else>{{ noteInitials(n.authorName) }}</template>
-                          </div>
-                          <div class="chat-bubble">
-                            <div class="chat-header">
-                              <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
-                              <div class="chat-header-right">
-                                <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
-                                <span v-if="n.isEdited && !n.isDeleted" class="chat-edited">(edited)</span>
-                                <v-menu v-if="n.authorId === currentUserId && !n.isDeleted" location="bottom end">
-                                  <template #activator="{ props }">
-                                    <v-btn v-bind="props" icon="mdi-dots-vertical" size="x-small" variant="text" color="white" />
-                                  </template>
-                                  <v-list density="compact">
-                                    <v-list-item @click="startEdit(n)">
-                                      <v-list-item-title>
-                                        <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
-                                        Edit
-                                      </v-list-item-title>
-                                    </v-list-item>
-                                    <v-list-item @click="softDeleteNote(n)">
-                                      <v-list-item-title class="text-error">
-                                        <v-icon size="small" class="mr-1" color="error">mdi-delete</v-icon>
-                                        Delete
-                                      </v-list-item-title>
-                                    </v-list-item>
-                                  </v-list>
-                                </v-menu>
-                              </div>
-                            </div>
-                            <div v-if="n.isDeleted" class="chat-text deleted">This message was deleted</div>
-                            <div v-else>
-                              <div v-if="editingKey && editingKey === noteKey(n)" class="edit-area">
-                                <v-textarea v-model="editingText" rows="2" auto-grow variant="outlined" class="custom-input" :counter="500" maxlength="500" />
-                                <div class="d-flex justify-end mt-2 gap-2">
-                                  <v-btn size="small" variant="text" @click="cancelEdit">Cancel</v-btn>
-                                  <v-btn size="small" color="black" variant="elevated" :loading="savingEdit" :disabled="!editingText.trim()" @click="saveEdit(n)">Save</v-btn>
-                                </div>
-                              </div>
-                              <div v-else class="chat-text">{{ n.text }}</div>
-                            </div>
-                          </div>
+              </v-card-text>
+              <!-- Action Buttons -->
+              <v-card-actions class="pa-4">
+                <v-spacer />
+                <v-btn
+                  v-if="entry.quoteFileName && entry.quoteFileURL"
+                  class="view-quote-btn"
+                  color="black"
+                  variant="elevated"
+                  @click="showQuoteDialog = true"
+                >
+                  View Quote Instructions
+                </v-btn>
+                <v-btn
+                  v-if="entry.quoteFileName && entry.quoteFileURL"
+                  class="delete-quote-btn"
+                  color="error"
+                  :disabled="saving"
+                  variant="outlined"
+                  @click="deleteQuoteFile"
+                >
+                  Delete Quote
+                </v-btn>
+                <v-btn
+                  class="cancel-btn"
+                  color="grey"
+                  :disabled="saving"
+                  variant="outlined"
+                  @click="goBack"
+                >
+                  Cancel
+                </v-btn>
+                <v-btn
+                  class="submit-btn"
+                  color="black"
+                  :disabled="!valid || saving"
+                  :loading="saving"
+                  variant="elevated"
+                  @click="saveEntry"
+                >
+                  {{ saving ? 'Saving...' : 'Submit Request' }}
+                </v-btn>
+              </v-card-actions>
+              <!-- Notes tab removed - using live chat instead -->
+              <div style="display: none;">
+                <v-card-text>
+                  <div class="notes-section" style="display: none;">
+                    <h3 class="mb-2">Notes</h3>
+                    <div v-if="(entry.notesLog && entry.notesLog.length > 0)" ref="chatLog" class="chat-log">
+                      <div
+                        v-for="(n, idx) in sortedNotes"
+                        :key="noteKey(n)"
+                        class="chat-message"
+                        :class="{ 'mine': n.authorId === currentUserId, 'other': n.authorId !== currentUserId }"
+                      >
+                        <div class="chat-avatar">
+                          <img v-if="n.authorAvatarUrl" alt="avatar" class="chat-avatar-img" :src="n.authorAvatarUrl">
+                          <template v-else>{{ noteInitials(n.authorName) }}</template>
                         </div>
-                      </div>
-                      <div v-else class="text-medium-emphasis">No notes yet.</div>
-
-                      <!-- Append note input (Admin and Agency) -->
-                      <div v-if="userType === 'Admin' || userType === 'Super Admin' || isAgencyUser" class="chat-input mt-4">
-                        <v-textarea
-                          v-model="newNote"
-                          placeholder="Write a note..."
-                          variant="outlined"
-                          class="custom-input"
-                          :counter="500"
-                          maxlength="500"
-                          rows="2"
-                          auto-grow
-                        />
-                        <div class="d-flex justify-end mt-2">
-                          <v-btn
-                            color="black"
-                            variant="elevated"
-                            :disabled="!newNote || savingNote"
-                            :loading="savingNote"
-                            @click="appendNote"
-                          >
-                            <v-icon start>mdi-send</v-icon>
-                            Send
-                          </v-btn>
+                        <div class="chat-bubble">
+                          <div class="chat-header">
+                            <span class="chat-author">{{ n.authorName || 'Unknown' }}</span>
+                            <div class="chat-header-right">
+                              <span class="chat-time">{{ formatNoteDate(n.timestamp) }}</span>
+                              <span v-if="n.isEdited && !n.isDeleted" class="chat-edited">(edited)</span>
+                              <v-menu v-if="n.authorId === currentUserId && !n.isDeleted" location="bottom end">
+                                <template #activator="{ props }">
+                                  <v-btn
+                                    v-bind="props"
+                                    color="white"
+                                    icon="mdi-dots-vertical"
+                                    size="x-small"
+                                    variant="text"
+                                  />
+                                </template>
+                                <v-list density="compact">
+                                  <v-list-item @click="startEdit(n)">
+                                    <v-list-item-title>
+                                      <v-icon class="mr-1" size="small">mdi-pencil</v-icon>
+                                      Edit
+                                    </v-list-item-title>
+                                  </v-list-item>
+                                  <v-list-item @click="softDeleteNote(n)">
+                                    <v-list-item-title class="text-error">
+                                      <v-icon class="mr-1" color="error" size="small">mdi-delete</v-icon>
+                                      Delete
+                                    </v-list-item-title>
+                                  </v-list-item>
+                                </v-list>
+                              </v-menu>
+                            </div>
+                          </div>
+                          <div v-if="n.isDeleted" class="chat-text deleted">This message was deleted</div>
+                          <div v-else>
+                            <div v-if="editingKey && editingKey === noteKey(n)" class="edit-area">
+                              <v-textarea
+                                v-model="editingText"
+                                auto-grow
+                                class="custom-input"
+                                :counter="500"
+                                maxlength="500"
+                                rows="2"
+                                variant="outlined"
+                              />
+                              <div class="d-flex justify-end mt-2 gap-2">
+                                <v-btn size="small" variant="text" @click="cancelEdit">Cancel</v-btn>
+                                <v-btn
+                                  color="black"
+                                  :disabled="!editingText.trim()"
+                                  :loading="savingEdit"
+                                  size="small"
+                                  variant="elevated"
+                                  @click="saveEdit(n)"
+                                >Save</v-btn>
+                              </div>
+                            </div>
+                            <div v-else class="chat-text">{{ n.text }}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </v-card-text>
-                </div>
+                    <div v-else class="text-medium-emphasis">No notes yet.</div>
+
+                    <!-- Append note input (Admin and Agency) -->
+                    <div v-if="userType === 'Admin' || userType === 'Super Admin' || isAgencyUser" class="chat-input mt-4">
+                      <v-textarea
+                        v-model="newNote"
+                        class="custom-input"
+                        auto-grow
+                        :counter="500"
+                        maxlength="500"
+                        placeholder="Write a note..."
+                        rows="2"
+                        variant="outlined"
+                      />
+                      <div class="d-flex justify-end mt-2">
+                        <v-btn
+                          color="black"
+                          :disabled="!newNote || savingNote"
+                          :loading="savingNote"
+                          variant="elevated"
+                          @click="appendNote"
+                        >
+                          <v-icon start>mdi-send</v-icon>
+                          Send
+                        </v-btn>
+                      </div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </div>
             </v-form>
           </div>
         </v-col>
@@ -292,7 +313,7 @@
     <div v-if="showQuoteDialog" class="quote-overlay" @click.self="showQuoteDialog = false">
       <div class="quote-dialog">
         <!-- colored card behind -->
-        <div class="quote-dialog-bg"></div>
+        <div class="quote-dialog-bg" />
         <!-- main white card -->
         <div class="quote-dialog-inner">
           <button class="quote-close" @click="showQuoteDialog = false">&times;</button>
@@ -303,7 +324,7 @@
 
           <h2 class="quote-title">Quote Document</h2>
           <p class="quote-subtitle">{{ currentQuoteName }}</p>
-          
+
           <div v-if="currentQuoteURL" class="pdf-container">
             <div class="pdf-controls">
               <button class="zoom-btn" @click="zoomOut">-</button>
@@ -312,11 +333,11 @@
             </div>
             <div class="pdf-wrapper" :style="{ transform: `scale(${zoomLevel})` }">
               <iframe
+                class="pdf-iframe"
+                frameborder="0"
+                height="400"
                 :src="currentQuoteURL"
                 width="100%"
-                height="400"
-                frameborder="0"
-                class="pdf-iframe"
               />
             </div>
           </div>
@@ -329,9 +350,9 @@
             <button class="quote-button secondary" @click="showQuoteDialog = false">
               Close
             </button>
-            <button 
+            <button
               v-if="currentQuoteURL"
-              class="quote-button primary" 
+              class="quote-button primary"
               @click="openInNewTab"
             >
               Open in New Tab
@@ -344,672 +365,688 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db, storage } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { collection, query, where, getDocs } from 'firebase/firestore'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { useAppStore } from '@/stores/app'
+  import { arrayUnion, collection, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 
-export default {
-  name: "EditMaintenancePage",
-  setup() {
-    const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    return { showSuccessDialog, showErrorDialog, showConfirmDialog, logAuditEvent, auditActions, resourceTypes }
-  },
-  data() {
-    return {
-      activeTab: 'details',
-      entry: {
-        id: null,
-        agencyId: "",
-        unitName: "",
-        unitNumber: "",
-        contactPerson: "",
-        contactPersonNumber: "",
-        noticeGiven: "No",
-        vacateDate: "",
-        contactNumber: "",
-        address: "",
-        status: "Pending",
-        priority: "Medium",
-        estimatedCost: 0,
-        notes: "",
-        quotes: []
+  import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { db, storage } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
+
+  export default {
+    name: 'EditMaintenancePage',
+    setup () {
+      const { showSuccessDialog, showErrorDialog, showConfirmDialog } = useCustomDialogs()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      return { showSuccessDialog, showErrorDialog, showConfirmDialog, logAuditEvent, auditActions, resourceTypes }
+    },
+    data () {
+      return {
+        activeTab: 'details',
+        entry: {
+          id: null,
+          agencyId: '',
+          unitName: '',
+          unitNumber: '',
+          contactPerson: '',
+          contactPersonNumber: '',
+          noticeGiven: 'No',
+          vacateDate: '',
+          contactNumber: '',
+          address: '',
+          status: 'Pending',
+          priority: 'Medium',
+          estimatedCost: 0,
+          notes: '',
+          quotes: [],
+        },
+        agencies: [],
+        agenciesLoading: false,
+        loading: true,
+        saving: false,
+        uploadingQuotes: false,
+        error: null,
+        valid: true,
+        showQuoteDialog: false,
+        currentQuoteURL: '',
+        currentQuoteName: '',
+        newQuoteFiles: [],
+        quoteInputKey: 0,
+        zoomLevel: 1,
+        newNote: '',
+        savingNote: false,
+        editingKey: null,
+        editingText: '',
+        savingEdit: false,
+        // Validation rules
+        agencyRules: [v => !!v || 'Agency selection is required'],
+        unitNameRules: [v => !!v || 'Unit Name is required'],
+        unitNumberRules: [v => !!v || 'Unit Number is required'],
+        contactPersonRules: [v => !!v || 'Contact Person is required'],
+        noticeGivenRules: [v => !!v || 'Notice Given is required'],
+        vacateDateRules: [v => !!v || 'Vacate Date is required'],
+        contactNumberRules: [v => !!v || 'Contact Number is required'],
+        addressRules: [v => !!v || 'Address is required'],
+        statusRules: [v => !!v || 'Status is required'],
+        priorityRules: [v => !!v || 'Priority is required'],
+        estimatedCostRules: [v => v >= 0 || 'Project budget cannot be negative'],
+        quoteFileRules: [
+          v => !v || v.every(file => file.size <= 50 * 1024 * 1024) || 'Each file must be less than 50MB',
+          v => !v || v.every(file => file.type === 'application/pdf') || 'Only PDF files are allowed',
+        ],
+      }
+    },
+    computed: {
+      isAgencyUser () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
       },
-      agencies: [],
-      agenciesLoading: false,
-      loading: true,
-      saving: false,
-      uploadingQuotes: false,
-      error: null,
-      valid: true,
-      showQuoteDialog: false,
-      currentQuoteURL: '',
-      currentQuoteName: '',
-      newQuoteFiles: [],
-      quoteInputKey: 0,
-      zoomLevel: 1,
-      newNote: '',
-      savingNote: false,
-      editingKey: null,
-      editingText: '',
-      savingEdit: false,
-      // Validation rules
-      agencyRules: [v => !!v || "Agency selection is required"],
-      unitNameRules: [v => !!v || "Unit Name is required"],
-      unitNumberRules: [v => !!v || "Unit Number is required"],
-      contactPersonRules: [v => !!v || "Contact Person is required"],
-      noticeGivenRules: [v => !!v || "Notice Given is required"],
-      vacateDateRules: [v => !!v || "Vacate Date is required"],
-      contactNumberRules: [v => !!v || "Contact Number is required"],
-      addressRules: [v => !!v || "Address is required"],
-      statusRules: [v => !!v || "Status is required"],
-      priorityRules: [v => !!v || "Priority is required"],
-      estimatedCostRules: [v => v >= 0 || "Project budget cannot be negative"],
-      quoteFileRules: [
-        v => !v || !v.length || v.every(file => file.size <= 50 * 1024 * 1024) || "Each file must be less than 50MB",
-        v => !v || !v.length || v.every(file => file.type === 'application/pdf') || "Only PDF files are allowed"
-      ]
-    };
-  },
-  computed: {
-    isAgencyUser() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+      userType () {
+        const appStore = useAppStore()
+        return appStore.currentUser?.userType
+      },
+      currentUserId () {
+        const appStore = useAppStore()
+        return appStore.userId
+      },
+      sortedNotes () {
+        const notes = this.entry?.notesLog || []
+        return [...notes].sort((a, b) => {
+          const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
+          const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
+          return ad - bd
+        })
+      },
     },
-    userType() {
-      const appStore = useAppStore();
-      return appStore.currentUser?.userType;
+    async mounted () {
+      document.title = 'Edit Maintenance Entry - Depsure'
+      const entryId = this.$route.params.id
+      if (entryId) {
+        await this.fetchAgencies()
+        this.loadEntryData(entryId)
+      } else {
+        this.error = 'Entry ID not found'
+        this.loading = false
+      }
     },
-    currentUserId() {
-      const appStore = useAppStore();
-      return appStore.userId;
-    },
-    sortedNotes() {
-      const notes = this.entry?.notesLog || []
-      return [...notes].sort((a,b) => {
-        const ad = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
-        const bd = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
-        return ad - bd
-      })
-    }
-  },
-  async mounted() {
-    document.title = "Edit Maintenance Entry - Depsure";
-    const entryId = this.$route.params.id;
-    if (entryId) {
-      await this.fetchAgencies();
-      this.loadEntryData(entryId);
-    } else {
-      this.error = "Entry ID not found";
-      this.loading = false;
-    }
-  },
-  methods: {
-    goBack() {
-      try {
-        const appStore = useAppStore();
-        const user = appStore.currentUser;
-        const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
-        if (isAgency) { this.$router.push('/onboard-units'); return }
-      } catch(_) {}
-      const from = this.$route?.query?.from
-      if (from === 'onboard') this.$router.push('/onboard-units')
-      else this.$router.push('/maintenance')
-    },
-    goBack() {
-      const from = this.$route?.query?.from
-      if (from === 'onboard') this.$router.push('/onboard-units')
-      else this.$router.push('/maintenance')
-    },
-    scrollNotesToBottom() {
-      this.$nextTick(() => {
-        const el = this.$refs.chatLog
-        if (el && el.scrollHeight != null) {
-          el.scrollTop = el.scrollHeight
+    methods: {
+      goBack () {
+        try {
+          const appStore = useAppStore()
+          const user = appStore.currentUser
+          const isAgency = user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+          if (isAgency) {
+            this.$router.push('/onboard-units'); return
+          }
+        } catch {}
+        const from = this.$route?.query?.from
+        if (from === 'onboard') this.$router.push('/onboard-units')
+        else this.$router.push('/maintenance')
+      },
+      goBack () {
+        const from = this.$route?.query?.from
+        if (from === 'onboard') this.$router.push('/onboard-units')
+        else this.$router.push('/maintenance')
+      },
+      scrollNotesToBottom () {
+        this.$nextTick(() => {
+          const el = this.$refs.chatLog
+          if (el && el.scrollHeight != null) {
+            el.scrollTop = el.scrollHeight
+          }
+        })
+      },
+      startEdit (note) {
+        this.editingKey = this.noteKey(note); this.editingText = String(note.text || '')
+      },
+      cancelEdit () {
+        this.editingKey = null; this.editingText = ''
+      },
+      noteKey (n) {
+        try {
+          if (n?.id) return `id:${n.id}`
+          const t = n?.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n?.timestamp || 0).getTime()
+          const aid = n?.authorId || ''
+          const txt = String(n?.text || '')
+          return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0, 8)}`
+        } catch {
+          return `legacy:${Math.random().toString(36).slice(2, 8)}`
         }
-      })
-    },
-    startEdit(note) { this.editingKey = this.noteKey(note); this.editingText = String(note.text || '') },
-    cancelEdit() { this.editingKey = null; this.editingText = '' },
-    noteKey(n) {
-      try {
-        if (n?.id) return `id:${n.id}`
-        const t = n?.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n?.timestamp || 0).getTime()
-        const aid = n?.authorId || ''
-        const txt = String(n?.text || '')
-        return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0,8)}`
-      } catch (_) { return `legacy:${Math.random().toString(36).slice(2,8)}` }
-    },
-    findNoteIndexByIdOrMatch(list, target) {
-      if (!Array.isArray(list)) return -1
-      if (target.id) { const i = list.findIndex(n => n && n.id === target.id); if (i !== -1) return i }
-      const tA = target.timestamp?.toDate ? target.timestamp.toDate().getTime() : new Date(target.timestamp || 0).getTime()
-      const txt = String(target.text || '')
-      const aid = target.authorId || ''
-      for (let i = list.length - 1; i >= 0; i--) {
-        const n = list[i] || {}
-        const nT = n.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n.timestamp || 0).getTime()
-        if ((n.id && !target.id) ? false : (String(n.text || '') === txt && (n.authorId || '') === aid && nT === tA)) return i
-      }
-      return -1
-    },
-    async saveEdit(target) {
-      if (!this.entry?.id) return
-      const newText = this.editingText.trim(); if (!newText) return
-      try {
-        this.savingEdit = true
-        const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
-        const idx = this.findNoteIndexByIdOrMatch(list, target)
-        if (idx === -1) throw new Error('Note not found')
-        const old = list[idx] || {}
-        list[idx] = { ...old, text: newText, isEdited: true, editedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
-        await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
-        this.entry.notesLog = list
-        this.cancelEdit()
-      } catch (e) {
-        console.error('Error editing note:', e)
-        this.showErrorDialog('Failed to edit note. Please try again.', 'Error', 'OK')
-      } finally { this.savingEdit = false }
-    },
-    async softDeleteNote(target) {
-      if (!this.entry?.id) return
-      try { await this.showConfirmDialog({ title: 'Delete message?', message: 'This message will be shown as deleted.', confirmText: 'Delete', cancelText: 'Cancel', color: '#dc3545' }) } catch(_) { return }
-      try {
-        const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
-        const idx = this.findNoteIndexByIdOrMatch(list, target)
-        if (idx === -1) throw new Error('Note not found')
-        const old = list[idx] || {}
-        list[idx] = { ...old, isDeleted: true, deletedAt: new Date(), id: old.id || (Date.now()+ '_' + Math.random().toString(36).slice(2,8)) }
-        await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
-        this.entry.notesLog = list
-      } catch (e) {
-        console.error('Error deleting note:', e)
-        this.showErrorDialog('Failed to delete note. Please try again.', 'Error', 'OK')
-      }
-    },
-     noteInitials(name) {
-       const raw = String(name || '').trim()
-       if (!raw) return '?'
-       const words = raw.split(/\s+/).filter(Boolean)
-       if (words.length === 1) {
-         const cleaned = words[0].replace(/[^A-Za-z0-9]/g, '')
-         if (!cleaned) return '?'
-         return cleaned.slice(0, 2).toUpperCase()
-       }
-       const first = (words[0] && words[0][0]) ? words[0][0] : ''
-       const second = (words[1] && words[1][0]) ? words[1][0] : ''
-       const res = (first + second).trim()
-       return res ? res.toUpperCase() : '?'
-     },
-    formatNoteDate(ts) {
-      try {
-        if (!ts) return 'Just now'
-        const d = ts.toDate ? ts.toDate() : new Date(ts)
-        return d.toLocaleString()
-      } catch (_) { return String(ts) }
-    },
-    async loadEntryData(id) {
-      try {
-        const docRef = doc(db, 'maintenance', id);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          this.entry = {
-            id: docSnap.id,
-            agencyId: data.agencyId || "",
-            unitName: data.unitName || "",
-            unitNumber: data.unitNumber || "",
-            contactPerson: data.contactPerson || "",
-            contactPersonNumber: data.contactPersonNumber || "",
-            noticeGiven: data.noticeGiven || "No",
-            vacateDate: data.vacateDate || "",
-            contactNumber: data.contactNumber || "",
-            address: data.address || "",
-            status: data.status || "Pending",
-            priority: data.priority || "Medium",
-            estimatedCost: data.estimatedCost || 0,
-            notes: data.notes || "",
-            notesLog: data.notesLog || [],
-            quotes: data.quotes || []
-          };
-          
-          // Automatically fetch and populate unit number from the unit
-          if (this.entry.unitName) {
-            try {
-              const unitsQuery = query(
-                collection(db, 'units'),
-                where('propertyName', '==', this.entry.unitName)
-              );
-              const unitsSnapshot = await getDocs(unitsQuery);
-              
-              if (!unitsSnapshot.empty) {
-                const unitData = unitsSnapshot.docs[0].data();
-                // Auto-populate unit number if it exists
-                if (unitData.unitNumber) {
-                  this.entry.unitNumber = unitData.unitNumber;
-                  console.log('Auto-populated unit number from property:', unitData.unitNumber);
+      },
+      findNoteIndexByIdOrMatch (list, target) {
+        if (!Array.isArray(list)) return -1
+        if (target.id) {
+          const i = list.findIndex(n => n && n.id === target.id); if (i !== -1) return i
+        }
+        const tA = target.timestamp?.toDate ? target.timestamp.toDate().getTime() : new Date(target.timestamp || 0).getTime()
+        const txt = String(target.text || '')
+        const aid = target.authorId || ''
+        for (let i = list.length - 1; i >= 0; i--) {
+          const n = list[i] || {}
+          const nT = n.timestamp?.toDate ? n.timestamp.toDate().getTime() : new Date(n.timestamp || 0).getTime()
+          if ((n.id && !target.id) ? false : (String(n.text || '') === txt && (n.authorId || '') === aid && nT === tA)) return i
+        }
+        return -1
+      },
+      async saveEdit (target) {
+        if (!this.entry?.id) return
+        const newText = this.editingText.trim(); if (!newText) return
+        try {
+          this.savingEdit = true
+          const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
+          const idx = this.findNoteIndexByIdOrMatch(list, target)
+          if (idx === -1) throw new Error('Note not found')
+          const old = list[idx] || {}
+          list[idx] = { ...old, text: newText, isEdited: true, editedAt: new Date(), id: old.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 8)) }
+          await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
+          this.entry.notesLog = list
+          this.cancelEdit()
+        } catch (error) {
+          console.error('Error editing note:', error)
+          this.showErrorDialog('Failed to edit note. Please try again.', 'Error', 'OK')
+        } finally {
+          this.savingEdit = false
+        }
+      },
+      async softDeleteNote (target) {
+        if (!this.entry?.id) return
+        try {
+          await this.showConfirmDialog({ title: 'Delete message?', message: 'This message will be shown as deleted.', confirmText: 'Delete', cancelText: 'Cancel', color: '#dc3545' })
+        } catch {
+          return
+        }
+        try {
+          const list = Array.isArray(this.entry.notesLog) ? [...this.entry.notesLog] : []
+          const idx = this.findNoteIndexByIdOrMatch(list, target)
+          if (idx === -1) throw new Error('Note not found')
+          const old = list[idx] || {}
+          list[idx] = { ...old, isDeleted: true, deletedAt: new Date(), id: old.id || (Date.now() + '_' + Math.random().toString(36).slice(2, 8)) }
+          await updateDoc(doc(db, 'maintenance', this.entry.id), { notesLog: list, updatedAt: serverTimestamp() })
+          this.entry.notesLog = list
+        } catch (error) {
+          console.error('Error deleting note:', error)
+          this.showErrorDialog('Failed to delete note. Please try again.', 'Error', 'OK')
+        }
+      },
+      noteInitials (name) {
+        const raw = String(name || '').trim()
+        if (!raw) return '?'
+        const words = raw.split(/\s+/).filter(Boolean)
+        if (words.length === 1) {
+          const cleaned = words[0].replace(/[^A-Za-z0-9]/g, '')
+          if (!cleaned) return '?'
+          return cleaned.slice(0, 2).toUpperCase()
+        }
+        const first = (words[0] && words[0][0]) ? words[0][0] : ''
+        const second = (words[1] && words[1][0]) ? words[1][0] : ''
+        const res = (first + second).trim()
+        return res ? res.toUpperCase() : '?'
+      },
+      formatNoteDate (ts) {
+        try {
+          if (!ts) return 'Just now'
+          const d = ts.toDate ? ts.toDate() : new Date(ts)
+          return d.toLocaleString()
+        } catch {
+          return String(ts)
+        }
+      },
+      async loadEntryData (id) {
+        try {
+          const docRef = doc(db, 'maintenance', id)
+          const docSnap = await getDoc(docRef)
+
+          if (docSnap.exists()) {
+            const data = docSnap.data()
+            this.entry = {
+              id: docSnap.id,
+              agencyId: data.agencyId || '',
+              unitName: data.unitName || '',
+              unitNumber: data.unitNumber || '',
+              contactPerson: data.contactPerson || '',
+              contactPersonNumber: data.contactPersonNumber || '',
+              noticeGiven: data.noticeGiven || 'No',
+              vacateDate: data.vacateDate || '',
+              contactNumber: data.contactNumber || '',
+              address: data.address || '',
+              status: data.status || 'Pending',
+              priority: data.priority || 'Medium',
+              estimatedCost: data.estimatedCost || 0,
+              notes: data.notes || '',
+              notesLog: data.notesLog || [],
+              quotes: data.quotes || [],
+            }
+
+            // Automatically fetch and populate unit number from the unit
+            if (this.entry.unitName) {
+              try {
+                const unitsQuery = query(
+                  collection(db, 'units'),
+                  where('propertyName', '==', this.entry.unitName),
+                )
+                const unitsSnapshot = await getDocs(unitsQuery)
+
+                if (unitsSnapshot.empty) {
+                  console.log('No unit found with propertyName:', this.entry.unitName)
+                } else {
+                  const unitData = unitsSnapshot.docs[0].data()
+                  // Auto-populate unit number if it exists
+                  if (unitData.unitNumber) {
+                    this.entry.unitNumber = unitData.unitNumber
+                    console.log('Auto-populated unit number from property:', unitData.unitNumber)
+                  }
                 }
-              } else {
-                console.log('No unit found with propertyName:', this.entry.unitName);
-              }
-            } catch (unitError) {
-              console.error('Could not fetch unit number:', unitError);
+              } catch (unitError) {
+                console.error('Could not fetch unit number:', unitError)
               // Continue even if unit fetch fails
+              }
+            }
+
+            this.loading = false
+          } else {
+            this.error = 'Maintenance entry not found'
+            this.loading = false
+          }
+        } catch (error) {
+          console.error('Error loading maintenance entry:', error)
+          this.error = 'Failed to load maintenance entry'
+          this.loading = false
+        }
+      },
+
+      async fetchAgencies () {
+        this.agenciesLoading = true
+        try {
+          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+          const querySnapshot = await getDocs(q)
+          this.agencies = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          console.log('Agencies loaded:', this.agencies.length)
+        } catch (error) {
+          console.error('Error fetching agencies:', error)
+          this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+        } finally {
+          this.agenciesLoading = false
+        }
+      },
+
+      async saveEntry () {
+        if (this.$refs.form.validate()) {
+          this.saving = true
+          try {
+            console.log('Saving maintenance entry:', this.entry)
+
+            // Get agency name from selected agency
+            const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
+
+            // Prepare maintenance data for Firestore
+            const maintenanceData = {
+              agencyId: this.entry.agencyId,
+              agencyName: selectedAgency ? selectedAgency.agencyName : '',
+              unitName: this.entry.unitName,
+              unitNumber: this.entry.unitNumber,
+              contactPerson: String(this.entry.contactPerson || '').trim(),
+              contactPersonNumber: String(this.entry.contactPersonNumber || '').replace(/\s+/g, ' ').trim(),
+              noticeGiven: this.entry.noticeGiven,
+              vacateDate: this.entry.vacateDate,
+              contactNumber: this.entry.contactNumber,
+              address: this.entry.address,
+              status: this.entry.status,
+              priority: this.entry.priority,
+              estimatedCost: this.entry.estimatedCost || 0,
+              notes: this.entry.notes || '',
+              quotes: this.entry.quotes || [],
+              updatedAt: new Date(),
+            }
+
+            // Log the update action before saving
+            await this.logAuditEvent(
+              this.auditActions.UPDATE,
+              {
+                maintenanceId: this.entry.id,
+                maintenanceType: maintenanceData.maintenanceType,
+                updatedFields: Object.keys(maintenanceData),
+                updatedData: maintenanceData,
+              },
+              this.resourceTypes.MAINTENANCE,
+              this.entry.id,
+            )
+
+            // Update maintenance data in Firestore
+            const docRef = doc(db, 'maintenance', this.entry.id)
+            await updateDoc(docRef, maintenanceData)
+
+            console.log('Maintenance data updated in Firestore')
+            this.showSuccessDialog('Maintenance entry updated successfully!', 'Success!', 'Continue', `/view-maintenance-${this.entry.id}`)
+          } catch (error) {
+            console.error('Error updating maintenance entry:', error)
+            this.showErrorDialog('Failed to update maintenance entry. Please try again.', 'Error', 'OK')
+          } finally {
+            this.saving = false
+          }
+        }
+      },
+      async appendNote () {
+        if (!this.newNote || !this.entry?.id) return
+        try {
+          this.savingNote = true
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const isAgency = currentUser?.userType === 'Agency' || (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency')
+
+          // Get proper author name based on user type
+          let authorName = 'Unknown User'
+          if (isAgency) {
+            authorName = currentUser?.agencyName || this.entry?.unitName || 'Property'
+          } else {
+            // For regular users, use firstName + lastName or fallback to email
+            if (currentUser?.firstName && currentUser?.lastName) {
+              authorName = `${currentUser.firstName} ${currentUser.lastName}`
+            } else if (currentUser?.firstName) {
+              authorName = currentUser.firstName
+            } else if (currentUser?.lastName) {
+              authorName = currentUser.lastName
+            } else if (currentUser?.email) {
+              authorName = currentUser.email
             }
           }
-          
-          this.loading = false;
-        } else {
-          this.error = "Maintenance entry not found";
-          this.loading = false;
-        }
-      } catch (error) {
-        console.error('Error loading maintenance entry:', error);
-        this.error = "Failed to load maintenance entry";
-        this.loading = false;
-      }
-    },
 
-    async fetchAgencies() {
-      this.agenciesLoading = true
-      try {
-        const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
-        const querySnapshot = await getDocs(q)
-        this.agencies = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }))
-        console.log('Agencies loaded:', this.agencies.length)
-      } catch (error) {
-        console.error('Error fetching agencies:', error)
-        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
-      } finally {
-        this.agenciesLoading = false
-      }
-    },
-
-    async saveEntry() {
-      if (this.$refs.form.validate()) {
-        this.saving = true
-        try {
-          console.log("Saving maintenance entry:", this.entry);
-          
-          // Get agency name from selected agency
-          const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
-          
-          // Prepare maintenance data for Firestore
-          const maintenanceData = {
-            agencyId: this.entry.agencyId,
-            agencyName: selectedAgency ? selectedAgency.agencyName : '',
-            unitName: this.entry.unitName,
-            unitNumber: this.entry.unitNumber,
-            contactPerson: String(this.entry.contactPerson || '').trim(),
-            contactPersonNumber: String(this.entry.contactPersonNumber || '').replace(/\s+/g,' ').trim(),
-            noticeGiven: this.entry.noticeGiven,
-            vacateDate: this.entry.vacateDate,
-            contactNumber: this.entry.contactNumber,
-            address: this.entry.address,
-            status: this.entry.status,
-            priority: this.entry.priority,
-            estimatedCost: this.entry.estimatedCost || 0,
-            notes: this.entry.notes || "",
-            quotes: this.entry.quotes || [],
-            updatedAt: new Date()
+          const note = {
+            id: Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+            text: this.newNote,
+            authorId: appStore.userId || currentUser?.uid || '',
+            authorName: authorName,
+            authorType: appStore.userType || currentUser?.userType || '',
+            authorAvatarUrl: isAgency
+              ? (this.entry?.agencyProfileImageUrl || this.entry?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '')
+              : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
+            timestamp: new Date(),
+            isEdited: false,
+            isDeleted: false,
           }
-          
-          // Log the update action before saving
+
+          await updateDoc(doc(db, 'maintenance', this.entry.id), {
+            notesLog: arrayUnion(note),
+            updatedAt: serverTimestamp(),
+          })
+
+          if (!this.entry.notesLog) this.entry.notesLog = []
+          this.entry.notesLog.push(note)
+          this.newNote = ''
+          this.scrollNotesToBottom()
+        } catch (error) {
+          console.error('Error adding note:', error)
+          this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
+        } finally {
+          this.savingNote = false
+        }
+      },
+
+      async uploadQuotes () {
+        if (!this.newQuoteFiles || this.newQuoteFiles.length === 0) return
+
+        this.uploadingQuotes = true
+        try {
+          const uploaded = []
+          for (const file of this.newQuoteFiles) {
+            const ts = Date.now()
+            const fileRef = ref(storage, `maintenance-quotes/${this.entry.id}/${ts}_${file.name}`)
+            const snapshot = await uploadBytes(fileRef, file)
+            const downloadURL = await getDownloadURL(snapshot.ref)
+            const storagePath = snapshot.ref.fullPath
+            uploaded.push({
+              fileName: file.name,
+              fileURL: downloadURL,
+              storagePath,
+              uploadedAt: new Date().toISOString(),
+            })
+          }
+
+          // Merge with existing quotes in maintenance
+          const updatedQuotes = [...(this.entry.quotes || []), ...uploaded]
+          this.entry.quotes = updatedQuotes
+
+          // Update maintenance document
+          await updateDoc(doc(db, 'maintenance', this.entry.id), {
+            quotes: updatedQuotes,
+            updatedAt: new Date(),
+          })
+
+          // Also update the property's quotes if we can find it
+          try {
+            const unitsQuery = query(
+              collection(db, 'units'),
+              where('unitName', '==', this.entry.unitName),
+            )
+            const unitsSnapshot = await getDocs(unitsQuery)
+
+            if (!unitsSnapshot.empty) {
+              const propertyDoc = unitsSnapshot.docs[0]
+              const propertyData = propertyDoc.data()
+              const existingPropertyQuotes = propertyData.quotes || []
+
+              // Add new quotes to property
+              const updatedPropertyQuotes = [...existingPropertyQuotes, ...uploaded]
+
+              await updateDoc(doc(db, 'units', propertyDoc.id), {
+                quotes: updatedPropertyQuotes,
+                updatedAt: new Date(),
+              })
+
+              console.log('Quotes also added to property documents')
+            }
+          } catch (propertyError) {
+            console.log('Could not add quotes to property:', propertyError)
+          // Continue even if property update fails
+          }
+
+          // Reset file input
+          this.newQuoteFiles = []
+          this.quoteInputKey++
+
+          this.showSuccessDialog(`${uploaded.length} quote(s) uploaded successfully and added to property documents!`, 'Success', 'OK')
+        } catch (error) {
+          console.error('Error uploading quotes:', error)
+          this.showErrorDialog('Failed to upload quotes. Please try again.', 'Error', 'OK')
+        } finally {
+          this.uploadingQuotes = false
+        }
+      },
+
+      viewQuote (quote) {
+        this.currentQuoteURL = quote.fileURL
+        this.currentQuoteName = quote.fileName
+        this.showQuoteDialog = true
+      },
+
+      async deleteQuote (index) {
+        const quote = this.entry.quotes[index]
+        if (!quote) return
+
+        try {
+          await this.showConfirmDialog({
+            title: 'Delete Quote?',
+            message: `Are you sure you want to delete "${quote.fileName}"?`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            color: '#dc3545',
+          })
+        } catch {
+          return
+        }
+
+        try {
+          // Delete from storage if storagePath exists
+          if (quote.storagePath) {
+            try {
+              const fileRef = ref(storage, quote.storagePath)
+              await deleteObject(fileRef)
+            } catch (deleteError) {
+              console.log('Storage delete failed, continuing:', deleteError)
+            }
+          }
+
+          // Remove from maintenance array
+          const updatedQuotes = this.entry.quotes.filter((_, i) => i !== index)
+          this.entry.quotes = updatedQuotes
+
+          // Update maintenance document
+          await updateDoc(doc(db, 'maintenance', this.entry.id), {
+            quotes: updatedQuotes,
+            updatedAt: new Date(),
+          })
+
+          // Also remove from property's quotes if we can find it
+          try {
+            const unitsQuery = query(
+              collection(db, 'units'),
+              where('unitName', '==', this.entry.unitName),
+            )
+            const unitsSnapshot = await getDocs(unitsQuery)
+
+            if (!unitsSnapshot.empty) {
+              const propertyDoc = unitsSnapshot.docs[0]
+              const propertyData = propertyDoc.data()
+              const existingPropertyQuotes = propertyData.quotes || []
+
+              // Remove quote from property by matching fileURL
+              const updatedPropertyQuotes = existingPropertyQuotes.filter(
+                q => q.fileURL !== quote.fileURL,
+              )
+
+              await updateDoc(doc(db, 'units', propertyDoc.id), {
+                quotes: updatedPropertyQuotes,
+                updatedAt: new Date(),
+              })
+
+              console.log('Quote also removed from property documents')
+            }
+          } catch (propertyError) {
+            console.log('Could not remove quote from property:', propertyError)
+          // Continue even if property update fails
+          }
+
+          this.showSuccessDialog('Quote deleted successfully from maintenance and property!', 'Success', 'OK')
+        } catch (error) {
+          console.error('Error deleting quote:', error)
+          this.showErrorDialog('Failed to delete quote. Please try again.', 'Error', 'OK')
+        }
+      },
+
+      openInNewTab () {
+        if (this.currentQuoteURL) {
+          window.open(this.currentQuoteURL, '_blank')
+        }
+      },
+
+      async deleteQuoteFile () {
+        if (!this.entry.quoteFileName || !this.entry.quoteFileURL) {
+          return
+        }
+
+        // Store the file details before deletion for audit logging
+        const fileNameToDelete = this.entry.quoteFileName
+        const fileURLToDelete = this.entry.quoteFileURL
+
+        // Show confirmation dialog
+        const confirmed = await this.showConfirmDialog(
+          `Are you sure you want to delete "${fileNameToDelete}"?`,
+          'Delete Quote File',
+          'This action cannot be undone.',
+        )
+
+        if (!confirmed) {
+          return
+        }
+
+        try {
+          // Delete from Firebase Storage
+          console.log('Attempting to delete file URL:', fileURLToDelete)
+
+          // Extract the file path from the URL
+          let filePath
+
+          // Try to extract from Firebase Storage URL
+          if (fileURLToDelete.includes('firebasestorage.googleapis.com')) {
+            // Firebase Storage URL format
+            const urlParts = fileURLToDelete.split('/')
+            const fileName = urlParts.at(-1)
+            const cleanFileName = fileName.split('?')[0]
+            filePath = `maintenance-quotes/${cleanFileName}`
+          } else {
+            // Fallback: try to extract filename from any URL
+            const urlParts = fileURLToDelete.split('/')
+            const fileName = urlParts.at(-1)
+            const cleanFileName = fileName.split('?')[0]
+            filePath = `maintenance-quotes/${cleanFileName}`
+          }
+
+          console.log('Extracted file path:', filePath)
+
+          // Try to delete the file from Firebase Storage
+          try {
+            const fileRef = ref(storage, filePath)
+            await deleteObject(fileRef)
+            console.log('Quote file deleted from storage:', filePath)
+          } catch (deleteError) {
+            console.log('Failed to delete from storage, but continuing with local cleanup:', deleteError)
+            // Continue with local cleanup even if storage delete fails
+          }
+
+          // Always clear the file data from the entry and update Firestore
+          this.entry.quoteFileName = ''
+          this.entry.quoteFileURL = ''
+
+          // Always update the Firestore document to remove file references
+          const docRef = doc(db, 'maintenance', this.entry.id)
+          await updateDoc(docRef, {
+            quoteFileName: '',
+            quoteFileURL: '',
+            updatedAt: new Date(),
+          })
+
+          console.log('Firestore document updated successfully')
+
+          // Log the delete action with the original file details
           await this.logAuditEvent(
-            this.auditActions.UPDATE,
+            this.auditActions.DELETE,
             {
               maintenanceId: this.entry.id,
-              maintenanceType: maintenanceData.maintenanceType,
-              updatedFields: Object.keys(maintenanceData),
-              updatedData: maintenanceData
+              fileName: fileNameToDelete,
+              fileURL: fileURLToDelete,
             },
             this.resourceTypes.MAINTENANCE,
-            this.entry.id
+            this.entry.id,
           )
-          
-          // Update maintenance data in Firestore
-          const docRef = doc(db, 'maintenance', this.entry.id)
-          await updateDoc(docRef, maintenanceData)
-          
-          console.log('Maintenance data updated in Firestore')
-          this.showSuccessDialog('Maintenance entry updated successfully!', 'Success!', 'Continue', `/view-maintenance-${this.entry.id}`)
-          
+
+          // Reload the entry data to ensure UI is updated
+          await this.loadEntryData(this.entry.id)
+
+          this.showSuccessDialog(
+            'Quote file has been deleted successfully.',
+            'File Deleted',
+            'OK',
+          )
         } catch (error) {
-          console.error('Error updating maintenance entry:', error)
-          this.showErrorDialog('Failed to update maintenance entry. Please try again.', 'Error', 'OK')
-        } finally {
-          this.saving = false
-        }
-      }
-    },
-    async appendNote() {
-      if (!this.newNote || !this.entry?.id) return
-      try {
-        this.savingNote = true
-        const appStore = useAppStore()
-        const currentUser = appStore.currentUser
-        const isAgency = currentUser?.userType === 'Agency' || (currentUser?.userType === 'Admin' && currentUser?.adminScope === 'agency')
-        
-        // Get proper author name based on user type
-        let authorName = 'Unknown User'
-        if (isAgency) {
-          authorName = currentUser?.agencyName || this.entry?.unitName || 'Property'
-        } else {
-          // For regular users, use firstName + lastName or fallback to email
-          if (currentUser?.firstName && currentUser?.lastName) {
-            authorName = `${currentUser.firstName} ${currentUser.lastName}`
-          } else if (currentUser?.firstName) {
-            authorName = currentUser.firstName
-          } else if (currentUser?.lastName) {
-            authorName = currentUser.lastName
-          } else if (currentUser?.email) {
-            authorName = currentUser.email
-          }
-        }
-        
-        const note = {
-          id: Date.now() + '_' + Math.random().toString(36).slice(2,8),
-          text: this.newNote,
-          authorId: appStore.userId || currentUser?.uid || '',
-          authorName: authorName,
-          authorType: appStore.userType || currentUser?.userType || '',
-          authorAvatarUrl: isAgency 
-            ? (this.entry?.agencyProfileImageUrl || this.entry?.profileImageUrl || currentUser?.profileImageUrl || currentUser?.profileImage || '') 
-            : (currentUser?.profileImageUrl || currentUser?.profileImage || ''),
-          timestamp: new Date(),
-          isEdited: false,
-          isDeleted: false
-        }
-        
-        await updateDoc(doc(db, 'maintenance', this.entry.id), { 
-          notesLog: arrayUnion(note), 
-          updatedAt: serverTimestamp() 
-        })
-        
-        if (!this.entry.notesLog) this.entry.notesLog = []
-        this.entry.notesLog.push(note)
-        this.newNote = ''
-        this.scrollNotesToBottom()
-      } catch (e) {
-        console.error('Error adding note:', e)
-        this.showErrorDialog('Failed to add note. Please try again.', 'Error', 'OK')
-      } finally {
-        this.savingNote = false
-      }
-    },
-    
-    async uploadQuotes() {
-      if (!this.newQuoteFiles || this.newQuoteFiles.length === 0) return
-      
-      this.uploadingQuotes = true
-      try {
-        const uploaded = []
-        for (const file of this.newQuoteFiles) {
-          const ts = Date.now()
-          const fileRef = ref(storage, `maintenance-quotes/${this.entry.id}/${ts}_${file.name}`)
-          const snapshot = await uploadBytes(fileRef, file)
-          const downloadURL = await getDownloadURL(snapshot.ref)
-          const storagePath = snapshot.ref.fullPath
-          uploaded.push({
-            fileName: file.name,
-            fileURL: downloadURL,
-            storagePath,
-            uploadedAt: new Date().toISOString()
+          console.error('Error deleting quote file:', error)
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack,
           })
+          // No error dialog - just log the error and continue
         }
-        
-        // Merge with existing quotes in maintenance
-        const updatedQuotes = [...(this.entry.quotes || []), ...uploaded]
-        this.entry.quotes = updatedQuotes
-        
-        // Update maintenance document
-        await updateDoc(doc(db, 'maintenance', this.entry.id), {
-          quotes: updatedQuotes,
-          updatedAt: new Date()
-        })
+      },
 
-        // Also update the property's quotes if we can find it
-        try {
-          const unitsQuery = query(
-            collection(db, 'units'),
-            where('unitName', '==', this.entry.unitName)
-          )
-          const unitsSnapshot = await getDocs(unitsQuery)
-          
-          if (!unitsSnapshot.empty) {
-            const propertyDoc = unitsSnapshot.docs[0]
-            const propertyData = propertyDoc.data()
-            const existingPropertyQuotes = propertyData.quotes || []
-            
-            // Add new quotes to property
-            const updatedPropertyQuotes = [...existingPropertyQuotes, ...uploaded]
-            
-            await updateDoc(doc(db, 'units', propertyDoc.id), {
-              quotes: updatedPropertyQuotes,
-              updatedAt: new Date()
-            })
-            
-            console.log('Quotes also added to property documents')
-          }
-        } catch (propertyError) {
-          console.log('Could not add quotes to property:', propertyError)
-          // Continue even if property update fails
-        }
-        
-        // Reset file input
-        this.newQuoteFiles = []
-        this.quoteInputKey++
-        
-        this.showSuccessDialog(`${uploaded.length} quote(s) uploaded successfully and added to property documents!`, 'Success', 'OK')
-      } catch (error) {
-        console.error('Error uploading quotes:', error)
-        this.showErrorDialog('Failed to upload quotes. Please try again.', 'Error', 'OK')
-      } finally {
-        this.uploadingQuotes = false
-      }
-    },
-
-    viewQuote(quote) {
-      this.currentQuoteURL = quote.fileURL
-      this.currentQuoteName = quote.fileName
-      this.showQuoteDialog = true
-    },
-
-    async deleteQuote(index) {
-      const quote = this.entry.quotes[index]
-      if (!quote) return
-
-      try {
-        await this.showConfirmDialog({
-          title: 'Delete Quote?',
-          message: `Are you sure you want to delete "${quote.fileName}"?`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          color: '#dc3545'
-        })
-      } catch (_) {
-        return
-      }
-
-      try {
-        // Delete from storage if storagePath exists
-        if (quote.storagePath) {
-          try {
-            const fileRef = ref(storage, quote.storagePath)
-            await deleteObject(fileRef)
-          } catch (deleteError) {
-            console.log('Storage delete failed, continuing:', deleteError)
-          }
-        }
-
-        // Remove from maintenance array
-        const updatedQuotes = this.entry.quotes.filter((_, i) => i !== index)
-        this.entry.quotes = updatedQuotes
-
-        // Update maintenance document
-        await updateDoc(doc(db, 'maintenance', this.entry.id), {
-          quotes: updatedQuotes,
-          updatedAt: new Date()
-        })
-
-        // Also remove from property's quotes if we can find it
-        try {
-          const unitsQuery = query(
-            collection(db, 'units'),
-            where('unitName', '==', this.entry.unitName)
-          )
-          const unitsSnapshot = await getDocs(unitsQuery)
-          
-          if (!unitsSnapshot.empty) {
-            const propertyDoc = unitsSnapshot.docs[0]
-            const propertyData = propertyDoc.data()
-            const existingPropertyQuotes = propertyData.quotes || []
-            
-            // Remove quote from property by matching fileURL
-            const updatedPropertyQuotes = existingPropertyQuotes.filter(
-              q => q.fileURL !== quote.fileURL
-            )
-            
-            await updateDoc(doc(db, 'units', propertyDoc.id), {
-              quotes: updatedPropertyQuotes,
-              updatedAt: new Date()
-            })
-            
-            console.log('Quote also removed from property documents')
-          }
-        } catch (propertyError) {
-          console.log('Could not remove quote from property:', propertyError)
-          // Continue even if property update fails
-        }
-
-        this.showSuccessDialog('Quote deleted successfully from maintenance and property!', 'Success', 'OK')
-      } catch (error) {
-        console.error('Error deleting quote:', error)
-        this.showErrorDialog('Failed to delete quote. Please try again.', 'Error', 'OK')
-      }
-    },
-
-    openInNewTab() {
-      if (this.currentQuoteURL) {
-        window.open(this.currentQuoteURL, '_blank');
-      }
-    },
-
-    async deleteQuoteFile() {
-      if (!this.entry.quoteFileName || !this.entry.quoteFileURL) {
-        return;
-      }
-
-      // Store the file details before deletion for audit logging
-      const fileNameToDelete = this.entry.quoteFileName;
-      const fileURLToDelete = this.entry.quoteFileURL;
-
-      // Show confirmation dialog
-      const confirmed = await this.showConfirmDialog(
-        `Are you sure you want to delete "${fileNameToDelete}"?`,
-        'Delete Quote File',
-        'This action cannot be undone.'
-      );
-
-      if (!confirmed) {
-        return;
-      }
-
-      try {
-        // Delete from Firebase Storage
-        console.log('Attempting to delete file URL:', fileURLToDelete);
-        
-        // Extract the file path from the URL
-        let filePath;
-        
-        // Try to extract from Firebase Storage URL
-        if (fileURLToDelete.includes('firebasestorage.googleapis.com')) {
-          // Firebase Storage URL format
-          const urlParts = fileURLToDelete.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          const cleanFileName = fileName.split('?')[0];
-          filePath = `maintenance-quotes/${cleanFileName}`;
-        } else {
-          // Fallback: try to extract filename from any URL
-          const urlParts = fileURLToDelete.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          const cleanFileName = fileName.split('?')[0];
-          filePath = `maintenance-quotes/${cleanFileName}`;
-        }
-        
-        console.log('Extracted file path:', filePath);
-        
-                 // Try to delete the file from Firebase Storage
-         try {
-           const fileRef = ref(storage, filePath);
-           await deleteObject(fileRef);
-           console.log('Quote file deleted from storage:', filePath);
-         } catch (deleteError) {
-           console.log('Failed to delete from storage, but continuing with local cleanup:', deleteError);
-           // Continue with local cleanup even if storage delete fails
-         }
-
-         // Always clear the file data from the entry and update Firestore
-         this.entry.quoteFileName = '';
-         this.entry.quoteFileURL = '';
-
-         // Always update the Firestore document to remove file references
-         const docRef = doc(db, 'maintenance', this.entry.id);
-         await updateDoc(docRef, {
-           quoteFileName: '',
-           quoteFileURL: '',
-           updatedAt: new Date()
-         });
-
-         console.log('Firestore document updated successfully');
-
-        // Log the delete action with the original file details
-        await this.logAuditEvent(
-          this.auditActions.DELETE,
-          {
-            maintenanceId: this.entry.id,
-            fileName: fileNameToDelete,
-            fileURL: fileURLToDelete
-          },
-          this.resourceTypes.MAINTENANCE,
-          this.entry.id
-        );
-
-        // Reload the entry data to ensure UI is updated
-        await this.loadEntryData(this.entry.id);
-
-        this.showSuccessDialog(
-          'Quote file has been deleted successfully.',
-          'File Deleted',
-          'OK'
-        );
-
-             } catch (error) {
-         console.error('Error deleting quote file:', error);
-         console.error('Error details:', {
-           code: error.code,
-           message: error.message,
-           stack: error.stack
-         });
-         // No error dialog - just log the error and continue
-       }
-    },
-
-    async showConfirmDialog(message, title, subtitle = '') {
-      return new Promise((resolve) => {
-        // Create a custom confirmation dialog with exact NotificationDialog styling
-        const dialog = document.createElement('div');
-        dialog.className = 'confirm-dialog-overlay';
-        dialog.style.cssText = `
+      async showConfirmDialog (message, title, subtitle = '') {
+        return new Promise(resolve => {
+          // Create a custom confirmation dialog with exact NotificationDialog styling
+          const dialog = document.createElement('div')
+          dialog.className = 'confirm-dialog-overlay'
+          dialog.style.cssText = `
           position: fixed;
           top: 0;
           left: 0;
@@ -1020,9 +1057,9 @@ export default {
           align-items: center;
           justify-content: center;
           z-index: 100000;
-        `;
-        
-        dialog.innerHTML = `
+        `
+
+          dialog.innerHTML = `
           <div style="
             position: relative;
             width: 500px;
@@ -1192,37 +1229,37 @@ export default {
               </div>
             </div>
           </div>
-        `;
-        
-        document.body.appendChild(dialog);
-        
-        // Handle the result
-        const checkResult = () => {
-          if (typeof window.confirmResult !== 'undefined') {
-            const result = window.confirmResult;
-            delete window.confirmResult;
-            resolve(result);
-          } else {
-            setTimeout(checkResult, 100);
+        `
+
+          document.body.append(dialog)
+
+          // Handle the result
+          const checkResult = () => {
+            if (window.confirmResult === undefined) {
+              setTimeout(checkResult, 100)
+            } else {
+              const result = window.confirmResult
+              delete window.confirmResult
+              resolve(result)
+            }
           }
-        };
-        checkResult();
-      });
+          checkResult()
+        })
+      },
+
+      zoomIn () {
+        if (this.zoomLevel < 2) {
+          this.zoomLevel += 0.1
+        }
+      },
+
+      zoomOut () {
+        if (this.zoomLevel > 0.5) {
+          this.zoomLevel -= 0.1
+        }
+      },
     },
-    
-    zoomIn() {
-      if (this.zoomLevel < 2) {
-        this.zoomLevel += 0.1;
-      }
-    },
-    
-    zoomOut() {
-      if (this.zoomLevel > 0.5) {
-        this.zoomLevel -= 0.1;
-      }
-    }
   }
-};
 </script>
 
 <style scoped>
@@ -1298,8 +1335,6 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;
@@ -1687,11 +1722,11 @@ export default {
     width: 95%;
     margin: 20px;
   }
-  
+
   .confirm-dialog-actions {
     flex-direction: column;
   }
-  
+
   .confirm-btn {
     width: 100%;
   }

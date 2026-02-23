@@ -1,16 +1,16 @@
 <template>
   <div class="view-user-page">
     <v-container fluid>
-      
+
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="primary"
             @click="$router.push('/user-management')"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -30,75 +30,75 @@
         <v-col cols="12">
           <v-card class="form-card">
             <v-card-title class="card-header">
-              <v-icon icon="mdi-account-circle-outline" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-account-circle-outline" />
               User Information
             </v-card-title>
-            
+
             <v-card-text>
               <v-row>
                 <!-- First Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.firstName"
-                    label="First Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="First Name"
+                    :model-value="user.firstName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Last Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.lastName"
-                    label="Last Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Last Name"
+                    :model-value="user.lastName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Email -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.email"
-                    label="Email"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Email"
+                    :model-value="user.email"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- User Type -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.userType"
-                    label="User Type"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="User Type"
+                    :model-value="user.userType"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Agency Name (if applicable) -->
-                <v-col cols="12" md="6" v-if="user.userType === 'Agency'">
+                <v-col v-if="user.userType === 'Agency'" cols="12" md="6">
                   <v-text-field
-                    :model-value="user.agencyName"
-                    label="Agency Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Agency Name"
+                    :model-value="user.agencyName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Status -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="user.status"
-                    label="Status"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Status"
+                    :model-value="user.status"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
               </v-row>
@@ -111,50 +111,50 @@
 </template>
 
 <script>
-import { db } from '@/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
+  import { doc, getDoc } from 'firebase/firestore'
+  import { db } from '@/firebaseConfig'
 
-export default {
-  name: "ViewUserPage",
-  data() {
-    return {
-      user: {
-        id: null,
-        firstName: "",
-        lastName: "",
-        email: "",
-        userType: "",
-        agencyName: "",
-        status: ""
+  export default {
+    name: 'ViewUserPage',
+    data () {
+      return {
+        user: {
+          id: null,
+          firstName: '',
+          lastName: '',
+          email: '',
+          userType: '',
+          agencyName: '',
+          status: '',
+        },
       }
-    }
-  },
-  async mounted() {
-    document.title = "User Details - Depsure"
-    const userId = this.$route.params.id
-    if (userId) {
-      await this.loadUserData(userId)
-    }
-  },
-  methods: {
-    async loadUserData(id) {
-      try {
-        const docRef = doc(db, 'users', id)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          this.user = {
-            id: docSnap.id,
-            ...docSnap.data()
+    },
+    async mounted () {
+      document.title = 'User Details - Depsure'
+      const userId = this.$route.params.id
+      if (userId) {
+        await this.loadUserData(userId)
+      }
+    },
+    methods: {
+      async loadUserData (id) {
+        try {
+          const docRef = doc(db, 'users', id)
+          const docSnap = await getDoc(docRef)
+          if (docSnap.exists()) {
+            this.user = {
+              id: docSnap.id,
+              ...docSnap.data(),
+            }
+          } else {
+            console.error('User not found')
           }
-        } else {
-          console.error('User not found')
+        } catch (error) {
+          console.error('Error loading user:', error)
         }
-      } catch (error) {
-        console.error('Error loading user:', error)
-      }
-    }
+      },
+    },
   }
-}
 </script>
 
 <style scoped>
@@ -210,8 +210,6 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;

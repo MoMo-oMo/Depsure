@@ -2,7 +2,7 @@
   <div v-if="show" class="dialog-overlay" @click.self="cancel">
     <div class="dialog">
       <!-- colored card behind -->
-      <div class="dialog-bg"></div>
+      <div class="dialog-bg" />
       <!-- main white card -->
       <div class="dialog-inner">
         <button class="dialog-close" @click="cancel">&times;</button>
@@ -18,23 +18,23 @@
           <!-- Date Input -->
           <v-text-field
             v-model="dateValue"
+            class="custom-input"
             label="Date"
+            required
+            :rules="dateRules"
             type="date"
             variant="outlined"
-            class="custom-input"
-            :rules="dateRules"
-            required
           />
 
           <!-- Notes Input -->
           <v-textarea
             v-model="notesValue"
-            label="Notes (Optional)"
-            variant="outlined"
             class="custom-input"
-            rows="3"
-            placeholder="Add any additional notes..."
             hide-details
+            label="Notes (Optional)"
+            placeholder="Add any additional notes..."
+            rows="3"
+            variant="outlined"
           />
         </div>
 
@@ -44,8 +44,8 @@
           </button>
           <button
             class="dialog-button primary"
-            @click="confirm"
             :disabled="!isValid"
+            @click="confirm"
           >
             {{ confirmText }}
           </button>
@@ -56,47 +56,47 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
+  import { computed } from 'vue'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
-const { dateNotesDialog, confirmDateNotes, cancelDateNotes } =
-  useCustomDialogs();
+  const { dateNotesDialog, confirmDateNotes, cancelDateNotes }
+    = useCustomDialogs()
 
-const show = computed(() => dateNotesDialog.value.show);
-const title = computed(() => dateNotesDialog.value.title);
-const message = computed(() => dateNotesDialog.value.message);
-const confirmText = computed(() => dateNotesDialog.value.confirmText);
-const cancelText = computed(() => dateNotesDialog.value.cancelText);
+  const show = computed(() => dateNotesDialog.value.show)
+  const title = computed(() => dateNotesDialog.value.title)
+  const message = computed(() => dateNotesDialog.value.message)
+  const confirmText = computed(() => dateNotesDialog.value.confirmText)
+  const cancelText = computed(() => dateNotesDialog.value.cancelText)
 
-const dateValue = computed({
-  get: () => dateNotesDialog.value.dateValue,
-  set: (value) => {
-    dateNotesDialog.value.dateValue = value;
-  },
-});
+  const dateValue = computed({
+    get: () => dateNotesDialog.value.dateValue,
+    set: value => {
+      dateNotesDialog.value.dateValue = value
+    },
+  })
 
-const notesValue = computed({
-  get: () => dateNotesDialog.value.notesValue,
-  set: (value) => {
-    dateNotesDialog.value.notesValue = value;
-  },
-});
+  const notesValue = computed({
+    get: () => dateNotesDialog.value.notesValue,
+    set: value => {
+      dateNotesDialog.value.notesValue = value
+    },
+  })
 
-const dateRules = [(v) => !!v || "Date is required"];
+  const dateRules = [v => !!v || 'Date is required']
 
-const isValid = computed(() => {
-  return !!dateValue.value;
-});
+  const isValid = computed(() => {
+    return !!dateValue.value
+  })
 
-const confirm = () => {
-  if (isValid.value) {
-    confirmDateNotes();
+  const confirm = () => {
+    if (isValid.value) {
+      confirmDateNotes()
+    }
   }
-};
 
-const cancel = () => {
-  cancelDateNotes();
-};
+  const cancel = () => {
+    cancelDateNotes()
+  }
 </script>
 
 <style scoped>
@@ -280,4 +280,3 @@ const cancel = () => {
   border-width: 2px !important;
 }
 </style>
-

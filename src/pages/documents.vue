@@ -17,17 +17,17 @@
 </template>
 
 <script>
-export default {
-  name: 'DocumentsPage',
-  data() {
-    return {
+  export default {
+    name: 'DocumentsPage',
+    data () {
+      return {
       // Add your data here
-    }
-  },
-  methods: {
+      }
+    },
+    methods: {
     // Add your methods here
+    },
   }
-}
 </script>
 
 <style scoped>

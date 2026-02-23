@@ -9,224 +9,237 @@
       v-model:visible="pushPromptVisible"
       @accepted="onPushAccepted"
     />
-    <ClearCookies :showOnFirstVisit="false" />
+    <ClearCookies :show-on-first-visit="false" />
   </v-app>
 </template>
 <script setup>
-import ClearCookies from "@/components/ClearCookies.vue";
-import NavDrawer from "@/components/NavDrawer.vue";
-import AppBar from "@/components/AppBar.vue";
-import GlobalNotification from "@/components/GlobalNotification.vue";
-import GlobalDialogs from "@/components/GlobalDialogs.vue";
-import PushPermissionPrompt from "@/components/PushPermissionPrompt.vue";
-import { ref, computed, onMounted, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useAppStore } from "@/stores/app";
-import { initMessaging } from "@/messaging";
+  import { computed, onMounted, ref, watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
+  import AppBar from '@/components/AppBar.vue'
+  import ClearCookies from '@/components/ClearCookies.vue'
+  import GlobalDialogs from '@/components/GlobalDialogs.vue'
+  import GlobalNotification from '@/components/GlobalNotification.vue'
+  import NavDrawer from '@/components/NavDrawer.vue'
+  import PushPermissionPrompt from '@/components/PushPermissionPrompt.vue'
+  import { initMessaging } from '@/messaging'
+  import { useAppStore } from '@/stores/app'
 
-const route = useRoute();
-const router = useRouter();
-const appStore = useAppStore();
+  const route = useRoute()
+  const router = useRouter()
+  const appStore = useAppStore()
 
-// Show drawer only on non-login routes
-const showDrawer = computed(() => route.path !== "/");
+  // Show drawer only on non-login routes
+  const showDrawer = computed(() => route.path !== '/')
 
-// Initialize authentication state
-const _pushPromptVisible = ref(false);
-const pushPromptVisible = computed({
-  get() {
-    return _pushPromptVisible.value;
-  },
-  set(v) {
-    _pushPromptVisible.value = v;
-  },
-});
+  // Initialize authentication state
+  const _pushPromptVisible = ref(false)
+  const pushPromptVisible = computed({
+    get () {
+      return _pushPromptVisible.value
+    },
+    set (v) {
+      _pushPromptVisible.value = v
+    },
+  })
 
-function shouldShowPushPrompt() {
-  try {
-    if (typeof window === "undefined") return false;
-    if (!("Notification" in window)) return false;
-    if (localStorage.getItem("fcmRegistered") === "1") return false;
-    if (Notification.permission === "granted") return false;
-    if (sessionStorage.getItem("pushPromptDismissed") === "1") return false;
-    return true;
-  } catch {
-    return false;
+  function shouldShowPushPrompt () {
+    try {
+      if (typeof window === 'undefined') return false
+      if (!('Notification' in window)) return false
+      if (localStorage.getItem('fcmRegistered') === '1') return false
+      if (Notification.permission === 'granted') return false
+      if (sessionStorage.getItem('pushPromptDismissed') === '1') return false
+      return true
+    } catch {
+      return false
+    }
   }
-}
 
-function onPushAccepted() {
-  // If accepted, init messaging to ensure token saved
-  try {
-    initMessaging(appStore.userId);
-  } catch {}
-}
-onMounted(async () => {
-  appStore.initializeAuth();
-  try {
-    if (appStore.isLoggedIn && "Notification" in window) {
-      if (
-        Notification.permission === "granted" ||
-        localStorage.getItem("fcmRegistered") === "1"
-      ) {
-        await initMessaging(appStore.userId);
-      } else if (shouldShowPushPrompt()) {
-        _pushPromptVisible.value = true;
-      }
-    }
-  } catch (e) {
-    console.warn("Messaging init skipped", e);
+  function onPushAccepted () {
+    // If accepted, init messaging to ensure token saved
+    try {
+      initMessaging(appStore.userId)
+    } catch {}
   }
-});
-
-// Protected routes list
-const protectedRoutes = [
-  "/agency",
-  "/active-units",
-  "/notices",
-  "/flagged-units",
-  "/maintenance",
-  "/inspections",
-  "/vacancies",
-  "/user-management",
-  "/audit-trail",
-  "/dashboard",
-  "/add-user",
-  "/add-unit",
-  "/add-notice",
-  "/add-flagged-unit",
-  "/profile",
-  "/chat",
-  "/onboard-units",
-];
-
-// Computed to check if current route is protected
-const isProtectedRoute = computed(() => {
-  return protectedRoutes.some((protectedRoute) =>
-    route.path.startsWith(protectedRoute)
-  );
-});
-
-// Role-based access
-const roleProtectedRoutes = {
-  "/user-management": ["Super Admin", "Admin"],
-  "/audit-trail": ["Super Admin"],
-  "/archived-units": ["Super Admin"],
-  "/view-archived-unit-": ["Super Admin"],
-  "/add-user": ["Super Admin", "Admin"],
-  "/add-agency": ["Super Admin"],
-  "/add-unit": ["Super Admin", "Admin", "Agency"],
-  "/add-notice": ["Super Admin", "Admin", "Agency"],
-  // Only Agency users and Agency Admin users can flag units
-  "/add-flagged-unit": ["Agency", "Admin"],
-  "/add-maintenance": ["Super Admin", "Admin", "Agency"],
-  "/add-inspection": ["Super Admin", "Admin", "Agency"],
-  "/add-vacancy": ["Super Admin", "Admin", "Agency"],
-};
-
-// Routes that require specific admin scope (not just any Admin)
-const scopeRestrictedRoutes = {
-  "/user-management": ["Super Admin", "Admin"], // Only Super Admin and Depsure Admin
-  "/add-user": ["Super Admin", "Admin"], // Only Super Admin and Depsure Admin
-  "/add-flagged-unit": ["Admin"], // Only Agency Admin (not Depsure Admin)
-};
-
-// Routes that require specific admin scope
-const scopeProtectedRoutes = {
-  "/agency": ["Super Admin", "Admin"], // Only Super Admin and Depsure Admin
-};
-
-// Agency-specific routes
-const agencyProtectedRoutes = ["/edit-agency-", "/view-agency-"];
-
-// Watch route changes to check authentication and authorization
-watch(
-  () => route.path,
-  (newPath) => {
-    // Redirect to login if not logged in
-    if (newPath !== "/" && !appStore.isLoggedIn) {
-      router.push("/");
-      return;
-    }
-
-    // Role-based access check
-    const userType = appStore.userType;
-    const userData = appStore.currentUser;
-    const requiredRoles = roleProtectedRoutes[newPath];
-
-    if (requiredRoles && !requiredRoles.includes(userType)) {
-      router.push("/dashboard");
-      return;
-    }
-
-    // Scope-based access check (for routes that require specific admin scope)
-    const requiredScopeRoles = scopeProtectedRoutes[newPath];
-    if (requiredScopeRoles && requiredScopeRoles.includes(userType)) {
-      // Check if it's an Admin user and verify their scope
-      if (userType === "Admin") {
-        const adminScope = userData?.adminScope;
-        if (adminScope === "agency") {
-          // Agency Admin should not access agency management page
-          router.push("/active-units");
-          return;
+  onMounted(async () => {
+    appStore.initializeAuth()
+    try {
+      if (appStore.isLoggedIn && 'Notification' in window) {
+        if (
+          Notification.permission === 'granted'
+          || localStorage.getItem('fcmRegistered') === '1'
+        ) {
+          await initMessaging(appStore.userId)
+        } else if (shouldShowPushPrompt()) {
+          _pushPromptVisible.value = true
         }
       }
+    } catch (error) {
+      console.warn('Messaging init skipped', error)
     }
+  })
 
-    // Scope-restricted routes (routes that require specific admin scope)
-    const scopeRestrictedRoute = scopeRestrictedRoutes[newPath];
-    if (scopeRestrictedRoute && scopeRestrictedRoute.includes(userType)) {
-      // Check if it's an Admin user and verify their scope
-      if (userType === "Admin") {
-        const adminScope = userData?.adminScope;
-        if (newPath === "/add-flagged-unit") {
-          // Only Agency Admin users can access add-flagged-unit
-          if (adminScope !== "agency") {
-            router.push("/active-units");
-            return;
+  // Protected routes list
+  const protectedRoutes = [
+    '/agency',
+    '/active-units',
+    '/notices',
+    '/flagged-units',
+    '/maintenance',
+    '/inspections',
+    '/vacancies',
+    '/user-management',
+    '/audit-trail',
+    '/dashboard',
+    '/add-user',
+    '/add-unit',
+    '/add-notice',
+    '/add-flagged-unit',
+    '/profile',
+    '/chat',
+    '/onboard-units',
+  ]
+
+  // Computed to check if current route is protected
+  const isProtectedRoute = computed(() => {
+    return protectedRoutes.some(protectedRoute =>
+      route.path.startsWith(protectedRoute),
+    )
+  })
+
+  // Role-based access
+  const roleProtectedRoutes = {
+    '/user-management': ['Super Admin', 'Admin'],
+    '/audit-trail': ['Super Admin'],
+    '/archived-units': ['Super Admin'],
+    '/view-archived-unit-': ['Super Admin'],
+    '/add-user': ['Super Admin', 'Admin'],
+    '/add-agency': ['Super Admin'],
+    '/add-unit': ['Super Admin', 'Admin', 'Agency'],
+    '/add-notice': ['Super Admin', 'Admin', 'Agency'],
+    // Legacy direct add page is admin-only; unit flagging is done from admin actions
+    '/add-flagged-unit': ['Super Admin', 'Admin'],
+    '/add-maintenance': ['Super Admin', 'Admin', 'Agency'],
+    '/add-inspection': ['Super Admin', 'Admin', 'Agency'],
+    '/add-vacancy': ['Super Admin', 'Admin', 'Agency'],
+  }
+
+  // Routes that require specific admin scope (not just any Admin)
+  const scopeRestrictedRoutes = {
+    '/user-management': ['Super Admin', 'Admin'], // Only Super Admin and Depsure Admin
+    '/add-user': ['Super Admin', 'Admin'], // Only Super Admin and Depsure Admin
+    '/add-flagged-unit': ['Admin'], // Only Depsure Admin (not Agency Admin)
+  }
+
+  // Routes that require specific admin scope
+  const scopeProtectedRoutes = {
+    '/agency': ['Super Admin', 'Admin'], // Only Super Admin and Depsure Admin
+  }
+
+  // Agency-specific routes
+  const agencyProtectedRoutes = ['/edit-agency-', '/view-agency-']
+  const depsureFlaggingRoutes = [
+    '/flagged-units',
+    '/view-flagged-unit-',
+    '/edit-flagged-unit-',
+    '/add-flagged-unit',
+  ]
+
+  // Watch route changes to check authentication and authorization
+  watch(
+    () => route.path,
+    newPath => {
+      // Redirect to login if not logged in
+      if (newPath !== '/' && !appStore.isLoggedIn) {
+        router.push('/')
+        return
+      }
+
+      // Role-based access check
+      const userType = appStore.userType
+      const userData = appStore.currentUser
+      const requiredRoles = roleProtectedRoutes[newPath]
+      const isAgencySideUser = userType === 'Agency'
+        || (userType === 'Admin' && userData?.adminScope === 'agency')
+
+      // Flagging management is handled on Depsure admin side only
+      const isDepsureFlaggingRoute = depsureFlaggingRoutes.some(prefix =>
+        newPath.startsWith(prefix),
+      )
+      if (isDepsureFlaggingRoute && isAgencySideUser) {
+        router.push('/onboard-units')
+        return
+      }
+
+      if (requiredRoles && !requiredRoles.includes(userType)) {
+        router.push('/dashboard')
+        return
+      }
+
+      // Scope-based access check (for routes that require specific admin scope)
+      const requiredScopeRoles = scopeProtectedRoutes[newPath]
+      if (requiredScopeRoles && requiredScopeRoles.includes(userType) // Check if it's an Admin user and verify their scope
+        && userType === 'Admin') {
+        const adminScope = userData?.adminScope
+        if (adminScope === 'agency') {
+          // Agency Admin should not access agency management page
+          router.push('/active-units')
+          return
+        }
+      }
+
+      // Scope-restricted routes (routes that require specific admin scope)
+      const scopeRestrictedRoute = scopeRestrictedRoutes[newPath]
+      if (scopeRestrictedRoute && scopeRestrictedRoute.includes(userType) // Check if it's an Admin user and verify their scope
+        && userType === 'Admin') {
+        const adminScope = userData?.adminScope
+        if (newPath === '/add-flagged-unit') {
+          // Only Depsure Admin users can access add-flagged-unit
+          if (adminScope === 'agency') {
+            router.push('/active-units')
+            return
           }
         } else {
           // For other scope-restricted routes, only Depsure Admin can access
-          if (adminScope === "agency") {
-            router.push("/active-units");
-            return;
+          if (adminScope === 'agency') {
+            router.push('/active-units')
+            return
           }
         }
       }
-    }
 
-    // Agency-specific route protection
-    const isAgencyRoute = agencyProtectedRoutes.some((route) =>
-      newPath.startsWith(route)
-    );
-    if (isAgencyRoute && userType === "Agency") {
-      router.push("/active-units");
-      return;
-    }
-  },
-  { immediate: true }
-);
-
-// Ensure messaging is initialized when login state flips to true after mount
-watch(
-  () => appStore.isLoggedIn,
-  async (loggedIn) => {
-    if (loggedIn && typeof window !== "undefined" && "Notification" in window) {
-      try {
-        if (
-          Notification.permission === "granted" ||
-          localStorage.getItem("fcmRegistered") === "1"
-        ) {
-          await initMessaging(appStore.userId);
-        } else if (shouldShowPushPrompt()) {
-          _pushPromptVisible.value = true;
-        }
-      } catch (e) {
-        console.warn("Messaging init error", e);
+      // Agency-specific route protection
+      const isAgencyRoute = agencyProtectedRoutes.some(route =>
+        newPath.startsWith(route),
+      )
+      if (isAgencyRoute && userType === 'Agency') {
+        router.push('/active-units')
+        return
       }
-    }
-  }
-);
+    },
+    { immediate: true },
+  )
+
+  // Ensure messaging is initialized when login state flips to true after mount
+  watch(
+    () => appStore.isLoggedIn,
+    async loggedIn => {
+      if (loggedIn && typeof window !== 'undefined' && 'Notification' in window) {
+        try {
+          if (
+            Notification.permission === 'granted'
+            || localStorage.getItem('fcmRegistered') === '1'
+          ) {
+            await initMessaging(appStore.userId)
+          } else if (shouldShowPushPrompt()) {
+            _pushPromptVisible.value = true
+          }
+        } catch (error) {
+          console.warn('Messaging init error', error)
+        }
+      }
+    },
+  )
 </script>
 
 <style>

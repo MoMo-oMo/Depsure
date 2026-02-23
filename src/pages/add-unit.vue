@@ -5,11 +5,11 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="primary"
             @click="$router.push('/active-units')"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -31,26 +31,26 @@
                   <v-col cols="12" md="6">
                     <template v-if="hasCurrentAgency || isAgencyUser">
                       <v-text-field
-                        :model-value="currentAgencyName"
-                        label="Agency"
-                        variant="outlined"
                         class="custom-input"
-                        readonly
+                        label="Agency"
+                        :model-value="currentAgencyName"
                         prepend-inner-icon="mdi-domain"
+                        readonly
+                        variant="outlined"
                       />
                     </template>
                     <template v-else>
                       <v-select
                         v-model="property.agencyId"
-                        label="Select Agency"
-                        variant="outlined"
                         class="custom-input"
-                        :items="agencies"
                         item-title="agencyName"
                         item-value="id"
-                        :rules="agencyRules"
-                        required
+                        :items="agencies"
+                        label="Select Agency"
                         :loading="agenciesLoading"
+                        required
+                        :rules="agencyRules"
+                        variant="outlined"
                       />
                     </template>
                   </v-col>
@@ -59,11 +59,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="property.tenantRef"
-                      label="Tenant Reference"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="tenantRefRules"
+                      label="Tenant Reference"
                       required
+                      :rules="tenantRefRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -71,11 +71,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="property.propertyName"
-                      label="Property Name"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="propertyNameRules"
+                      label="Property Name"
                       required
+                      :rules="propertyNameRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -83,11 +83,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="property.unitNumber"
-                      label="Unit Number"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="unitNumberRules"
+                      label="Unit Number"
                       required
+                      :rules="unitNumberRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -95,32 +95,32 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="property.propertyType"
-                      label="Property Type"
-                      variant="outlined"
                       class="custom-input"
-                      :items="propertyTypeOptions"
                       item-title="title"
                       item-value="value"
-                      :rules="propertyTypeRules"
+                      :items="propertyTypeOptions"
+                      label="Property Type"
                       required
+                      :rules="propertyTypeRules"
+                      variant="outlined"
                       @update:model-value="onPropertyTypeChange"
                     />
                   </v-col>
 
                   <!-- Square Meterage -->
-                  <v-col cols="12" md="6" v-if="requiresSquareMeterage">
+                  <v-col v-if="requiresSquareMeterage" cols="12" md="6">
                     <v-text-field
                       v-model="property.squareMeterage"
-                      label="Square Meterage (sqm)"
-                      variant="outlined"
                       class="custom-input"
-                      type="number"
-                      min="0"
-                      step="0.01"
                       inputmode="decimal"
-                      suffix="sqm"
+                      label="Square Meterage (sqm)"
+                      min="0"
                       :rules="[validateSquareMeterage]"
+                      step="0.01"
                       required
+                      suffix="sqm"
+                      type="number"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -128,12 +128,12 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="property.newOccupation"
-                      label="New Occupation Yes/No"
-                      variant="outlined"
                       class="custom-input"
                       :items="['Yes', 'No']"
-                      :rules="newOccupationRules"
+                      label="New Occupation Yes/No"
                       required
+                      :rules="newOccupationRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -141,12 +141,12 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="property.leaseStartDate"
-                      label="Lease Starting Date"
-                      variant="outlined"
-                      type="date"
                       class="custom-input"
-                      :rules="leaseStartDateRules"
+                      label="Lease Starting Date"
                       required
+                      :rules="leaseStartDateRules"
+                      type="date"
+                      variant="outlined"
                     />
                   </v-col>
                   <!-- Lease End Date (optional) -->
@@ -212,20 +212,20 @@
               <v-card-actions class="pa-4">
                 <v-spacer />
                 <v-btn
+                  class="cancel-btn"
                   color="grey"
                   variant="outlined"
                   @click="$router.push('/active-units')"
-                  class="cancel-btn"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
+                  class="save-btn"
                   color="black"
-                  variant="elevated"
-                  @click="saveProperty"
                   :disabled="!valid || loading"
                   :loading="loading"
-                  class="save-btn"
+                  variant="elevated"
+                  @click="saveProperty"
                 >
                   {{ loading ? "Adding Unit..." : "Add Unit" }}
                 </v-btn>
@@ -239,295 +239,293 @@
 </template>
 
 <script>
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
-import { db } from "@/firebaseConfig";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  query,
-  where,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import { useAppStore } from "@/stores/app";
-import { useAuditTrail } from "@/composables/useAuditTrail";
-import { usePropertyType } from "@/composables/usePropertyType";
-import { PROPERTY_TYPES } from "@/constants/propertyTypes";
+  import {
+    addDoc,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+  } from 'firebase/firestore'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { usePropertyType } from '@/composables/usePropertyType'
+  import { PROPERTY_TYPES } from '@/constants/propertyTypes'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-const SQUARE_METER_TYPES = [
-  PROPERTY_TYPES.COMMERCIAL,
-  PROPERTY_TYPES.INDUSTRIAL,
-];
+  const SQUARE_METER_TYPES = new Set([
+    PROPERTY_TYPES.COMMERCIAL,
+    PROPERTY_TYPES.INDUSTRIAL,
+  ])
 
-export default {
-  name: "AddUnitPage",
-  setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs();
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
-    const { getOptions } = usePropertyType();
-    return {
-      showSuccessDialog,
-      showErrorDialog,
-      logAuditEvent,
-      auditActions,
-      resourceTypes,
-      getOptions,
-    };
-  },
-  data() {
-    return {
-      property: {
-        agencyId: "",
-        tenantRef: "",
-        propertyName: "",
-        unitNumber: "", // <-- Added Unit Number
-        propertyType: "",
-        squareMeterage: null,
-        newOccupation: "Yes", // <-- Set to 'Yes' by default so units appear on onboarding page
-        leaseStartDate: "",
-        leaseEndDate: "",
-        monthsMissed: 0,
-        maintenanceAmount: 0,
-        contractorRequested: "",
-        paidTowardsFund: 0,
-        amountToBePaidOut: 0,
-        paidOut: "",
+  export default {
+    name: 'AddUnitPage',
+    setup () {
+      const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      const { getOptions } = usePropertyType()
+      return {
+        showSuccessDialog,
+        showErrorDialog,
+        logAuditEvent,
+        auditActions,
+        resourceTypes,
+        getOptions,
+      }
+    },
+    data () {
+      return {
+        property: {
+          agencyId: '',
+          tenantRef: '',
+          propertyName: '',
+          unitNumber: '', // <-- Added Unit Number
+          propertyType: '',
+          squareMeterage: null,
+          newOccupation: 'Yes', // <-- Set to 'Yes' by default so units appear on onboarding page
+          leaseStartDate: '',
+          leaseEndDate: '',
+          monthsMissed: 0,
+          maintenanceAmount: 0,
+          contractorRequested: '',
+          paidTowardsFund: 0,
+          amountToBePaidOut: 0,
+          paidOut: '',
+        },
+        agencies: [],
+        agenciesLoading: false,
+        loading: false,
+        valid: true,
+        // Validation rules
+        agencyRules: [v => !!v || 'Agency selection is required'],
+        tenantRefRules: [
+          v => !!v || 'Tenant Reference is required',
+          v =>
+            v.length >= 2 || 'Tenant Reference must be at least 2 characters',
+        ],
+        propertyNameRules: [
+          v => !!v || 'Property Name is required',
+          v => v.length >= 5 || 'Property Name must be at least 5 characters',
+        ],
+        unitNumberRules: [
+          v => !!v || 'Unit Number is required',
+          v => v.length > 0 || 'Unit Number must be at least 1 character',
+        ],
+        newOccupationRules: [v => !!v || 'New Occupation is required'],
+        leaseStartDateRules: [v => !!v || 'Lease Start Date is required'],
+        leaseEndDateRules: [],
+        monthsMissedRules: [
+          v => v >= 0 || 'Months Missed cannot be negative',
+          v => v <= 12 || 'Months Missed cannot exceed 12',
+        ],
+        maintenanceAmountRules: [
+          v => v >= 0 || 'Maintenance Amount cannot be negative',
+        ],
+        contractorRequestedRules: [
+          v => !!v || 'Contractor Requested is required',
+        ],
+        paidTowardsFundRules: [
+          v => v >= 0 || 'Paid Towards Fund cannot be negative',
+        ],
+        amountToBePaidOutRules: [
+          v => v >= 0 || 'Amount to be Paid Out cannot be negative',
+        ],
+        paidOutRules: [v => !!v || 'Paid Out is required'],
+        propertyTypeRules: [v => !!v || 'Property Type is required'],
+      }
+    },
+    computed: {
+      requiresSquareMeterage () {
+        return this.requiresSquareMeterageFor(this.property.propertyType)
       },
-      agencies: [],
-      agenciesLoading: false,
-      loading: false,
-      valid: true,
-      // Validation rules
-      agencyRules: [(v) => !!v || "Agency selection is required"],
-      tenantRefRules: [
-        (v) => !!v || "Tenant Reference is required",
-        (v) =>
-          v.length >= 2 || "Tenant Reference must be at least 2 characters",
-      ],
-      propertyNameRules: [
-        (v) => !!v || "Property Name is required",
-        (v) => v.length >= 5 || "Property Name must be at least 5 characters",
-      ],
-      unitNumberRules: [
-        (v) => !!v || "Unit Number is required",
-        (v) => v.length >= 1 || "Unit Number must be at least 1 character",
-      ],
-      newOccupationRules: [(v) => !!v || "New Occupation is required"],
-      leaseStartDateRules: [(v) => !!v || "Lease Start Date is required"],
-      leaseEndDateRules: [],
-      monthsMissedRules: [
-        (v) => v >= 0 || "Months Missed cannot be negative",
-        (v) => v <= 12 || "Months Missed cannot exceed 12",
-      ],
-      maintenanceAmountRules: [
-        (v) => v >= 0 || "Maintenance Amount cannot be negative",
-      ],
-      contractorRequestedRules: [
-        (v) => !!v || "Contractor Requested is required",
-      ],
-      paidTowardsFundRules: [
-        (v) => v >= 0 || "Paid Towards Fund cannot be negative",
-      ],
-      amountToBePaidOutRules: [
-        (v) => v >= 0 || "Amount to be Paid Out cannot be negative",
-      ],
-      paidOutRules: [(v) => !!v || "Paid Out is required"],
-      propertyTypeRules: [(v) => !!v || "Property Type is required"],
-    };
-  },
-  computed: {
-    requiresSquareMeterage() {
-      return this.requiresSquareMeterageFor(this.property.propertyType);
+      isAgencyUser () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        return (
+          user?.userType === 'Agency'
+          || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+        )
+      },
+      hasCurrentAgency () {
+        const appStore = useAppStore()
+        return !!appStore.currentAgency
+      },
+      currentAgencyName () {
+        const appStore = useAppStore()
+        return appStore.currentAgency?.agencyName || ''
+      },
+      propertyTypeOptions () {
+        return this.getOptions()
+      },
     },
-    isAgencyUser() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      return (
-        user?.userType === "Agency" ||
-        (user?.userType === "Admin" && user?.adminScope === "agency")
-      );
-    },
-    hasCurrentAgency() {
-      const appStore = useAppStore();
-      return !!appStore.currentAgency;
-    },
-    currentAgencyName() {
-      const appStore = useAppStore();
-      return appStore.currentAgency?.agencyName || "";
-    },
-    propertyTypeOptions() {
-      return this.getOptions();
-    },
-  },
-  async mounted() {
-    console.log("AddUnitPage mounted");
-    document.title = "Add New Unit - Depsure";
-    await this.fetchAgencies();
-    const appStore = useAppStore();
-    if (appStore.currentAgency?.id) {
-      this.property.agencyId = appStore.currentAgency.id;
-    } else {
-      const urlParams = new URLSearchParams(window.location.search);
-      const agencyId = urlParams.get("agencyId");
-      if (agencyId) {
-        this.property.agencyId = agencyId;
-        console.log("Pre-selected agency ID:", agencyId);
-      }
-    }
-  },
-  methods: {
-    requiresSquareMeterageFor(type) {
-      return SQUARE_METER_TYPES.includes(type);
-    },
-    parseSquareMeterage(value) {
-      if (value === null || value === undefined || value === "") return null;
-      const numeric = typeof value === "number" ? value : Number(value);
-      return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
-    },
-    validateSquareMeterage(value) {
-      if (!this.requiresSquareMeterage) return true;
-      if (value === null || value === undefined || value === "") {
-        return "Square meterage is required";
-      }
-      const parsed = this.parseSquareMeterage(value);
-      if (parsed === null)
-        return "Enter a valid square meterage greater than 0";
-      return true;
-    },
-    onPropertyTypeChange(value) {
-      if (!this.requiresSquareMeterageFor(value)) {
-        this.property.squareMeterage = null;
+    async mounted () {
+      console.log('AddUnitPage mounted')
+      document.title = 'Add New Unit - Depsure'
+      await this.fetchAgencies()
+      const appStore = useAppStore()
+      if (appStore.currentAgency?.id) {
+        this.property.agencyId = appStore.currentAgency.id
+      } else {
+        const urlParams = new URLSearchParams(window.location.search)
+        const agencyId = urlParams.get('agencyId')
+        if (agencyId) {
+          this.property.agencyId = agencyId
+          console.log('Pre-selected agency ID:', agencyId)
+        }
       }
     },
-    async fetchAgencies() {
-      this.agenciesLoading = true;
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
+    methods: {
+      requiresSquareMeterageFor (type) {
+        return SQUARE_METER_TYPES.has(type)
+      },
+      parseSquareMeterage (value) {
+        if (value === null || value === undefined || value === '') return null
+        const numeric = typeof value === 'number' ? value : Number(value)
+        return Number.isFinite(numeric) && numeric > 0 ? numeric : null
+      },
+      validateSquareMeterage (value) {
+        if (!this.requiresSquareMeterage) return true
+        if (value === null || value === undefined || value === '') {
+          return 'Square meterage is required'
+        }
+        const parsed = this.parseSquareMeterage(value)
+        if (parsed === null)
+          return 'Enter a valid square meterage greater than 0'
+        return true
+      },
+      onPropertyTypeChange (value) {
+        if (!this.requiresSquareMeterageFor(value)) {
+          this.property.squareMeterage = null
+        }
+      },
+      async fetchAgencies () {
+        this.agenciesLoading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
 
-        if (
-          userType === "Agency" ||
-          (userType === "Admin" && currentUser.adminScope === "agency")
-        ) {
-          let agencyData = null;
-          if (userType === "Agency") {
-            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
-            if (agencyDoc.exists()) {
-              agencyData = {
-                id: agencyDoc.id,
-                ...agencyDoc.data(),
-              };
-            }
-          } else if (
-            userType === "Admin" &&
-            currentUser.adminScope === "agency"
+          if (
+            userType === 'Agency'
+            || (userType === 'Admin' && currentUser.adminScope === 'agency')
           ) {
-            if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(
-                doc(db, "users", currentUser.managedAgencyId)
-              );
+            let agencyData = null
+            if (userType === 'Agency') {
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid))
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
                   ...agencyDoc.data(),
-                };
+                }
+              }
+            } else if (
+              userType === 'Admin'
+              && currentUser.adminScope === 'agency'
+              && currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(
+                doc(db, 'users', currentUser.managedAgencyId),
+              )
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data(),
+                }
               }
             }
-          }
-          if (agencyData) {
-            this.agencies = [agencyData];
-            this.property.agencyId = agencyData.id;
+            if (agencyData) {
+              this.agencies = [agencyData]
+              this.property.agencyId = agencyData.id
+            } else {
+              this.agencies = []
+            }
           } else {
-            this.agencies = [];
+            const agenciesQuery = query(
+              collection(db, 'users'),
+              where('userType', '==', 'Agency'),
+            )
+            const querySnapshot = await getDocs(agenciesQuery)
+            this.agencies = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
           }
-        } else {
-          const agenciesQuery = query(
-            collection(db, "users"),
-            where("userType", "==", "Agency")
-          );
-          const querySnapshot = await getDocs(agenciesQuery);
-          this.agencies = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching agencies:", error);
-        this.showErrorDialog(
-          "Failed to load agencies. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.agenciesLoading = false;
-      }
-    },
-
-    async saveProperty() {
-      if (this.$refs.form.validate()) {
-        this.loading = true;
-        try {
-          const unitData = {
-            ...this.property,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-          const squareMeterageRequired = this.requiresSquareMeterageFor(
-            unitData.propertyType
-          );
-          const normalizedSquareMeterage = squareMeterageRequired
-            ? this.parseSquareMeterage(this.property.squareMeterage)
-            : null;
-          if (squareMeterageRequired && normalizedSquareMeterage === null) {
-            this.loading = false;
-            this.showErrorDialog(
-              "Square meterage is required for commercial or industrial units.",
-              "Validation Error",
-              "OK"
-            );
-            return;
-          }
-          unitData.squareMeterage = squareMeterageRequired
-            ? normalizedSquareMeterage
-            : null;
-          this.property.squareMeterage = unitData.squareMeterage;
-          const docRef = await addDoc(collection(db, "units"), unitData);
-          await this.logAuditEvent(
-            this.auditActions.CREATE,
-            {
-              propertyName: this.property.propertyName,
-              tenantRef: this.property.tenantRef,
-              unitNumber: this.property.unitNumber,
-              agencyId: this.property.agencyId,
-              leaseStartDate: this.property.leaseStartDate,
-              leaseEndDate: this.property.leaseEndDate,
-              maintenanceAmount: this.property.maintenanceAmount,
-            },
-            this.resourceTypes.UNIT,
-            docRef.id
-          );
-          this.showSuccessDialog(
-            "Unit added successfully!",
-            "Success!",
-            "Continue",
-            "/active-units"
-          );
         } catch (error) {
-          console.error("Error adding unit:", error);
+          console.error('Error fetching agencies:', error)
           this.showErrorDialog(
-            "Failed to add unit. Please try again.",
-            "Error",
-            "OK"
-          );
+            'Failed to load agencies. Please try again.',
+            'Error',
+            'OK',
+          )
         } finally {
-          this.loading = false;
+          this.agenciesLoading = false
         }
-      }
+      },
+
+      async saveProperty () {
+        if (this.$refs.form.validate()) {
+          this.loading = true
+          try {
+            const unitData = {
+              ...this.property,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+            const squareMeterageRequired = this.requiresSquareMeterageFor(
+              unitData.propertyType,
+            )
+            const normalizedSquareMeterage = squareMeterageRequired
+              ? this.parseSquareMeterage(this.property.squareMeterage)
+              : null
+            if (squareMeterageRequired && normalizedSquareMeterage === null) {
+              this.loading = false
+              this.showErrorDialog(
+                'Square meterage is required for commercial or industrial units.',
+                'Validation Error',
+                'OK',
+              )
+              return
+            }
+            unitData.squareMeterage = squareMeterageRequired
+              ? normalizedSquareMeterage
+              : null
+            this.property.squareMeterage = unitData.squareMeterage
+            const docRef = await addDoc(collection(db, 'units'), unitData)
+            await this.logAuditEvent(
+              this.auditActions.CREATE,
+              {
+                propertyName: this.property.propertyName,
+                tenantRef: this.property.tenantRef,
+                unitNumber: this.property.unitNumber,
+                agencyId: this.property.agencyId,
+                leaseStartDate: this.property.leaseStartDate,
+                leaseEndDate: this.property.leaseEndDate,
+                maintenanceAmount: this.property.maintenanceAmount,
+              },
+              this.resourceTypes.UNIT,
+              docRef.id,
+            )
+            this.showSuccessDialog(
+              'Unit added successfully!',
+              'Success!',
+              'Continue',
+              '/active-units',
+            )
+          } catch (error) {
+            console.error('Error adding unit:', error)
+            this.showErrorDialog(
+              'Failed to add unit. Please try again.',
+              'Error',
+              'OK',
+            )
+          } finally {
+            this.loading = false
+          }
+        }
+      },
     },
-  },
-};
+  }
 </script>
 
 <style scoped>

@@ -1,61 +1,61 @@
 <template>
-    <div v-if="visible" class="notification-overlay" @click.self="close">
-      <div class="notification-dialog">
-        <!-- colored card behind -->
-        <div :class="['notification-dialog-bg', type]"></div>
-        <!-- main white card -->
-        <div class="notification-dialog-inner">
-          <button class="notification-close" @click="close">&times;</button>
-  
-          <div :class="['notification-icon', type]">
-            <v-icon v-if="type === 'success'">mdi-check</v-icon>
-            <v-icon v-else-if="type === 'error'">mdi-close</v-icon>
-          </div>
-  
-          <h2 class="notification-title">{{ title }}</h2>
-          <p class="notification-message">{{ message }}</p>
-          <button :class="['notification-button', type]" @click="close">
-            {{ buttonText }}
-          </button>
+  <div v-if="visible" class="notification-overlay" @click.self="close">
+    <div class="notification-dialog">
+      <!-- colored card behind -->
+      <div :class="['notification-dialog-bg', type]" />
+      <!-- main white card -->
+      <div class="notification-dialog-inner">
+        <button class="notification-close" @click="close">&times;</button>
+
+        <div :class="['notification-icon', type]">
+          <v-icon v-if="type === 'success'">mdi-check</v-icon>
+          <v-icon v-else-if="type === 'error'">mdi-close</v-icon>
         </div>
+
+        <h2 class="notification-title">{{ title }}</h2>
+        <p class="notification-message">{{ message }}</p>
+        <button :class="['notification-button', type]" @click="close">
+          {{ buttonText }}
+        </button>
       </div>
     </div>
-  </template>
-  
+  </div>
+</template>
+
   <script>
   export default {
-    name: "NotificationDialog",
+    name: 'NotificationDialog',
     props: {
       visible: {
         type: Boolean,
-        required: true
+        required: true,
       },
       type: {
         type: String,
-        default: "success"
+        default: 'success',
       },
       title: {
         type: String,
-        required: true
+        required: true,
       },
       message: {
         type: String,
-        required: true
+        required: true,
       },
       buttonText: {
         type: String,
-        default: "OK"
-      }
+        default: 'OK',
+      },
     },
     methods: {
-      close() {
-        this.$emit("update:visible", false);
-        this.$emit("close");
-      }
-    }
-  };
+      close () {
+        this.$emit('update:visible', false)
+        this.$emit('close')
+      },
+    },
+  }
   </script>
-  
+
   <style scoped>
   .notification-overlay {
     position: fixed;
@@ -69,14 +69,14 @@
     justify-content: center;
     z-index: 100000;
   }
-  
+
   .notification-dialog {
     position: relative;
     width: 500px;               /* increased width */
     max-width: 90vw;            /* responsive fallback */
     min-height: 200px;          /* ensure adequate height */
   }
-  
+
   .notification-dialog-bg {
     position: absolute;
     top: 12px;
@@ -92,7 +92,7 @@
   .notification-dialog-bg.error {
     background-color: #e53e3e;
   }
-  
+
   .notification-dialog-inner {
     position: relative;
     background: #ffffff;
@@ -101,7 +101,7 @@
     text-align: center;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
   }
-  
+
   .notification-close {
     position: absolute;
     top: 16px;
@@ -112,7 +112,7 @@
     cursor: pointer;
     line-height: 1;
   }
-  
+
   .notification-icon {
     position: relative;
     margin: 0 auto 24px auto;  /* larger bottom margin */
@@ -153,7 +153,7 @@
   .notification-icon.error::before {
     background-color: #e53e3e;
   }
-  
+
   @keyframes fadeInCircle {
     from {
       opacity: 0;
@@ -164,7 +164,7 @@
       transform: scale(1);
     }
   }
-  
+
   @keyframes pulse {
     0%, 100% {
       transform: translate(-50%, -50%) scale(1);
@@ -173,17 +173,17 @@
       transform: translate(-50%, -50%) scale(1.2);
     }
   }
-  
+
   .notification-title {
     font-size: 2em;             /* larger title font */
     margin: 0 0 12px 0;
   }
-  
+
   .notification-message {
     font-size: 1.2em;           /* larger message font */
     margin: 0 0 32px 0;
   }
-  
+
   .notification-button {
     border: none;
     border-radius: 8px;
@@ -202,4 +202,3 @@
     opacity: 0.9;
   }
   </style>
-  

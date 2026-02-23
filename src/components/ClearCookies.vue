@@ -3,7 +3,7 @@
   <section class="container" style="z-index: 10000 !important">
     <section class="sec__container">
       <div class="cookie__box" :class="[{ hide: !open, show: open }]">
-        <img :src="imageUrl" alt="cookie" />
+        <img alt="cookie" :src="imageUrl">
         <div class="content">
           <h2>{{ title }}</h2>
           <p v-if="currentVersion" class="version-text">
@@ -14,12 +14,11 @@
             <button class="accept__btn" @click="accept">Accept</button>
             <a
               v-if="policyUrl"
-              :href="policyUrl"
-              target="_blank"
-              rel="noopener"
               class="learn__more-btn"
-              >Learn More</a
-            >
+              :href="policyUrl"
+              rel="noopener"
+              target="_blank"
+            >Learn More</a>
           </div>
         </div>
       </div>
@@ -28,175 +27,175 @@
 </template>
 
 <script>
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+  import { doc, getDoc } from 'firebase/firestore'
+  import { db } from '@/firebaseConfig'
 
-export default {
-  name: "ClearCookies",
-  props: {
-    brand: { type: String, default: "" },
-    title: { type: String, default: "Cookie Notice" },
-    message: {
-      type: String,
-      default: "This site uses cookies because they're freshly baked & tasty.",
+  export default {
+    name: 'ClearCookies',
+    props: {
+      brand: { type: String, default: '' },
+      title: { type: String, default: 'Cookie Notice' },
+      message: {
+        type: String,
+        default: 'This site uses cookies because they\'re freshly baked & tasty.',
+      },
+      policyUrl: { type: String, default: '' },
+      imageUrl: {
+        type: String,
+        default: 'https://i.postimg.cc/mDLqkpv7/cookie.png',
+      },
+      checkVersion: { type: Boolean, default: true },
+      showOnFirstVisit: { type: Boolean, default: true },
     },
-    policyUrl: { type: String, default: "" },
-    imageUrl: {
-      type: String,
-      default: "https://i.postimg.cc/mDLqkpv7/cookie.png",
-    },
-    checkVersion: { type: Boolean, default: true },
-    showOnFirstVisit: { type: Boolean, default: true },
-  },
-  data() {
-    return {
-      open: false,
-      currentVersion: "1.0.13",
-    };
-  },
-  computed: {
-    displayMessage() {
-      if (this.currentVersion) {
-        return "A new version has been detected. Click Accept to clear cookies and cached data.";
-      }
-      return this.brand
-        ? `${this.brand} uses cookies because they're freshly baked & tasty.`
-        : this.message;
-    },
-  },
-  mounted() {
-    this.evaluateConsent();
-  },
-  methods: {
-    openConsentIfNeeded({ accepted, mismatch }) {
-      if (!accepted && !mismatch && this.showOnFirstVisit) {
-        this.open = true;
+    data () {
+      return {
+        open: false,
+        currentVersion: '1.0.13',
       }
     },
-    async evaluateConsent() {
-      try {
-        let accepted = false;
+    computed: {
+      displayMessage () {
+        if (this.currentVersion) {
+          return 'A new version has been detected. Click Accept to clear cookies and cached data.'
+        }
+        return this.brand
+          ? `${this.brand} uses cookies because they're freshly baked & tasty.`
+          : this.message
+      },
+    },
+    mounted () {
+      this.evaluateConsent()
+    },
+    methods: {
+      openConsentIfNeeded ({ accepted, mismatch }) {
+        if (!accepted && !mismatch && this.showOnFirstVisit) {
+          this.open = true
+        }
+      },
+      async evaluateConsent () {
         try {
-          accepted = localStorage.getItem("cookieAccepted") === "1";
-        } catch {}
+          let accepted = false
+          try {
+            accepted = localStorage.getItem('cookieAccepted') === '1'
+          } catch {}
 
-        let mismatch = false;
-        let local = "";
-        if (this.checkVersion) {
-          const snap = await getDoc(doc(db, "version", "RfXRwpsn2XyZ1NMTcw9q"));
-          const data =
-            typeof snap.data === "function"
-              ? snap.data()
-              : snap && snap._document
-              ? { version: snap.get("version") }
-              : null;
-          const remote = data && data.version;
-          console.log("Version Check - Remote:", remote);
-          if (remote) {
-            const remoteVersion = String(remote);
-            const localVersion = this.currentVersion; // This is '1.0.0' from data
-            console.log("Version Check - Remote:", remoteVersion);
-            console.log("Version Check - Local (data):", localVersion);
+          let mismatch = false
+          let local = ''
+          if (this.checkVersion) {
+            const snap = await getDoc(doc(db, 'version', 'RfXRwpsn2XyZ1NMTcw9q'))
+            const data
+              = typeof snap.data === 'function'
+                ? snap.data()
+                : (snap && snap._document
+                  ? { version: snap.get('version') }
+                  : null)
+            const remote = data && data.version
+            console.log('Version Check - Remote:', remote)
+            if (remote) {
+              const remoteVersion = String(remote)
+              const localVersion = this.currentVersion // This is '1.0.0' from data
+              console.log('Version Check - Remote:', remoteVersion)
+              console.log('Version Check - Local (data):', localVersion)
 
-            // Compare remote version with local data version
-            if (remoteVersion !== localVersion) {
-              console.log("Version mismatch detected! Showing dialog");
-              this.currentVersion = remoteVersion; // Update currentVersion as indicator
-              mismatch = true;
-              this.open = true;
+              // Compare remote version with local data version
+              if (remoteVersion === localVersion) {
+                console.log('Versions match - no dialog needed')
+              } else {
+                console.log('Version mismatch detected! Showing dialog')
+                this.currentVersion = remoteVersion // Update currentVersion as indicator
+                mismatch = true
+                this.open = true
+              }
             } else {
-              console.log("Versions match - no dialog needed");
+              console.warn(
+                'No remote version found, falling back to consent flag only',
+              )
             }
-          } else {
-            console.warn(
-              "No remote version found, falling back to consent flag only"
-            );
           }
-        }
 
-        if (!this.open) {
-          this.openConsentIfNeeded({ accepted, mismatch });
+          if (!this.open) {
+            this.openConsentIfNeeded({ accepted, mismatch })
+          }
+        } catch (error) {
+          console.error('Consent/version evaluation failed:', error)
+          try {
+            const accepted = localStorage.getItem('cookieAccepted') === '1'
+            if (!accepted && this.showOnFirstVisit) this.open = true
+          } catch {}
         }
-      } catch (e) {
-        console.error("Consent/version evaluation failed:", e);
+      },
+      async checkRemoteVersion () {
         try {
-          const accepted = localStorage.getItem("cookieAccepted") === "1";
-          if (!accepted && this.showOnFirstVisit) this.open = true;
-        } catch {}
-      }
-    },
-    async checkRemoteVersion() {
-      try {
-        const snap = await getDoc(doc(db, "version", "RfXRwpsn2XyZ1NMTcw9q"));
-        const data =
-          typeof snap.data === "function"
-            ? snap.data()
-            : snap && snap._document
-            ? { version: snap.get("version") }
-            : null;
-        const remote = data && data.version;
-        console.log("🔍 Version Check - Remote:", remote);
-        if (!remote) {
-          console.warn("No remote version found");
-          return;
+          const snap = await getDoc(doc(db, 'version', 'RfXRwpsn2XyZ1NMTcw9q'))
+          const data
+            = typeof snap.data === 'function'
+              ? snap.data()
+              : (snap && snap._document
+                ? { version: snap.get('version') }
+                : null)
+          const remote = data && data.version
+          console.log('🔍 Version Check - Remote:', remote)
+          if (!remote) {
+            console.warn('No remote version found')
+            return
+          }
+          this.currentVersion = String(remote)
+          let local = ''
+          // Compare remote version with local data version
+          const remoteVersion = String(remote)
+          const localVersion = this.currentVersion // This is '1.0.0' from data
+          console.log('🔍 Version Check - Remote:', remoteVersion)
+          console.log('🔍 Version Check - Local (data):', localVersion)
+          if (remoteVersion === localVersion) {
+            console.log('✅ Versions match - no dialog needed')
+          } else {
+            console.log('⚠️ Version mismatch detected - showing dialog')
+            this.currentVersion = remoteVersion // Update currentVersion as indicator
+            this.open = true
+          }
+        } catch (error) {
+          console.error('❌ Version check failed:', error)
         }
-        this.currentVersion = String(remote);
-        let local = "";
-        // Compare remote version with local data version
-        const remoteVersion = String(remote);
-        const localVersion = this.currentVersion; // This is '1.0.0' from data
-        console.log("🔍 Version Check - Remote:", remoteVersion);
-        console.log("🔍 Version Check - Local (data):", localVersion);
-        if (remoteVersion !== localVersion) {
-          console.log("⚠️ Version mismatch detected - showing dialog");
-          this.currentVersion = remoteVersion; // Update currentVersion as indicator
-          this.open = true;
+      },
+      clearAllCookies () {
+        try {
+          for (const c of document.cookie.split(';')) {
+            const eq = c.indexOf('=')
+            const name = (eq === -1 ? c : c.slice(0, Math.max(0, eq))).trim()
+            if (!name) continue
+            document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+          }
+        } catch {}
+      },
+      accept () {
+        if (this.currentVersion) {
+          // Clear everything for version update
+          try {
+            this.clearAllCookies()
+          } catch {}
+          try {
+            sessionStorage.clear()
+          } catch {}
+          try {
+            localStorage.clear()
+          } catch {}
+          // Don't store version in sessionStorage - always show dialog on mismatch
+          try {
+            localStorage.setItem('cookieAccepted', '1')
+          } catch {}
+          try {
+            location.reload()
+          } catch {}
         } else {
-          console.log("✅ Versions match - no dialog needed");
+          // Regular cookie acceptance
+          try {
+            localStorage.setItem('cookieAccepted', '1')
+          } catch {}
+          this.open = false
         }
-      } catch (e) {
-        console.error("❌ Version check failed:", e);
-      }
+      },
     },
-    clearAllCookies() {
-      try {
-        document.cookie.split(";").forEach((c) => {
-          const eq = c.indexOf("=");
-          const name = (eq > -1 ? c.substring(0, eq) : c).trim();
-          if (!name) return;
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-        });
-      } catch {}
-    },
-    accept() {
-      if (this.currentVersion) {
-        // Clear everything for version update
-        try {
-          this.clearAllCookies();
-        } catch {}
-        try {
-          sessionStorage.clear();
-        } catch {}
-        try {
-          localStorage.clear();
-        } catch {}
-        // Don't store version in sessionStorage - always show dialog on mismatch
-        try {
-          localStorage.setItem("cookieAccepted", "1");
-        } catch {}
-        try {
-          location.reload();
-        } catch {}
-      } else {
-        // Regular cookie acceptance
-        try {
-          localStorage.setItem("cookieAccepted", "1");
-        } catch {}
-        this.open = false;
-      }
-    },
-  },
-};
+  }
 </script>
 
 <style scoped>

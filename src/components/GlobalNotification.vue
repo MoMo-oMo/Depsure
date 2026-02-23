@@ -1,61 +1,66 @@
 <template>
-  <v-snackbar 
-    :model-value="snackbar.value" 
-    :timeout="snackbarTimeout.value"
+  <v-snackbar
+    class="global-notification"
     :color="snackbarColor.value"
     location="top"
-    class="global-notification"
+    :model-value="snackbar.value"
+    :timeout="snackbarTimeout.value"
     @update:model-value="hideNotification"
   >
     <div class="d-flex align-center">
-      <v-icon 
-        :icon="getIcon()" 
+      <v-icon
         class="me-3"
         :color="getIconColor()"
+        :icon="getIcon()"
       />
       <span class="notification-message">{{ snackbarMessage.value }}</span>
     </div>
-    
-    <template v-slot:actions>
+
+    <template #actions>
       <v-btn
+        color="white"
         icon="mdi-close"
         variant="text"
         @click="hideNotification"
-        color="white"
       />
     </template>
   </v-snackbar>
 </template>
 
 <script setup>
-import { useNotification } from '@/composables/useNotification'
+  import { useNotification } from '@/composables/useNotification'
 
-const {
-  snackbar,
-  snackbarMessage,
-  snackbarColor,
-  snackbarTimeout,
-  hideNotification
-} = useNotification()
+  const {
+    snackbar,
+    snackbarMessage,
+    snackbarColor,
+    snackbarTimeout,
+    hideNotification,
+  } = useNotification()
 
-const getIcon = () => {
-  switch (snackbarColor.value) {
-    case 'success':
-      return 'mdi-check-circle'
-    case 'error':
-      return 'mdi-alert-circle'
-    case 'warning':
-      return 'mdi-alert'
-    case 'info':
-      return 'mdi-information'
-    default:
-      return 'mdi-check-circle'
+  const getIcon = () => {
+    switch (snackbarColor.value) {
+      case 'success': {
+        return 'mdi-check-circle'
+      }
+      case 'error': {
+        return 'mdi-alert-circle'
+      }
+      case 'warning': {
+        return 'mdi-alert'
+      }
+      case 'info': {
+        return 'mdi-information'
+      }
+      default: {
+        return 'mdi-check-circle'
+      }
+    }
   }
-}
 
-const getIconColor = () => {
-  return 'white'
-}
+  const getIconColor = () => {
+    return 'white'
+  }
 </script>
 
 <style scoped>

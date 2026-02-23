@@ -17,16 +17,16 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.agencyId"
-                      label="Select Agency"
-                      variant="outlined"
                       class="custom-input"
-                      :items="agencies"
                       item-title="agencyName"
                       item-value="id"
-                      :rules="agencyRules"
-                      required
+                      :items="agencies"
+                      label="Select Agency"
                       :loading="agenciesLoading"
                       :disabled="isAgencyUser"
+                      required
+                      :rules="agencyRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -34,30 +34,30 @@
                   <v-col cols="12" md="6">
                     <v-autocomplete
                       v-model="entry.unitName"
-                      label="Select Unit"
-                      variant="outlined"
                       class="custom-input"
-                      :items="units"
                       item-title="propertyName"
                       item-value="propertyName"
-                      :rules="unitNameRules"
-                      :loading="unitsLoading"
+                      :items="units"
                       clearable
+                      label="Select Unit"
                       hide-no-data
+                      :loading="unitsLoading"
                       auto-select-first
+                      :rules="unitNameRules"
                       required
+                      variant="outlined"
                     />
                   </v-col>
 
                   <!-- Property Type (Read-only) -->
-                  <v-col cols="12" md="6" v-if="selectedUnitPropertyType">
+                  <v-col v-if="selectedUnitPropertyType" cols="12" md="6">
                     <v-text-field
-                      :model-value="propertyTypeLabel"
-                      label="Property Type"
-                      variant="outlined"
                       class="custom-input"
-                      readonly
+                      label="Property Type"
+                      :model-value="propertyTypeLabel"
                       prepend-inner-icon="mdi-home"
+                      readonly
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -65,12 +65,12 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.noticeGiven"
-                      label="Notice Given (Yes/No)"
-                      variant="outlined"
                       class="custom-input"
                       :items="['Yes', 'No']"
-                      :rules="noticeGivenRules"
+                      label="Notice Given (Yes/No)"
                       required
+                      :rules="noticeGivenRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -78,12 +78,12 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.vacateDate"
+                      class="custom-input"
                       label="Vacate Date"
+                      required
+                      :rules="vacateDateRules"
                       type="date"
                       variant="outlined"
-                      class="custom-input"
-                      :rules="vacateDateRules"
-                      required
                     />
                   </v-col>
 
@@ -91,11 +91,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.contactNumber"
-                      label="Contact Number"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="contactNumberRules"
+                      label="Contact Number"
                       required
+                      :rules="contactNumberRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -103,11 +103,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="entry.address"
-                      label="Address"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="addressRules"
+                      label="Address"
                       required
+                      :rules="addressRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -115,16 +115,16 @@
                   <v-col cols="12" md="6">
                     <v-file-input
                       v-model="entry.quoteFile"
-                      label="Upload Quote Instructions (PDF only)"
-                      variant="outlined"
-                      class="custom-input"
                       accept=".pdf"
-                      show-size
-                      prepend-icon="mdi-file-pdf-box"
+                      class="custom-input"
+                      label="Upload Quote Instructions (PDF only)"
                       :loading="uploading"
-                      :rules="quoteFileRules"
                       hint="Only PDF files are allowed. Maximum size: 50MB"
+                      prepend-icon="mdi-file-pdf-box"
                       persistent-hint
+                      :rules="quoteFileRules"
+                      show-size
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -132,12 +132,12 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.status"
-                      label="Maintenance Status"
-                      variant="outlined"
                       class="custom-input"
                       :items="['Pending', 'In Progress', 'Completed', 'Cancelled']"
-                      :rules="statusRules"
+                      label="Maintenance Status"
                       required
+                      :rules="statusRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -145,12 +145,12 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="entry.priority"
-                      label="Priority Level"
-                      variant="outlined"
                       class="custom-input"
                       :items="['Low', 'Medium', 'High', 'Urgent']"
-                      :rules="priorityRules"
+                      label="Priority Level"
                       required
+                      :rules="priorityRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -167,7 +167,6 @@
                     />
                   </v-col> -->
 
-                  
                 </v-row>
               </v-card-text>
 
@@ -175,20 +174,20 @@
               <v-card-actions class="pa-4">
                 <v-spacer />
                 <v-btn
-                  color="grey"
-                  variant="outlined"
                   class="cancel-btn"
-                  @click="goBack"
+                  color="grey"
                   :disabled="loading"
+                  variant="outlined"
+                  @click="goBack"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
-                  color="black"
-                  variant="elevated"
                   class="submit-btn"
+                  color="black"
                   :disabled="!valid || loading"
                   :loading="loading"
+                  variant="elevated"
                   @click="submitForm"
                 >
                   {{ loading ? 'Adding...' : 'Add Entry' }}
@@ -203,294 +202,290 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db, storage } from '@/firebaseConfig'
-import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { useAppStore } from '@/stores/app'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { usePropertyType } from '@/composables/usePropertyType'
+  import { addDoc, collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
+  import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { usePropertyType } from '@/composables/usePropertyType'
+  import { db, storage } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: "AddMaintenancePage",
-  setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { getLabel } = usePropertyType()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getLabel }
-  },
-  data() {
-    return {
-      valid: false,
-      loading: false,
-      uploading: false,
-      agenciesLoading: false,
-      unitsLoading: false,
-      agencies: [],
-      units: [],
-      entry: {
-        agencyId: "",
-        unitName: "",
-        noticeGiven: "No",
-        vacateDate: "",
-        contactNumber: "",
-        address: "",
-        quoteFile: null,
-        status: "Pending",
-        priority: "Medium",
-        estimatedCost: 0
-      },
-      agencyRules: [v => !!v || "Agency selection is required"],
-      unitNameRules: [v => !!v || "Unit Name is required"],
-      noticeGivenRules: [v => !!v || "Notice Given is required"],
-      vacateDateRules: [v => !!v || "Vacate Date is required"],
-      contactNumberRules: [v => !!v || "Contact Number is required"],
-      addressRules: [v => !!v || "Address is required"],
-      statusRules: [v => !!v || "Status is required"],
-      priorityRules: [v => !!v || "Priority is required"],
-      estimatedCostRules: [v => v >= 0 || "Project budget cannot be negative"],
-      quoteFileRules: [
-        v => !v || v.size <= 50 * 1024 * 1024 || "File size must be less than 50MB",
-        v => !v || v.type === 'application/pdf' || "Only PDF files are allowed"
-      ]
-    };
-  },
-  computed: {
-    isAgencyUser() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency');
+  export default {
+    name: 'AddMaintenancePage',
+    setup () {
+      const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      const { getLabel } = usePropertyType()
+      return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, getLabel }
     },
-    selectedUnitPropertyType() {
-      if (!this.entry.unitName) return null;
-      const selectedUnit = this.units.find(unit => unit.propertyName === this.entry.unitName);
-      return selectedUnit?.propertyType || null;
-    },
-    propertyTypeLabel() {
-      return this.selectedUnitPropertyType ? this.getLabel(this.selectedUnitPropertyType) : '';
-    }
-  },
-  methods: {
-    async submitForm() {
-      if (this.$refs.form.validate()) {
-        this.loading = true
-        try {
-          console.log("Adding maintenance entry:", this.entry);
-          
-          // Get agency name from selected agency
-          const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
-          console.log('Selected agency ID:', this.entry.agencyId)
-          console.log('Selected agency object:', selectedAgency)
-          console.log('Available agencies:', this.agencies)
-          
-          // Prepare maintenance data for Firestore
-          const maintenanceData = {
-            agencyId: this.entry.agencyId,
-            agencyName: selectedAgency ? selectedAgency.agencyName : '',
-            unitName: this.entry.unitName,
-            noticeGiven: this.entry.noticeGiven,
-            vacateDate: this.entry.vacateDate,
-            contactNumber: this.entry.contactNumber,
-            address: this.entry.address,
-            status: this.entry.status,
-            priority: this.entry.priority,
-            estimatedCost: this.entry.estimatedCost || 0,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-
-          // Upload file if provided
-          if (this.entry.quoteFile) {
-            this.uploading = true
-            try {
-              const fileRef = ref(storage, `maintenance-quotes/${Date.now()}_${this.entry.quoteFile.name}`)
-              const snapshot = await uploadBytes(fileRef, this.entry.quoteFile)
-              const downloadURL = await getDownloadURL(snapshot.ref)
-              maintenanceData.quoteFileURL = downloadURL
-              maintenanceData.quoteFileName = this.entry.quoteFile.name
-              console.log('File uploaded successfully:', downloadURL)
-            } catch (uploadError) {
-              console.error('Error uploading file:', uploadError)
-              this.showErrorDialog('Failed to upload file. Please try again.', 'Upload Error', 'OK')
-              return
-            } finally {
-              this.uploading = false
-            }
-          }
-          
-          // Store maintenance data in Firestore
-          const docRef = await addDoc(collection(db, 'maintenance'), maintenanceData)
-          
-          // Log the audit event
-          await this.logAuditEvent(
-            this.auditActions.CREATE,
-            {
-              unitName: this.entry.unitName,
-              agencyId: this.entry.agencyId,
-              agencyName: selectedAgency ? selectedAgency.agencyName : '',
-              status: this.entry.status,
-              priority: this.entry.priority,
-              estimatedCost: this.entry.estimatedCost,
-              hasQuoteFile: !!this.entry.quoteFile
-            },
-            this.resourceTypes.MAINTENANCE,
-            docRef.id
-          )
-          
-          console.log('Maintenance data stored in Firestore')
-          this.showSuccessDialog('Maintenance entry added successfully!', 'Success!', 'Continue', '/maintenance')
-          
-        } catch (error) {
-          console.error('Error creating maintenance entry:', error)
-          this.showErrorDialog('Failed to create maintenance entry. Please try again.', 'Error', 'OK')
-        } finally {
-          this.loading = false
-        }
+    data () {
+      return {
+        valid: false,
+        loading: false,
+        uploading: false,
+        agenciesLoading: false,
+        unitsLoading: false,
+        agencies: [],
+        units: [],
+        entry: {
+          agencyId: '',
+          unitName: '',
+          noticeGiven: 'No',
+          vacateDate: '',
+          contactNumber: '',
+          address: '',
+          quoteFile: null,
+          status: 'Pending',
+          priority: 'Medium',
+          estimatedCost: 0,
+        },
+        agencyRules: [v => !!v || 'Agency selection is required'],
+        unitNameRules: [v => !!v || 'Unit Name is required'],
+        noticeGivenRules: [v => !!v || 'Notice Given is required'],
+        vacateDateRules: [v => !!v || 'Vacate Date is required'],
+        contactNumberRules: [v => !!v || 'Contact Number is required'],
+        addressRules: [v => !!v || 'Address is required'],
+        statusRules: [v => !!v || 'Status is required'],
+        priorityRules: [v => !!v || 'Priority is required'],
+        estimatedCostRules: [v => v >= 0 || 'Project budget cannot be negative'],
+        quoteFileRules: [
+          v => !v || v.size <= 50 * 1024 * 1024 || 'File size must be less than 50MB',
+          v => !v || v.type === 'application/pdf' || 'Only PDF files are allowed',
+        ],
       }
     },
+    computed: {
+      isAgencyUser () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        return user?.userType === 'Agency' || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+      },
+      selectedUnitPropertyType () {
+        if (!this.entry.unitName) return null
+        const selectedUnit = this.units.find(unit => unit.propertyName === this.entry.unitName)
+        return selectedUnit?.propertyType || null
+      },
+      propertyTypeLabel () {
+        return this.selectedUnitPropertyType ? this.getLabel(this.selectedUnitPropertyType) : ''
+      },
+    },
+    watch: {
+      'entry.agencyId': {
+        handler (newAgencyId) {
+          if (this.isAgencyUser) {
+            // Agency users automatically get their own units
+            this.fetchUnits()
+          } else if (newAgencyId) {
+            // Super Admin/Admin users get units for selected agency
+            this.fetchUnits(newAgencyId)
+          } else {
+            this.units = []
+            this.entry.unitName = ''
+          }
+        },
+        immediate: false,
+      },
+    },
+    async mounted () {
+      // Fetch agencies first
+      await this.fetchAgencies()
 
-    async fetchAgencies() {
-      this.agenciesLoading = true
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
-        
-        if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
-          // Agency users and Agency Admin users can only add maintenance entries to their own agency
-          let agencyData = null;
-          
-          if (userType === 'Agency') {
-            // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (agencyDoc.exists()) {
-              agencyData = {
-                id: agencyDoc.id,
-                ...agencyDoc.data()
-              };
+      // For agency users, fetch their units automatically
+      if (this.isAgencyUser) {
+        await this.fetchUnits()
+      }
+    },
+    methods: {
+      async submitForm () {
+        if (this.$refs.form.validate()) {
+          this.loading = true
+          try {
+            console.log('Adding maintenance entry:', this.entry)
+
+            // Get agency name from selected agency
+            const selectedAgency = this.agencies.find(agency => agency.id === this.entry.agencyId)
+            console.log('Selected agency ID:', this.entry.agencyId)
+            console.log('Selected agency object:', selectedAgency)
+            console.log('Available agencies:', this.agencies)
+
+            // Prepare maintenance data for Firestore
+            const maintenanceData = {
+              agencyId: this.entry.agencyId,
+              agencyName: selectedAgency ? selectedAgency.agencyName : '',
+              unitName: this.entry.unitName,
+              noticeGiven: this.entry.noticeGiven,
+              vacateDate: this.entry.vacateDate,
+              contactNumber: this.entry.contactNumber,
+              address: this.entry.address,
+              status: this.entry.status,
+              priority: this.entry.priority,
+              estimatedCost: this.entry.estimatedCost || 0,
+              createdAt: new Date(),
+              updatedAt: new Date(),
             }
-          } else if (userType === 'Admin' && currentUser.adminScope === 'agency') {
-            // For Agency Admin users, fetch their managed agency
-            if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId));
+
+            // Upload file if provided
+            if (this.entry.quoteFile) {
+              this.uploading = true
+              try {
+                const fileRef = ref(storage, `maintenance-quotes/${Date.now()}_${this.entry.quoteFile.name}`)
+                const snapshot = await uploadBytes(fileRef, this.entry.quoteFile)
+                const downloadURL = await getDownloadURL(snapshot.ref)
+                maintenanceData.quoteFileURL = downloadURL
+                maintenanceData.quoteFileName = this.entry.quoteFile.name
+                console.log('File uploaded successfully:', downloadURL)
+              } catch (uploadError) {
+                console.error('Error uploading file:', uploadError)
+                this.showErrorDialog('Failed to upload file. Please try again.', 'Upload Error', 'OK')
+                return
+              } finally {
+                this.uploading = false
+              }
+            }
+
+            // Store maintenance data in Firestore
+            const docRef = await addDoc(collection(db, 'maintenance'), maintenanceData)
+
+            // Log the audit event
+            await this.logAuditEvent(
+              this.auditActions.CREATE,
+              {
+                unitName: this.entry.unitName,
+                agencyId: this.entry.agencyId,
+                agencyName: selectedAgency ? selectedAgency.agencyName : '',
+                status: this.entry.status,
+                priority: this.entry.priority,
+                estimatedCost: this.entry.estimatedCost,
+                hasQuoteFile: !!this.entry.quoteFile,
+              },
+              this.resourceTypes.MAINTENANCE,
+              docRef.id,
+            )
+
+            console.log('Maintenance data stored in Firestore')
+            this.showSuccessDialog('Maintenance entry added successfully!', 'Success!', 'Continue', '/maintenance')
+          } catch (error) {
+            console.error('Error creating maintenance entry:', error)
+            this.showErrorDialog('Failed to create maintenance entry. Please try again.', 'Error', 'OK')
+          } finally {
+            this.loading = false
+          }
+        }
+      },
+
+      async fetchAgencies () {
+        this.agenciesLoading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
+
+          if (userType === 'Agency' || (userType === 'Admin' && currentUser.adminScope === 'agency')) {
+            // Agency users and Agency Admin users can only add maintenance entries to their own agency
+            let agencyData = null
+
+            if (userType === 'Agency') {
+              // For Agency users, use their own document
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid))
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
-                  ...agencyDoc.data()
-                };
+                  ...agencyDoc.data(),
+                }
+              }
+            } else if (userType === 'Admin' && currentUser.adminScope === 'agency' // For Agency Admin users, fetch their managed agency
+              && currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.managedAgencyId))
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data(),
+                }
               }
             }
-          }
-          
-          if (agencyData) {
-            this.agencies = [agencyData];
-            // Pre-select the agency for agency users and agency admins
-            this.entry.agencyId = agencyData.id;
+
+            if (agencyData) {
+              this.agencies = [agencyData]
+              // Pre-select the agency for agency users and agency admins
+              this.entry.agencyId = agencyData.id
+            } else {
+              this.agencies = []
+            }
+            console.log('Agency user - own agency loaded:', this.agencies)
           } else {
-            this.agencies = [];
-          }
-          console.log('Agency user - own agency loaded:', this.agencies);
-        } else {
-          // Super Admin and Admin users can see all agencies
-          const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
-          const querySnapshot = await getDocs(q)
-          this.agencies = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }))
-          console.log('All agencies loaded:', this.agencies.length)
-          console.log('Agencies data:', this.agencies)
-          // Check if agencies have the correct field names
-          if (this.agencies.length > 0) {
-            console.log('First agency structure:', this.agencies[0])
-            console.log('First agency agencyName:', this.agencies[0].agencyName)
-          } else {
-            console.log('No agencies found in database')
+            // Super Admin and Admin users can see all agencies
+            const q = query(collection(db, 'users'), where('userType', '==', 'Agency'))
+            const querySnapshot = await getDocs(q)
+            this.agencies = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            console.log('All agencies loaded:', this.agencies.length)
+            console.log('Agencies data:', this.agencies)
+            // Check if agencies have the correct field names
+            if (this.agencies.length > 0) {
+              console.log('First agency structure:', this.agencies[0])
+              console.log('First agency agencyName:', this.agencies[0].agencyName)
+            } else {
+              console.log('No agencies found in database')
             // Avoid auto-creating test agencies from this page
+            }
           }
-        }
-      } catch (error) {
-        console.error('Error fetching agencies:', error)
-        this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
-      } finally {
-        this.agenciesLoading = false
-      }
-    },
-
-
-    async fetchUnits(agencyId = null) {
-      this.unitsLoading = true;
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
-        
-        let unitsQuery;
-        
-        if (userType === 'Agency') {
-          // Agency users can only see units from their own agency
-          unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', currentUser.uid)
-          );
-        } else if (agencyId) {
-          // Super Admin/Admin users query units for specific agency
-          unitsQuery = query(
-            collection(db, 'units'),
-            where('agencyId', '==', agencyId)
-          );
-        } else {
-          // Super Admin/Admin users query all units when no agency selected
-          unitsQuery = collection(db, 'units');
-        }
-        
-        const querySnapshot = await getDocs(unitsQuery);
-        this.units = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        
-        console.log('Units fetched:', this.units);
-        console.log('User type:', userType, 'Agency ID filter:', agencyId);
-      } catch (error) {
-        console.error('Error fetching units:', error);
-        this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK');
-      } finally {
-        this.unitsLoading = false;
-      }
-    },
-
-    goBack() {
-      this.$router.push("/maintenance");
-    }
-  },
-  async mounted() {
-    // Fetch agencies first
-    await this.fetchAgencies()
-    
-    // For agency users, fetch their units automatically
-    if (this.isAgencyUser) {
-      await this.fetchUnits();
-    }
-  },
-  watch: {
-    'entry.agencyId': {
-      handler(newAgencyId) {
-        if (this.isAgencyUser) {
-          // Agency users automatically get their own units
-          this.fetchUnits();
-        } else if (newAgencyId) {
-          // Super Admin/Admin users get units for selected agency
-          this.fetchUnits(newAgencyId);
-        } else {
-          this.units = [];
-          this.entry.unitName = '';
+        } catch (error) {
+          console.error('Error fetching agencies:', error)
+          this.showErrorDialog('Failed to load agencies. Please try again.', 'Error', 'OK')
+        } finally {
+          this.agenciesLoading = false
         }
       },
-      immediate: false
-    }
+
+      async fetchUnits (agencyId = null) {
+        this.unitsLoading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
+
+          let unitsQuery
+
+          if (userType === 'Agency') {
+            // Agency users can only see units from their own agency
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', currentUser.uid),
+            )
+          } else if (agencyId) {
+            // Super Admin/Admin users query units for specific agency
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', agencyId),
+            )
+          } else {
+            // Super Admin/Admin users query all units when no agency selected
+            unitsQuery = collection(db, 'units')
+          }
+
+          const querySnapshot = await getDocs(unitsQuery)
+          this.units = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+
+          console.log('Units fetched:', this.units)
+          console.log('User type:', userType, 'Agency ID filter:', agencyId)
+        } catch (error) {
+          console.error('Error fetching units:', error)
+          this.showErrorDialog('Failed to load units. Please try again.', 'Error', 'OK')
+        } finally {
+          this.unitsLoading = false
+        }
+      },
+
+      goBack () {
+        this.$router.push('/maintenance')
+      },
+    },
   }
-};
 </script>
 
 <style scoped>

@@ -1,20 +1,22 @@
+import { addDoc, collection, deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '@/firebaseConfig'
-import { collection, addDoc, deleteDoc, doc, getDoc, updateDoc } from 'firebase/firestore'
 import { useAppStore } from '@/stores/app'
 
-export function useNoticeToVacancyTransition() {
+export function useNoticeToVacancyTransition () {
   /**
    * Check if a notice is complete (has all required fields filled)
    */
-  function isNoticeComplete(notice) {
-    if (!notice) return false
-    
+  function isNoticeComplete (notice) {
+    if (!notice) {
+      return false
+    }
+
     // Required fields for a notice to be considered complete
     const hasUnitName = !!notice.unitName
     const hasLeaseStartDate = !!notice.leaseStartDate
     const hasLeaseEndDate = !!notice.leaseEndDate
     // monthsMissedRent is optional (can be 0)
-    
+
     return hasUnitName && hasLeaseStartDate && hasLeaseEndDate
   }
 
@@ -22,7 +24,7 @@ export function useNoticeToVacancyTransition() {
    * Automatically transition a completed notice to a vacancy
    * Returns true if transition was successful, false otherwise
    */
-  async function autoTransitionToVacancy(noticeId) {
+  async function autoTransitionToVacancy (noticeId) {
     try {
       // Get the notice data
       const noticeDoc = await getDoc(doc(db, 'notices', noticeId))
@@ -54,7 +56,7 @@ export function useNoticeToVacancyTransition() {
       // Create vacancy entry
       const vacancyData = {
         agencyId: notice.agencyId || '',
-        unitId: unitId,
+        unitId,
         unitName: notice.unitName,
         dateVacated: notice.leaseEndDate || notice.vacateDate,
         leaseStartDate: notice.leaseStartDate || '',
@@ -65,15 +67,19 @@ export function useNoticeToVacancyTransition() {
         paidTowardsFund: Number(notice.paidTowardsFund ?? 0),
         paidOut: (() => {
           const v = notice.paidOut
-          if (v === true || v === 'Yes' || v === 'yes') return 'Yes'
-          if (v === false || v === 'No' || v === 'no') return 'No'
+          if (v === true || v === 'Yes' || v === 'yes') {
+            return 'Yes'
+          }
+          if (v === false || v === 'No' || v === 'no') {
+            return 'No'
+          }
           return v || ''
         })(),
         notes: `Transitioned from notice. Month's Missed Rent: ${notice.monthsMissedRent || 0}`,
         propertyType: notice.propertyType || unitData?.propertyType || 'residential',
         monthsMissedRent: notice.monthsMissedRent || 0,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
 
       await addDoc(collection(db, 'vacancies'), vacancyData)
@@ -88,7 +94,7 @@ export function useNoticeToVacancyTransition() {
           archivedAt: new Date(),
           archivedBy: appStore.currentUser?.uid || 'system',
           archivedByUserType: appStore.currentUser?.userType || 'system',
-          archivedReason: 'Notice completed - moved to vacancies'
+          archivedReason: 'Notice completed - moved to vacancies',
         }
 
         await addDoc(collection(db, 'archivedUnits'), archivedUnitData)
@@ -109,7 +115,6 @@ export function useNoticeToVacancyTransition() {
 
   return {
     isNoticeComplete,
-    autoTransitionToVacancy
+    autoTransitionToVacancy,
   }
 }
-

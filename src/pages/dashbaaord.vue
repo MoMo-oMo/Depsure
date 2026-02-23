@@ -17,10 +17,10 @@
 
       <!-- Quick Actions -->
       <v-row>
-        <v-col v-if="canAccessUserManagement" cols="12" md="6" lg="4">
+        <v-col v-if="canAccessUserManagement" cols="12" lg="4" md="6">
           <v-card class="action-card" @click="navigateTo('user-management')">
             <v-card-title>
-              <v-icon icon="mdi-account-group" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-account-group" />
               User Management
             </v-card-title>
             <v-card-text>
@@ -29,10 +29,10 @@
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="6" lg="4">
+        <v-col cols="12" lg="4" md="6">
           <v-card class="action-card" @click="navigateTo('agency')">
             <v-card-title>
-              <v-icon icon="mdi-domain" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-domain" />
               Agencies
             </v-card-title>
             <v-card-text>
@@ -41,10 +41,10 @@
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="6" lg="4">
+        <v-col cols="12" lg="4" md="6">
           <v-card class="action-card" @click="navigateTo('active-units')">
             <v-card-title>
-              <v-icon icon="mdi-home" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-home" />
               Active Units
             </v-card-title>
             <v-card-text>
@@ -53,10 +53,10 @@
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="6" lg="4">
+        <v-col cols="12" lg="4" md="6">
           <v-card class="action-card" @click="navigateTo('notices')">
             <v-card-title>
-              <v-icon icon="mdi-bell" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-bell" />
               Notices
             </v-card-title>
             <v-card-text>
@@ -65,10 +65,10 @@
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="6" lg="4">
+        <v-col cols="12" lg="4" md="6">
           <v-card class="action-card" @click="navigateTo('flagged-units')">
             <v-card-title>
-              <v-icon icon="mdi-flag" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-flag" />
               Flagged Units
             </v-card-title>
             <v-card-text>
@@ -77,10 +77,10 @@
           </v-card>
         </v-col>
 
-        <v-col cols="12" md="6" lg="4">
+        <v-col cols="12" lg="4" md="6">
           <v-card class="action-card" @click="navigateTo('maintenance')">
             <v-card-title>
-              <v-icon icon="mdi-wrench" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-wrench" />
               Maintenance
             </v-card-title>
             <v-card-text>
@@ -94,39 +94,39 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAppStore } from '@/stores/app'
+  import { computed } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: 'DashboardPage',
-  setup() {
-    const router = useRouter()
-    const appStore = useAppStore()
-    
-    const userName = computed(() => appStore.userName)
-    const userType = computed(() => appStore.userType)
-    
-    // Role-based access control
-    const canAccessUserManagement = computed(() => {
-      return userType.value === 'Super Admin' || userType.value === 'Admin'
-    })
+  export default {
+    name: 'DashboardPage',
+    setup () {
+      const router = useRouter()
+      const appStore = useAppStore()
 
-    const navigateTo = (route) => {
-      router.push(`/${route}`)
-    }
+      const userName = computed(() => appStore.userName)
+      const userType = computed(() => appStore.userType)
 
-    return {
-      userName,
-      userType,
-      navigateTo,
-      canAccessUserManagement
-    }
-  },
-  mounted() {
-    document.title = "Dashboard - Depsure"
+      // Role-based access control
+      const canAccessUserManagement = computed(() => {
+        return userType.value === 'Super Admin' || userType.value === 'Admin'
+      })
+
+      const navigateTo = route => {
+        router.push(`/${route}`)
+      }
+
+      return {
+        userName,
+        userType,
+        navigateTo,
+        canAccessUserManagement,
+      }
+    },
+    mounted () {
+      document.title = 'Dashboard - Depsure'
+    },
   }
-}
 </script>
 
 <style scoped>
@@ -169,5 +169,3 @@ export default {
   }
 }
 </style>
-
-

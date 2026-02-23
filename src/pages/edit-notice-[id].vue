@@ -6,8 +6,8 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
-            @click="$router.push('/notices')"
             class="back-btn"
+            @click="$router.push('/notices')"
           >
             Back
           </v-btn>
@@ -24,7 +24,7 @@
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-progress-circular indeterminate color="primary" />
+              <v-progress-circular color="primary" indeterminate />
               <p class="mt-4">Loading notice details...</p>
             </v-card-text>
           </v-card>
@@ -32,7 +32,7 @@
           <!-- Error -->
           <v-card v-else-if="error" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-icon icon="mdi-alert" color="error" size="large" />
+              <v-icon color="error" icon="mdi-alert" size="large" />
               <p class="mt-4 text-error">{{ error }}</p>
             </v-card-text>
           </v-card>
@@ -46,11 +46,11 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="notice.unitName"
-                      label="Unit Name"
-                      variant="outlined"
                       class="custom-input"
-                      :rules="unitNameRules"
+                      label="Unit Name"
                       required
+                      :rules="unitNameRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -58,12 +58,12 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="notice.leaseStartDate"
+                      class="custom-input"
                       label="Lease Start Date"
+                      required
+                      :rules="leaseStartDateRules"
                       type="date"
                       variant="outlined"
-                      class="custom-input"
-                      :rules="leaseStartDateRules"
-                      required
                     />
                   </v-col>
 
@@ -71,12 +71,12 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="notice.leaseEndDate"
+                      class="custom-input"
                       label="Lease End Date"
+                      required
+                      :rules="leaseEndDateRules"
                       type="date"
                       variant="outlined"
-                      class="custom-input"
-                      :rules="leaseEndDateRules"
-                      required
                     />
                   </v-col>
 
@@ -84,13 +84,13 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="notice.maintenanceAmount"
+                      class="custom-input"
                       label="Maintenance Amount"
-                      type="number"
-                      step="0.01"
                       min="0"
                       prefix="R"
+                      step="0.01"
+                      type="number"
                       variant="outlined"
-                      class="custom-input"
                     />
                   </v-col>
 
@@ -98,14 +98,14 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="notice.monthsMissedRent"
-                      label="Month's Missed Rent"
-                      variant="outlined"
-                      type="number"
                       class="custom-input"
-                      min="0"
-                      step="1"
                       hint="Enter number of months rent was missed"
+                      label="Month's Missed Rent"
+                      min="0"
                       persistent-hint
+                      step="1"
+                      type="number"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -113,13 +113,13 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="notice.paidOutAmount"
+                      class="custom-input"
                       label="Paid Out Amount"
-                      type="number"
-                      step="0.01"
                       min="0"
                       prefix="R"
+                      step="0.01"
+                      type="number"
                       variant="outlined"
-                      class="custom-input"
                     />
                   </v-col>
 
@@ -130,20 +130,20 @@
               <v-card-actions class="pa-4">
                 <v-spacer />
                 <v-btn
+                  class="cancel-btn"
                   color="grey"
                   variant="outlined"
                   @click="$router.push('/notices')"
-                  class="cancel-btn"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
+                  class="save-btn"
                   color="black"
-                  variant="elevated"
-                  @click="saveNotice"
                   :disabled="!valid || loading"
                   :loading="loading"
-                  class="save-btn"
+                  variant="elevated"
+                  @click="saveNotice"
                 >
                   {{ loading ? 'Saving...' : 'Save Changes' }}
                 </v-btn>
@@ -157,171 +157,170 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { db } from '@/firebaseConfig'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { useAuditTrail } from '@/composables/useAuditTrail'
-import { useNoticeToVacancyTransition } from '@/composables/useNoticeToVacancyTransition'
+  import { doc, getDoc, updateDoc } from 'firebase/firestore'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { useNoticeToVacancyTransition } from '@/composables/useNoticeToVacancyTransition'
+  import { db } from '@/firebaseConfig'
 
-export default {
-  name: 'EditNoticePage',
-  setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
-    const { autoTransitionToVacancy } = useNoticeToVacancyTransition()
-    return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, autoTransitionToVacancy }
-  },
-  data() {
-    return {
-      notice: {
-        id: '',
-        unitName: '',
-        leaseStartDate: '',
-        leaseEndDate: '',
-        monthsMissedRent: 0,
-        maintenanceAmount: 0,
-        paidOutAmount: 0
-      },
-      loading: true,
-      error: null,
-      valid: true,
-      // Validation rules
-      unitNameRules: [
-        v => !!v || "Unit Name is required",
-        v => v.length >= 5 || "Unit Name must be at least 5 characters"
-      ],
-      leaseStartDateRules: [
-        v => !!v || "Lease Start Date is required"
-      ],
-      leaseEndDateRules: [
-        v => !!v || "Lease End Date is required"
-      ]
-    };
-  },
-  async mounted() {
-    document.title = "Edit Notice - Depsure";
-    const noticeId = this.$route.params.id;
-    if (noticeId) {
-      await this.loadNoticeData(noticeId);
-    } else {
-      this.error = "Notice ID not found";
-      this.loading = false;
-    }
-  },
-  methods: {
-    async loadNoticeData(noticeId) {
-      this.loading = true;
-      this.error = null;
-      
-      try {
-        console.log('Loading notice data for ID:', noticeId);
-        
-        // Fetch notice from Firestore
-        const noticeDoc = await getDoc(doc(db, 'notices', noticeId));
-        
-        if (noticeDoc.exists()) {
-          const noticeData = noticeDoc.data();
-          this.notice = {
-            id: noticeDoc.id,
-            ...noticeData
-          };
-          this.notice.maintenanceAmount = Number(
-            noticeData?.maintenanceAmount ?? 0
-          ) || 0;
-          this.notice.paidOutAmount = Number(
-            noticeData?.paidOutAmount ?? 0
-          ) || 0;
-          console.log('Notice loaded successfully:', this.notice);
-        } else {
-          this.error = 'Notice not found';
-          console.log('Notice not found in Firestore');
-        }
-      } catch (error) {
-        console.error('Error loading notice:', error);
-        this.error = `Failed to load notice details: ${error.message}`;
-      } finally {
-        this.loading = false;
+  export default {
+    name: 'EditNoticePage',
+    setup () {
+      const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      const { autoTransitionToVacancy } = useNoticeToVacancyTransition()
+      return { showSuccessDialog, showErrorDialog, logAuditEvent, auditActions, resourceTypes, autoTransitionToVacancy }
+    },
+    data () {
+      return {
+        notice: {
+          id: '',
+          unitName: '',
+          leaseStartDate: '',
+          leaseEndDate: '',
+          monthsMissedRent: 0,
+          maintenanceAmount: 0,
+          paidOutAmount: 0,
+        },
+        loading: true,
+        error: null,
+        valid: true,
+        // Validation rules
+        unitNameRules: [
+          v => !!v || 'Unit Name is required',
+          v => v.length >= 5 || 'Unit Name must be at least 5 characters',
+        ],
+        leaseStartDateRules: [
+          v => !!v || 'Lease Start Date is required',
+        ],
+        leaseEndDateRules: [
+          v => !!v || 'Lease End Date is required',
+        ],
       }
     },
-    
-    async saveNotice() {
-      if (this.$refs.form.validate()) {
-        this.loading = true;
-        try {
-          console.log('Saving notice:', this.notice);
-          
-          // Validate that we have an ID
-          if (!this.notice.id) {
-            throw new Error('Notice ID is missing');
-          }
-          
-          // Prepare notice data for Firestore (remove id field)
-          const { id, ...noticeData } = this.notice;
-          
-          // Set vacateDate to match leaseEndDate (they are the same thing)
-          noticeData.vacateDate = this.notice.leaseEndDate;
-          
-          // Add updated timestamp
-          noticeData.updatedAt = new Date();
-        noticeData.maintenanceAmount =
-          Number(this.notice.maintenanceAmount) || 0;
-        noticeData.paidOutAmount =
-          Number(this.notice.paidOutAmount) || 0;
-          
-          console.log('Notice data to save:', noticeData);
-          
-          // Log the update action before saving
-          await this.logAuditEvent(
-            this.auditActions.UPDATE,
-            {
-              noticeId: id,
-              noticeTitle: noticeData.noticeTitle,
-              updatedFields: Object.keys(noticeData),
-              updatedData: noticeData
-            },
-            this.resourceTypes.NOTICE,
-            id
-          )
-          
-          // Update notice in Firestore
-          await updateDoc(doc(db, 'notices', id), noticeData);
-          
-          console.log('Notice updated successfully');
-          
-          // AUTO-TRANSITION: Check if notice is complete and move to vacancies
-          const transitioned = await this.autoTransitionToVacancy(id);
-          
-          if (transitioned) {
-            // Notice was moved to vacancies
-            this.showSuccessDialog(
-              'Notice completed and moved to Vacancies!',
-              'Success!',
-              'Continue',
-              '/vacancies'
-            );
-          } else {
-            // Notice saved but not complete yet
-            this.showSuccessDialog(
-              'Notice saved successfully!',
-              'Success!',
-              'Continue',
-              `/view-notice-${id}`
-            );
-          }
-          
-        } catch (error) {
-          console.error('Error saving notice:', error);
-          this.showErrorDialog(`Failed to save notice: ${error.message}`, 'Error', 'OK');
-        } finally {
-          this.loading = false;
-        }
+    async mounted () {
+      document.title = 'Edit Notice - Depsure'
+      const noticeId = this.$route.params.id
+      if (noticeId) {
+        await this.loadNoticeData(noticeId)
       } else {
-        console.log('Form validation failed');
-        this.showErrorDialog('Please fix the form errors before saving.', 'Validation Error', 'OK');
+        this.error = 'Notice ID not found'
+        this.loading = false
       }
-    }
+    },
+    methods: {
+      async loadNoticeData (noticeId) {
+        this.loading = true
+        this.error = null
+
+        try {
+          console.log('Loading notice data for ID:', noticeId)
+
+          // Fetch notice from Firestore
+          const noticeDoc = await getDoc(doc(db, 'notices', noticeId))
+
+          if (noticeDoc.exists()) {
+            const noticeData = noticeDoc.data()
+            this.notice = {
+              id: noticeDoc.id,
+              ...noticeData,
+            }
+            this.notice.maintenanceAmount = Number(
+              noticeData?.maintenanceAmount ?? 0,
+            ) || 0
+            this.notice.paidOutAmount = Number(
+              noticeData?.paidOutAmount ?? 0,
+            ) || 0
+            console.log('Notice loaded successfully:', this.notice)
+          } else {
+            this.error = 'Notice not found'
+            console.log('Notice not found in Firestore')
+          }
+        } catch (error) {
+          console.error('Error loading notice:', error)
+          this.error = `Failed to load notice details: ${error.message}`
+        } finally {
+          this.loading = false
+        }
+      },
+
+      async saveNotice () {
+        if (this.$refs.form.validate()) {
+          this.loading = true
+          try {
+            console.log('Saving notice:', this.notice)
+
+            // Validate that we have an ID
+            if (!this.notice.id) {
+              throw new Error('Notice ID is missing')
+            }
+
+            // Prepare notice data for Firestore (remove id field)
+            const { id, ...noticeData } = this.notice
+
+            // Set vacateDate to match leaseEndDate (they are the same thing)
+            noticeData.vacateDate = this.notice.leaseEndDate
+
+            // Add updated timestamp
+            noticeData.updatedAt = new Date()
+            noticeData.maintenanceAmount
+              = Number(this.notice.maintenanceAmount) || 0
+            noticeData.paidOutAmount
+              = Number(this.notice.paidOutAmount) || 0
+
+            console.log('Notice data to save:', noticeData)
+
+            // Log the update action before saving
+            await this.logAuditEvent(
+              this.auditActions.UPDATE,
+              {
+                noticeId: id,
+                noticeTitle: noticeData.noticeTitle,
+                updatedFields: Object.keys(noticeData),
+                updatedData: noticeData,
+              },
+              this.resourceTypes.NOTICE,
+              id,
+            )
+
+            // Update notice in Firestore
+            await updateDoc(doc(db, 'notices', id), noticeData)
+
+            console.log('Notice updated successfully')
+
+            // AUTO-TRANSITION: Check if notice is complete and move to vacancies
+            const transitioned = await this.autoTransitionToVacancy(id)
+
+            if (transitioned) {
+              // Notice was moved to vacancies
+              this.showSuccessDialog(
+                'Notice completed and moved to Vacancies!',
+                'Success!',
+                'Continue',
+                '/vacancies',
+              )
+            } else {
+              // Notice saved but not complete yet
+              this.showSuccessDialog(
+                'Notice saved successfully!',
+                'Success!',
+                'Continue',
+                `/view-notice-${id}`,
+              )
+            }
+          } catch (error) {
+            console.error('Error saving notice:', error)
+            this.showErrorDialog(`Failed to save notice: ${error.message}`, 'Error', 'OK')
+          } finally {
+            this.loading = false
+          }
+        } else {
+          console.log('Form validation failed')
+          this.showErrorDialog('Please fix the form errors before saving.', 'Validation Error', 'OK')
+        }
+      },
+    },
   }
-};
 </script>
 
 <style scoped>
@@ -379,8 +378,6 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;

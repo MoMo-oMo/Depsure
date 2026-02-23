@@ -5,11 +5,11 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="primary"
             @click="goBack"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -26,14 +26,14 @@
           <!-- Loading / Error -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-progress-circular indeterminate color="primary" />
+              <v-progress-circular color="primary" indeterminate />
               <p class="mt-4">Loading property documents...</p>
             </v-card-text>
           </v-card>
 
           <v-card v-else-if="error" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-icon icon="mdi-alert" color="error" size="large" />
+              <v-icon color="error" icon="mdi-alert" size="large" />
               <p class="mt-4 text-error">{{ error }}</p>
             </v-card-text>
           </v-card>
@@ -47,26 +47,26 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="search"
+                      class="search-input"
+                      clearable
+                      density="comfortable"
+                      hide-details
                       label="Search documents..."
                       prepend-inner-icon="mdi-magnify"
-                      density="comfortable"
                       variant="outlined"
-                      clearable
-                      hide-details
-                      class="search-input"
                     />
                   </v-col>
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="dateFilter"
+                      class="date-input"
+                      clearable
+                      density="comfortable"
+                      hide-details
                       label="Filter by date..."
                       prepend-inner-icon="mdi-calendar"
-                      density="comfortable"
-                      variant="outlined"
                       type="date"
-                      clearable
-                      hide-details
-                      class="date-input"
+                      variant="outlined"
                     />
                   </v-col>
                 </v-row>
@@ -74,33 +74,32 @@
 
               <div class="docs-section">
                 <h3 class="docs-title">Quotes</h3>
-                <div v-if="filteredQuotes.length" class="doc-list">
+                <div v-if="filteredQuotes.length > 0" class="doc-list">
                   <div
                     v-for="(docItem, idx) in filteredQuotes"
                     :key="'q-' + idx"
                     class="doc-item"
                   >
-                    <v-icon color="primary" class="mr-2"
-                      >mdi-file-document</v-icon
-                    >
+                    <v-icon
+                      class="mr-2"
+                      color="primary"
+                    >mdi-file-document</v-icon>
                     <span class="doc-name">{{
                       docItem.fileName || "Document"
                     }}</span>
                     <v-btn
+                      class="ml-2"
+                      color="primary"
                       size="small"
                       variant="outlined"
-                      color="primary"
-                      class="ml-2"
                       @click="viewDoc(docItem)"
-                      >View</v-btn
-                    >
+                    >View</v-btn>
                     <a
                       v-if="docItem.fileURL"
                       class="download-link ml-2"
                       :href="docItem.fileURL"
                       target="_blank"
-                      >Download</a
-                    >
+                    >Download</a>
                   </div>
                 </div>
                 <div v-else class="text-medium-emphasis">
@@ -112,33 +111,32 @@
 
               <div class="docs-section">
                 <h3 class="docs-title">Inspections</h3>
-                <div v-if="filteredInspections.length" class="doc-list">
+                <div v-if="filteredInspections.length > 0" class="doc-list">
                   <div
                     v-for="(docItem, idx) in filteredInspections"
                     :key="'i-' + idx"
                     class="doc-item"
                   >
-                    <v-icon color="success" class="mr-2"
-                      >mdi-clipboard-check</v-icon
-                    >
+                    <v-icon
+                      class="mr-2"
+                      color="success"
+                    >mdi-clipboard-check</v-icon>
                     <span class="doc-name">{{
                       docItem.fileName || "Document"
                     }}</span>
                     <v-btn
+                      class="ml-2"
+                      color="success"
                       size="small"
                       variant="outlined"
-                      color="success"
-                      class="ml-2"
                       @click="viewDoc(docItem)"
-                      >View</v-btn
-                    >
+                    >View</v-btn>
                     <a
                       v-if="docItem.fileURL"
                       class="download-link ml-2"
                       :href="docItem.fileURL"
                       target="_blank"
-                      >Download</a
-                    >
+                    >Download</a>
                   </div>
                 </div>
                 <div v-else class="text-medium-emphasis">
@@ -150,33 +148,32 @@
 
               <div class="docs-section">
                 <h3 class="docs-title">Invoices</h3>
-                <div v-if="filteredInvoices.length" class="doc-list">
+                <div v-if="filteredInvoices.length > 0" class="doc-list">
                   <div
                     v-for="(docItem, idx) in filteredInvoices"
                     :key="'inv-' + idx"
                     class="doc-item"
                   >
-                    <v-icon color="success" class="mr-2"
-                      >mdi-receipt-text</v-icon
-                    >
+                    <v-icon
+                      class="mr-2"
+                      color="success"
+                    >mdi-receipt-text</v-icon>
                     <span class="doc-name">{{
                       docItem.fileName || "Document"
                     }}</span>
                     <v-btn
+                      class="ml-2"
+                      color="success"
                       size="small"
                       variant="outlined"
-                      color="success"
-                      class="ml-2"
                       @click="viewDoc(docItem)"
-                      >View</v-btn
-                    >
+                    >View</v-btn>
                     <a
                       v-if="docItem.fileURL"
                       class="download-link ml-2"
                       :href="docItem.fileURL"
                       target="_blank"
-                      >Download</a
-                    >
+                    >Download</a>
                   </div>
                 </div>
                 <div v-else class="text-medium-emphasis">
@@ -196,7 +193,7 @@
       @click.self="showDialog = false"
     >
       <div class="document-dialog">
-        <div class="document-dialog-bg"></div>
+        <div class="document-dialog-bg" />
         <div class="document-dialog-inner">
           <button class="document-close" @click="showDialog = false">
             &times;
@@ -213,11 +210,11 @@
             </div>
             <div class="pdf-wrapper" :style="{ transform: `scale(${zoom})` }">
               <iframe
+                class="pdf-iframe"
+                frameborder="0"
+                height="420"
                 :src="currentURL"
                 width="100%"
-                height="420"
-                frameborder="0"
-                class="pdf-iframe"
               />
             </div>
           </div>
@@ -247,206 +244,206 @@
 </template>
 
 <script>
-import { db } from "@/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
-import { useAppStore } from "@/stores/app";
+  import { doc, getDoc } from 'firebase/firestore'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: "PropertyDocumentsPage",
-  data() {
-    return {
-      loading: true,
-      error: null,
-      property: {},
-      search: "",
-      dateFilter: "",
-      showDialog: false,
-      currentURL: "",
-      currentName: "",
-      zoom: 1,
-    };
-  },
-  computed: {
-    isAgencyContext() {
-      const appStore = useAppStore();
-      const u = appStore.currentUser;
-      return (
-        u?.userType === "Agency" ||
-        (u?.userType === "Admin" && u?.adminScope === "agency")
-      );
-    },
-    filteredQuotes() {
-      const q = (this.search || "").toLowerCase();
-      const list = Array.isArray(this.property?.quotes)
-        ? [...this.property.quotes]
-        : [];
-      const sorted = this.sortByNewest(list);
-
-      let filtered = sorted;
-
-      // Apply search filter
-      if (q) {
-        filtered = filtered.filter((d) =>
-          String(d?.fileName || "")
-            .toLowerCase()
-            .includes(q)
-        );
-      }
-
-      // Apply date filter
-      if (this.dateFilter) {
-        filtered = filtered.filter((d) =>
-          this.matchesDateFilter(d, this.dateFilter)
-        );
-      }
-
-      return this.isAgencyContext ? filtered.slice(0, 3) : filtered;
-    },
-    filteredInspections() {
-      const q = (this.search || "").toLowerCase();
-      const list = Array.isArray(this.property?.inspections)
-        ? [...this.property.inspections]
-        : [];
-      const sorted = this.sortByNewest(list);
-
-      let filtered = sorted;
-
-      // Apply search filter
-      if (q) {
-        filtered = filtered.filter((d) =>
-          String(d?.fileName || "")
-            .toLowerCase()
-            .includes(q)
-        );
-      }
-
-      // Apply date filter
-      if (this.dateFilter) {
-        filtered = filtered.filter((d) =>
-          this.matchesDateFilter(d, this.dateFilter)
-        );
-      }
-
-      return this.isAgencyContext ? filtered.slice(0, 3) : filtered;
-    },
-    filteredInvoices() {
-      const q = (this.search || "").toLowerCase();
-      const list = Array.isArray(this.property?.invoices)
-        ? [...this.property.invoices]
-        : [];
-      const sorted = this.sortByNewest(list);
-
-      let filtered = sorted;
-
-      // Apply search filter
-      if (q) {
-        filtered = filtered.filter((d) =>
-          String(d?.fileName || "")
-            .toLowerCase()
-            .includes(q)
-        );
-      }
-
-      // Apply date filter
-      if (this.dateFilter) {
-        filtered = filtered.filter((d) =>
-          this.matchesDateFilter(d, this.dateFilter)
-        );
-      }
-
-      return this.isAgencyContext ? filtered.slice(0, 3) : filtered;
-    },
-  },
-  methods: {
-    sortByNewest(arr) {
-      try {
-        const withKeys = (arr || []).map((d, i) => ({
-          item: d,
-          ts: this.extractTimestamp(d),
-          idx: i,
-        }));
-        // Sort descending by timestamp; fall back to original order when equal
-        withKeys.sort((a, b) => {
-          if (a.ts === b.ts) return b.idx - a.idx; // assume later index is newer
-          return (b.ts || 0) - (a.ts || 0);
-        });
-        return withKeys.map((x) => x.item);
-      } catch (_) {
-        return Array.isArray(arr) ? arr : [];
+  export default {
+    name: 'PropertyDocumentsPage',
+    data () {
+      return {
+        loading: true,
+        error: null,
+        property: {},
+        search: '',
+        dateFilter: '',
+        showDialog: false,
+        currentURL: '',
+        currentName: '',
+        zoom: 1,
       }
     },
-    extractTimestamp(d) {
-      try {
-        const raw =
-          d?.uploadedAt || d?.createdAt || d?.date || d?.timestamp || null;
-        if (!raw) return 0;
-        if (raw?.toDate) {
-          return raw.toDate().getTime();
+    computed: {
+      isAgencyContext () {
+        const appStore = useAppStore()
+        const u = appStore.currentUser
+        return (
+          u?.userType === 'Agency'
+          || (u?.userType === 'Admin' && u?.adminScope === 'agency')
+        )
+      },
+      filteredQuotes () {
+        const q = (this.search || '').toLowerCase()
+        const list = Array.isArray(this.property?.quotes)
+          ? [...this.property.quotes]
+          : []
+        const sorted = this.sortByNewest(list)
+
+        let filtered = sorted
+
+        // Apply search filter
+        if (q) {
+          filtered = filtered.filter(d =>
+            String(d?.fileName || '')
+              .toLowerCase()
+              .includes(q),
+          )
         }
-        const t = new Date(raw).getTime();
-        return Number.isFinite(t) ? t : 0;
-      } catch {
-        return 0;
-      }
-    },
-    matchesDateFilter(doc, filterDate) {
-      try {
-        const docTimestamp = this.extractTimestamp(doc);
-        if (!docTimestamp) return false;
 
-        const docDate = new Date(docTimestamp);
-        const filterDateObj = new Date(filterDate);
-
-        // Compare dates (ignore time)
-        const docDateStr = docDate.toISOString().split("T")[0];
-        const filterDateStr = filterDateObj.toISOString().split("T")[0];
-
-        return docDateStr === filterDateStr;
-      } catch {
-        return false;
-      }
-    },
-    async loadPropertyData(id) {
-      this.loading = true;
-      try {
-        const snap = await getDoc(doc(db, "units", id));
-        if (!snap.exists()) {
-          this.error = "Property not found";
-          return;
+        // Apply date filter
+        if (this.dateFilter) {
+          filtered = filtered.filter(d =>
+            this.matchesDateFilter(d, this.dateFilter),
+          )
         }
-        const data = snap.data() || {};
-        this.property = { id: snap.id, ...data };
-      } catch (e) {
-        console.error("Load property failed", e);
-        this.error = "Failed to load property documents";
-      } finally {
-        this.loading = false;
-      }
+
+        return this.isAgencyContext ? filtered.slice(0, 3) : filtered
+      },
+      filteredInspections () {
+        const q = (this.search || '').toLowerCase()
+        const list = Array.isArray(this.property?.inspections)
+          ? [...this.property.inspections]
+          : []
+        const sorted = this.sortByNewest(list)
+
+        let filtered = sorted
+
+        // Apply search filter
+        if (q) {
+          filtered = filtered.filter(d =>
+            String(d?.fileName || '')
+              .toLowerCase()
+              .includes(q),
+          )
+        }
+
+        // Apply date filter
+        if (this.dateFilter) {
+          filtered = filtered.filter(d =>
+            this.matchesDateFilter(d, this.dateFilter),
+          )
+        }
+
+        return this.isAgencyContext ? filtered.slice(0, 3) : filtered
+      },
+      filteredInvoices () {
+        const q = (this.search || '').toLowerCase()
+        const list = Array.isArray(this.property?.invoices)
+          ? [...this.property.invoices]
+          : []
+        const sorted = this.sortByNewest(list)
+
+        let filtered = sorted
+
+        // Apply search filter
+        if (q) {
+          filtered = filtered.filter(d =>
+            String(d?.fileName || '')
+              .toLowerCase()
+              .includes(q),
+          )
+        }
+
+        // Apply date filter
+        if (this.dateFilter) {
+          filtered = filtered.filter(d =>
+            this.matchesDateFilter(d, this.dateFilter),
+          )
+        }
+
+        return this.isAgencyContext ? filtered.slice(0, 3) : filtered
+      },
     },
-    viewDoc(docItem) {
-      this.currentURL = docItem?.fileURL || "";
-      this.currentName = docItem?.fileName || "Document";
-      if (this.currentURL) this.showDialog = true;
+    async mounted () {
+      await this.loadPropertyData(this.$route.params.id)
     },
-    openInNewTab() {
-      if (this.currentURL) window.open(this.currentURL, "_blank");
+    methods: {
+      sortByNewest (arr) {
+        try {
+          const withKeys = (arr || []).map((d, i) => ({
+            item: d,
+            ts: this.extractTimestamp(d),
+            idx: i,
+          }))
+          // Sort descending by timestamp; fall back to original order when equal
+          withKeys.sort((a, b) => {
+            if (a.ts === b.ts) return b.idx - a.idx // assume later index is newer
+            return (b.ts || 0) - (a.ts || 0)
+          })
+          return withKeys.map(x => x.item)
+        } catch {
+          return Array.isArray(arr) ? arr : []
+        }
+      },
+      extractTimestamp (d) {
+        try {
+          const raw
+            = d?.uploadedAt || d?.createdAt || d?.date || d?.timestamp || null
+          if (!raw) return 0
+          if (raw?.toDate) {
+            return raw.toDate().getTime()
+          }
+          const t = new Date(raw).getTime()
+          return Number.isFinite(t) ? t : 0
+        } catch {
+          return 0
+        }
+      },
+      matchesDateFilter (doc, filterDate) {
+        try {
+          const docTimestamp = this.extractTimestamp(doc)
+          if (!docTimestamp) return false
+
+          const docDate = new Date(docTimestamp)
+          const filterDateObj = new Date(filterDate)
+
+          // Compare dates (ignore time)
+          const docDateStr = docDate.toISOString().split('T')[0]
+          const filterDateStr = filterDateObj.toISOString().split('T')[0]
+
+          return docDateStr === filterDateStr
+        } catch {
+          return false
+        }
+      },
+      async loadPropertyData (id) {
+        this.loading = true
+        try {
+          const snap = await getDoc(doc(db, 'units', id))
+          if (!snap.exists()) {
+            this.error = 'Property not found'
+            return
+          }
+          const data = snap.data() || {}
+          this.property = { id: snap.id, ...data }
+        } catch (error) {
+          console.error('Load property failed', error)
+          this.error = 'Failed to load property documents'
+        } finally {
+          this.loading = false
+        }
+      },
+      viewDoc (docItem) {
+        this.currentURL = docItem?.fileURL || ''
+        this.currentName = docItem?.fileName || 'Document'
+        if (this.currentURL) this.showDialog = true
+      },
+      openInNewTab () {
+        if (this.currentURL) window.open(this.currentURL, '_blank')
+      },
+      zoomIn () {
+        if (this.zoom < 2) this.zoom += 0.1
+      },
+      zoomOut () {
+        if (this.zoom > 0.5) this.zoom -= 0.1
+      },
+      goBack () {
+        const from = this.$route?.query?.from
+        if (from === 'onboard') this.$router.push('/onboard-units')
+        else this.$router.push('/active-units')
+      },
     },
-    zoomIn() {
-      if (this.zoom < 2) this.zoom += 0.1;
-    },
-    zoomOut() {
-      if (this.zoom > 0.5) this.zoom -= 0.1;
-    },
-    goBack() {
-      const from = this.$route?.query?.from;
-      if (from === "onboard") this.$router.push("/onboard-units");
-      else this.$router.push("/active-units");
-    },
-  },
-  async mounted() {
-    await this.loadPropertyData(this.$route.params.id);
-  },
-};
+  }
 </script>
 
 <style scoped>

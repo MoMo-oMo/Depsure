@@ -2,8 +2,8 @@
   <div v-if="dialogData.show" class="prompt-dialog-overlay" @click.self="onCancel">
     <div class="prompt-dialog-container">
       <!-- Colored card behind -->
-      <div class="prompt-dialog-bg"></div>
-      
+      <div class="prompt-dialog-bg" />
+
       <!-- Main white card -->
       <div class="prompt-dialog-inner">
         <button class="prompt-dialog-close" @click="onCancel">&times;</button>
@@ -14,16 +14,16 @@
 
         <h2 class="prompt-dialog-title">{{ dialogData.title }}</h2>
         <p class="prompt-dialog-message">{{ dialogData.message }}</p>
-        
+
         <!-- Input field -->
         <div class="prompt-dialog-input-container">
           <input
-            v-model="dialogData.inputValue"
-            :type="dialogData.inputType"
-            class="prompt-dialog-input"
-            @keyup.enter="onConfirm"
             ref="inputRef"
-          />
+            v-model="dialogData.inputValue"
+            class="prompt-dialog-input"
+            :type="dialogData.inputType"
+            @keyup.enter="onConfirm"
+          >
         </div>
 
         <div class="prompt-dialog-actions">
@@ -40,45 +40,45 @@
 </template>
 
 <script>
-import { useCustomDialogs } from '@/composables/useCustomDialogs'
-import { watch, ref, nextTick } from 'vue'
+  import { nextTick, ref, watch } from 'vue'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
 
-export default {
-  name: 'PromptDialog',
-  setup() {
-    const { promptDialog, confirmPrompt, cancelPrompt } = useCustomDialogs()
-    const inputRef = ref(null)
-    
-    // Auto-focus input when dialog opens
-    watch(
-      () => promptDialog.value.show,
-      (newValue) => {
-        if (newValue) {
-          nextTick(() => {
-            if (inputRef.value) {
-              inputRef.value.focus()
-            }
-          })
-        }
+  export default {
+    name: 'PromptDialog',
+    setup () {
+      const { promptDialog, confirmPrompt, cancelPrompt } = useCustomDialogs()
+      const inputRef = ref(null)
+
+      // Auto-focus input when dialog opens
+      watch(
+        () => promptDialog.value.show,
+        newValue => {
+          if (newValue) {
+            nextTick(() => {
+              if (inputRef.value) {
+                inputRef.value.focus()
+              }
+            })
+          }
+        },
+      )
+
+      const onConfirm = () => {
+        confirmPrompt()
       }
-    )
-    
-    const onConfirm = () => {
-      confirmPrompt()
-    }
 
-    const onCancel = () => {
-      cancelPrompt()
-    }
+      const onCancel = () => {
+        cancelPrompt()
+      }
 
-    return {
-      dialogData: promptDialog,
-      onConfirm,
-      onCancel,
-      inputRef
-    }
+      return {
+        dialogData: promptDialog,
+        onConfirm,
+        onCancel,
+        inputRef,
+      }
+    },
   }
-}
 </script>
 
 <style scoped>
@@ -254,4 +254,3 @@ export default {
   background-color: #333;
 }
 </style>
-

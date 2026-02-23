@@ -5,11 +5,11 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon
             variant="outlined"
-            color="primary"
             @click="$router.push('/notices')"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -31,16 +31,16 @@
                   <v-col cols="12" md="6">
                     <v-select
                       v-model="notice.agencyId"
-                      :items="agencies"
+                      class="custom-input"
                       item-title="agencyName"
                       item-value="id"
+                      :disabled="isAgencyUser"
+                      :items="agencies"
                       label="Select Agency"
-                      variant="outlined"
-                      class="custom-input"
-                      :rules="agencyRules"
                       :loading="agenciesLoading"
                       required
-                      :disabled="isAgencyUser"
+                      :rules="agencyRules"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -48,30 +48,30 @@
                   <v-col cols="12" md="6">
                     <v-autocomplete
                       v-model="notice.unitName"
-                      label="Select Unit"
-                      variant="outlined"
                       class="custom-input"
-                      :items="units"
                       item-title="propertyName"
                       item-value="propertyName"
-                      :rules="unitNameRules"
-                      :loading="unitsLoading"
+                      :items="units"
                       clearable
+                      label="Select Unit"
                       hide-no-data
+                      :loading="unitsLoading"
                       auto-select-first
+                      :rules="unitNameRules"
                       required
+                      variant="outlined"
                     />
                   </v-col>
 
                   <!-- Property Type (Read-only) -->
-                  <v-col cols="12" md="6" v-if="selectedUnitPropertyType">
+                  <v-col v-if="selectedUnitPropertyType" cols="12" md="6">
                     <v-text-field
-                      :model-value="propertyTypeLabel"
-                      label="Property Type"
-                      variant="outlined"
                       class="custom-input"
-                      readonly
+                      label="Property Type"
+                      :model-value="propertyTypeLabel"
                       prepend-inner-icon="mdi-home"
+                      readonly
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -79,12 +79,12 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="notice.leaseStartDate"
-                      label="Lease Start Date"
-                      variant="outlined"
-                      type="date"
                       class="custom-input"
-                      :rules="leaseStartDateRules"
+                      label="Lease Start Date"
                       required
+                      :rules="leaseStartDateRules"
+                      type="date"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -92,12 +92,12 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="notice.leaseEndDate"
-                      label="Lease End Date"
-                      variant="outlined"
-                      type="date"
                       class="custom-input"
-                      :rules="leaseEndDateRules"
+                      label="Lease End Date"
                       required
+                      :rules="leaseEndDateRules"
+                      type="date"
+                      variant="outlined"
                     />
                   </v-col>
 
@@ -105,14 +105,14 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model.number="notice.monthsMissedRent"
-                      label="Month's Missed Rent"
-                      variant="outlined"
-                      type="number"
                       class="custom-input"
-                      min="0"
-                      step="1"
                       hint="Enter number of months rent was missed"
+                      label="Month's Missed Rent"
+                      min="0"
                       persistent-hint
+                      step="1"
+                      type="number"
+                      variant="outlined"
                     />
                   </v-col>
                 </v-row>
@@ -122,20 +122,20 @@
               <v-card-actions class="pa-4">
                 <v-spacer />
                 <v-btn
+                  class="cancel-btn"
                   color="grey"
                   variant="outlined"
                   @click="$router.push('/notices')"
-                  class="cancel-btn"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
+                  class="save-btn"
                   color="black"
-                  variant="elevated"
-                  @click="saveNotice"
                   :disabled="!valid || loading"
                   :loading="loading"
-                  class="save-btn"
+                  variant="elevated"
+                  @click="saveNotice"
                 >
                   {{ loading ? "Adding..." : "Add Notice" }}
                 </v-btn>
@@ -149,426 +149,424 @@
 </template>
 
 <script>
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
-import { db } from "@/firebaseConfig";
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-  deleteDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { useAppStore } from "@/stores/app";
-import { useAuditTrail } from "@/composables/useAuditTrail";
-import { usePropertyType } from "@/composables/usePropertyType";
+  import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    updateDoc,
+    where,
+  } from 'firebase/firestore'
+  import { useAuditTrail } from '@/composables/useAuditTrail'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { usePropertyType } from '@/composables/usePropertyType'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: "AddNoticePage",
-  setup() {
-    const { showSuccessDialog, showErrorDialog } = useCustomDialogs();
-    const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail();
-    const { getLabel } = usePropertyType();
-    return {
-      showSuccessDialog,
-      showErrorDialog,
-      logAuditEvent,
-      auditActions,
-      resourceTypes,
-      getLabel,
-    };
-  },
-  data() {
-    return {
-      valid: true,
-      loading: false,
-      agencies: [],
-      agenciesLoading: false,
-      units: [],
-      unitsLoading: false,
-      notice: {
-        agencyId: "",
-        unitName: "",
-        leaseStartDate: "",
-        leaseEndDate: "",
-        monthsMissedRent: 0,
-      },
-      agencyRules: [(v) => !!v || "Agency selection is required"],
-      unitNameRules: [
-        (v) => !!v || "Unit Name is required",
-        (v) => v.length >= 2 || "Unit Name must be at least 2 characters",
-      ],
-      leaseStartDateRules: [(v) => !!v || "Lease Start Date is required"],
-      leaseEndDateRules: [(v) => !!v || "Lease End Date is required"],
-    };
-  },
-  computed: {
-    isAgencyUser() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      return (
-        user?.userType === "Agency" ||
-        (user?.userType === "Admin" && user?.adminScope === "agency")
-      );
-    },
-    selectedUnitPropertyType() {
-      if (!this.notice.unitName) return null;
-      const selectedUnit = this.units.find(
-        (unit) => unit.propertyName === this.notice.unitName
-      );
-      return selectedUnit?.propertyType || null;
-    },
-    propertyTypeLabel() {
-      return this.selectedUnitPropertyType
-        ? this.getLabel(this.selectedUnitPropertyType)
-        : "";
-    },
-  },
-  async mounted() {
-    document.title = "Add New Notice - Depsure";
-
-    // Fetch agencies first
-    await this.fetchAgencies();
-
-    // For agency users, fetch their units automatically
-    if (this.isAgencyUser) {
-      await this.fetchUnits();
-    }
-  },
-  methods: {
-    async isUnitFlagged(unitName) {
-      try {
-        if (!unitName) return false;
-        // Check flaggedUnits collection for a matching unit by name
-        const flaggedQuery = query(
-          collection(db, "flaggedUnits"),
-          where("unitName", "==", unitName)
-        );
-        const flaggedSnapshot = await getDocs(flaggedQuery);
-        return !flaggedSnapshot.empty;
-      } catch (e) {
-        console.error("Failed to check flagged unit status:", e);
-        // Fail-safe: don't allow proceeding when we can't verify
-        return true;
+  export default {
+    name: 'AddNoticePage',
+    setup () {
+      const { showSuccessDialog, showErrorDialog } = useCustomDialogs()
+      const { logAuditEvent, auditActions, resourceTypes } = useAuditTrail()
+      const { getLabel } = usePropertyType()
+      return {
+        showSuccessDialog,
+        showErrorDialog,
+        logAuditEvent,
+        auditActions,
+        resourceTypes,
+        getLabel,
       }
     },
-    async fetchAgencies() {
-      this.agenciesLoading = true;
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
+    data () {
+      return {
+        valid: true,
+        loading: false,
+        agencies: [],
+        agenciesLoading: false,
+        units: [],
+        unitsLoading: false,
+        notice: {
+          agencyId: '',
+          unitName: '',
+          leaseStartDate: '',
+          leaseEndDate: '',
+          monthsMissedRent: 0,
+        },
+        agencyRules: [v => !!v || 'Agency selection is required'],
+        unitNameRules: [
+          v => !!v || 'Unit Name is required',
+          v => v.length >= 2 || 'Unit Name must be at least 2 characters',
+        ],
+        leaseStartDateRules: [v => !!v || 'Lease Start Date is required'],
+        leaseEndDateRules: [v => !!v || 'Lease End Date is required'],
+      }
+    },
+    computed: {
+      isAgencyUser () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        return (
+          user?.userType === 'Agency'
+          || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+        )
+      },
+      selectedUnitPropertyType () {
+        if (!this.notice.unitName) return null
+        const selectedUnit = this.units.find(
+          unit => unit.propertyName === this.notice.unitName,
+        )
+        return selectedUnit?.propertyType || null
+      },
+      propertyTypeLabel () {
+        return this.selectedUnitPropertyType
+          ? this.getLabel(this.selectedUnitPropertyType)
+          : ''
+      },
+    },
+    watch: {
+      'notice.agencyId': {
+        handler (newAgencyId) {
+          if (this.isAgencyUser) {
+            // Agency users automatically get their own units
+            this.fetchUnits()
+          } else if (newAgencyId) {
+            // Super Admin/Admin users get units for selected agency
+            this.fetchUnits(newAgencyId)
+          } else {
+            this.units = []
+            this.notice.unitName = ''
+          }
+        },
+        immediate: false,
+      },
+      'notice.unitName' (unitName) {
+        if (!unitName) {
+          return
+        }
+        const selectedUnit = this.units.find(
+          unit => unit.propertyName === unitName || unit.unitName === unitName,
+        )
+        if (selectedUnit) {
+          this.notice.leaseStartDate = selectedUnit.leaseStartDate || ''
+          this.notice.leaseEndDate = selectedUnit.leaseEndDate || ''
+          // Prefill months missed rent from the unit if available
+          const mm
+            = typeof selectedUnit.monthsMissed === 'number'
+              ? selectedUnit.monthsMissed
+              : Number(selectedUnit.monthsMissed)
+          this.notice.monthsMissedRent = Number.isFinite(mm) ? mm : 0
+        }
+      },
+    },
+    async mounted () {
+      document.title = 'Add New Notice - Depsure'
 
-        if (
-          userType === "Agency" ||
-          (userType === "Admin" && currentUser.adminScope === "agency")
-        ) {
-          // Agency users and Agency Admin users can only add notices to their own agency
-          let agencyData = null;
+      // Fetch agencies first
+      await this.fetchAgencies()
 
-          if (userType === "Agency") {
-            // For Agency users, use their own document
-            const agencyDoc = await getDoc(doc(db, "users", currentUser.uid));
-            if (agencyDoc.exists()) {
-              agencyData = {
-                id: agencyDoc.id,
-                ...agencyDoc.data(),
-              };
-            }
-          } else if (
-            userType === "Admin" &&
-            currentUser.adminScope === "agency"
+      // For agency users, fetch their units automatically
+      if (this.isAgencyUser) {
+        await this.fetchUnits()
+      }
+    },
+    methods: {
+      async isUnitFlagged (unitName) {
+        try {
+          if (!unitName) return false
+          // Check flaggedUnits collection for a matching unit by name
+          const flaggedQuery = query(
+            collection(db, 'flaggedUnits'),
+            where('unitName', '==', unitName),
+          )
+          const flaggedSnapshot = await getDocs(flaggedQuery)
+          return !flaggedSnapshot.empty
+        } catch (error) {
+          console.error('Failed to check flagged unit status:', error)
+          // Fail-safe: don't allow proceeding when we can't verify
+          return true
+        }
+      },
+      async fetchAgencies () {
+        this.agenciesLoading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
+
+          if (
+            userType === 'Agency'
+            || (userType === 'Admin' && currentUser.adminScope === 'agency')
           ) {
-            // For Agency Admin users, fetch their managed agency
-            if (currentUser.managedAgencyId) {
-              const agencyDoc = await getDoc(
-                doc(db, "users", currentUser.managedAgencyId)
-              );
+            // Agency users and Agency Admin users can only add notices to their own agency
+            let agencyData = null
+
+            if (userType === 'Agency') {
+              // For Agency users, use their own document
+              const agencyDoc = await getDoc(doc(db, 'users', currentUser.uid))
               if (agencyDoc.exists()) {
                 agencyData = {
                   id: agencyDoc.id,
                   ...agencyDoc.data(),
-                };
+                }
+              }
+            } else if (
+              userType === 'Admin'
+              && currentUser.adminScope === 'agency'
+              && // For Agency Admin users, fetch their managed agency
+              currentUser.managedAgencyId) {
+              const agencyDoc = await getDoc(
+                doc(db, 'users', currentUser.managedAgencyId),
+              )
+              if (agencyDoc.exists()) {
+                agencyData = {
+                  id: agencyDoc.id,
+                  ...agencyDoc.data(),
+                }
               }
             }
-          }
 
-          if (agencyData) {
-            this.agencies = [agencyData];
-            // Pre-select the agency for agency users and agency admins
-            this.notice.agencyId = agencyData.id;
+            if (agencyData) {
+              this.agencies = [agencyData]
+              // Pre-select the agency for agency users and agency admins
+              this.notice.agencyId = agencyData.id
+            } else {
+              this.agencies = []
+            }
+            console.log('Agency user - own agency loaded:', this.agencies)
           } else {
-            this.agencies = [];
+            // Super Admin and Admin users can see all agencies
+            console.log('Fetching agencies...')
+            const agenciesQuery = query(
+              collection(db, 'users'),
+              where('userType', '==', 'Agency'),
+            )
+            const agenciesSnapshot = await getDocs(agenciesQuery)
+
+            this.agencies = agenciesSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            console.log('All agencies loaded:', this.agencies)
           }
-          console.log("Agency user - own agency loaded:", this.agencies);
-        } else {
-          // Super Admin and Admin users can see all agencies
-          console.log("Fetching agencies...");
-          const agenciesQuery = query(
-            collection(db, "users"),
-            where("userType", "==", "Agency")
-          );
-          const agenciesSnapshot = await getDocs(agenciesQuery);
-
-          this.agencies = agenciesSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          console.log("All agencies loaded:", this.agencies);
-        }
-      } catch (error) {
-        console.error("Error fetching agencies:", error);
-      } finally {
-        this.agenciesLoading = false;
-      }
-    },
-
-    async saveNotice() {
-      if (this.$refs.form.validate()) {
-        this.loading = true;
-        try {
-          console.log("Saving notice:", this.notice);
-
-          // Block if unit is flagged
-          const flagged = await this.isUnitFlagged(this.notice.unitName);
-          if (flagged) {
-            this.showErrorDialog(
-              "Can't move flagged units to notices. Please remove the flag first.",
-              "Action Blocked",
-              "OK"
-            );
-            return;
-          }
-
-          // Prepare notice data for Firestore
-          const noticeData = {
-            ...this.notice,
-            noticeGivenDate: new Date().toISOString().split("T")[0], // Auto-set to today
-            vacateDate: this.notice.leaseEndDate, // Same as lease end date
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-
-          console.log("Notice data to save:", noticeData);
-
-          // Add notice to Firestore
-          const docRef = await addDoc(collection(db, "notices"), noticeData);
-
-          // NEW FLOW: Remove from Active Units, store in Notice (don't create vacancy yet)
-          let unitId = null;
-          try {
-            // Find the unit by propertyName
-            const unitsCol = collection(db, "units");
-            const q = query(
-              unitsCol,
-              where("propertyName", "==", this.notice.unitName)
-            );
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-              const unitDoc = snap.docs[0];
-              const unitData = unitDoc.data();
-              unitId = unitDoc.id;
-
-              // Update the notice with unitId reference
-              await updateDoc(doc(db, "notices", docRef.id), {
-                unitId: unitId,
-                propertyType: unitData.propertyType || "residential",
-              });
-
-              // Mark unit as having a notice (add status field)
-              await updateDoc(doc(db, "units", unitDoc.id), {
-                status: "Notice Given",
-                noticeId: docRef.id,
-                updatedAt: new Date(),
-                monthsMissed: 0,
-                monthsMissedRent: 0,
-              });
-            }
-          } catch (transitionErr) {
-            console.error("Error updating unit status:", transitionErr);
-          }
-
-          // Log the audit event
-          await this.logAuditEvent(
-            this.auditActions.CREATE,
-            {
-              unitName: this.notice.unitName,
-              agencyId: this.notice.agencyId,
-              leaseStartDate: this.notice.leaseStartDate,
-              leaseEndDate: this.notice.leaseEndDate,
-            },
-            this.resourceTypes.NOTICE,
-            docRef.id
-          );
-
-          console.log("Notice added successfully with ID:", docRef.id);
-          this.showSuccessDialog(
-            "Notice added successfully!",
-            "Success!",
-            "Continue",
-            "/notices"
-          );
         } catch (error) {
-          console.error("Error adding notice:", error);
-          this.showErrorDialog(
-            `Failed to add notice: ${error.message}`,
-            "Error",
-            "OK"
-          );
+          console.error('Error fetching agencies:', error)
         } finally {
-          this.loading = false;
-        }
-      }
-    },
-
-    async fetchUnits(agencyId = null) {
-      this.unitsLoading = true;
-      try {
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const userType = currentUser?.userType;
-
-        let unitsQuery;
-
-        if (userType === "Agency") {
-          // Agency users can only see units from their own agency
-          unitsQuery = query(
-            collection(db, "units"),
-            where("agencyId", "==", currentUser.uid)
-          );
-        } else if (agencyId) {
-          // Super Admin/Admin users query units for specific agency
-          unitsQuery = query(
-            collection(db, "units"),
-            where("agencyId", "==", agencyId)
-          );
-        } else {
-          // Super Admin/Admin users query all units when no agency selected
-          unitsQuery = collection(db, "units");
-        }
-
-        const querySnapshot = await getDocs(unitsQuery);
-
-        // Get all vacancies to filter out units that already have vacancies
-        const vacanciesQuery = collection(db, "vacancies");
-        const vacanciesSnapshot = await getDocs(vacanciesQuery);
-        const vacantUnitIds = new Set();
-        const vacantUnitNames = new Set();
-
-        vacanciesSnapshot.docs.forEach((doc) => {
-          const vacancy = doc.data();
-          if (vacancy.unitId) {
-            vacantUnitIds.add(vacancy.unitId);
-          }
-          if (vacancy.unitName) {
-            vacantUnitNames.add(vacancy.unitName);
-          }
-        });
-
-        // Get all notices to filter out units that already have notices
-        const noticesQuery = collection(db, "notices");
-        const noticesSnapshot = await getDocs(noticesQuery);
-        const noticeUnitIds = new Set();
-        const noticeUnitNames = new Set();
-
-        noticesSnapshot.docs.forEach((doc) => {
-          const notice = doc.data();
-          if (notice.unitId) {
-            noticeUnitIds.add(notice.unitId);
-          }
-          if (notice.unitName) {
-            noticeUnitNames.add(notice.unitName);
-          }
-        });
-
-        // Filter out units that have active vacancies or notices
-        this.units = querySnapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-          .filter((unit) => {
-            // Exclude if unit ID is in vacancies
-            if (vacantUnitIds.has(unit.id)) {
-              return false;
-            }
-            // Exclude if unit name/propertyName is in vacancies
-            if (unit.propertyName && vacantUnitNames.has(unit.propertyName)) {
-              return false;
-            }
-            if (unit.unitName && vacantUnitNames.has(unit.unitName)) {
-              return false;
-            }
-            // Exclude if unit ID is in notices
-            if (noticeUnitIds.has(unit.id)) {
-              return false;
-            }
-            // Exclude if unit name/propertyName is in notices
-            if (unit.propertyName && noticeUnitNames.has(unit.propertyName)) {
-              return false;
-            }
-            if (unit.unitName && noticeUnitNames.has(unit.unitName)) {
-              return false;
-            }
-            return true;
-          });
-
-        console.log(
-          "Units fetched (excluding units with vacancies or notices):",
-          this.units
-        );
-        console.log("User type:", userType, "Agency ID filter:", agencyId);
-      } catch (error) {
-        console.error("Error fetching units:", error);
-        this.showErrorDialog(
-          "Failed to load units. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.unitsLoading = false;
-      }
-    },
-  },
-  watch: {
-    "notice.agencyId": {
-      handler(newAgencyId) {
-        if (this.isAgencyUser) {
-          // Agency users automatically get their own units
-          this.fetchUnits();
-        } else if (newAgencyId) {
-          // Super Admin/Admin users get units for selected agency
-          this.fetchUnits(newAgencyId);
-        } else {
-          this.units = [];
-          this.notice.unitName = "";
+          this.agenciesLoading = false
         }
       },
-      immediate: false,
+
+      async saveNotice () {
+        if (this.$refs.form.validate()) {
+          this.loading = true
+          try {
+            console.log('Saving notice:', this.notice)
+
+            // Block if unit is flagged
+            const flagged = await this.isUnitFlagged(this.notice.unitName)
+            if (flagged) {
+              this.showErrorDialog(
+                'Can\'t move flagged units to notices. Please remove the flag first.',
+                'Action Blocked',
+                'OK',
+              )
+              return
+            }
+
+            // Prepare notice data for Firestore
+            const noticeData = {
+              ...this.notice,
+              noticeGivenDate: new Date().toISOString().split('T')[0], // Auto-set to today
+              vacateDate: this.notice.leaseEndDate, // Same as lease end date
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+
+            console.log('Notice data to save:', noticeData)
+
+            // Add notice to Firestore
+            const docRef = await addDoc(collection(db, 'notices'), noticeData)
+
+            // NEW FLOW: Remove from Active Units, store in Notice (don't create vacancy yet)
+            let unitId = null
+            try {
+              // Find the unit by propertyName
+              const unitsCol = collection(db, 'units')
+              const q = query(
+                unitsCol,
+                where('propertyName', '==', this.notice.unitName),
+              )
+              const snap = await getDocs(q)
+              if (!snap.empty) {
+                const unitDoc = snap.docs[0]
+                const unitData = unitDoc.data()
+                unitId = unitDoc.id
+
+                // Update the notice with unitId reference
+                await updateDoc(doc(db, 'notices', docRef.id), {
+                  unitId: unitId,
+                  propertyType: unitData.propertyType || 'residential',
+                })
+
+                // Mark unit as having a notice (add status field)
+                await updateDoc(doc(db, 'units', unitDoc.id), {
+                  status: 'Notice Given',
+                  noticeId: docRef.id,
+                  updatedAt: new Date(),
+                  monthsMissed: 0,
+                  monthsMissedRent: 0,
+                })
+              }
+            } catch (error) {
+              console.error('Error updating unit status:', error)
+            }
+
+            // Log the audit event
+            await this.logAuditEvent(
+              this.auditActions.CREATE,
+              {
+                unitName: this.notice.unitName,
+                agencyId: this.notice.agencyId,
+                leaseStartDate: this.notice.leaseStartDate,
+                leaseEndDate: this.notice.leaseEndDate,
+              },
+              this.resourceTypes.NOTICE,
+              docRef.id,
+            )
+
+            console.log('Notice added successfully with ID:', docRef.id)
+            this.showSuccessDialog(
+              'Notice added successfully!',
+              'Success!',
+              'Continue',
+              '/notices',
+            )
+          } catch (error) {
+            console.error('Error adding notice:', error)
+            this.showErrorDialog(
+              `Failed to add notice: ${error.message}`,
+              'Error',
+              'OK',
+            )
+          } finally {
+            this.loading = false
+          }
+        }
+      },
+
+      async fetchUnits (agencyId = null) {
+        this.unitsLoading = true
+        try {
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const userType = currentUser?.userType
+
+          let unitsQuery
+
+          if (userType === 'Agency') {
+            // Agency users can only see units from their own agency
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', currentUser.uid),
+            )
+          } else if (agencyId) {
+            // Super Admin/Admin users query units for specific agency
+            unitsQuery = query(
+              collection(db, 'units'),
+              where('agencyId', '==', agencyId),
+            )
+          } else {
+            // Super Admin/Admin users query all units when no agency selected
+            unitsQuery = collection(db, 'units')
+          }
+
+          const querySnapshot = await getDocs(unitsQuery)
+
+          // Get all vacancies to filter out units that already have vacancies
+          const vacanciesQuery = collection(db, 'vacancies')
+          const vacanciesSnapshot = await getDocs(vacanciesQuery)
+          const vacantUnitIds = new Set()
+          const vacantUnitNames = new Set()
+
+          for (const doc of vacanciesSnapshot.docs) {
+            const vacancy = doc.data()
+            if (vacancy.unitId) {
+              vacantUnitIds.add(vacancy.unitId)
+            }
+            if (vacancy.unitName) {
+              vacantUnitNames.add(vacancy.unitName)
+            }
+          }
+
+          // Get all notices to filter out units that already have notices
+          const noticesQuery = collection(db, 'notices')
+          const noticesSnapshot = await getDocs(noticesQuery)
+          const noticeUnitIds = new Set()
+          const noticeUnitNames = new Set()
+
+          for (const doc of noticesSnapshot.docs) {
+            const notice = doc.data()
+            if (notice.unitId) {
+              noticeUnitIds.add(notice.unitId)
+            }
+            if (notice.unitName) {
+              noticeUnitNames.add(notice.unitName)
+            }
+          }
+
+          // Filter out units that have active vacancies or notices
+          this.units = querySnapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .filter(unit => {
+              // Exclude if unit ID is in vacancies
+              if (vacantUnitIds.has(unit.id)) {
+                return false
+              }
+              // Exclude if unit name/propertyName is in vacancies
+              if (unit.propertyName && vacantUnitNames.has(unit.propertyName)) {
+                return false
+              }
+              if (unit.unitName && vacantUnitNames.has(unit.unitName)) {
+                return false
+              }
+              // Exclude if unit ID is in notices
+              if (noticeUnitIds.has(unit.id)) {
+                return false
+              }
+              // Exclude if unit name/propertyName is in notices
+              if (unit.propertyName && noticeUnitNames.has(unit.propertyName)) {
+                return false
+              }
+              if (unit.unitName && noticeUnitNames.has(unit.unitName)) {
+                return false
+              }
+              return true
+            })
+
+          console.log(
+            'Units fetched (excluding units with vacancies or notices):',
+            this.units,
+          )
+          console.log('User type:', userType, 'Agency ID filter:', agencyId)
+        } catch (error) {
+          console.error('Error fetching units:', error)
+          this.showErrorDialog(
+            'Failed to load units. Please try again.',
+            'Error',
+            'OK',
+          )
+        } finally {
+          this.unitsLoading = false
+        }
+      },
     },
-    "notice.unitName"(unitName) {
-      if (!unitName) {
-        return;
-      }
-      const selectedUnit = this.units.find(
-        (unit) => unit.propertyName === unitName || unit.unitName === unitName
-      );
-      if (selectedUnit) {
-        this.notice.leaseStartDate = selectedUnit.leaseStartDate || "";
-        this.notice.leaseEndDate = selectedUnit.leaseEndDate || "";
-        // Prefill months missed rent from the unit if available
-        const mm =
-          typeof selectedUnit.monthsMissed === "number"
-            ? selectedUnit.monthsMissed
-            : Number(selectedUnit.monthsMissed);
-        this.notice.monthsMissedRent = Number.isFinite(mm) ? mm : 0;
-      }
-    },
-  },
-};
+  }
 </script>
 
 <style scoped>

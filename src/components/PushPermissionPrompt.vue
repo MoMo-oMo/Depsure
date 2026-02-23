@@ -2,7 +2,7 @@
   <div v-if="visible" class="notification-overlay" @click.self="dismiss">
     <div class="notification-dialog">
       <!-- colored card behind -->
-      <div class="notification-dialog-bg info"></div>
+      <div class="notification-dialog-bg info" />
       <!-- main white card -->
       <div class="notification-dialog-inner">
         <button class="notification-close" @click="dismiss">&times;</button>
@@ -12,17 +12,17 @@
         </div>
 
         <h2 class="notification-title">Enable Notifications</h2>
-        
+
         <!-- Default state: prompt to enable -->
         <div v-if="state === 'default'">
           <p class="notification-message">
             To get chat messages and updates in real time, allow browser notifications for this device.
           </p>
           <div class="button-container">
-            <button class="notification-button info" @click="enable" :disabled="loading">
+            <button class="notification-button info" :disabled="loading" @click="enable">
               {{ loading ? 'Requesting...' : 'Enable Notifications' }}
             </button>
-            <button class="notification-button secondary" @click="dismiss" :disabled="loading">
+            <button class="notification-button secondary" :disabled="loading" @click="dismiss">
               Not Now
             </button>
           </div>
@@ -62,104 +62,112 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { initMessaging } from '@/messaging'
-import { useAppStore } from '@/stores/app'
+  import { onMounted, ref, watch } from 'vue'
+  import { initMessaging } from '@/messaging'
+  import { useAppStore } from '@/stores/app'
 
-const props = defineProps({
-  visible: { type: Boolean, default: false }
-})
-const emit = defineEmits(['update:visible', 'accepted', 'dismissed'])
+  const props = defineProps({
+    visible: { type: Boolean, default: false },
+  })
+  const emit = defineEmits(['update:visible', 'accepted', 'dismissed'])
 
-const appStore = useAppStore()
-const loading = ref(false)
-const state = ref('default') // 'default' | 'denied' | 'unsupported'
+  const appStore = useAppStore()
+  const loading = ref(false)
+  const state = ref('default') // 'default' | 'denied' | 'unsupported'
 
-function detectState() {
-  try {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
+  function detectState () {
+    try {
+      if (typeof window === 'undefined' || !('Notification' in window)) {
+        return 'unsupported'
+      }
+      const perm = Notification.permission
+      if (perm === 'denied') return 'denied'
+      if (perm === 'granted') return 'granted'
+      return 'default'
+    } catch {
       return 'unsupported'
     }
-    const perm = Notification.permission
-    if (perm === 'denied') return 'denied'
-    if (perm === 'granted') return 'granted'
-    return 'default'
-  } catch {
-    return 'unsupported'
   }
-}
 
-async function enable() {
-  loading.value = true
-  try {
-    // First, request notification permission explicitly
-    let permission
+  async function enable () {
+    loading.value = true
     try {
-      permission = await Notification.requestPermission()
-      console.log('[PushPrompt] Permission result:', permission)
-    } catch (e) {
-      console.error('[PushPrompt] Permission request failed:', e)
-      permission = Notification.permission
-    }
-    
-    // Check the permission result
-    if (permission === 'granted') {
-      // Permission granted! Now initialize messaging
+      // First, request notification permission explicitly
+      let permission
       try {
-        await initMessaging(appStore.userId)
-      } catch (e) {
-        console.warn('[PushPrompt] initMessaging failed, but permission was granted:', e)
+        permission = await Notification.requestPermission()
+        console.log('[PushPrompt] Permission result:', permission)
+      } catch (error) {
+        console.error('[PushPrompt] Permission request failed:', error)
+        permission = Notification.permission
       }
-      
-      // Store that we've accepted and close the dialog
-      try { localStorage.setItem('pushPromptAccepted', '1') } catch {}
-      try { localStorage.setItem('fcmRegistered', '1') } catch {}
-      emit('accepted')
-      emit('update:visible', false)
-    } else if (permission === 'denied') {
-      // User explicitly denied
-      state.value = 'denied'
-    } else {
-      // User dismissed without deciding (still 'default')
-      emit('dismissed')
-      emit('update:visible', false)
+
+      // Check the permission result
+      if (permission === 'granted') {
+        // Permission granted! Now initialize messaging
+        try {
+          await initMessaging(appStore.userId)
+        } catch (error) {
+          console.warn('[PushPrompt] initMessaging failed, but permission was granted:', error)
+        }
+
+        // Store that we've accepted and close the dialog
+        try {
+          localStorage.setItem('pushPromptAccepted', '1')
+        } catch {}
+        try {
+          localStorage.setItem('fcmRegistered', '1')
+        } catch {}
+        emit('accepted')
+        emit('update:visible', false)
+      } else if (permission === 'denied') {
+        // User explicitly denied
+        state.value = 'denied'
+      } else {
+        // User dismissed without deciding (still 'default')
+        emit('dismissed')
+        emit('update:visible', false)
+      }
+    } catch (error) {
+      console.error('[PushPrompt] Error in enable():', error)
+      // Check final state
+      const s = detectState()
+      if (s === 'denied') {
+        state.value = 'denied'
+      } else if (s === 'granted') {
+        // Even though there was an error, permission was granted
+        try {
+          localStorage.setItem('pushPromptAccepted', '1')
+        } catch {}
+        emit('accepted')
+        emit('update:visible', false)
+      } else {
+        // Just close
+        emit('dismissed')
+        emit('update:visible', false)
+      }
+    } finally {
+      loading.value = false
     }
-  } catch (e) {
-    console.error('[PushPrompt] Error in enable():', e)
-    // Check final state
-    const s = detectState()
-    if (s === 'denied') {
-      state.value = 'denied'
-    } else if (s === 'granted') {
-      // Even though there was an error, permission was granted
-      try { localStorage.setItem('pushPromptAccepted', '1') } catch {}
-      emit('accepted')
-      emit('update:visible', false)
-    } else {
-      // Just close
-      emit('dismissed')
-      emit('update:visible', false)
-    }
-  } finally {
-    loading.value = false
   }
-}
 
-function dismiss() {
-  try { sessionStorage.setItem('pushPromptDismissed', '1') } catch {}
-  emit('dismissed')
-  emit('update:visible', false)
-}
+  function dismiss () {
+    try {
+      sessionStorage.setItem('pushPromptDismissed', '1')
+    } catch {}
+    emit('dismissed')
+    emit('update:visible', false)
+  }
 
-watch(() => props.visible, (v) => {
-  if (v) {
+  watch(() => props.visible, v => {
+    if (v) {
+      state.value = detectState()
+    }
+  })
+
+  onMounted(() => {
     state.value = detectState()
-  }
-})
-
-onMounted(() => {
-  state.value = detectState()
-})
+  })
 
 </script>
 
@@ -351,14 +359,13 @@ onMounted(() => {
     width: 95vw;
     margin: 0 10px;
   }
-  
+
   .button-container {
     flex-direction: column;
   }
-  
+
   .notification-button {
     width: 100%;
   }
 }
 </style>
-

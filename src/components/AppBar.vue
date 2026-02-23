@@ -1,104 +1,104 @@
 <template>
-	<v-app-bar
-		app
-		color="#ffffff"
-		theme="light"
-		flat
-		density="compact"
-		class="app-bar"
-	>
-		<v-app-bar-nav-icon color="black" @click="toggle" />
-		<v-toolbar-title class="title-black">
-			<span class="title-text" :key="displayTitle">{{ displayTitle }}</span>
-		</v-toolbar-title>
-		<v-spacer />
-		<!-- Chat Icon with Notification Badge -->
-	
-	</v-app-bar>
+  <v-app-bar
+    app
+    class="app-bar"
+    color="#ffffff"
+    density="compact"
+    flat
+    theme="light"
+  >
+    <v-app-bar-nav-icon color="black" @click="toggle" />
+    <v-toolbar-title class="title-black">
+      <span :key="displayTitle" class="title-text">{{ displayTitle }}</span>
+    </v-toolbar-title>
+    <v-spacer />
+    <!-- Chat Icon with Notification Badge -->
+
+  </v-app-bar>
 </template>
 
 <script setup>
-	import { ref, computed, onMounted, onUnmounted } from 'vue'
-	import { useRouter } from 'vue-router'
-	import { useDrawer } from '@/composables/useDrawer'
-	import { useNav } from '@/composables/useNav'
-	import { db } from '@/firebaseConfig'
-	import { collection, query, where, onSnapshot } from 'firebase/firestore'
-	import { useAppStore } from '@/stores/app'
+  import { collection, onSnapshot, query, where } from 'firebase/firestore'
+  import { computed, onMounted, onUnmounted, ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { useDrawer } from '@/composables/useDrawer'
+  import { useNav } from '@/composables/useNav'
+  import { db } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-	const { toggle } = useDrawer()
-	const { current } = useNav()
-	const router = useRouter()
-	const appStore = useAppStore()
+  const { toggle } = useDrawer()
+  const { current } = useNav()
+  const router = useRouter()
+  const appStore = useAppStore()
 
-	// Dynamic app bar title for Chat route
-	const displayTitle = computed(() => {
-		const user = appStore.currentUser
-		const isAgencyUser = user?.userType === 'Agency'
-		const isAgencyAdmin = user?.userType === 'Admin' && user?.adminScope === 'agency'
-		const isDepsureAdmin = user?.userType === 'Admin' && user?.adminScope === 'depsure'
-		const isSuperAdmin = user?.userType === 'Super Admin'
-		const key = current.value?.key
-		if (key === 'chat') {
-			if (isAgencyUser || isAgencyAdmin) return 'Depsure Support'
-			if (isSuperAdmin || isDepsureAdmin) return appStore.currentAgency?.agencyName || 'Chat'
-		}
-		return current.value?.title || ''
-	})
-	
-	const unreadCount = ref(0)
-	let unsubscribe = null
+  // Dynamic app bar title for Chat route
+  const displayTitle = computed(() => {
+    const user = appStore.currentUser
+    const isAgencyUser = user?.userType === 'Agency'
+    const isAgencyAdmin = user?.userType === 'Admin' && user?.adminScope === 'agency'
+    const isDepsureAdmin = user?.userType === 'Admin' && user?.adminScope === 'depsure'
+    const isSuperAdmin = user?.userType === 'Super Admin'
+    const key = current.value?.key
+    if (key === 'chat') {
+      if (isAgencyUser || isAgencyAdmin) return 'Depsure Support'
+      if (isSuperAdmin || isDepsureAdmin) return appStore.currentAgency?.agencyName || 'Chat'
+    }
+    return current.value?.title || ''
+  })
 
-	const openChat = () => {
-		router.push('/chat')
-	}
+  const unreadCount = ref(0)
+  let unsubscribe = null
 
-	const subscribeToChats = () => {
-		try {
-			const user = appStore.currentUser
-			if (!user) return
+  const openChat = () => {
+    router.push('/chat')
+  }
 
-			let chatQuery
-			
-			if (user.userType === 'Agency' || (user.userType === 'Admin' && user.adminScope === 'agency')) {
-				// Agency users see their own chat
-				const agencyId = user.userType === 'Agency' ? user.uid : user.managedAgencyId
-				chatQuery = query(
-					collection(db, 'chats'),
-					where('agencyId', '==', agencyId)
-				)
-			} else {
-				// Admin/Super Admin see all chats
-				chatQuery = collection(db, 'chats')
-			}
+  const subscribeToChats = () => {
+    try {
+      const user = appStore.currentUser
+      if (!user) return
 
-			unsubscribe = onSnapshot(chatQuery, (snapshot) => {
-				let count = 0
-				const userId = user.uid
-				snapshot.docs.forEach(doc => {
-					const data = doc.data()
-					const messages = data.messages || []
-					// Count unread messages (where current user is not the author and message is not read)
-					messages.forEach(msg => {
-						if (msg.authorId !== userId && !msg.readBy?.includes(userId)) {
-							count++
-						}
-					})
-				})
-				unreadCount.value = count
-			})
-		} catch (error) {
-			console.error('Error subscribing to chats:', error)
-		}
-	}
+      let chatQuery
 
-	onMounted(() => {
-		subscribeToChats()
-	})
+      if (user.userType === 'Agency' || (user.userType === 'Admin' && user.adminScope === 'agency')) {
+        // Agency users see their own chat
+        const agencyId = user.userType === 'Agency' ? user.uid : user.managedAgencyId
+        chatQuery = query(
+          collection(db, 'chats'),
+          where('agencyId', '==', agencyId),
+        )
+      } else {
+        // Admin/Super Admin see all chats
+        chatQuery = collection(db, 'chats')
+      }
 
-	onUnmounted(() => {
-		if (unsubscribe) unsubscribe()
-	})
+      unsubscribe = onSnapshot(chatQuery, snapshot => {
+        let count = 0
+        const userId = user.uid
+        for (const doc of snapshot.docs) {
+          const data = doc.data()
+          const messages = data.messages || []
+          // Count unread messages (where current user is not the author and message is not read)
+          for (const msg of messages) {
+            if (msg.authorId !== userId && !msg.readBy?.includes(userId)) {
+              count++
+            }
+          }
+        }
+        unreadCount.value = count
+      })
+    } catch (error) {
+      console.error('Error subscribing to chats:', error)
+    }
+  }
+
+  onMounted(() => {
+    subscribeToChats()
+  })
+
+  onUnmounted(() => {
+    if (unsubscribe) unsubscribe()
+  })
 </script>
 
 <style scoped>
@@ -156,7 +156,7 @@
 	.title-text {
 		font-size: 0.9rem;
 	}
-	
+
 	.chat-btn {
 		margin-right: 4px;
 	}

@@ -1,16 +1,16 @@
 <template>
   <div class="view-flagged-unit-page">
     <v-container fluid>
-      
+
       <!-- Back Button -->
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="primary"
             @click="$router.push('/flagged-units')"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -30,43 +30,43 @@
         <v-col cols="12">
           <v-card class="form-card">
             <v-card-title class="card-header">
-              <v-icon icon="mdi-alert-circle-outline" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-alert-circle-outline" />
               Flagged Unit Information
             </v-card-title>
-            
+
             <v-card-text>
               <v-row>
                 <!-- Unit Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="unit.propertyName"
-                    label="Unit Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Unit Name"
+                    :model-value="unit.propertyName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Missed Payment Flag -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="unit.missedPaymentFlag"
-                    label="Missed Payment Flag"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Missed Payment Flag"
+                    :model-value="unit.missedPaymentFlag"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Notice Given / Notes -->
                 <v-col cols="12">
                   <v-textarea
-                    :model-value="unit.noticeGivenNotes"
+                    class="custom-input"
                     label="Notice Given / Notes"
-                    variant="outlined"
+                    :model-value="unit.noticeGivenNotes"
                     readonly
                     rows="4"
-                    class="custom-input"
+                    variant="outlined"
                   />
                 </v-col>
               </v-row>
@@ -79,50 +79,50 @@
 </template>
 
 <script>
-export default {
-  name: "ViewFlaggedUnitPage",
-  data() {
-    return {
-      unit: {
-        id: null,
-        propertyName: "123 Main Street, Cape Town",
-        missedPaymentFlag: "Yes",
-        noticeGivenNotes: "Tenant has missed 2 months of payment. Notice given on 01/08/2025."
-      }
-    };
-  },
-  mounted() {
-    document.title = "Flagged Unit Details - Depsure";
-    const unitId = this.$route.params.id;
-    if (unitId) {
-      this.loadUnitData(unitId);
-    }
-  },
-  methods: {
-    loadUnitData(id) {
-      // Mock data - replace with API call in real app
-      const mockUnits = [
-        {
-          id: 1,
-          propertyName: "123 Main Street, Cape Town",
-          missedPaymentFlag: "Yes",
-          noticeGivenNotes: "Tenant has missed 2 months of payment. Notice given on 01/08/2025."
+  export default {
+    name: 'ViewFlaggedUnitPage',
+    data () {
+      return {
+        unit: {
+          id: null,
+          propertyName: '123 Main Street, Cape Town',
+          missedPaymentFlag: 'Yes',
+          noticeGivenNotes: 'Tenant has missed 2 months of payment. Notice given on 01/08/2025.',
         },
-        {
-          id: 2,
-          propertyName: "456 Ocean Drive, Camps Bay",
-          missedPaymentFlag: "No",
-          noticeGivenNotes: "Tenant caught up on all payments."
-        }
-      ];
-
-      const foundUnit = mockUnits.find(u => u.id == id);
-      if (foundUnit) {
-        this.unit = foundUnit;
       }
-    }
+    },
+    mounted () {
+      document.title = 'Flagged Unit Details - Depsure'
+      const unitId = this.$route.params.id
+      if (unitId) {
+        this.loadUnitData(unitId)
+      }
+    },
+    methods: {
+      loadUnitData (id) {
+        // Mock data - replace with API call in real app
+        const mockUnits = [
+          {
+            id: 1,
+            propertyName: '123 Main Street, Cape Town',
+            missedPaymentFlag: 'Yes',
+            noticeGivenNotes: 'Tenant has missed 2 months of payment. Notice given on 01/08/2025.',
+          },
+          {
+            id: 2,
+            propertyName: '456 Ocean Drive, Camps Bay',
+            missedPaymentFlag: 'No',
+            noticeGivenNotes: 'Tenant caught up on all payments.',
+          },
+        ]
+
+        const foundUnit = mockUnits.find(u => u.id == id)
+        if (foundUnit) {
+          this.unit = foundUnit
+        }
+      },
+    },
   }
-};
 </script>
 
 <style scoped>
@@ -179,8 +179,6 @@ export default {
 .custom-input .v-field {
   border-radius: 8px;
 }
-
-
 
 .custom-input :deep(.v-field__outline) {
   border-color: #e9ecef !important;

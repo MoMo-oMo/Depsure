@@ -5,11 +5,11 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-btn
+            class="back-btn"
+            color="primary"
             icon="mdi-arrow-left"
             variant="outlined"
-            color="primary"
             @click="goBack"
-            class="back-btn"
           >
             Back
           </v-btn>
@@ -26,7 +26,7 @@
           <!-- Loading -->
           <v-card v-if="loading" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-progress-circular indeterminate color="primary" />
+              <v-progress-circular color="primary" indeterminate />
               <p class="mt-4">Loading inspection entry...</p>
             </v-card-text>
           </v-card>
@@ -34,7 +34,7 @@
           <!-- Error -->
           <v-card v-else-if="error" class="form-card" elevation="0">
             <v-card-text class="text-center">
-              <v-icon icon="mdi-alert" color="error" size="large" />
+              <v-icon color="error" icon="mdi-alert" size="large" />
               <p class="mt-4 text-error">{{ error }}</p>
             </v-card-text>
           </v-card>
@@ -46,22 +46,22 @@
                 <!-- Unit Name -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.unitName"
-                    label="Unit Name"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Unit Name"
+                    :model-value="entry.unitName"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
                 <!-- Inspection Required -->
                 <v-col cols="12" md="6">
                   <v-text-field
-                    :model-value="entry.inspectionRequired"
-                    label="Inspection Required"
-                    variant="outlined"
-                    readonly
                     class="custom-input"
+                    label="Inspection Required"
+                    :model-value="entry.inspectionRequired"
+                    readonly
+                    variant="outlined"
                   />
                 </v-col>
 
@@ -70,18 +70,18 @@
                   <template v-if="isAgencyUser">
                     <v-text-field
                       v-model="entry.contactPerson"
+                      class="custom-input"
                       label="Contact Person"
                       variant="outlined"
-                      class="custom-input"
                     />
                   </template>
                   <template v-else>
                     <v-text-field
-                      :model-value="entry.contactPerson"
-                      label="Contact Person"
-                      variant="outlined"
-                      readonly
                       class="custom-input"
+                      label="Contact Person"
+                      :model-value="entry.contactPerson"
+                      readonly
+                      variant="outlined"
                     />
                   </template>
                 </v-col>
@@ -91,18 +91,18 @@
                   <template v-if="isAgencyUser">
                     <v-text-field
                       v-model="entry.contactNumber"
+                      class="custom-input"
                       label="Contact Number"
                       variant="outlined"
-                      class="custom-input"
                     />
                   </template>
                   <template v-else>
                     <v-text-field
-                      :model-value="entry.contactNumber"
-                      label="Contact Number"
-                      variant="outlined"
-                      readonly
                       class="custom-input"
+                      label="Contact Number"
+                      :model-value="entry.contactNumber"
+                      readonly
+                      variant="outlined"
                     />
                   </template>
                 </v-col>
@@ -112,19 +112,19 @@
                   <template v-if="isAgencyUser">
                     <v-select
                       v-model="entry.appointmentMade"
+                      class="custom-input"
                       :items="['Yes', 'No']"
                       label="Appointment Made (Yes/No)"
                       variant="outlined"
-                      class="custom-input"
                     />
                   </template>
                   <template v-else>
                     <v-text-field
-                      :model-value="entry.appointmentMade"
-                      label="Appointment Made"
-                      variant="outlined"
-                      readonly
                       class="custom-input"
+                      label="Appointment Made"
+                      :model-value="entry.appointmentMade"
+                      readonly
+                      variant="outlined"
                     />
                   </template>
                 </v-col>
@@ -134,23 +134,23 @@
                   <template v-if="isAgencyUser">
                     <v-text-field
                       v-model="entry.inspectionDate"
-                      type="date"
-                      label="Inspection Date"
-                      variant="outlined"
                       class="custom-input"
                       :disabled="!appointmentMadeIsYes"
+                      label="Inspection Date"
                       :placeholder="
                         appointmentMadeIsYes ? '' : 'Not applicable'
                       "
+                      type="date"
+                      variant="outlined"
                     />
                   </template>
                   <template v-else>
                     <v-text-field
-                      :model-value="entry.inspectionDate"
-                      label="Inspection Date"
-                      variant="outlined"
-                      readonly
                       class="custom-input"
+                      label="Inspection Date"
+                      :model-value="entry.inspectionDate"
+                      readonly
+                      variant="outlined"
                     />
                   </template>
                 </v-col>
@@ -160,23 +160,23 @@
                   <template v-if="isAgencyUser">
                     <v-text-field
                       v-model="entry.inspectionTime"
-                      type="time"
-                      label="Inspection Time"
-                      variant="outlined"
                       class="custom-input"
                       :disabled="!appointmentMadeIsYes"
+                      label="Inspection Time"
                       :placeholder="
                         appointmentMadeIsYes ? '' : 'Not applicable'
                       "
+                      type="time"
+                      variant="outlined"
                     />
                   </template>
                   <template v-else>
                     <v-text-field
-                      :model-value="entry.inspectionTime || ''"
-                      label="Inspection Time"
-                      variant="outlined"
-                      readonly
                       class="custom-input"
+                      label="Inspection Time"
+                      :model-value="entry.inspectionTime || ''"
+                      readonly
+                      variant="outlined"
                     />
                   </template>
                 </v-col>
@@ -186,19 +186,19 @@
                   <template v-if="isAgencyUser">
                     <v-select
                       v-model="entry.quotesNeeded"
+                      class="custom-input"
                       :items="['Yes', 'No']"
                       label="Quotes Needed (Yes/No)"
                       variant="outlined"
-                      class="custom-input"
                     />
                   </template>
                   <template v-else>
                     <v-text-field
-                      :model-value="entry.quotesNeeded"
-                      label="Quotes Needed"
-                      variant="outlined"
-                      readonly
                       class="custom-input"
+                      label="Quotes Needed"
+                      :model-value="entry.quotesNeeded"
+                      readonly
+                      variant="outlined"
                     />
                   </template>
                 </v-col>
@@ -210,14 +210,14 @@
               <div v-if="canUploadDoc" class="upload-row mb-2">
                 <v-file-input
                   v-model="newInspectionFile"
-                  label="Upload Inspection Document (PDF only)"
-                  variant="outlined"
-                  class="custom-input upload-input"
                   accept=".pdf"
-                  show-size
-                  prepend-icon="mdi-file-pdf-box"
+                  class="custom-input upload-input"
+                  label="Upload Inspection Document (PDF only)"
                   :loading="uploading"
+                  prepend-icon="mdi-file-pdf-box"
                   :rules="inspectionFileRules"
+                  show-size
+                  variant="outlined"
                 />
                 <v-btn
                   class="save-btn mb-6"
@@ -240,10 +240,10 @@
                   </div>
                   <div class="doc-actions">
                     <v-btn
+                      class="doc-view-btn"
+                      color="black"
                       size="small"
                       variant="outlined"
-                      color="black"
-                      class="doc-view-btn"
                       @click="openDocument"
                     >
                       View
@@ -262,10 +262,10 @@
                 <!-- For Agency and Agency Admin users: Only show Save Changes -->
                 <template v-if="isAgencyUser">
                   <v-btn
+                    class="save-btn"
                     color="black"
                     variant="elevated"
                     @click="saveDetails"
-                    class="save-btn"
                   >
                     Save Changes
                   </v-btn>
@@ -280,9 +280,9 @@
                 <div class="notes-section">
                   <h3 class="mb-2">Notes</h3>
                   <div
-                    v-if="entry.notesLog && entry.notesLog.length"
-                    class="chat-log"
+                    v-if="entry.notesLog && entry.notesLog.length > 0"
                     ref="chatLog"
+                    class="chat-log"
                   >
                     <div
                       v-for="(n, idx) in sortedNotes"
@@ -296,10 +296,10 @@
                       <div class="chat-avatar">
                         <img
                           v-if="n.authorAvatarUrl"
-                          :src="n.authorAvatarUrl"
                           alt="avatar"
                           class="chat-avatar-img"
-                        />
+                          :src="n.authorAvatarUrl"
+                        >
                         <template v-else>{{
                           noteInitials(n.authorName)
                         }}</template>
@@ -316,8 +316,7 @@
                             <span
                               v-if="n.isEdited && !n.isDeleted"
                               class="chat-edited"
-                              >(edited)</span
-                            >
+                            >(edited)</span>
                             <v-menu
                               v-if="
                                 n.authorId === currentUserId && !n.isDeleted
@@ -327,29 +326,29 @@
                               <template #activator="{ props }">
                                 <v-btn
                                   v-bind="props"
+                                  color="white"
                                   icon="mdi-dots-vertical"
                                   size="x-small"
                                   variant="text"
-                                  color="white"
                                 />
                               </template>
                               <v-list density="compact">
                                 <v-list-item @click="startEdit(n)">
                                   <v-list-item-title>
-                                    <v-icon size="small" class="mr-1"
-                                      >mdi-pencil</v-icon
-                                    >
+                                    <v-icon
+                                      class="mr-1"
+                                      size="small"
+                                    >mdi-pencil</v-icon>
                                     Edit
                                   </v-list-item-title>
                                 </v-list-item>
                                 <v-list-item @click="softDeleteNote(n)">
                                   <v-list-item-title class="text-error">
                                     <v-icon
-                                      size="small"
                                       class="mr-1"
                                       color="error"
-                                      >mdi-delete</v-icon
-                                    >
+                                      size="small"
+                                    >mdi-delete</v-icon>
                                     Delete
                                   </v-list-item-title>
                                 </v-list-item>
@@ -367,29 +366,27 @@
                           >
                             <v-textarea
                               v-model="editingText"
-                              rows="2"
                               auto-grow
-                              variant="outlined"
                               class="custom-input"
                               :counter="500"
                               maxlength="500"
+                              rows="2"
+                              variant="outlined"
                             />
                             <div class="d-flex justify-end mt-2 gap-2">
                               <v-btn
                                 size="small"
                                 variant="text"
                                 @click="cancelEdit"
-                                >Cancel</v-btn
-                              >
+                              >Cancel</v-btn>
                               <v-btn
-                                size="small"
                                 color="black"
-                                variant="elevated"
-                                :loading="savingEdit"
                                 :disabled="!editingText.trim()"
+                                :loading="savingEdit"
+                                size="small"
+                                variant="elevated"
                                 @click="saveEdit(n)"
-                                >Save</v-btn
-                              >
+                              >Save</v-btn>
                             </div>
                           </div>
                           <div v-else class="chat-text">{{ n.text }}</div>
@@ -401,20 +398,20 @@
                   <div class="chat-input mt-4">
                     <v-textarea
                       v-model="newNote"
-                      placeholder="Write a note..."
-                      variant="outlined"
+                      auto-grow
                       class="custom-input"
                       :counter="500"
                       maxlength="500"
+                      placeholder="Write a note..."
                       rows="2"
-                      auto-grow
+                      variant="outlined"
                     />
                     <div class="d-flex justify-end mt-2">
                       <v-btn
                         color="black"
-                        variant="elevated"
                         :disabled="!newNote || savingNote"
                         :loading="savingNote"
+                        variant="elevated"
                         @click="appendNote"
                       >
                         <v-icon start>mdi-send</v-icon>
@@ -438,7 +435,7 @@
     >
       <div class="quote-dialog">
         <!-- colored card behind -->
-        <div class="quote-dialog-bg"></div>
+        <div class="quote-dialog-bg" />
         <!-- main white card -->
         <div class="quote-dialog-inner">
           <button class="quote-close" @click="showDocumentDialog = false">
@@ -468,11 +465,11 @@
               :style="{ transform: `scale(${zoomLevel})` }"
             >
               <iframe
+                class="pdf-iframe"
+                frameborder="0"
+                height="400"
                 :src="entry.inspectionFileURL"
                 width="100%"
-                height="400"
-                frameborder="0"
-                class="pdf-iframe"
               />
             </div>
           </div>
@@ -503,569 +500,569 @@
 </template>
 
 <script>
-import { db, storage } from "@/firebaseConfig";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  serverTimestamp,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import {
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
-import { useCustomDialogs } from "@/composables/useCustomDialogs";
-import { useAppStore } from "@/stores/app";
+  import {
+    arrayUnion,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where,
+  } from 'firebase/firestore'
+  import {
+    getDownloadURL,
+    ref as storageRef,
+    uploadBytes,
+  } from 'firebase/storage'
+  import { useCustomDialogs } from '@/composables/useCustomDialogs'
+  import { db, storage } from '@/firebaseConfig'
+  import { useAppStore } from '@/stores/app'
 
-export default {
-  name: "ViewInspectionPage",
-  setup() {
-    const { showConfirmDialog, showErrorDialog, showSuccessDialog } =
-      useCustomDialogs();
-    return { showConfirmDialog, showErrorDialog, showSuccessDialog };
-  },
-  computed: {
-    isAgencyUser() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      return (
-        user?.userType === "Agency" ||
-        (user?.userType === "Admin" && user?.adminScope === "agency")
-      );
+  export default {
+    name: 'ViewInspectionPage',
+    setup () {
+      const { showConfirmDialog, showErrorDialog, showSuccessDialog }
+        = useCustomDialogs()
+      return { showConfirmDialog, showErrorDialog, showSuccessDialog }
     },
-    userType() {
-      const appStore = useAppStore();
-      return appStore.currentUser?.userType;
-    },
-    canUploadDoc() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      const fromOnboard = this.$route?.query?.from === "onboard";
-      const isSuperAdmin = user?.userType === "Super Admin";
-      const isDepsureAdmin =
-        user?.userType === "Admin" && user?.adminScope === "depsure";
-      // Hide upload for Super Admin and Depsure Admin; allow Agency roles when coming from onboard flow
-      if (isSuperAdmin || isDepsureAdmin) return false;
-      return fromOnboard && this.isAgencyUser;
-    },
-    appointmentMadeIsYes() {
-      const val = String(this.entry?.appointmentMade || "").toLowerCase();
-      return val === "yes";
-    },
-    currentUserId() {
-      const appStore = useAppStore();
-      return appStore.userId;
-    },
-    sortedNotes() {
-      const notes = this.entry?.notesLog || [];
-      return [...notes].sort((a, b) => {
-        const ad = a.timestamp?.toDate
-          ? a.timestamp.toDate()
-          : new Date(a.timestamp || 0);
-        const bd = b.timestamp?.toDate
-          ? b.timestamp.toDate()
-          : new Date(b.timestamp || 0);
-        return ad - bd;
-      });
-    },
-  },
-  data() {
-    return {
-      activeTab: "details",
-      entry: {},
-      loading: true,
-      error: null,
-      newNote: "",
-      savingNote: false,
-      editingKey: null,
-      editingText: "",
-      savingEdit: false,
-      // Document upload state
-      uploading: false,
-      newInspectionFile: null,
-      inspectionFileRules: [
-        (v) =>
-          !v ||
-          (v && (!v.size || v.size <= 50 * 1024 * 1024)) ||
-          "File size must be less than 50MB",
-        (v) =>
-          !v ||
-          (v && (!v.type || v.type === "application/pdf")) ||
-          "Only PDF files are allowed",
-      ],
-      // Document dialog state
-      showDocumentDialog: false,
-      zoomLevel: 1,
-    };
-  },
-  mounted() {
-    document.title = "Inspection Entry Details - Depsure";
-    const entryId = this.$route.params.id;
-    this.loadEntry(entryId);
-  },
-  methods: {
-    async openPropertyDetails() {
-      try {
-        const name = this.entry?.unitName || "";
-        if (!name)
-          return this.showErrorDialog?.(
-            "No unit name on this inspection.",
-            "Not found",
-            "OK"
-          );
-        const q = query(
-          collection(db, "units"),
-          where("propertyName", "==", name)
-        );
-        const snap = await getDocs(q);
-        if (snap.empty)
-          return this.showErrorDialog?.(
-            "Could not find a property matching this unit.",
-            "Not found",
-            "OK"
-          );
-        const unitId = snap.docs[0].id;
-        this.$router.push(`/view-property-${unitId}`);
-      } catch (e) {
-        console.error("Open property details failed", e);
-        this.showErrorDialog?.(
-          "Failed to open property details.",
-          "Error",
-          "OK"
-        );
+    data () {
+      return {
+        activeTab: 'details',
+        entry: {},
+        loading: true,
+        error: null,
+        newNote: '',
+        savingNote: false,
+        editingKey: null,
+        editingText: '',
+        savingEdit: false,
+        // Document upload state
+        uploading: false,
+        newInspectionFile: null,
+        inspectionFileRules: [
+          v =>
+            !v
+            || (v && (v.size === 0 || v.size <= 50 * 1024 * 1024))
+            || 'File size must be less than 50MB',
+          v =>
+            !v
+            || (v && (!v.type || v.type === 'application/pdf'))
+            || 'Only PDF files are allowed',
+        ],
+        // Document dialog state
+        showDocumentDialog: false,
+        zoomLevel: 1,
       }
     },
-    async uploadInspectionDocument() {
-      try {
-        if (!this.entry?.id)
-          return this.showErrorDialog?.(
-            "Invalid inspection entry.",
-            "Error",
-            "OK"
-          );
-        if (!this.newInspectionFile) return;
-        const file = this.newInspectionFile;
-        // Basic validation (also covered by rules)
-        if (file.type !== "application/pdf") {
-          return this.showErrorDialog?.(
-            "Only PDF files are allowed.",
-            "Invalid File",
-            "OK"
-          );
-        }
-        if (file.size > 50 * 1024 * 1024) {
-          return this.showErrorDialog?.(
-            "File size must be under 50MB.",
-            "Invalid File",
-            "OK"
-          );
-        }
-        this.uploading = true;
-        const path = `inspection-documents/${this.entry.id}/${Date.now()}_${
-          file.name
-        }`;
-        const fileRef = storageRef(storage, path);
-        const snap = await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(snap.ref);
-        await updateDoc(doc(db, "inspections", this.entry.id), {
-          inspectionFileURL: url,
-          inspectionFileName: file.name,
-          updatedAt: serverTimestamp(),
-        });
-        this.entry.inspectionFileURL = url;
-        this.entry.inspectionFileName = file.name;
-        this.newInspectionFile = null;
-        this.showSuccessDialog?.(
-          "Document uploaded successfully!",
-          "Success",
-          "OK"
-        );
-      } catch (e) {
-        console.error("Upload document failed", e);
-        this.showErrorDialog?.(
-          "Failed to upload document. Please try again.",
-          "Upload Error",
-          "OK"
-        );
-      } finally {
-        this.uploading = false;
-      }
-    },
-    async saveDetails() {
-      try {
-        if (!this.entry?.id) return;
-        const payload = {
-          inspectionRequired: this.entry.inspectionRequired || "Yes",
-          contactPerson: this.entry.contactPerson || "",
-          contactNumber: this.entry.contactNumber || "",
-          appointmentMade: this.entry.appointmentMade || "",
-          inspectionDate: this.entry.inspectionDate || "",
-          inspectionTime: this.entry.inspectionTime || "",
-          quotesNeeded: this.entry.quotesNeeded || "",
-          updatedAt: new Date(),
-        };
-        await updateDoc(doc(db, "inspections", this.entry.id), payload);
-        // Success pop and role-based redirect
-        const appStore = useAppStore();
-        const user = appStore.currentUser;
-        const isAgency =
-          user?.userType === "Agency" ||
-          (user?.userType === "Admin" && user?.adminScope === "agency");
-        const redirectTo = isAgency ? "/onboard-units" : "/inspections";
-        this.showSuccessDialog?.(
-          "Inspection changes saved successfully!",
-          "Success!",
-          "Continue",
-          redirectTo
-        );
-      } catch (e) {
-        console.error("Save details failed", e);
-        this.showErrorDialog &&
-          this.showErrorDialog(
-            "Failed to save changes. Please try again.",
-            "Error",
-            "OK"
-          );
-      }
-    },
-    goBack() {
-      const appStore = useAppStore();
-      const user = appStore.currentUser;
-      const isAgency =
-        user?.userType === "Agency" ||
-        (user?.userType === "Admin" && user?.adminScope === "agency");
-
-      // Agency users always go back to onboard-units
-      if (isAgency) {
-        this.$router.push("/onboard-units");
-      } else {
-        // Admin/Super Admin go to inspections
-        this.$router.push("/inspections");
-      }
-    },
-    scrollNotesToBottom() {
-      this.$nextTick(() => {
-        const el = this.$refs.chatLog;
-        if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight;
-      });
-    },
-    startEdit(note) {
-      this.editingKey = this.noteKey(note);
-      this.editingText = String(note.text || "");
-    },
-    cancelEdit() {
-      this.editingKey = null;
-      this.editingText = "";
-    },
-    noteKey(n) {
-      try {
-        if (n?.id) return `id:${n.id}`;
-        const t = n?.timestamp?.toDate
-          ? n.timestamp.toDate().getTime()
-          : new Date(n?.timestamp || 0).getTime();
-        const aid = n?.authorId || "";
-        const txt = String(n?.text || "");
-        return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0, 8)}`;
-      } catch (_) {
-        return `legacy:${Math.random().toString(36).slice(2, 8)}`;
-      }
-    },
-    findNoteIndexByIdOrMatch(list, target) {
-      if (!Array.isArray(list)) return -1;
-      if (target.id) {
-        const i = list.findIndex((n) => n && n.id === target.id);
-        if (i !== -1) return i;
-      }
-      const tA = target.timestamp?.toDate
-        ? target.timestamp.toDate().getTime()
-        : new Date(target.timestamp || 0).getTime();
-      const txt = String(target.text || "");
-      const aid = target.authorId || "";
-      for (let i = list.length - 1; i >= 0; i--) {
-        const n = list[i] || {};
-        const nT = n.timestamp?.toDate
-          ? n.timestamp.toDate().getTime()
-          : new Date(n.timestamp || 0).getTime();
-        if (
-          n.id && !target.id
-            ? false
-            : String(n.text || "") === txt &&
-              (n.authorId || "") === aid &&
-              nT === tA
+    computed: {
+      isAgencyUser () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        return (
+          user?.userType === 'Agency'
+          || (user?.userType === 'Admin' && user?.adminScope === 'agency')
         )
-          return i;
-      }
-      return -1;
+      },
+      userType () {
+        const appStore = useAppStore()
+        return appStore.currentUser?.userType
+      },
+      canUploadDoc () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        const fromOnboard = this.$route?.query?.from === 'onboard'
+        const isSuperAdmin = user?.userType === 'Super Admin'
+        const isDepsureAdmin
+          = user?.userType === 'Admin' && user?.adminScope === 'depsure'
+        // Hide upload for Super Admin and Depsure Admin; allow Agency roles when coming from onboard flow
+        if (isSuperAdmin || isDepsureAdmin) return false
+        return fromOnboard && this.isAgencyUser
+      },
+      appointmentMadeIsYes () {
+        const val = String(this.entry?.appointmentMade || '').toLowerCase()
+        return val === 'yes'
+      },
+      currentUserId () {
+        const appStore = useAppStore()
+        return appStore.userId
+      },
+      sortedNotes () {
+        const notes = this.entry?.notesLog || []
+        return [...notes].sort((a, b) => {
+          const ad = a.timestamp?.toDate
+            ? a.timestamp.toDate()
+            : new Date(a.timestamp || 0)
+          const bd = b.timestamp?.toDate
+            ? b.timestamp.toDate()
+            : new Date(b.timestamp || 0)
+          return ad - bd
+        })
+      },
     },
-    async saveEdit(target) {
-      if (!this.entry?.id) return;
-      const newText = this.editingText.trim();
-      if (!newText) return;
-      try {
-        this.savingEdit = true;
-        const list = Array.isArray(this.entry.notesLog)
-          ? [...this.entry.notesLog]
-          : [];
-        const idx = this.findNoteIndexByIdOrMatch(list, target);
-        if (idx === -1) throw new Error("Note not found");
-        const old = list[idx] || {};
-        list[idx] = {
-          ...old,
-          text: newText,
-          isEdited: true,
-          editedAt: new Date(),
-          id:
-            old.id || Date.now() + "_" + Math.random().toString(36).slice(2, 8),
-        };
-        await updateDoc(doc(db, "inspections", this.entry.id), {
-          notesLog: list,
-          updatedAt: serverTimestamp(),
-        });
-        this.entry.notesLog = list;
-        this.cancelEdit();
-      } catch (e) {
-        console.error("Error editing note:", e);
-        this.showErrorDialog(
-          "Failed to edit note. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.savingEdit = false;
-      }
+    mounted () {
+      document.title = 'Inspection Entry Details - Depsure'
+      const entryId = this.$route.params.id
+      this.loadEntry(entryId)
     },
-    async softDeleteNote(target) {
-      if (!this.entry?.id) return;
-      try {
-        await this.showConfirmDialog({
-          title: "Delete message?",
-          message: "This message will be shown as deleted.",
-          confirmText: "Delete",
-          cancelText: "Cancel",
-          color: "#dc3545",
-        });
-      } catch (_) {
-        return;
-      }
-      try {
-        const list = Array.isArray(this.entry.notesLog)
-          ? [...this.entry.notesLog]
-          : [];
-        const idx = this.findNoteIndexByIdOrMatch(list, target);
-        if (idx === -1) throw new Error("Note not found");
-        const old = list[idx] || {};
-        list[idx] = {
-          ...old,
-          isDeleted: true,
-          deletedAt: new Date(),
-          id:
-            old.id || Date.now() + "_" + Math.random().toString(36).slice(2, 8),
-        };
-        await updateDoc(doc(db, "inspections", this.entry.id), {
-          notesLog: list,
-          updatedAt: serverTimestamp(),
-        });
-        this.entry.notesLog = list;
-      } catch (e) {
-        console.error("Error deleting note:", e);
-        this.showErrorDialog(
-          "Failed to delete note. Please try again.",
-          "Error",
-          "OK"
-        );
-      }
-    },
-    noteInitials(name) {
-      const raw = String(name || "").trim();
-      if (!raw) return "?";
-      const words = raw.split(/\s+/).filter(Boolean);
-      if (words.length === 1) {
-        const cleaned = words[0].replace(/[^A-Za-z0-9]/g, "");
-        if (!cleaned) return "?";
-        return cleaned.slice(0, 2).toUpperCase();
-      }
-      const first = words[0] && words[0][0] ? words[0][0] : "";
-      const second = words[1] && words[1][0] ? words[1][0] : "";
-      const res = (first + second).trim();
-      return res ? res.toUpperCase() : "?";
-    },
-    formatNoteDate(ts) {
-      try {
-        if (!ts) return "Just now";
-        const d = ts.toDate ? ts.toDate() : new Date(ts);
-        return d.toLocaleString();
-      } catch (_) {
-        return String(ts);
-      }
-    },
-    async loadEntry(entryId) {
-      try {
-        console.log("Loading inspection entry with ID:", entryId);
-        const docRef = doc(db, "inspections", entryId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          this.entry = {
-            id: docSnap.id,
-            ...docSnap.data(),
-            createdAt: docSnap.data().createdAt?.toDate(),
-            updatedAt: docSnap.data().updatedAt?.toDate(),
-          };
-          console.log("Inspection entry loaded:", this.entry);
-          this.scrollNotesToBottom();
-        } else {
-          this.error = "Inspection entry not found";
-          console.log("Inspection entry not found with ID:", entryId);
+    methods: {
+      async openPropertyDetails () {
+        try {
+          const name = this.entry?.unitName || ''
+          if (!name)
+            return this.showErrorDialog?.(
+              'No unit name on this inspection.',
+              'Not found',
+              'OK',
+            )
+          const q = query(
+            collection(db, 'units'),
+            where('propertyName', '==', name),
+          )
+          const snap = await getDocs(q)
+          if (snap.empty)
+            return this.showErrorDialog?.(
+              'Could not find a property matching this unit.',
+              'Not found',
+              'OK',
+            )
+          const unitId = snap.docs[0].id
+          this.$router.push(`/view-property-${unitId}`)
+        } catch (error) {
+          console.error('Open property details failed', error)
+          this.showErrorDialog?.(
+            'Failed to open property details.',
+            'Error',
+            'OK',
+          )
         }
-      } catch (error) {
-        console.error("Error loading inspection entry:", error);
-        this.error = "Failed to load inspection entry";
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    editEntry() {
-      // Pass the 'from' parameter along to edit page
-      const from = this.$route?.query?.from;
-      if (from === "onboard") {
-        this.$router.push({
-          path: `/edit-inspection-${this.entry.id}`,
-          query: { from: "onboard" },
-        });
-      } else {
-        this.$router.push(`/edit-inspection-${this.entry.id}`);
-      }
-    },
-    async appendNote() {
-      if (!this.newNote || !this.entry?.id) return;
-      try {
-        this.savingNote = true;
-        const appStore = useAppStore();
-        const currentUser = appStore.currentUser;
-        const isAgency =
-          currentUser?.userType === "Agency" ||
-          (currentUser?.userType === "Admin" &&
-            currentUser?.adminScope === "agency");
-
-        // Get proper author name based on user type
-        let authorName = "Unknown User";
-        if (isAgency) {
-          authorName =
-            currentUser?.agencyName ||
-            this.entry?.unitName ||
-            this.entry?.propertyName ||
-            "Property";
-        } else {
-          // For regular users, use firstName + lastName or fallback to email
-          if (currentUser?.firstName && currentUser?.lastName) {
-            authorName = `${currentUser.firstName} ${currentUser.lastName}`;
-          } else if (currentUser?.firstName) {
-            authorName = currentUser.firstName;
-          } else if (currentUser?.lastName) {
-            authorName = currentUser.lastName;
-          } else if (currentUser?.email) {
-            authorName = currentUser.email;
+      },
+      async uploadInspectionDocument () {
+        try {
+          if (!this.entry?.id)
+            return this.showErrorDialog?.(
+              'Invalid inspection entry.',
+              'Error',
+              'OK',
+            )
+          if (!this.newInspectionFile) return
+          const file = this.newInspectionFile
+          // Basic validation (also covered by rules)
+          if (file.type !== 'application/pdf') {
+            return this.showErrorDialog?.(
+              'Only PDF files are allowed.',
+              'Invalid File',
+              'OK',
+            )
           }
+          if (file.size > 50 * 1024 * 1024) {
+            return this.showErrorDialog?.(
+              'File size must be under 50MB.',
+              'Invalid File',
+              'OK',
+            )
+          }
+          this.uploading = true
+          const path = `inspection-documents/${this.entry.id}/${Date.now()}_${
+            file.name
+          }`
+          const fileRef = storageRef(storage, path)
+          const snap = await uploadBytes(fileRef, file)
+          const url = await getDownloadURL(snap.ref)
+          await updateDoc(doc(db, 'inspections', this.entry.id), {
+            inspectionFileURL: url,
+            inspectionFileName: file.name,
+            updatedAt: serverTimestamp(),
+          })
+          this.entry.inspectionFileURL = url
+          this.entry.inspectionFileName = file.name
+          this.newInspectionFile = null
+          this.showSuccessDialog?.(
+            'Document uploaded successfully!',
+            'Success',
+            'OK',
+          )
+        } catch (error) {
+          console.error('Upload document failed', error)
+          this.showErrorDialog?.(
+            'Failed to upload document. Please try again.',
+            'Upload Error',
+            'OK',
+          )
+        } finally {
+          this.uploading = false
         }
+      },
+      async saveDetails () {
+        try {
+          if (!this.entry?.id) return
+          const payload = {
+            inspectionRequired: this.entry.inspectionRequired || 'Yes',
+            contactPerson: this.entry.contactPerson || '',
+            contactNumber: this.entry.contactNumber || '',
+            appointmentMade: this.entry.appointmentMade || '',
+            inspectionDate: this.entry.inspectionDate || '',
+            inspectionTime: this.entry.inspectionTime || '',
+            quotesNeeded: this.entry.quotesNeeded || '',
+            updatedAt: new Date(),
+          }
+          await updateDoc(doc(db, 'inspections', this.entry.id), payload)
+          // Success pop and role-based redirect
+          const appStore = useAppStore()
+          const user = appStore.currentUser
+          const isAgency
+            = user?.userType === 'Agency'
+              || (user?.userType === 'Admin' && user?.adminScope === 'agency')
+          const redirectTo = isAgency ? '/onboard-units' : '/inspections'
+          this.showSuccessDialog?.(
+            'Inspection changes saved successfully!',
+            'Success!',
+            'Continue',
+            redirectTo,
+          )
+        } catch (error) {
+          console.error('Save details failed', error)
+          this.showErrorDialog
+            && this.showErrorDialog(
+              'Failed to save changes. Please try again.',
+              'Error',
+              'OK',
+            )
+        }
+      },
+      goBack () {
+        const appStore = useAppStore()
+        const user = appStore.currentUser
+        const isAgency
+          = user?.userType === 'Agency'
+            || (user?.userType === 'Admin' && user?.adminScope === 'agency')
 
-        const note = {
-          id: Date.now() + "_" + Math.random().toString(36).slice(2, 8),
-          text: this.newNote,
-          authorId: appStore.userId || currentUser?.uid || "",
-          authorName: authorName,
-          authorType: appStore.userType || currentUser?.userType || "",
-          authorAvatarUrl: isAgency
-            ? this.entry?.agencyProfileImageUrl ||
-              this.entry?.profileImageUrl ||
-              currentUser?.profileImageUrl ||
-              currentUser?.profileImage ||
-              ""
-            : currentUser?.profileImageUrl || currentUser?.profileImage || "",
-          timestamp: new Date(),
-          isEdited: false,
-          isDeleted: false,
-        };
+        // Agency users always go back to onboard-units
+        if (isAgency) {
+          this.$router.push('/onboard-units')
+        } else {
+          // Admin/Super Admin go to inspections
+          this.$router.push('/inspections')
+        }
+      },
+      scrollNotesToBottom () {
+        this.$nextTick(() => {
+          const el = this.$refs.chatLog
+          if (el && el.scrollHeight != null) el.scrollTop = el.scrollHeight
+        })
+      },
+      startEdit (note) {
+        this.editingKey = this.noteKey(note)
+        this.editingText = String(note.text || '')
+      },
+      cancelEdit () {
+        this.editingKey = null
+        this.editingText = ''
+      },
+      noteKey (n) {
+        try {
+          if (n?.id) return `id:${n.id}`
+          const t = n?.timestamp?.toDate
+            ? n.timestamp.toDate().getTime()
+            : new Date(n?.timestamp || 0).getTime()
+          const aid = n?.authorId || ''
+          const txt = String(n?.text || '')
+          return `legacy:${aid}:${t}:${txt.length}:${txt.slice(0, 8)}`
+        } catch {
+          return `legacy:${Math.random().toString(36).slice(2, 8)}`
+        }
+      },
+      findNoteIndexByIdOrMatch (list, target) {
+        if (!Array.isArray(list)) return -1
+        if (target.id) {
+          const i = list.findIndex(n => n && n.id === target.id)
+          if (i !== -1) return i
+        }
+        const tA = target.timestamp?.toDate
+          ? target.timestamp.toDate().getTime()
+          : new Date(target.timestamp || 0).getTime()
+        const txt = String(target.text || '')
+        const aid = target.authorId || ''
+        for (let i = list.length - 1; i >= 0; i--) {
+          const n = list[i] || {}
+          const nT = n.timestamp?.toDate
+            ? n.timestamp.toDate().getTime()
+            : new Date(n.timestamp || 0).getTime()
+          if (
+            n.id && !target.id
+              ? false
+              : String(n.text || '') === txt
+                && (n.authorId || '') === aid
+                && nT === tA
+          )
+            return i
+        }
+        return -1
+      },
+      async saveEdit (target) {
+        if (!this.entry?.id) return
+        const newText = this.editingText.trim()
+        if (!newText) return
+        try {
+          this.savingEdit = true
+          const list = Array.isArray(this.entry.notesLog)
+            ? [...this.entry.notesLog]
+            : []
+          const idx = this.findNoteIndexByIdOrMatch(list, target)
+          if (idx === -1) throw new Error('Note not found')
+          const old = list[idx] || {}
+          list[idx] = {
+            ...old,
+            text: newText,
+            isEdited: true,
+            editedAt: new Date(),
+            id:
+              old.id || Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+          }
+          await updateDoc(doc(db, 'inspections', this.entry.id), {
+            notesLog: list,
+            updatedAt: serverTimestamp(),
+          })
+          this.entry.notesLog = list
+          this.cancelEdit()
+        } catch (error) {
+          console.error('Error editing note:', error)
+          this.showErrorDialog(
+            'Failed to edit note. Please try again.',
+            'Error',
+            'OK',
+          )
+        } finally {
+          this.savingEdit = false
+        }
+      },
+      async softDeleteNote (target) {
+        if (!this.entry?.id) return
+        try {
+          await this.showConfirmDialog({
+            title: 'Delete message?',
+            message: 'This message will be shown as deleted.',
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            color: '#dc3545',
+          })
+        } catch {
+          return
+        }
+        try {
+          const list = Array.isArray(this.entry.notesLog)
+            ? [...this.entry.notesLog]
+            : []
+          const idx = this.findNoteIndexByIdOrMatch(list, target)
+          if (idx === -1) throw new Error('Note not found')
+          const old = list[idx] || {}
+          list[idx] = {
+            ...old,
+            isDeleted: true,
+            deletedAt: new Date(),
+            id:
+              old.id || Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+          }
+          await updateDoc(doc(db, 'inspections', this.entry.id), {
+            notesLog: list,
+            updatedAt: serverTimestamp(),
+          })
+          this.entry.notesLog = list
+        } catch (error) {
+          console.error('Error deleting note:', error)
+          this.showErrorDialog(
+            'Failed to delete note. Please try again.',
+            'Error',
+            'OK',
+          )
+        }
+      },
+      noteInitials (name) {
+        const raw = String(name || '').trim()
+        if (!raw) return '?'
+        const words = raw.split(/\s+/).filter(Boolean)
+        if (words.length === 1) {
+          const cleaned = words[0].replace(/[^A-Za-z0-9]/g, '')
+          if (!cleaned) return '?'
+          return cleaned.slice(0, 2).toUpperCase()
+        }
+        const first = words[0] && words[0][0] ? words[0][0] : ''
+        const second = words[1] && words[1][0] ? words[1][0] : ''
+        const res = (first + second).trim()
+        return res ? res.toUpperCase() : '?'
+      },
+      formatNoteDate (ts) {
+        try {
+          if (!ts) return 'Just now'
+          const d = ts.toDate ? ts.toDate() : new Date(ts)
+          return d.toLocaleString()
+        } catch {
+          return String(ts)
+        }
+      },
+      async loadEntry (entryId) {
+        try {
+          console.log('Loading inspection entry with ID:', entryId)
+          const docRef = doc(db, 'inspections', entryId)
+          const docSnap = await getDoc(docRef)
 
-        await updateDoc(doc(db, "inspections", this.entry.id), {
-          notesLog: arrayUnion(note),
-          updatedAt: serverTimestamp(),
-        });
+          if (docSnap.exists()) {
+            this.entry = {
+              id: docSnap.id,
+              ...docSnap.data(),
+              createdAt: docSnap.data().createdAt?.toDate(),
+              updatedAt: docSnap.data().updatedAt?.toDate(),
+            }
+            console.log('Inspection entry loaded:', this.entry)
+            this.scrollNotesToBottom()
+          } else {
+            this.error = 'Inspection entry not found'
+            console.log('Inspection entry not found with ID:', entryId)
+          }
+        } catch (error) {
+          console.error('Error loading inspection entry:', error)
+          this.error = 'Failed to load inspection entry'
+        } finally {
+          this.loading = false
+        }
+      },
 
-        if (!this.entry.notesLog) this.entry.notesLog = [];
-        this.entry.notesLog.push(note);
-        this.newNote = "";
-        this.scrollNotesToBottom();
-      } catch (e) {
-        console.error("Error adding note:", e);
-        this.showErrorDialog(
-          "Failed to add note. Please try again.",
-          "Error",
-          "OK"
-        );
-      } finally {
-        this.savingNote = false;
-      }
-    },
+      editEntry () {
+        // Pass the 'from' parameter along to edit page
+        const from = this.$route?.query?.from
+        if (from === 'onboard') {
+          this.$router.push({
+            path: `/edit-inspection-${this.entry.id}`,
+            query: { from: 'onboard' },
+          })
+        } else {
+          this.$router.push(`/edit-inspection-${this.entry.id}`)
+        }
+      },
+      async appendNote () {
+        if (!this.newNote || !this.entry?.id) return
+        try {
+          this.savingNote = true
+          const appStore = useAppStore()
+          const currentUser = appStore.currentUser
+          const isAgency
+            = currentUser?.userType === 'Agency'
+              || (currentUser?.userType === 'Admin'
+                && currentUser?.adminScope === 'agency')
 
-    async deleteEntry() {
-      try {
-        await this.showConfirmDialog({
-          title: "Delete inspection entry?",
-          message: `Are you sure you want to delete inspection entry for ${this.entry.unitName}?`,
-          confirmText: "Delete",
-          cancelText: "Cancel",
-          color: "#dc3545",
-        });
-      } catch (_) {
-        return;
-      }
-      try {
-        const { deleteDoc } = await import("firebase/firestore");
-        await deleteDoc(doc(db, "inspections", this.entry.id));
-        this.showSuccessDialog?.(
-          "Inspection entry deleted successfully!",
-          "Success!",
-          "Continue",
-          "/inspections"
-        );
-      } catch (error) {
-        console.error("Error deleting inspection entry:", error);
-        this.showErrorDialog?.(
-          "Failed to delete inspection entry. Please try again.",
-          "Error",
-          "OK"
-        );
-      }
+          // Get proper author name based on user type
+          let authorName = 'Unknown User'
+          if (isAgency) {
+            authorName
+              = currentUser?.agencyName
+                || this.entry?.unitName
+                || this.entry?.propertyName
+                || 'Property'
+          } else {
+            // For regular users, use firstName + lastName or fallback to email
+            if (currentUser?.firstName && currentUser?.lastName) {
+              authorName = `${currentUser.firstName} ${currentUser.lastName}`
+            } else if (currentUser?.firstName) {
+              authorName = currentUser.firstName
+            } else if (currentUser?.lastName) {
+              authorName = currentUser.lastName
+            } else if (currentUser?.email) {
+              authorName = currentUser.email
+            }
+          }
+
+          const note = {
+            id: Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+            text: this.newNote,
+            authorId: appStore.userId || currentUser?.uid || '',
+            authorName: authorName,
+            authorType: appStore.userType || currentUser?.userType || '',
+            authorAvatarUrl: isAgency
+              ? this.entry?.agencyProfileImageUrl
+                || this.entry?.profileImageUrl
+              || currentUser?.profileImageUrl
+                || currentUser?.profileImage
+              || ''
+              : currentUser?.profileImageUrl || currentUser?.profileImage || '',
+            timestamp: new Date(),
+            isEdited: false,
+            isDeleted: false,
+          }
+
+          await updateDoc(doc(db, 'inspections', this.entry.id), {
+            notesLog: arrayUnion(note),
+            updatedAt: serverTimestamp(),
+          })
+
+          if (!this.entry.notesLog) this.entry.notesLog = []
+          this.entry.notesLog.push(note)
+          this.newNote = ''
+          this.scrollNotesToBottom()
+        } catch (error) {
+          console.error('Error adding note:', error)
+          this.showErrorDialog(
+            'Failed to add note. Please try again.',
+            'Error',
+            'OK',
+          )
+        } finally {
+          this.savingNote = false
+        }
+      },
+
+      async deleteEntry () {
+        try {
+          await this.showConfirmDialog({
+            title: 'Delete inspection entry?',
+            message: `Are you sure you want to delete inspection entry for ${this.entry.unitName}?`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            color: '#dc3545',
+          })
+        } catch {
+          return
+        }
+        try {
+          const { deleteDoc } = await import('firebase/firestore')
+          await deleteDoc(doc(db, 'inspections', this.entry.id))
+          this.showSuccessDialog?.(
+            'Inspection entry deleted successfully!',
+            'Success!',
+            'Continue',
+            '/inspections',
+          )
+        } catch (error) {
+          console.error('Error deleting inspection entry:', error)
+          this.showErrorDialog?.(
+            'Failed to delete inspection entry. Please try again.',
+            'Error',
+            'OK',
+          )
+        }
+      },
+      openDocument () {
+        if (this.entry.inspectionFileURL) {
+          this.showDocumentDialog = true
+        }
+      },
+      openInNewTab () {
+        if (this.entry.inspectionFileURL) {
+          window.open(this.entry.inspectionFileURL, '_blank')
+        }
+      },
+      zoomIn () {
+        if (this.zoomLevel < 2) {
+          this.zoomLevel += 0.1
+        }
+      },
+      zoomOut () {
+        if (this.zoomLevel > 0.5) {
+          this.zoomLevel -= 0.1
+        }
+      },
     },
-    openDocument() {
-      if (this.entry.inspectionFileURL) {
-        this.showDocumentDialog = true;
-      }
-    },
-    openInNewTab() {
-      if (this.entry.inspectionFileURL) {
-        window.open(this.entry.inspectionFileURL, "_blank");
-      }
-    },
-    zoomIn() {
-      if (this.zoomLevel < 2) {
-        this.zoomLevel += 0.1;
-      }
-    },
-    zoomOut() {
-      if (this.zoomLevel > 0.5) {
-        this.zoomLevel -= 0.1;
-      }
-    },
-  },
-};
+  }
 </script>
 
 <style scoped>

@@ -2,7 +2,7 @@
   <div v-if="visible" class="notification-overlay" @click.self="closeDialog">
     <div class="notification-dialog">
       <!-- colored card behind -->
-      <div class="notification-dialog-bg info"></div>
+      <div class="notification-dialog-bg info" />
       <!-- main white card -->
       <div class="notification-dialog-inner">
         <button class="notification-close" @click="closeDialog">&times;</button>
@@ -20,35 +20,35 @@
         <div class="email-input-container">
           <v-text-field
             v-model="email"
-            label="Email Address"
-            type="email"
-            variant="outlined"
-            prepend-inner-icon="mdi-email"
-            :rules="emailRules"
-            :disabled="loading"
-            @keyup.enter="resetPassword"
             class="email-input"
             density="comfortable"
+            :disabled="loading"
+            label="Email Address"
+            prepend-inner-icon="mdi-email"
+            :rules="emailRules"
+            type="email"
+            variant="outlined"
+            @keyup.enter="resetPassword"
           />
         </div>
 
         <!-- Success message -->
         <div v-if="successMessage" class="success-message">
-          <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
+          <v-icon class="mr-2" color="success">mdi-check-circle</v-icon>
           {{ successMessage }}
         </div>
 
         <!-- Error message -->
         <div v-if="errorMessage" class="error-message">
-          <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+          <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
           {{ errorMessage }}
         </div>
 
         <div class="button-container">
-          <button class="notification-button info" @click="resetPassword" :disabled="loading || !isEmailValid">
+          <button class="notification-button info" :disabled="loading || !isEmailValid" @click="resetPassword">
             {{ loading ? 'Sending...' : 'Send Reset Link' }}
           </button>
-          <button class="notification-button secondary" @click="closeDialog" :disabled="loading">
+          <button class="notification-button secondary" :disabled="loading" @click="closeDialog">
             Cancel
           </button>
         </div>
@@ -58,96 +58,100 @@
 </template>
 
 <script>
-import { sendPasswordResetEmail } from 'firebase/auth'
-import { auth } from '@/firebaseConfig'
+  import { sendPasswordResetEmail } from 'firebase/auth'
+  import { auth } from '@/firebaseConfig'
 
-export default {
-  name: 'ForgotPasswordDialog',
-  props: {
-    visible: {
-      type: Boolean,
-      required: true
-    }
-  },
-  data() {
-    return {
-      email: '',
-      valid: false,
-      loading: false,
-      successMessage: '',
-      errorMessage: '',
-      emailRules: [
-        v => !!v || 'Email is required',
-        v => /.+@.+\..+/.test(v) || 'Please enter a valid email address',
-      ]
-    }
-  },
-  computed: {
-    isEmailValid() {
-      return this.email && /.+@.+\..+/.test(this.email)
-    }
-  },
-  watch: {
-    visible(newVal) {
-      if (newVal) {
-        this.resetForm()
+  export default {
+    name: 'ForgotPasswordDialog',
+    props: {
+      visible: {
+        type: Boolean,
+        required: true,
+      },
+    },
+    data () {
+      return {
+        email: '',
+        valid: false,
+        loading: false,
+        successMessage: '',
+        errorMessage: '',
+        emailRules: [
+          v => !!v || 'Email is required',
+          v => /.+@.+\..+/.test(v) || 'Please enter a valid email address',
+        ],
       }
-    }
-  },
-  methods: {
-    async resetPassword() {
-      if (!this.isEmailValid) {
-        this.errorMessage = 'Please enter a valid email address.'
-        return
-      }
-
-      this.loading = true
-      this.errorMessage = ''
-      this.successMessage = ''
-
-             try {
-         await sendPasswordResetEmail(auth, this.email)
-         this.successMessage = 'Password reset link sent! Please check your email.'
-         
-         // Auto-close after 2 seconds
-         setTimeout(() => {
-           this.closeDialog()
-         }, 2000)
-       } catch (error) {
-        console.error('Password reset error:', error)
-        
-        // Handle specific Firebase errors
-        switch (error.code) {
-          case 'auth/user-not-found':
-            this.errorMessage = 'No account found with this email address.'
-            break
-          case 'auth/invalid-email':
-            this.errorMessage = 'Please enter a valid email address.'
-            break
-          case 'auth/too-many-requests':
-            this.errorMessage = 'Too many requests. Please try again later.'
-            break
-          default:
-            this.errorMessage = 'Failed to send reset link. Please try again.'
+    },
+    computed: {
+      isEmailValid () {
+        return this.email && /.+@.+\..+/.test(this.email)
+      },
+    },
+    watch: {
+      visible (newVal) {
+        if (newVal) {
+          this.resetForm()
         }
-      } finally {
-        this.loading = false
-      }
+      },
     },
-    
-    closeDialog() {
-      this.$emit("update:visible", false)
-      this.$emit("close")
+    methods: {
+      async resetPassword () {
+        if (!this.isEmailValid) {
+          this.errorMessage = 'Please enter a valid email address.'
+          return
+        }
+
+        this.loading = true
+        this.errorMessage = ''
+        this.successMessage = ''
+
+        try {
+          await sendPasswordResetEmail(auth, this.email)
+          this.successMessage = 'Password reset link sent! Please check your email.'
+
+          // Auto-close after 2 seconds
+          setTimeout(() => {
+            this.closeDialog()
+          }, 2000)
+        } catch (error) {
+          console.error('Password reset error:', error)
+
+          // Handle specific Firebase errors
+          switch (error.code) {
+            case 'auth/user-not-found': {
+              this.errorMessage = 'No account found with this email address.'
+              break
+            }
+            case 'auth/invalid-email': {
+              this.errorMessage = 'Please enter a valid email address.'
+              break
+            }
+            case 'auth/too-many-requests': {
+              this.errorMessage = 'Too many requests. Please try again later.'
+              break
+            }
+            default: {
+              this.errorMessage = 'Failed to send reset link. Please try again.'
+            }
+          }
+        } finally {
+          this.loading = false
+        }
+      },
+
+      closeDialog () {
+        this.$emit('update:visible', false)
+        this.$emit('close')
+      },
+
+      resetForm () {
+        this.email = ''
+        this.valid = false
+        this.successMessage = ''
+        this.errorMessage = ''
+      },
     },
-    
-    resetForm() {
-      this.email = ''
-      this.valid = false
-      this.successMessage = ''
-      this.errorMessage = ''
-    }
   }
-}
 </script>
 
 <style scoped>
@@ -357,11 +361,11 @@ export default {
     width: 95vw;
     margin: 0 10px;
   }
-  
+
   .button-container {
     flex-direction: column;
   }
-  
+
   .notification-button {
     width: 100%;
   }

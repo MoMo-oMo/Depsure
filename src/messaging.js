@@ -1,6 +1,6 @@
-import { isSupported, getMessaging, getToken, onMessage } from 'firebase/messaging'
-import { firebaseApp, db, auth } from '@/firebaseConfig'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging'
+import { auth, db, firebaseApp } from '@/firebaseConfig'
 import { useAppStore } from '@/stores/app'
 
 const VAPID_KEY = import.meta?.env?.VITE_FCM_VAPID_KEY || ''
@@ -9,9 +9,13 @@ let _messagingInitDone = false
 
 export async function initMessaging (explicitUid) {
   try {
-    const supported = await isSupported().catch((e) => { console.warn('FCM support check failed', e); return false })
+    const supported = await isSupported().catch(error => {
+      console.warn('FCM support check failed', error); return false
+    })
     console.info('[FCM] supported:', supported)
-    if (!supported) return { supported: false }
+    if (!supported) {
+      return { supported: false }
+    }
     if (!VAPID_KEY) {
       console.warn('[FCM] VAPID key missing (VITE_FCM_VAPID_KEY). Skipping push setup.')
       return { supported: true, configured: false }
@@ -22,18 +26,18 @@ export async function initMessaging (explicitUid) {
     try {
       reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
       console.info('[FCM] service worker registered')
-    } catch (e) {
-      console.error('[FCM] service worker registration failed', e)
-      return { supported: true, configured: false, error: e }
+    } catch (error) {
+      console.error('[FCM] service worker registration failed', error)
+      return { supported: true, configured: false, error }
     }
 
     // Request permission
     let perm
     try {
       perm = await Notification.requestPermission()
-    } catch (e) {
-      console.error('[FCM] Notification permission request failed', e)
-      return { supported: true, configured: false, error: e }
+    } catch (error) {
+      console.error('[FCM] Notification permission request failed', error)
+      return { supported: true, configured: false, error }
     }
     console.info('[FCM] permission:', perm)
     if (perm !== 'granted') {
@@ -45,9 +49,9 @@ export async function initMessaging (explicitUid) {
     let token
     try {
       token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg })
-    } catch (e) {
-      console.error('[FCM] getToken failed', e)
-      return { supported: true, configured: false, error: e }
+    } catch (error) {
+      console.error('[FCM] getToken failed', error)
+      return { supported: true, configured: false, error }
     }
     console.info('[FCM] token present:', Boolean(token))
 
@@ -57,12 +61,16 @@ export async function initMessaging (explicitUid) {
       if (!uid) {
         try {
           const raw = localStorage.getItem('userInfo')
-          if (raw) uid = JSON.parse(raw)?.uid || ''
+          if (raw) {
+            uid = JSON.parse(raw)?.uid || ''
+          }
         } catch {}
       }
       if (!uid) {
         // Try Pinia store if available in active context
-        try { uid = useAppStore().userId } catch {}
+        try {
+          uid = useAppStore().userId
+        } catch {}
       }
       if (uid) {
         try {
@@ -70,7 +78,7 @@ export async function initMessaging (explicitUid) {
             token,
             createdAt: serverTimestamp(),
             platform: navigator.platform || '',
-            userAgent: navigator.userAgent || ''
+            userAgent: navigator.userAgent || '',
           }, { merge: true })
           console.info('[FCM] token saved for user', uid)
           try {
@@ -79,8 +87,8 @@ export async function initMessaging (explicitUid) {
               window.dispatchEvent(new CustomEvent('fcm-registered'))
             }
           } catch {}
-        } catch (e) {
-          console.error('[FCM] failed to save token for user', uid, e)
+        } catch (error) {
+          console.error('[FCM] failed to save token for user', uid, error)
         }
       } else {
         console.warn('[FCM] no UID resolved; token not stored')
@@ -89,7 +97,7 @@ export async function initMessaging (explicitUid) {
 
     // Foreground handler
     if (!_messagingInitDone) {
-      onMessage(messaging, (payload) => {
+      onMessage(messaging, payload => {
         console.info('[FCM] foreground message received', payload)
         try {
           const mid = payload?.data?.messageId || ''
@@ -105,7 +113,9 @@ export async function initMessaging (explicitUid) {
           try {
             if (typeof document !== 'undefined') {
               const focused = typeof document.hasFocus === 'function' ? document.hasFocus() : (document.visibilityState === 'visible')
-              if (focused) return
+              if (focused) {
+                return
+              }
             }
           } catch {}
 
@@ -113,8 +123,8 @@ export async function initMessaging (explicitUid) {
           const body = payload.notification?.body || ''
           // Best effort: show a native notification in foreground too
           if (Notification.permission === 'granted') {
-          const n = new Notification(title, { body, icon: '/favicon.ico', data: payload.data || {} })
-            n.onclick = () => {
+            const n = new Notification(title, { body, icon: '/favicon.ico', data: payload.data || {} })
+            n.addEventListener('click', () => {
               window.focus?.()
               if (payload.data?.click_action) {
                 const target = payload.data.click_action
@@ -124,19 +134,23 @@ export async function initMessaging (explicitUid) {
                   window.location.assign(target)
                 }
               }
-            }
-            try { if (mid) localStorage.setItem('lastNotifiedMessageId', mid) } catch {}
+            })
+            try {
+              if (mid) {
+                localStorage.setItem('lastNotifiedMessageId', mid)
+              }
+            } catch {}
           }
-        } catch (e) {
-          console.warn('onMessage handler error', e)
+        } catch (error) {
+          console.warn('onMessage handler error', error)
         }
       })
       _messagingInitDone = true
     }
 
     return { supported: true, configured: true }
-  } catch (e) {
-    console.error('initMessaging error', e)
-    return { supported: false, error: e }
+  } catch (error) {
+    console.error('initMessaging error', error)
+    return { supported: false, error }
   }
 }
